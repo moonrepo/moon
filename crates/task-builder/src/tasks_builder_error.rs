@@ -19,12 +19,21 @@ pub enum TasksBuilderError {
 
     #[diagnostic(code(task_builder::dependency::run_in_ci_mismatch))]
     #[error(
-        "Task {} cannot depend on task {}, as the dependency cannot run in CI because {} is disabled. Because of this, the pipeline will not run tasks correctly.",
+        "Task {} cannot depend on task {}, as the dependency cannot run in CI because {} is disabled{}. Because of this, the pipeline will not run tasks correctly. Instead you can either:\n\n- Enable {} for the dependency, so that both run in CI.\n- Set {} to {} for the dependency, so that the task runs in CI without it.\n- Disable {} for the task, so that neither runs in CI.",
         .task.style(Style::Label),
         .dep.style(Style::Label),
         "options.runInCI".style(Style::Property),
+        get_run_in_ci_default(.persistent),
+        "options.runInCI".style(Style::Property),
+        "options.runInCI".style(Style::Property),
+        "skip".style(Style::Symbol),
+        "options.runInCI".style(Style::Property),
     )]
-    RunInCiDepRequirement { dep: Target, task: Target },
+    RunInCiDepRequirement {
+        dep: Target,
+        persistent: bool,
+        task: Target,
+    },
 
     #[diagnostic(code(task_builder::dependency::persistent_requirement))]
     #[error(
@@ -176,4 +185,14 @@ pub enum TasksBuilderError {
         "script".style(Style::Property),
     )]
     UnsupportedCommandSyntax { task: Target },
+}
+
+// Persistent tasks are disabled in CI by default, so the option
+// that the error refers to may not have been configured at all
+fn get_run_in_ci_default(persistent: &bool) -> &'static str {
+    if *persistent {
+        ", which is the default for persistent tasks"
+    } else {
+        ""
+    }
 }

@@ -87,6 +87,11 @@ pub async fn check(session: MoonSession, args: CheckArgs) -> SessionResult {
 
         exec.targets = targets;
         exec.on_failure = OnFailure::Bail;
+
+        // Persistent tasks never complete, and neither would the check,
+        // so only run them when another task depends on them
+        exec.skip_persistent = true;
+
         exec
     })
     .await

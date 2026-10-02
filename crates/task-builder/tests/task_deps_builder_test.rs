@@ -204,6 +204,70 @@ mod task_deps_builder {
     mod run_in_ci {
         use super::*;
 
+        fn get_error(type_of: TaskDependencyType, dep_options: TaskOptions) -> String {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.options.run_in_ci = TaskOptionRunInCI::Enabled(true);
+            task.deps.push(dep_typed("no-ci", type_of));
+
+            TaskDepsBuilder {
+                querent: Box::new(TestQuerent {
+                    data: FxHashMap::from_iter([(
+                        Target::parse("project:no-ci").unwrap(),
+                        dep_options,
+                    )]),
+                    ..Default::default()
+                }),
+                project: Some(&mut project),
+                root_project_id: None,
+                task: &mut task,
+            }
+            .build()
+            .unwrap_err()
+            .to_string()
+        }
+
+        #[test]
+        fn errors_with_how_to_resolve() {
+            let error = get_error(
+                TaskDependencyType::Required,
+                TaskOptions {
+                    run_in_ci: TaskOptionRunInCI::Enabled(false),
+                    ..Default::default()
+                },
+            );
+
+            for expected in [
+                "because options.runInCI is disabled. Because of this",
+                "- Enable options.runInCI for the dependency, so that both run in CI.",
+                "- Set options.runInCI to skip for the dependency, so that the task runs in CI without it.",
+                "- Disable options.runInCI for the task, so that neither runs in CI.",
+            ] {
+                assert!(error.contains(expected), "{error}");
+            }
+        }
+
+        // Persistent tasks are disabled by default, so it may not have been configured
+        #[test]
+        fn errors_with_the_default_of_persistent_deps() {
+            let error = get_error(
+                TaskDependencyType::Wait,
+                TaskOptions {
+                    persistent: true,
+                    run_in_ci: TaskOptionRunInCI::Enabled(false),
+                    ..Default::default()
+                },
+            );
+
+            assert!(
+                error.contains(
+                    "because options.runInCI is disabled, which is the default for persistent tasks. Because of this"
+                ),
+                "{error}"
+            );
+        }
+
         #[test]
         #[should_panic(expected = "Task project:task cannot depend on task project:no-ci")]
         fn errors_if_dep_not_enabled() {

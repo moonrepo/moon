@@ -908,9 +908,8 @@ Wait dependencies:
   persistent tasks don't run in CI by default, and a task that runs in CI can't depend on a task
   that doesn't (an error is raised). To resolve this, either enable [`runInCI`](#runinci) for the
   dependency (both run in CI), set it to `skip` for the dependency (this task runs in CI without
-  it), or disable it for this task (neither runs in CI). Be aware that once enabled,
-  [`moon ci`](../commands/ci) also runs the dependency on its own when it's affected, which keeps
-  the pipeline running until it's stopped.
+  it), or disable it for this task (neither runs in CI). Once enabled, the dependency is only ran in
+  CI for the tasks that depend on it, and never on its own.
 - Can't be [interactive](#interactive), as interactive tasks run in isolation, so nothing can run
   alongside them.
 - Are not stopped once this task has completed. A persistent dependency keeps running until the
@@ -1751,8 +1750,10 @@ tasks:
 
 Since persistent tasks never complete, non-persistent tasks cannot depend on them, unless they only
 wait for them to start with a [`wait`](#type) dependency. For the same reason, they're not ran in CI
-by default, as they would keep the pipeline running, unless [`runInCI`](#runinci) is explicitly
-enabled.
+by default, as they would keep the pipeline running. When [`runInCI`](#runinci) is explicitly
+enabled, they're only ran in CI for the tasks that depend on them, or when explicitly passed as a
+target, and never on their own. Likewise, [`moon check`](../commands/check) only runs them for the
+tasks that depend on them.
 
 > We suggest using the [`preset`](#preset) setting instead, which enables this setting, amongst
 > other useful settings.
@@ -1860,7 +1861,8 @@ tasks:
 ```
 
 [Persistent](#persistent) tasks default to `false` instead, and must be explicitly enabled to run in
-CI.
+CI. Once enabled, they're only ran for the tasks that depend on them, or when explicitly passed as a
+target, and never on their own, as they would keep the pipeline running.
 
 #### `runInSyncPhase`<VersionLabel version="2.1.0" />
 

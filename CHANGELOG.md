@@ -49,6 +49,8 @@
 - Changed `runDepsInParallel` (when disabled) to skip persistent dependencies when ordering the
   dependencies that follow them, as a persistent dependency never completes. Those dependencies are
   now ordered against the previous dependency that does complete.
+- Improved the error for a task that runs in CI and depends on a task that doesn't
+  (`run_in_ci_mismatch`), which now explains how to resolve it.
 - Updated the MCP server (`moon mcp`) to the stateless MCP `2026-07-28` protocol. Clients must
   support this protocol version, as older versions (`2025-11-25` and below) and the `initialize`
   handshake are no longer supported.
@@ -96,6 +98,13 @@
 - Fixed an issue where a persistent task would run in CI by default, when it defined `outputs`, or a
   `type` of `build` or `test`, which keeps the pipeline running. Persistent tasks no longer run in
   CI, unless `options.runInCI` is explicitly enabled.
+- Fixed an issue where a persistent task with `options.runInCI` enabled would be ran in CI on its
+  own (by `moon ci` when it was affected, or when a task that it depends on was ran), which keeps
+  the pipeline running. In CI, persistent tasks are now only ran when another task depends on them,
+  or when they're explicitly passed as a target.
+- Fixed an issue where `moon check` would run persistent tasks (those that define `outputs`, or a
+  `type` of `build` or `test`), so the command would never complete. Persistent tasks are now only
+  ran by `moon check` when another task depends on them.
 
 #### ⚙️ Internal
 

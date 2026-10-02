@@ -62,6 +62,7 @@ pub struct RunRequirements {
     pub job: Option<usize>,          // Current job index
     pub job_total: Option<usize>,    // Total amount of jobs
     pub skip_affected: bool,         // Skip all affected checks
+    pub skip_persistent: bool,       // Skip persistent tasks that aren't a dependency
 }
 
 impl Default for RunRequirements {
@@ -76,6 +77,7 @@ impl Default for RunRequirements {
             job: None,
             job_total: None,
             skip_affected: false,
+            skip_persistent: false,
         }
     }
 }
@@ -107,6 +109,9 @@ pub struct RunTaskState {
     // downstream expansion restarts from inside dependency subtrees and
     // runs tasks that aren't dependents of the requested targets.
     pub via_dependency: bool,
+    // Whether this task was reached by traversing a dependent (downstream)
+    // edge, instead of being requested, or being depended on.
+    pub via_dependent: bool,
 }
 
 pub struct ActionGraphBuilderOptions {
@@ -839,6 +844,7 @@ impl<'query> ActionGraphBuilder<'query> {
             {
                 let mut dep_state = state.clone();
                 dep_state.via_dependency = true;
+                dep_state.via_dependent = false;
 
                 if let Some(dep_index) =
                     Box::pin(self.internal_run_task(&dep_task, reqs, Some(dep), &mut dep_state))
@@ -942,6 +948,7 @@ impl<'query> ActionGraphBuilder<'query> {
                 // keep cascading through transitive dependents
                 let mut dep_state = state.clone();
                 dep_state.via_dependency = false;
+                dep_state.via_dependent = true;
 
                 indexes.push(
                     Box::pin(self.internal_run_task(&dep_task, reqs, None, &mut dep_state)).await?,
@@ -1199,6 +1206,30 @@ impl<'query> ActionGraphBuilder<'query> {
                 "Not running task {} because {} has been configured not to",
                 color::id(&task.target.id),
                 color::property("runInCI"),
+            );
+
+            // Dependents may still want to run though!
+            if should_run_dependents {
+                child_reqs.skip_affected = false;
+
+                Box::pin(self.run_task_dependents(task, &child_reqs, state)).await?;
+            }
+
+            return Ok(None);
+        }
+
+        // Persistent tasks never complete, so they would keep the pipeline
+        // running. When the targets were not requested (the command chose
+        // them), they're only ran when another task depends on them. In CI,
+        // they're also never ran as a dependent of another task
+        if task.is_persistent()
+            && !state.via_dependency
+            && (reqs.skip_persistent || (reqs.ci && reqs.ci_check && state.via_dependent))
+        {
+            debug!(
+                task_target = task.target.as_str(),
+                "Not running persistent task {} because it has not been requested, and no task depends on it",
+                color::id(&task.target.id),
             );
 
             // Dependents may still want to run though!

@@ -23,6 +23,9 @@ $ moon check --closest
 $ moon check --all
 ```
 
+[Persistent](../config/project#persistent) tasks are the exception, as they never complete, and
+neither would the check. They're only ran when another task that is ran depends on them.
+
 ### Arguments
 
 - `[...id]` - List of project IDs or aliases to explicitly check, as defined in

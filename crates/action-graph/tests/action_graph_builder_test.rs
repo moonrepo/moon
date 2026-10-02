@@ -2179,6 +2179,251 @@ mod action_graph_builder {
             }
         }
 
+        // Persistent tasks never complete, so in CI they're only ran when
+        // another task depends on them, or when they've been requested.
+        // Outside of CI, that's only the case when the targets weren't
+        // requested, and were determined by the command (like `moon check`).
+        // The `persistent-ci` fixture forms the following dependency graph,
+        // where `server` and `proxy` are persistent and enabled for CI, and
+        // `watcher` is persistent and not enabled for CI (the default):
+        //   proxy -> server -> build
+        //   watcher -> build
+        //   e2e -> server (wait), stop (cleanup)
+        mod persistent_in_ci {
+            use super::*;
+
+            fn ci_reqs() -> RunRequirements {
+                RunRequirements {
+                    ci: true,
+                    ci_check: true,
+                    ..RunRequirements::default()
+                }
+            }
+
+            async fn run_targets(
+                ids: &[&str],
+                reqs: RunRequirements,
+            ) -> (ActionContext, Vec<String>) {
+                let sandbox = create_sandbox("persistent-ci");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                for id in ids {
+                    let task = wg.get_task_from_project("proj", id).unwrap();
+
+                    builder.run_task(&task, &reqs).await.unwrap();
+                }
+
+                let (context, graph) = builder.build();
+
+                (context, extract_run_task_targets(graph))
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_when_requested() {
+                let (context, targets) = run_targets(&["proxy"], ci_reqs()).await;
+
+                assert_eq!(targets, ["proj:build", "proj:proxy", "proj:server"]);
+                assert!(
+                    context
+                        .primary_targets
+                        .contains(&Target::parse("proj:proxy").unwrap())
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_as_a_dependency() {
+                let (_, targets) = run_targets(&["e2e"], ci_reqs()).await;
+
+                assert_eq!(
+                    targets,
+                    ["proj:build", "proj:e2e", "proj:server", "proj:stop"]
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_run_as_a_dependent() {
+                let (_, targets) = run_targets(
+                    &["build"],
+                    RunRequirements {
+                        dependents: DownstreamScope::Direct,
+                        ..ci_reqs()
+                    },
+                )
+                .await;
+
+                assert_eq!(targets, ["proj:build"]);
+            }
+
+            // But the tasks that depend on it are, which then run it
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_the_dependents_of_a_dependent() {
+                let (_, targets) = run_targets(
+                    &["build"],
+                    RunRequirements {
+                        dependents: DownstreamScope::Deep,
+                        ..ci_reqs()
+                    },
+                )
+                .await;
+
+                assert_eq!(
+                    targets,
+                    ["proj:build", "proj:e2e", "proj:server", "proj:stop"]
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_run_as_a_dependent_when_already_a_dependency() {
+                let (_, targets) = run_targets(
+                    &["e2e", "build"],
+                    RunRequirements {
+                        dependents: DownstreamScope::Deep,
+                        ..ci_reqs()
+                    },
+                )
+                .await;
+
+                assert_eq!(
+                    targets,
+                    ["proj:build", "proj:e2e", "proj:server", "proj:stop"]
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_as_a_dependent_when_not_in_ci() {
+                let (_, targets) = run_targets(
+                    &["build"],
+                    RunRequirements {
+                        ci: false,
+                        ci_check: true,
+                        dependents: DownstreamScope::Direct,
+                        ..RunRequirements::default()
+                    },
+                )
+                .await;
+
+                assert_eq!(targets, ["proj:build", "proj:server", "proj:watcher"]);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_as_a_dependent_when_ignoring_ci_checks() {
+                let (_, targets) = run_targets(
+                    &["build"],
+                    RunRequirements {
+                        ci: true,
+                        ci_check: false,
+                        dependents: DownstreamScope::Direct,
+                        ..RunRequirements::default()
+                    },
+                )
+                .await;
+
+                assert_eq!(targets, ["proj:build", "proj:server", "proj:watcher"]);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_run_when_not_requested() {
+                let (_, targets) = run_targets(
+                    &["server", "proxy"],
+                    RunRequirements {
+                        skip_persistent: true,
+                        ..ci_reqs()
+                    },
+                )
+                .await;
+
+                assert!(targets.is_empty());
+            }
+
+            // Like `moon ci` without targets, which runs every task
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_as_a_dependency_when_not_requested() {
+                for ids in [
+                    ["build", "server", "proxy", "watcher", "e2e", "stop"],
+                    ["stop", "e2e", "watcher", "proxy", "server", "build"],
+                ] {
+                    let (context, targets) = run_targets(
+                        &ids,
+                        RunRequirements {
+                            skip_persistent: true,
+                            ..ci_reqs()
+                        },
+                    )
+                    .await;
+
+                    assert_eq!(
+                        targets,
+                        ["proj:build", "proj:e2e", "proj:server", "proj:stop"],
+                        "{ids:?}"
+                    );
+
+                    // It was ran for another task, and not on its own
+                    assert!(
+                        !context
+                            .primary_targets
+                            .contains(&Target::parse("proj:server").unwrap()),
+                        "{ids:?}"
+                    );
+                }
+            }
+
+            // Like `moon check`, which is also ran outside of CI
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_run_when_not_requested_and_not_in_ci() {
+                let (_, targets) = run_targets(
+                    &["server", "proxy", "watcher"],
+                    RunRequirements {
+                        ci: false,
+                        ci_check: true,
+                        skip_persistent: true,
+                        ..RunRequirements::default()
+                    },
+                )
+                .await;
+
+                assert!(targets.is_empty());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_run_as_a_dependent_when_not_requested_and_not_in_ci() {
+                let (_, targets) = run_targets(
+                    &["build"],
+                    RunRequirements {
+                        ci: false,
+                        ci_check: true,
+                        dependents: DownstreamScope::Direct,
+                        skip_persistent: true,
+                        ..RunRequirements::default()
+                    },
+                )
+                .await;
+
+                assert_eq!(targets, ["proj:build"]);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_as_a_dependency_when_not_requested_and_not_in_ci() {
+                let (_, targets) = run_targets(
+                    &["build", "server", "proxy", "watcher", "e2e", "stop"],
+                    RunRequirements {
+                        ci: false,
+                        ci_check: true,
+                        skip_persistent: true,
+                        ..RunRequirements::default()
+                    },
+                )
+                .await;
+
+                assert_eq!(
+                    targets,
+                    ["proj:build", "proj:e2e", "proj:server", "proj:stop"]
+                );
+            }
+        }
+
         mod dependencies {
             use super::*;
 

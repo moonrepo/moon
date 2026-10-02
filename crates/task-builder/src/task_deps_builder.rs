@@ -257,6 +257,7 @@ impl TaskDepsBuilder<'_> {
         {
             return Err(TasksBuilderError::RunInCiDepRequirement {
                 dep: dep_task_target.to_owned(),
+                persistent: dep_task_options.persistent,
                 task: self.task.target.to_owned(),
             }
             .into());

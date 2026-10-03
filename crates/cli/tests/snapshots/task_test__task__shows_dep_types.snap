@@ -1,0 +1,30 @@
+---
+source: crates/cli/tests/task_test.rs
+expression: assert.output_standardized()
+---
+About ──────────────────────────────────────────────────────
+
+  Target: app:e2e
+  Project: app
+  Task: e2e
+  Toolchain: system
+  Type: test
+  Depends on:
+    - app:setup
+    - app:server (wait)
+    - app:teardown (cleanup)
+
+Process ────────────────────────────────────────────────────
+
+  Command: noop
+  Environment variables: —
+  Runs dependencies: Parallel
+  Runs in CI: Yes
+
+Configuration ──────────────────────────────────────────────
+
+  Tags: —
+  Inputs:
+    - .moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}
+    - app/**/*
+  Outputs: —

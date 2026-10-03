@@ -2,15 +2,24 @@ use crate::tasks_builder_error::TasksBuilderError;
 use moon_common::Id;
 use moon_config::{
     DependencyScope, DependencySource, ProjectDependencyConfig, TaskDependencyCacheStrategy,
-    TaskDependencyConfig,
+    TaskDependencyConfig, TaskDependencyType,
 };
 use moon_project::Project;
 use moon_task::{
     Target, TargetDependencyScope as TargetDepScope, TargetProjectScope, TargetTaskScope, Task,
     TaskOptionRunInCI, TaskOptions,
 };
+use rustc_hash::FxHashMap;
 use std::mem;
 use tracing::debug;
+
+fn normalize_type(type_of: TaskDependencyType) -> TaskDependencyType {
+    if type_of.is_required_type() {
+        TaskDependencyType::Required
+    } else {
+        type_of
+    }
+}
 
 pub trait TasksQuerent {
     fn query_projects_by_tag(&self, tag: &str) -> miette::Result<Vec<&Id>>;
@@ -32,6 +41,7 @@ pub struct TaskDepsBuilder<'proj> {
 impl TaskDepsBuilder<'_> {
     pub fn build(mut self) -> miette::Result<()> {
         let mut deps = vec![];
+        let mut dep_types = FxHashMap::<Target, TaskDependencyType>::default();
         let project = self.project.take().unwrap();
 
         for dep_config in mem::take(&mut self.task.deps) {
@@ -142,6 +152,21 @@ impl TaskDepsBuilder<'_> {
                     .is_ok_and(|id| id == project.id.as_str())
                     && dep_task_target.get_task_id()? == self.task.target.get_task_id()?
                 {
+                    // A required dependency on itself is a harmless cycle (common
+                    // when inheriting `~:` dependencies), but the other types
+                    // describe an ordering that a task can't have with itself
+                    if !dep_config.type_of.is_required_type() {
+                        return Err(TasksBuilderError::SelfDepRequirement {
+                            task: self.task.target.to_owned(),
+                            type_of: dep_config.type_of,
+                            relation: match dep_config.type_of {
+                                TaskDependencyType::Cleanup => "after",
+                                _ => "alongside",
+                            },
+                        }
+                        .into());
+                    }
+
                     continue;
                 }
 
@@ -168,6 +193,27 @@ impl TaskDepsBuilder<'_> {
                     project.dependencies.push(project_dep);
                 }
 
+                // The same target can be depended on multiple times (with
+                // different args/env), but must always use the same type,
+                // otherwise the graph would create competing edges
+                let dep_type = normalize_type(task_dep.type_of);
+
+                match dep_types.get(&task_dep.target) {
+                    Some(other_type) if *other_type != dep_type => {
+                        return Err(TasksBuilderError::ConflictingDepType {
+                            dep: task_dep.target.to_owned(),
+                            task: self.task.target.to_owned(),
+                            current_type: *other_type,
+                            other_type: dep_type,
+                        }
+                        .into());
+                    }
+                    Some(_) => {}
+                    None => {
+                        dep_types.insert(task_dep.target.to_owned(), dep_type);
+                    }
+                };
+
                 if !deps.contains(&task_dep) {
                     deps.push(task_dep);
                 }
@@ -185,8 +231,16 @@ impl TaskDepsBuilder<'_> {
         dep_task_options: &TaskOptions,
         dep_config: &TaskDependencyConfig,
     ) -> miette::Result<TaskDependencyConfig> {
+        let is_required = dep_config.type_of.is_required_type();
+
+        // Cleanup dependencies run after the task, and their result is never
+        // consumed by it, so the constraints of running before it don't apply.
+        // Wait dependencies do run before the task, and it's skipped when they
+        // fail before it starts (which would be silent if they can fail)
+        let is_cleanup = matches!(dep_config.type_of, TaskDependencyType::Cleanup);
+
         // Do not depend on tasks that can fail
-        if dep_task_options.allow_failure {
+        if !is_cleanup && dep_task_options.allow_failure {
             return Err(TasksBuilderError::AllowFailureDepRequirement {
                 dep: dep_task_target.to_owned(),
                 task: self.task.target.to_owned(),
@@ -195,37 +249,81 @@ impl TaskDepsBuilder<'_> {
         }
 
         // Do not depend on tasks that can't run in CI
-        if !dep_task_options.run_in_ci.is_enabled()
+        if !is_cleanup
+            && !dep_task_options.run_in_ci.is_enabled()
             && self.task.options.run_in_ci.is_enabled()
             && dep_task_options.run_in_ci != TaskOptionRunInCI::Skip
             && self.task.options.run_in_ci != TaskOptionRunInCI::Skip
         {
             return Err(TasksBuilderError::RunInCiDepRequirement {
                 dep: dep_task_target.to_owned(),
+                persistent: dep_task_options.persistent,
                 task: self.task.target.to_owned(),
             }
             .into());
         }
 
         // Enforce persistent constraints
-        if dep_task_options.persistent && !self.task.options.persistent {
-            return Err(TasksBuilderError::PersistentDepRequirement {
-                dep: dep_task_target.to_owned(),
-                task: self.task.target.to_owned(),
-            }
-            .into());
-        }
+        match dep_config.type_of {
+            // A cleanup dependency must run to completion after the task,
+            // which is not possible when either side is persistent
+            TaskDependencyType::Cleanup => {
+                if dep_task_options.persistent {
+                    return Err(TasksBuilderError::PersistentCleanupDepRequirement {
+                        dep: dep_task_target.to_owned(),
+                        task: self.task.target.to_owned(),
+                    }
+                    .into());
+                }
 
-        let dep_has_outputs = self.querent.query_task_has_outputs(dep_task_target);
+                if self.task.options.persistent {
+                    return Err(TasksBuilderError::PersistentCleanupTaskRequirement {
+                        dep: dep_task_target.to_owned(),
+                        task: self.task.target.to_owned(),
+                    }
+                    .into());
+                }
+            }
+            // A wait dependency only waits for the dependency to start
+            // running, which is the entire point of depending on a server
+            TaskDependencyType::Wait => {
+                // But an interactive dependency runs in isolation (it owns stdin),
+                // so the task can't run alongside it, and would wait for it to
+                // complete instead, which isn't what was configured
+                if dep_task_options.interactive {
+                    return Err(TasksBuilderError::InteractiveWaitDepRequirement {
+                        dep: dep_task_target.to_owned(),
+                        task: self.task.target.to_owned(),
+                    }
+                    .into());
+                }
+            }
+            _ => {
+                if dep_task_options.persistent && !self.task.options.persistent {
+                    return Err(TasksBuilderError::PersistentDepRequirement {
+                        dep: dep_task_target.to_owned(),
+                        task: self.task.target.to_owned(),
+                    }
+                    .into());
+                }
+            }
+        };
 
         // Add the dep if it has not already been
         let dep = TaskDependencyConfig {
             target: dep_task_target.to_owned(),
-            cache_strategy: dep_config.cache_strategy.or(Some(if dep_has_outputs {
-                TaskDependencyCacheStrategy::Hash
+            cache_strategy: if is_required {
+                dep_config.cache_strategy.or(Some(
+                    if self.querent.query_task_has_outputs(dep_task_target) {
+                        TaskDependencyCacheStrategy::Hash
+                    } else {
+                        TaskDependencyCacheStrategy::Ignored
+                    },
+                ))
             } else {
-                TaskDependencyCacheStrategy::Ignored
-            })),
+                // These dependencies do not contribute to the task's hash
+                Some(TaskDependencyCacheStrategy::Ignored)
+            },
             // optional: Some(skip_if_missing),
             ..dep_config.clone()
         };

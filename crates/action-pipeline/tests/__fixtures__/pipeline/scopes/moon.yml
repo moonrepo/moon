@@ -1,0 +1,17 @@
+tasks:
+  # Takes a moment before signaling, so that tasks that
+  # don't wait for it to complete will fail their check
+  prep:
+    command: 'node ./signal.mjs write prepped 500'
+
+  # Ran on its own, and with args by the task below, which are separate
+  # actions, where both must wait for the dependency to complete
+  shared:
+    command: 'node ./signal.mjs check prepped'
+    deps: ['prep']
+
+  with-args:
+    command: 'node ./signal.mjs check prepped'
+    deps:
+      - target: 'shared'
+        args: ['10']

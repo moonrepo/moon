@@ -21,6 +21,12 @@ tasks:
       shell: true
       retryCount: 3
 
+  retry-slow:
+    script: 'Start-Sleep -Seconds 3; Exit 1'
+    toolchain: system
+    options:
+      retryCount: 3
+
   create-file:
     command: 'New-Item file.txt'
     outputs:

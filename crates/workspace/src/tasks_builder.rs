@@ -1,7 +1,7 @@
 use crate::projects_builder::ProjectBuildData;
 use daggy::Dag;
 use moon_common::Id;
-use moon_config::TaskDependencyType;
+use moon_config::{TaskDependencyConfig, TaskDependencyType};
 use moon_graph_utils::{GraphExpanderContext, NodeState};
 use moon_project_graph::ProjectGraph;
 use moon_task::{Target, Task, TaskOptions};
@@ -13,6 +13,32 @@ use std::sync::Arc;
 use tracing::instrument;
 
 pub type TaskDag = Dag<NodeState<Task>, TaskDependencyType>;
+
+/// Resolve the edge weight for a task dependency. The configured type always
+/// wins, except for `required` dependencies that were inherited as optional,
+/// which are marked with the internal-only `optional` weight.
+pub fn resolve_dep_edge_type(dep_config: &TaskDependencyConfig) -> TaskDependencyType {
+    if dep_config.type_of.is_required_type() && dep_config.optional.is_some_and(|v| v) {
+        TaskDependencyType::Optional
+    } else {
+        dep_config.type_of
+    }
+}
+
+/// Return the graph edge endpoints for a task dependency, based on its type.
+/// `cleanup` dependencies run *after* the task, so their edge is reversed —
+/// the cleanup task depends on the task that it cleans up.
+pub fn resolve_dep_edge_endpoints(
+    task_index: NodeIndex,
+    dep_index: NodeIndex,
+    edge_type: TaskDependencyType,
+) -> (NodeIndex, NodeIndex) {
+    if matches!(edge_type, TaskDependencyType::Cleanup) {
+        (dep_index, task_index)
+    } else {
+        (task_index, dep_index)
+    }
+}
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(default)]
@@ -44,7 +70,7 @@ impl TaskBuildData {
     }
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Default, Deserialize, Serialize)]
 pub struct WorkspaceTasksBuilder {
     /// The task DAG.
     pub graph: TaskDag,
@@ -85,10 +111,7 @@ impl WorkspaceTasksBuilder {
 
 impl WorkspaceTasksBuilder {
     pub fn new() -> Self {
-        Self {
-            graph: TaskDag::default(),
-            targets_to_indexes: FxHashMap::default(),
-        }
+        Self::default()
     }
 
     #[instrument(skip_all)]
@@ -97,18 +120,24 @@ impl WorkspaceTasksBuilder {
             let from_index = self.get_or_insert_node(&task.target);
 
             for dep_config in &task.deps {
-                let to_index = self.get_or_insert_node(&dep_config.target);
-                let scope = if dep_config.optional.is_some_and(|v| v) {
-                    TaskDependencyType::Optional
-                } else {
-                    TaskDependencyType::Required
-                };
+                let dep_index = self.get_or_insert_node(&dep_config.target);
+                let edge_type = resolve_dep_edge_type(dep_config);
+                let (source_index, target_index) =
+                    resolve_dep_edge_endpoints(from_index, dep_index, edge_type);
 
                 self.graph
-                    .add_edge(from_index, to_index, scope)
-                    .map_err(|_| TaskGraphError::WouldCycle {
-                        source_target: task.target.to_string(),
-                        target_target: dep_config.target.to_string(),
+                    .add_edge(source_index, target_index, edge_type)
+                    .map_err(|_| {
+                        let (source, target) = if source_index == from_index {
+                            (&task.target, &dep_config.target)
+                        } else {
+                            (&dep_config.target, &task.target)
+                        };
+
+                        TaskGraphError::WouldCycle {
+                            source_target: source.to_string(),
+                            target_target: target.to_string(),
+                        }
                     })?;
             }
 

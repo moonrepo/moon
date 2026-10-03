@@ -1,6 +1,6 @@
 mod utils;
 
-use moon_test_utils::predicates::prelude::*;
+use moon_test_utils::{create_empty_moon_sandbox, predicates::prelude::*};
 use starbase_sandbox::assert_snapshot;
 use utils::create_projects_sandbox;
 
@@ -39,6 +39,41 @@ mod task {
 
         let assert = sandbox.run_bin(|cmd| {
             cmd.arg("task").arg("tasks:lint");
+        });
+
+        assert_snapshot!(assert.output_standardized());
+    }
+
+    #[test]
+    fn shows_dep_types() {
+        let sandbox = create_empty_moon_sandbox();
+        sandbox.with_default_projects();
+        sandbox.create_file(
+            "app/moon.yml",
+            r#"
+tasks:
+  setup:
+    command: 'noop'
+  server:
+    command: 'noop'
+    options:
+      persistent: true
+      runInCI: true
+  teardown:
+    command: 'noop'
+  e2e:
+    command: 'noop'
+    deps:
+      - 'setup'
+      - target: 'server'
+        type: 'wait'
+      - target: 'teardown'
+        type: 'cleanup'
+"#,
+        );
+
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("task").arg("app:e2e");
         });
 
         assert_snapshot!(assert.output_standardized());

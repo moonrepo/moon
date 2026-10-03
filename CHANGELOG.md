@@ -28,13 +28,29 @@
   setup is now activated, which may set environment variables (like `JAVA_HOME` for Java) and
   prepend paths to `PATH`. Variables that are already configured, like a task's `env`, are not
   overridden, and the first toolchain configured for a task takes precedence (#2568).
+- Added a new `type` setting to task `deps`, which controls when a dependency runs in relation to
+  the task. Supports the following values:
+  - `required` (default) - Runs before the task, and must complete successfully.
+  - `cleanup` - Runs after the task has ran its command, even when the task fails, or the failure
+    aborts the pipeline. Useful for tearing down resources, like stopping a database. It's skipped
+    when there's nothing to clean up (the task was skipped, or hydrated from the cache, without
+    having started a `wait` dependency).
+  - `wait` - Runs before the task, but the task only waits for it to start running, not to complete.
+    Useful for long-running dependencies, like a development server, and allows non-persistent tasks
+    to depend on persistent tasks.
+  - Since `cleanup` and `wait` dependencies don't complete before the task runs, they don't
+    contribute to the task's hash, and they always run their command, instead of being hydrated from
+    the cache.
 - Changed persistent tasks to run when they are processed in the action graph, instead of being
   batched and ran last, in parallel, once all other actions have finished. Persistent tasks now run
   alongside other tasks, and a persistent task no longer blocks the persistent tasks that depend on
-  it. Non-persistent tasks are still not allowed to depend on persistent tasks.
+  it. Non-persistent tasks are still not allowed to depend on persistent tasks, unless they only
+  wait for them to start, with the new `wait` dependency type.
 - Changed `runDepsInParallel` (when disabled) to skip persistent dependencies when ordering the
   dependencies that follow them, as a persistent dependency never completes. Those dependencies are
   now ordered against the previous dependency that does complete.
+- Improved the error for a task that runs in CI and depends on a task that doesn't
+  (`run_in_ci_mismatch`), which now explains how to resolve it.
 - Updated the MCP server (`moon mcp`) to the stateless MCP `2026-07-28` protocol. Clients must
   support this protocol version, as older versions (`2025-11-25` and below) and the `initialize`
   handshake are no longer supported.
@@ -48,17 +64,55 @@
   configured one (like `node`), and makes the `append`/`prepend` merge strategies apply to
   toolchains as they do to other task fields. Since this list is part of a task's hash, existing
   caches will be invalidated once.
-
 - Fixed an issue where a task's `options.outputStyle` was applied to primary targets (those
   explicitly requested on the command line) when running in CI, or when the task was hydrated from
   the cache. Primary targets now always display their output, as documented, unless the
   `explicitTaskOutputStyle` experiment is enabled.
+- Fixed an issue where JSON output containing project configuration (`moon project --json`,
+  `moon query projects`, MCP responses, and webhook payloads) serialized renamed settings under the
+  wrong keys: `typeOf` instead of `type` (tasks), `runInCi` instead of `runInCI` (task options), and
+  `schema` instead of `$schema`. The output now matches the documented JSON schemas and
+  `@moonrepo/types`.
 - Fixed an issue where environment variables removed through moon's internal environment bag (for
   example `NO_COLOR` when colors are forced) were not removed from the current process, and could be
   inherited back into the bag on a subsequent read.
+- Fixed an issue where a task with `options.retryCount` would attempt to run again after the
+  pipeline was aborted (because another task failed) or interrupted (like with Ctrl+C), which
+  started a new process that was never terminated, and could continue running after moon exited.
+- Fixed an issue where a task that had yet to run its command when the pipeline was aborted or
+  interrupted (it was still generating its hash, or waiting on a `mutex`) would run it afterwards,
+  which started a process that was never terminated.
+- Fixed an issue where tasks that depend on a persistent task would still run when the persistent
+  task was skipped (because one of its own dependencies failed), when failures don't abort the
+  pipeline (like with `moon ci`).
+- Fixed an issue where a task dependency would be inserted into the action graph (and ran) more than
+  once, when its `env` was defined in a different order by the tasks that depend on it.
+- Fixed an issue where a task that is ran more than once in the same pipeline (with different `args`
+  or `env`, as a dependency of other tasks) would fail with a missing dependency hash error, or
+  ignore its own dependencies, when running with `--upstream direct`. Its dependencies are now
+  linked for every instance of the task, once they are in scope for one of them.
+- Fixed an issue where the action graph would fail with a cycle error, when the order of
+  dependencies for a task with `options.runDepsInParallel` disabled contradicts a dependency between
+  them, and that dependency is linked after they were ordered (like when running with
+  `--upstream direct`). Dependencies now always take precedence over the configured order.
+- Fixed an issue where a persistent task would run in CI by default, when it defined `outputs`, or a
+  `type` of `build` or `test`, which keeps the pipeline running. Persistent tasks no longer run in
+  CI, unless `options.runInCI` is explicitly enabled.
+- Fixed an issue where a persistent task with `options.runInCI` enabled would be ran in CI on its
+  own (by `moon ci` when it was affected, or when a task that it depends on was ran), which keeps
+  the pipeline running. In CI, persistent tasks are now only ran when another task depends on them,
+  or when they're explicitly passed as a target.
+- Fixed an issue where `moon check` would run persistent tasks (those that define `outputs`, or a
+  `type` of `build` or `test`), so the command would never complete. Persistent tasks are now only
+  ran by `moon check` when another task depends on them.
+- Fixed an issue where `moon check` would prompt for a list of tasks to run, or fail with an
+  identifier error in non-TTY environments, when the projects being checked have no build or test
+  tasks. It now reports that there's nothing to check.
 
 #### ⚙️ Internal
 
+- Interactive tasks now only block the pipeline until they have completed themselves, instead of
+  until every task that was already running has completed.
 - Improved the performance of the action pipeline's job dispatcher by 10-15x. Dependency
   relationships are now extracted from the action graph once up front, and completed jobs unblock
   their dependents incrementally, instead of re-traversing the graph for every dispatch check.
@@ -66,6 +120,9 @@
   individual files in `.moon/cache/hashes`. The local cache backend is now always enabled, as it
   backs these manifests; storing task _outputs_ in it remains gated by the `cas_outputs_cache`
   experiment.
+- Removed the action graph's "transitive reduction", which never removed any edges, as it started
+  from the workspace sync action, which has no dependencies to walk. Edges that are implied by a
+  longer path don't change the order that actions run in.
 - Updated proto to [v0.62.2](https://github.com/moonrepo/proto/releases/tag/v0.62.0) from 0.60.2.
 
 ## 2.5.6

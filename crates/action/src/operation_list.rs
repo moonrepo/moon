@@ -50,6 +50,22 @@ impl OperationList {
         self.0.iter().rfind(|op| op.meta.is_task_execution())
     }
 
+    /// Whether a task's command was executed (at least one attempt ran,
+    /// regardless of its outcome), instead of the task being skipped,
+    /// hydrated from the cache, or failing before it could be ran. A task
+    /// without a command (a no-operation) counts as executed, as it still
+    /// ran, which matters for tasks that only orchestrate their dependencies.
+    pub fn has_executed_task(&self) -> bool {
+        self.0.iter().any(|op| {
+            (op.meta.is_task_execution()
+                && matches!(
+                    op.status,
+                    ActionStatus::Passed | ActionStatus::Failed | ActionStatus::TimedOut
+                ))
+                || (op.meta.is_no_operation() && op.has_passed())
+        })
+    }
+
     pub fn is_flaky(&self) -> bool {
         let mut attempt_count = 0;
         let mut any_failed = false;

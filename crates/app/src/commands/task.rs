@@ -173,9 +173,17 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> SessionResult {
                         #(task.deps.iter().map(|dep| {
                             element! {
                                 ListItem {
+                                    // Only label types that don't run before the task
                                     StyledText(
-                                        content: dep.target.to_string(),
-                                        style: Style::Id
+                                        content: if dep.type_of.is_required_type() {
+                                            format!("<id>{}</id>", dep.target)
+                                        } else {
+                                            format!(
+                                                "<id>{}</id> <muted>({})</muted>",
+                                                dep.target,
+                                                dep.type_of
+                                            )
+                                        },
                                     )
                                 }
                             }

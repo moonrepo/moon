@@ -82,6 +82,11 @@ pub struct ExecArgs {
         help_heading = super::HEADING_WORKFLOW,
     )]
     pub query: Option<String>,
+
+    // Skip persistent tasks when the targets were not explicitly requested,
+    // and were determined by the command instead (like `moon ci` and `moon check`)
+    #[arg(skip)]
+    pub skip_persistent: bool,
 }
 
 #[instrument(skip(session))]
@@ -493,6 +498,7 @@ impl ExecWorkflow {
                     // Forcing runs tasks even when not affected, but still
                     // tracks affected files for the `affectedFiles` option.
                     skip_affected: !self.affected || self.args.force,
+                    skip_persistent: self.args.skip_persistent,
                 },
             )
             .await?;

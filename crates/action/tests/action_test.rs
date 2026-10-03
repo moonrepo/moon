@@ -1,4 +1,4 @@
-use moon_action::{Action, ActionStatus, Operation};
+use moon_action::{Action, ActionStatus, Operation, OperationMeta};
 
 fn task_op(exit_code: Option<i32>, status: ActionStatus) -> Operation {
     let mut op = Operation::task_execution("cmd");
@@ -91,5 +91,84 @@ mod get_exit_code {
         action.operations.push(Operation::hash_generation());
 
         assert_eq!(action.get_exit_code(), Some(6));
+    }
+}
+
+mod has_executed_task {
+    use super::*;
+
+    #[test]
+    fn false_when_no_operations() {
+        let action = Action::default();
+
+        assert!(!action.operations.has_executed_task());
+    }
+
+    #[test]
+    fn false_when_skipped() {
+        let mut action = Action::default();
+        action.operations.push(task_op(None, ActionStatus::Skipped));
+
+        assert!(!action.operations.has_executed_task());
+    }
+
+    // Tasks that error before their command runs are injected with an aborted execution
+    #[test]
+    fn false_when_aborted_before_running() {
+        let mut action = Action::default();
+        action
+            .operations
+            .push(task_op(Some(-1), ActionStatus::Aborted));
+
+        assert!(!action.operations.has_executed_task());
+    }
+
+    #[test]
+    fn false_when_hydrated_from_cache() {
+        let mut action = Action::default();
+        action.operations.push(Operation::hash_generation());
+        action.operations.push(Operation::output_hydration());
+
+        assert!(!action.operations.has_executed_task());
+    }
+
+    #[test]
+    fn true_when_ran() {
+        for status in [
+            ActionStatus::Passed,
+            ActionStatus::Failed,
+            ActionStatus::TimedOut,
+        ] {
+            let mut action = Action::default();
+            action.operations.push(task_op(Some(0), status));
+
+            assert!(action.operations.has_executed_task(), "{status:?}");
+        }
+    }
+
+    #[test]
+    fn true_when_retried() {
+        let mut action = Action::default();
+        action
+            .operations
+            .push(task_op(Some(1), ActionStatus::Failed));
+        action
+            .operations
+            .push(task_op(Some(0), ActionStatus::Passed));
+
+        assert!(action.operations.has_executed_task());
+    }
+
+    // A task without a command (typically one that only orchestrates
+    // its dependencies) still ran, so its cleanups must run too
+    #[test]
+    fn true_when_no_op() {
+        let mut action = Action::default();
+        action.operations.push(Operation::new_finished(
+            OperationMeta::NoOperation,
+            ActionStatus::Passed,
+        ));
+
+        assert!(action.operations.has_executed_task());
     }
 }

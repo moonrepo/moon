@@ -2280,6 +2280,49 @@ tasks:
     mod global_implicits {
         use super::*;
 
+        // Persistent tasks never complete, so they can't be cleaned up after,
+        // which must not break every persistent task in the workspace
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_inherit_cleanup_deps_for_persistent_tasks() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+
+            let tasks = container.build_tasks("implicits-cleanup").await;
+
+            assert_eq!(
+                tasks.get("standard").unwrap().deps,
+                vec![
+                    TaskDependencyConfig {
+                        type_of: TaskDependencyType::Cleanup,
+                        ..TaskDependencyConfig::new(Target::parse("app:teardown").unwrap())
+                    },
+                    TaskDependencyConfig {
+                        type_of: TaskDependencyType::Cleanup,
+                        ..TaskDependencyConfig::new(Target::parse("~:local-teardown").unwrap())
+                    },
+                ]
+            );
+            assert!(tasks.get("server").unwrap().deps.is_empty());
+        }
+
+        // Implicit dependencies apply to every task, including the task they
+        // reference, which must not end up depending on itself
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_inherit_self_referencing_deps() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+
+            let tasks = container.build_tasks("implicits-cleanup").await;
+
+            assert_eq!(
+                tasks.get("local-teardown").unwrap().deps,
+                vec![TaskDependencyConfig {
+                    type_of: TaskDependencyType::Cleanup,
+                    ..TaskDependencyConfig::new(Target::parse("app:teardown").unwrap())
+                }]
+            );
+        }
+
         #[tokio::test(flavor = "multi_thread")]
         async fn no_inputs() {
             let sandbox = create_sandbox("builder");
@@ -2943,6 +2986,44 @@ tasks:
             let task = tasks.get("run-type-custom").unwrap();
 
             assert_eq!(task.options.run_in_ci, TaskOptionRunInCI::Always);
+        }
+
+        // Persistent tasks never complete, so they would keep CI running
+        #[tokio::test(flavor = "multi_thread")]
+        async fn disables_for_persistent_tasks_regardless_of_task_type() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+            let tasks = container.build_tasks("options-runinci").await;
+
+            for (id, type_of) in [
+                ("persistent-outputs", TaskType::Build),
+                ("persistent-build-type", TaskType::Build),
+                ("persistent-test-type", TaskType::Test),
+                ("persistent-run-type", TaskType::Run),
+            ] {
+                let task = tasks.get(id).unwrap();
+
+                assert!(task.options.persistent, "{id}");
+                assert_eq!(task.type_of, type_of, "{id}");
+                assert_eq!(
+                    task.options.run_in_ci,
+                    TaskOptionRunInCI::Enabled(false),
+                    "{id}"
+                );
+            }
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_override_explicit_setting_for_persistent_tasks() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+            let tasks = container.build_tasks("options-runinci").await;
+
+            let task = tasks.get("persistent-custom").unwrap();
+
+            assert!(task.options.persistent);
+            assert_eq!(task.type_of, TaskType::Build);
+            assert_eq!(task.options.run_in_ci, TaskOptionRunInCI::Enabled(true));
         }
     }
 }

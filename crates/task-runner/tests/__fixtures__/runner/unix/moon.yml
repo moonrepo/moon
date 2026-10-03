@@ -21,6 +21,12 @@ tasks:
       shell: true
       retryCount: 3
 
+  retry-slow:
+    script: 'sleep 3 && exit 1'
+    toolchain: system
+    options:
+      retryCount: 3
+
   create-file:
     command: 'touch file.txt'
     outputs:

@@ -1,18 +1,19 @@
 mod utils;
 
 use moon_action::*;
-use moon_action_context::TargetState;
+use moon_action_context::{ActionContext, TargetState};
 use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, RunRequirements};
 use moon_affected::{AffectedBy, DownstreamScope, UpstreamScope};
 use moon_common::{Id, path::WorkspaceRelativePathBuf};
 use moon_config::{
-    EnvMap, PROTO_CLI_VERSION, PipelineActionSwitch, TaskDependencyConfig, TaskOptionRunInCI,
-    UnresolvedVersionSpec, Version, VersionSpec,
+    EnvMap, PROTO_CLI_VERSION, PipelineActionSwitch, TaskDependencyConfig, TaskDependencyType,
+    TaskOptionRunInCI, UnresolvedVersionSpec, Version, VersionSpec,
 };
 use moon_exec_plan::{ExecutionPlan, GraphBlock, TargetsBlock};
 use moon_graph_utils::*;
 use moon_task::{Target, TargetLocator, Task, TaskFileInput};
 use moon_toolchain::ToolchainSpec;
+use petgraph::graph::NodeIndex;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{assert_snapshot, create_sandbox};
 use utils::ActionGraphContainer;
@@ -2178,6 +2179,251 @@ mod action_graph_builder {
             }
         }
 
+        // Persistent tasks never complete, so in CI they're only ran when
+        // another task depends on them, or when they've been requested.
+        // Outside of CI, that's only the case when the targets weren't
+        // requested, and were determined by the command (like `moon check`).
+        // The `persistent-ci` fixture forms the following dependency graph,
+        // where `server` and `proxy` are persistent and enabled for CI, and
+        // `watcher` is persistent and not enabled for CI (the default):
+        //   proxy -> server -> build
+        //   watcher -> build
+        //   e2e -> server (wait), stop (cleanup)
+        mod persistent_in_ci {
+            use super::*;
+
+            fn ci_reqs() -> RunRequirements {
+                RunRequirements {
+                    ci: true,
+                    ci_check: true,
+                    ..RunRequirements::default()
+                }
+            }
+
+            async fn run_targets(
+                ids: &[&str],
+                reqs: RunRequirements,
+            ) -> (ActionContext, Vec<String>) {
+                let sandbox = create_sandbox("persistent-ci");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                for id in ids {
+                    let task = wg.get_task_from_project("proj", id).unwrap();
+
+                    builder.run_task(&task, &reqs).await.unwrap();
+                }
+
+                let (context, graph) = builder.build();
+
+                (context, extract_run_task_targets(graph))
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_when_requested() {
+                let (context, targets) = run_targets(&["proxy"], ci_reqs()).await;
+
+                assert_eq!(targets, ["proj:build", "proj:proxy", "proj:server"]);
+                assert!(
+                    context
+                        .primary_targets
+                        .contains(&Target::parse("proj:proxy").unwrap())
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_as_a_dependency() {
+                let (_, targets) = run_targets(&["e2e"], ci_reqs()).await;
+
+                assert_eq!(
+                    targets,
+                    ["proj:build", "proj:e2e", "proj:server", "proj:stop"]
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_run_as_a_dependent() {
+                let (_, targets) = run_targets(
+                    &["build"],
+                    RunRequirements {
+                        dependents: DownstreamScope::Direct,
+                        ..ci_reqs()
+                    },
+                )
+                .await;
+
+                assert_eq!(targets, ["proj:build"]);
+            }
+
+            // But the tasks that depend on it are, which then run it
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_the_dependents_of_a_dependent() {
+                let (_, targets) = run_targets(
+                    &["build"],
+                    RunRequirements {
+                        dependents: DownstreamScope::Deep,
+                        ..ci_reqs()
+                    },
+                )
+                .await;
+
+                assert_eq!(
+                    targets,
+                    ["proj:build", "proj:e2e", "proj:server", "proj:stop"]
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_run_as_a_dependent_when_already_a_dependency() {
+                let (_, targets) = run_targets(
+                    &["e2e", "build"],
+                    RunRequirements {
+                        dependents: DownstreamScope::Deep,
+                        ..ci_reqs()
+                    },
+                )
+                .await;
+
+                assert_eq!(
+                    targets,
+                    ["proj:build", "proj:e2e", "proj:server", "proj:stop"]
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_as_a_dependent_when_not_in_ci() {
+                let (_, targets) = run_targets(
+                    &["build"],
+                    RunRequirements {
+                        ci: false,
+                        ci_check: true,
+                        dependents: DownstreamScope::Direct,
+                        ..RunRequirements::default()
+                    },
+                )
+                .await;
+
+                assert_eq!(targets, ["proj:build", "proj:server", "proj:watcher"]);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_as_a_dependent_when_ignoring_ci_checks() {
+                let (_, targets) = run_targets(
+                    &["build"],
+                    RunRequirements {
+                        ci: true,
+                        ci_check: false,
+                        dependents: DownstreamScope::Direct,
+                        ..RunRequirements::default()
+                    },
+                )
+                .await;
+
+                assert_eq!(targets, ["proj:build", "proj:server", "proj:watcher"]);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_run_when_not_requested() {
+                let (_, targets) = run_targets(
+                    &["server", "proxy"],
+                    RunRequirements {
+                        skip_persistent: true,
+                        ..ci_reqs()
+                    },
+                )
+                .await;
+
+                assert!(targets.is_empty());
+            }
+
+            // Like `moon ci` without targets, which runs every task
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_as_a_dependency_when_not_requested() {
+                for ids in [
+                    ["build", "server", "proxy", "watcher", "e2e", "stop"],
+                    ["stop", "e2e", "watcher", "proxy", "server", "build"],
+                ] {
+                    let (context, targets) = run_targets(
+                        &ids,
+                        RunRequirements {
+                            skip_persistent: true,
+                            ..ci_reqs()
+                        },
+                    )
+                    .await;
+
+                    assert_eq!(
+                        targets,
+                        ["proj:build", "proj:e2e", "proj:server", "proj:stop"],
+                        "{ids:?}"
+                    );
+
+                    // It was ran for another task, and not on its own
+                    assert!(
+                        !context
+                            .primary_targets
+                            .contains(&Target::parse("proj:server").unwrap()),
+                        "{ids:?}"
+                    );
+                }
+            }
+
+            // Like `moon check`, which is also ran outside of CI
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_run_when_not_requested_and_not_in_ci() {
+                let (_, targets) = run_targets(
+                    &["server", "proxy", "watcher"],
+                    RunRequirements {
+                        ci: false,
+                        ci_check: true,
+                        skip_persistent: true,
+                        ..RunRequirements::default()
+                    },
+                )
+                .await;
+
+                assert!(targets.is_empty());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_run_as_a_dependent_when_not_requested_and_not_in_ci() {
+                let (_, targets) = run_targets(
+                    &["build"],
+                    RunRequirements {
+                        ci: false,
+                        ci_check: true,
+                        dependents: DownstreamScope::Direct,
+                        skip_persistent: true,
+                        ..RunRequirements::default()
+                    },
+                )
+                .await;
+
+                assert_eq!(targets, ["proj:build"]);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_as_a_dependency_when_not_requested_and_not_in_ci() {
+                let (_, targets) = run_targets(
+                    &["build", "server", "proxy", "watcher", "e2e", "stop"],
+                    RunRequirements {
+                        ci: false,
+                        ci_check: true,
+                        skip_persistent: true,
+                        ..RunRequirements::default()
+                    },
+                )
+                .await;
+
+                assert_eq!(
+                    targets,
+                    ["proj:build", "proj:e2e", "proj:server", "proj:stop"]
+                );
+            }
+        }
+
         mod dependencies {
             use super::*;
 
@@ -2477,6 +2723,205 @@ mod action_graph_builder {
                 let (_, graph) = builder.build();
 
                 assert_snapshot!(graph.to_dot());
+            }
+
+            // Multiple actions may run the same task (with different args or env),
+            // but dependencies are ignored per task, and not per action, so they
+            // must be linked for all of its actions, or for none of them
+            mod multiple_actions {
+                use super::*;
+
+                fn describe(node: &ActionNode) -> String {
+                    match node {
+                        ActionNode::RunTask(inner) if !inner.args.is_empty() => {
+                            format!("{} {}", inner.target, inner.args.join(" "))
+                        }
+                        ActionNode::RunTask(inner) => inner.target.to_string(),
+                        other => other.label(),
+                    }
+                }
+
+                fn map_task_edges(graph: &ActionGraph) -> Vec<(String, String, String)> {
+                    let inner = graph.get_inner_graph();
+
+                    let mut edges = inner
+                        .graph()
+                        .edge_indices()
+                        .filter_map(|edge| {
+                            let (source, target) = inner.edge_endpoints(edge).unwrap();
+                            let source = graph.get_node_from_index(&source).unwrap();
+                            let target = graph.get_node_from_index(&target).unwrap();
+
+                            (matches!(source, ActionNode::RunTask(_))
+                                && matches!(target, ActionNode::RunTask(_)))
+                            .then(|| {
+                                (
+                                    describe(source),
+                                    describe(target),
+                                    inner.edge_weight(edge).unwrap().to_string(),
+                                )
+                            })
+                        })
+                        .collect::<Vec<_>>();
+
+                    edges.sort();
+                    edges
+                }
+
+                fn edge(from: &str, to: &str, type_of: &str) -> (String, String, String) {
+                    (from.to_owned(), to.to_owned(), type_of.to_owned())
+                }
+
+                fn target(id: &str) -> Target {
+                    Target::parse(id).unwrap()
+                }
+
+                async fn build_graph(
+                    ids: &[&str],
+                    dependencies: UpstreamScope,
+                ) -> (ActionContext, ActionGraph) {
+                    let sandbox = create_sandbox("dep-scopes");
+                    let mut container = ActionGraphContainer::new(sandbox.path());
+
+                    let wg = container.create_workspace_graph().await;
+                    let mut builder = container.create_builder(wg.clone()).await;
+
+                    let reqs = RunRequirements {
+                        dependencies,
+                        dependents: DownstreamScope::None,
+                        ..RunRequirements::default()
+                    };
+
+                    for id in ids {
+                        let task = wg.get_task_from_project("proj", id).unwrap();
+
+                        builder.run_task(&task, &reqs).await.unwrap();
+                    }
+
+                    builder.build()
+                }
+
+                // The task is ran with args by another task (its dependencies are
+                // out of scope), and on its own (in scope, but another action)
+                #[tokio::test(flavor = "multi_thread")]
+                async fn links_deps_for_all_actions_when_in_scope_for_a_new_action() {
+                    for ids in [["with-args", "shared"], ["shared", "with-args"]] {
+                        let (context, graph) = build_graph(&ids, UpstreamScope::Direct).await;
+
+                        assert_eq!(
+                            map_task_edges(&graph),
+                            [
+                                edge("proj:shared", "proj:prep", "required"),
+                                edge("proj:shared --force", "proj:prep", "required"),
+                                edge("proj:with-args", "proj:shared --force", "required"),
+                            ],
+                            "{ids:?}"
+                        );
+                        assert!(
+                            !context
+                                .ignored_dependencies
+                                .contains_key(&target("proj:shared")),
+                            "{ids:?}"
+                        );
+                    }
+                }
+
+                // Both actions exist (their dependencies were out of scope)
+                // by the time one of them is revisited in scope
+                #[tokio::test(flavor = "multi_thread")]
+                async fn links_deps_for_all_actions_when_in_scope_for_an_existing_action() {
+                    for ids in [
+                        ["with-args", "without-args", "shared"],
+                        ["without-args", "with-args", "shared"],
+                    ] {
+                        let (context, graph) = build_graph(&ids, UpstreamScope::Direct).await;
+
+                        assert_eq!(
+                            map_task_edges(&graph),
+                            [
+                                edge("proj:shared", "proj:prep", "required"),
+                                edge("proj:shared --force", "proj:prep", "required"),
+                                edge("proj:with-args", "proj:shared --force", "required"),
+                                edge("proj:without-args", "proj:shared", "required"),
+                            ],
+                            "{ids:?}"
+                        );
+                        assert!(
+                            !context
+                                .ignored_dependencies
+                                .contains_key(&target("proj:shared")),
+                            "{ids:?}"
+                        );
+                    }
+                }
+
+                #[tokio::test(flavor = "multi_thread")]
+                async fn links_deps_for_cleanup_actions_when_in_scope_for_another_action() {
+                    for ids in [["with-cleanup", "shared"], ["shared", "with-cleanup"]] {
+                        let (context, graph) = build_graph(&ids, UpstreamScope::Direct).await;
+
+                        assert_eq!(
+                            map_task_edges(&graph),
+                            [
+                                edge("proj:shared", "proj:prep", "required"),
+                                edge("proj:shared --force", "proj:prep", "required"),
+                                edge("proj:shared --force", "proj:with-cleanup", "cleanup"),
+                            ],
+                            "{ids:?}"
+                        );
+                        assert!(
+                            !context
+                                .ignored_dependencies
+                                .contains_key(&target("proj:shared")),
+                            "{ids:?}"
+                        );
+                    }
+                }
+
+                #[tokio::test(flavor = "multi_thread")]
+                async fn ignores_deps_for_all_actions_when_never_in_scope() {
+                    for ids in [["with-args", "without-args"], ["without-args", "with-args"]] {
+                        let (context, graph) = build_graph(&ids, UpstreamScope::Direct).await;
+
+                        assert_eq!(
+                            map_task_edges(&graph),
+                            [
+                                edge("proj:with-args", "proj:shared --force", "required"),
+                                edge("proj:without-args", "proj:shared", "required"),
+                            ],
+                            "{ids:?}"
+                        );
+                        assert_eq!(
+                            context.ignored_dependencies,
+                            FxHashMap::from_iter([(
+                                target("proj:shared"),
+                                FxHashSet::from_iter([target("proj:prep")])
+                            )]),
+                            "{ids:?}"
+                        );
+                    }
+                }
+
+                #[tokio::test(flavor = "multi_thread")]
+                async fn ignores_deps_for_all_tasks_when_none_are_in_scope() {
+                    let (context, graph) =
+                        build_graph(&["with-args", "shared"], UpstreamScope::None).await;
+
+                    assert!(map_task_edges(&graph).is_empty());
+                    assert_eq!(
+                        context.ignored_dependencies,
+                        FxHashMap::from_iter([
+                            (
+                                target("proj:shared"),
+                                FxHashSet::from_iter([target("proj:prep")])
+                            ),
+                            (
+                                target("proj:with-args"),
+                                FxHashSet::from_iter([target("proj:shared")])
+                            ),
+                        ])
+                    );
+                }
             }
         }
 
@@ -3131,6 +3576,881 @@ mod action_graph_builder {
             let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
+        }
+
+        // The serial order is a preference, while a dependency is a requirement,
+        // so when the configured order contradicts a dependency between the tasks,
+        // the dependency wins. The ordering edge is skipped when the dependency
+        // was linked first, but must also be removed when it's linked last, which
+        // happens when a task is revisited once its dependencies are in scope
+        mod serial_conflicts {
+            use super::*;
+
+            fn map_task_edges(graph: &ActionGraph) -> Vec<(String, String, String)> {
+                let inner = graph.get_inner_graph();
+
+                let mut edges = inner
+                    .graph()
+                    .edge_indices()
+                    .filter_map(|edge| {
+                        let (source, target) = inner.edge_endpoints(edge).unwrap();
+
+                        match (
+                            graph.get_node_from_index(&source).unwrap(),
+                            graph.get_node_from_index(&target).unwrap(),
+                        ) {
+                            (ActionNode::RunTask(source), ActionNode::RunTask(target)) => Some((
+                                source.target.to_string(),
+                                target.target.to_string(),
+                                inner.edge_weight(edge).unwrap().to_string(),
+                            )),
+                            _ => None,
+                        }
+                    })
+                    .collect::<Vec<_>>();
+
+                edges.sort();
+                edges
+            }
+
+            fn edge(from: &str, to: &str, type_of: &str) -> (String, String, String) {
+                (
+                    format!("proj:{from}"),
+                    format!("proj:{to}"),
+                    type_of.to_owned(),
+                )
+            }
+
+            async fn build_graph(ids: &[&str], dependencies: UpstreamScope) -> ActionGraph {
+                let sandbox = create_sandbox("serial-conflict");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let reqs = RunRequirements {
+                    dependencies,
+                    dependents: DownstreamScope::None,
+                    ..RunRequirements::default()
+                };
+
+                for id in ids {
+                    let task = wg.get_task_from_project("proj", id).unwrap();
+
+                    builder
+                        .run_task(&task, &reqs)
+                        .await
+                        .unwrap_or_else(|error| panic!("{ids:?} ({dependencies:?}): {error}"));
+                }
+
+                builder.build().1
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn dependency_wins_when_linked_after_the_serial_order() {
+                let expected = [
+                    edge("first", "second", "required"),
+                    edge("ordered", "first", "required"),
+                    edge("ordered", "second", "required"),
+                ];
+
+                for (ids, scope) in [
+                    // The dependency is linked first, so the order is skipped
+                    (["ordered", "first"], UpstreamScope::Deep),
+                    (["first", "ordered"], UpstreamScope::Direct),
+                    // The dependency is linked once `first` is revisited in scope
+                    (["ordered", "first"], UpstreamScope::Direct),
+                ] {
+                    assert_eq!(
+                        map_task_edges(&build_graph(&ids, scope).await),
+                        expected,
+                        "{ids:?} ({scope:?})"
+                    );
+                }
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn wait_dependency_wins_when_linked_after_the_serial_order() {
+                let expected = [
+                    edge("first-wait", "second", "wait"),
+                    edge("ordered-wait", "first-wait", "required"),
+                    edge("ordered-wait", "second", "required"),
+                ];
+
+                for (ids, scope) in [
+                    (["ordered-wait", "first-wait"], UpstreamScope::Deep),
+                    (["first-wait", "ordered-wait"], UpstreamScope::Direct),
+                    (["ordered-wait", "first-wait"], UpstreamScope::Direct),
+                ] {
+                    assert_eq!(
+                        map_task_edges(&build_graph(&ids, scope).await),
+                        expected,
+                        "{ids:?} ({scope:?})"
+                    );
+                }
+            }
+
+            // `head` requires `tail`, so `tail` (and its own dependency) can no
+            // longer run after `middle`, while `middle` still runs after `head`
+            #[tokio::test(flavor = "multi_thread")]
+            async fn only_removes_the_order_that_conflicts() {
+                let expected = [
+                    edge("head", "tail", "required"),
+                    edge("middle", "head", "required"),
+                    edge("ordered-three", "head", "required"),
+                    edge("ordered-three", "middle", "required"),
+                    edge("ordered-three", "tail", "required"),
+                    edge("tail", "tail-dep", "required"),
+                ];
+
+                for scope in [UpstreamScope::Deep, UpstreamScope::Direct] {
+                    assert_eq!(
+                        map_task_edges(
+                            &build_graph(&["tail", "ordered-three", "head"], scope).await
+                        ),
+                        expected,
+                        "{scope:?}"
+                    );
+                }
+            }
+
+            // `c` requires `b`, which matches the order, so the ordering edge
+            // between them is a dependency from then on, and must not be removed
+            // when `a` requires `c`, which contradicts the order
+            #[tokio::test(flavor = "multi_thread")]
+            async fn keeps_the_order_that_became_a_dependency() {
+                let expected = [
+                    edge("a", "c", "required"),
+                    edge("c", "b", "required"),
+                    edge("ordered-chain", "a", "required"),
+                    edge("ordered-chain", "b", "required"),
+                    edge("ordered-chain", "c", "required"),
+                ];
+
+                for (ids, scope) in [
+                    (["ordered-chain", "c", "a"], UpstreamScope::Deep),
+                    (["ordered-chain", "c", "a"], UpstreamScope::Direct),
+                    (["ordered-chain", "a", "c"], UpstreamScope::Direct),
+                    (["a", "c", "ordered-chain"], UpstreamScope::Direct),
+                ] {
+                    assert_eq!(
+                        map_task_edges(&build_graph(&ids, scope).await),
+                        expected,
+                        "{ids:?} ({scope:?})"
+                    );
+                }
+            }
+
+            // The order of `nested` is removed when `inner` is revisited, right
+            // after `inner` has ordered its own dependencies, and that order is
+            // then removed when `one` is revisited, so it must still be known as
+            // an order (removing an edge from the graph moves another)
+            #[tokio::test(flavor = "multi_thread")]
+            async fn removes_orders_one_after_the_other() {
+                let expected = [
+                    edge("inner", "one", "required"),
+                    edge("inner", "two", "required"),
+                    edge("nested", "inner", "required"),
+                    edge("nested", "one", "required"),
+                    edge("one", "two", "required"),
+                ];
+
+                for (ids, scope) in [
+                    (["nested", "inner", "one"], UpstreamScope::Deep),
+                    (["nested", "inner", "one"], UpstreamScope::Direct),
+                    (["one", "inner", "nested"], UpstreamScope::Direct),
+                ] {
+                    assert_eq!(
+                        map_task_edges(&build_graph(&ids, scope).await),
+                        expected,
+                        "{ids:?} ({scope:?})"
+                    );
+                }
+            }
+
+            // A cleanup is linked from the cleanup to the task (it runs after it),
+            // which may also contradict an order that was linked before it
+            #[tokio::test(flavor = "multi_thread")]
+            async fn cleanup_wins_when_linked_after_the_serial_order() {
+                let expected = [
+                    edge("cleaned", "setup", "required"),
+                    edge("sequence", "setup", "required"),
+                    edge("sequence", "teardown", "required"),
+                    edge("teardown", "cleaned", "cleanup"),
+                ];
+
+                for ids in [["cleaned", "sequence"], ["sequence", "cleaned"]] {
+                    assert_eq!(
+                        map_task_edges(&build_graph(&ids, UpstreamScope::Deep).await),
+                        expected,
+                        "{ids:?}"
+                    );
+                }
+            }
+
+            // Only orders are removed, so tasks that
+            // depend on each other are still an error
+            #[tokio::test(flavor = "multi_thread")]
+            async fn errors_when_dependencies_cycle() {
+                let sandbox = create_sandbox("serial-conflict");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                // first -> second, and then second -> first, which is applied
+                // here, as it would cycle the task graph if it was configured
+                let mut task = wg
+                    .get_task_from_project("proj", "second")
+                    .unwrap()
+                    .as_ref()
+                    .to_owned();
+
+                task.deps.push(TaskDependencyConfig {
+                    target: Target::parse("proj:first").unwrap(),
+                    ..TaskDependencyConfig::default()
+                });
+
+                let error = builder
+                    .run_task(&task, &RunRequirements::default())
+                    .await
+                    .unwrap_err();
+
+                assert!(
+                    error.to_string().contains(
+                        "adding a relationship from action RunTask(proj:second) to RunTask(proj:first) would introduce a cycle"
+                    ),
+                    "{error}"
+                );
+            }
+        }
+    }
+
+    mod dep_types {
+        use super::*;
+
+        fn find_task_index(graph: &ActionGraph, target: &str) -> NodeIndex {
+            graph
+                .get_inner_nodes()
+                .iter()
+                .find_map(|(index, node)| match node {
+                    ActionNode::RunTask(inner) if inner.target.as_str() == target => Some(*index),
+                    _ => None,
+                })
+                .unwrap_or_else(|| panic!("No node for target {target}!"))
+        }
+
+        fn map_targets(targets: Vec<Target>) -> Vec<String> {
+            let mut targets = targets
+                .into_iter()
+                .map(|target| target.to_string())
+                .collect::<Vec<_>>();
+            targets.sort();
+            targets
+        }
+
+        fn map_edges(graph: &ActionGraph) -> Vec<(String, String, String)> {
+            let inner = graph.get_inner_graph();
+
+            inner
+                .graph()
+                .edge_indices()
+                .map(|edge| {
+                    let (source, target) = inner.edge_endpoints(edge).unwrap();
+
+                    (
+                        graph.get_node_from_index(&source).unwrap().label(),
+                        graph.get_node_from_index(&target).unwrap().label(),
+                        inner.edge_weight(edge).unwrap().to_string(),
+                    )
+                })
+                .collect()
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn graphs_required_and_cleanup_deps() {
+            let sandbox = create_sandbox("dep-types");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let task = wg.get_task_from_project("proj", "base").unwrap();
+
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+
+            let (context, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+
+            // Tracked, as it must always run its command
+            assert_eq!(
+                map_targets(context.cleanup_targets.into_iter().collect()),
+                ["proj:teardown"]
+            );
+            assert!(context.wait_targets.is_empty());
+
+            // The cleanup edge is reversed, it runs after the task
+            let edges = map_edges(&graph);
+
+            assert!(edges.contains(&(
+                "RunTask(proj:base)".into(),
+                "RunTask(proj:setup)".into(),
+                "required".into()
+            )));
+            assert!(edges.contains(&(
+                "RunTask(proj:teardown)".into(),
+                "RunTask(proj:base)".into(),
+                "cleanup".into()
+            )));
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn tracks_cleanup_indices_through_build() {
+            let sandbox = create_sandbox("dep-types");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let task = wg.get_task_from_project("proj", "base").unwrap();
+
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            let teardown = find_task_index(&graph, "proj:teardown");
+
+            assert_eq!(
+                graph.get_cleanup_indices().iter().collect::<Vec<_>>(),
+                vec![&teardown]
+            );
+            assert!(graph.is_cleanup_index(&teardown));
+            assert!(!graph.is_cleanup_index(&find_task_index(&graph, "proj:base")));
+            assert!(!graph.is_cleanup_index(&find_task_index(&graph, "proj:setup")));
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn graphs_wait_deps() {
+            let sandbox = create_sandbox("dep-types");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let task = wg.get_task_from_project("proj", "waits").unwrap();
+
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+
+            let (context, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+
+            // Tracked, as it must always run its command
+            assert_eq!(
+                map_targets(context.wait_targets.into_iter().collect()),
+                ["proj:server"]
+            );
+            assert!(context.cleanup_targets.is_empty());
+
+            assert!(map_edges(&graph).contains(&(
+                "RunTask(proj:waits)".into(),
+                "RunPersistentTask(proj:server)".into(),
+                "wait".into()
+            )));
+            assert!(graph.get_cleanup_indices().is_empty());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn graphs_serial_deps_of_all_types() {
+            let sandbox = create_sandbox("dep-types");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let task = wg.get_task_from_project("proj", "serial").unwrap();
+
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+
+            let edges = map_edges(&graph);
+            let task_edges = edges
+                .iter()
+                .filter(|(source, target, _)| {
+                    source.contains("Task(proj:") && target.contains("Task(proj:")
+                })
+                .cloned()
+                .collect::<Vec<_>>();
+
+            // Only the required deps are chained (b runs after a), while the
+            // wait and cleanup deps take no part in the chain
+            assert_eq!(
+                task_edges,
+                vec![
+                    (
+                        "RunTask(proj:b)".into(),
+                        "RunTask(proj:a)".into(),
+                        "required".into()
+                    ),
+                    (
+                        "RunTask(proj:serial)".into(),
+                        "RunTask(proj:a)".into(),
+                        "required".into()
+                    ),
+                    (
+                        "RunTask(proj:serial)".into(),
+                        "RunPersistentTask(proj:server)".into(),
+                        "wait".into()
+                    ),
+                    (
+                        "RunTask(proj:serial)".into(),
+                        "RunTask(proj:b)".into(),
+                        "required".into()
+                    ),
+                    (
+                        "RunTask(proj:teardown)".into(),
+                        "RunTask(proj:serial)".into(),
+                        "cleanup".into()
+                    ),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_chain_serial_deps_after_non_persistent_wait_deps() {
+            let sandbox = create_sandbox("dep-types");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let task = wg.get_task_from_project("proj", "serial-wait").unwrap();
+
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            let edges = map_edges(&graph);
+            let task_edges = edges
+                .iter()
+                .filter(|(source, target, _)| {
+                    source.contains("Task(proj:") && target.contains("Task(proj:")
+                })
+                .cloned()
+                .collect::<Vec<_>>();
+
+            // Unlike a persistent dep, a non-persistent wait dep completes,
+            // but it's not waited on, so b is still chained after a (not c)
+            assert_eq!(
+                task_edges,
+                vec![
+                    (
+                        "RunTask(proj:b)".into(),
+                        "RunTask(proj:a)".into(),
+                        "required".into()
+                    ),
+                    (
+                        "RunTask(proj:serial-wait)".into(),
+                        "RunTask(proj:a)".into(),
+                        "required".into()
+                    ),
+                    (
+                        "RunTask(proj:serial-wait)".into(),
+                        "RunTask(proj:c)".into(),
+                        "wait".into()
+                    ),
+                    (
+                        "RunTask(proj:serial-wait)".into(),
+                        "RunTask(proj:b)".into(),
+                        "required".into()
+                    ),
+                ]
+            );
+        }
+
+        fn find_task_args(graph: &ActionGraph, target: &str) -> Vec<Vec<String>> {
+            graph
+                .get_inner_nodes()
+                .values()
+                .filter_map(|node| match node {
+                    ActionNode::RunTask(inner) if inner.target.as_str() == target => {
+                        Some(inner.args.clone())
+                    }
+                    _ => None,
+                })
+                .collect()
+        }
+
+        // Cleanups are dependents in the task graph (they run after the task),
+        // but must not be ran again as dependents, as that would create another
+        // action (without their args) that isn't ordered after the task
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_run_cleanups_again_as_dependents() {
+            let sandbox = create_sandbox("dep-types");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let task = wg.get_task_from_project("proj", "args-parent").unwrap();
+
+            builder
+                .run_task(
+                    &task,
+                    &RunRequirements {
+                        dependents: DownstreamScope::Direct,
+                        ..Default::default()
+                    },
+                )
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_eq!(
+                find_task_args(&graph, "proj:teardown"),
+                vec![vec!["--force".to_string()]]
+            );
+            assert!(map_edges(&graph).contains(&(
+                "RunTask(proj:teardown)".into(),
+                "RunTask(proj:args-parent)".into(),
+                "cleanup".into()
+            )));
+        }
+
+        // Cleanups always run after the task, even when its dependencies
+        // (which run before it) are not in scope
+        #[tokio::test(flavor = "multi_thread")]
+        async fn runs_cleanups_when_dependencies_are_not_in_scope() {
+            let sandbox = create_sandbox("dep-types");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let task = wg.get_task_from_project("proj", "args-parent").unwrap();
+
+            builder
+                .run_task(
+                    &task,
+                    &RunRequirements {
+                        dependencies: UpstreamScope::None,
+                        dependents: DownstreamScope::Direct,
+                        ..Default::default()
+                    },
+                )
+                .await
+                .unwrap();
+
+            let (context, graph) = builder.build();
+
+            // The cleanup is linked, so only the others are ignored
+            assert_eq!(
+                map_targets(
+                    context.ignored_dependencies[&Target::parse("proj:args-parent").unwrap()]
+                        .iter()
+                        .cloned()
+                        .collect()
+                ),
+                ["proj:setup"]
+            );
+
+            assert!(find_task_args(&graph, "proj:setup").is_empty());
+            assert_eq!(
+                find_task_args(&graph, "proj:teardown"),
+                vec![vec!["--force".to_string()]]
+            );
+            assert!(map_edges(&graph).contains(&(
+                "RunTask(proj:teardown)".into(),
+                "RunTask(proj:args-parent)".into(),
+                "cleanup".into()
+            )));
+        }
+
+        // Tasks may relate to each other in multiple ways, and every
+        // relationship must be kept, as the pipeline honors all of them
+        #[tokio::test(flavor = "multi_thread")]
+        async fn keeps_a_cleanup_that_also_requires_its_task() {
+            for id in ["both-parent", "both-cleanup"] {
+                let sandbox = create_sandbox("dep-types");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let task = wg.get_task_from_project("proj", id).unwrap();
+
+                builder
+                    .run_task(&task, &RunRequirements::default())
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+                let edges = map_edges(&graph);
+
+                assert!(
+                    edges.contains(&(
+                        "RunTask(proj:both-cleanup)".into(),
+                        "RunTask(proj:both-parent)".into(),
+                        "cleanup".into()
+                    )),
+                    "missing cleanup edge when running {id}"
+                );
+                assert!(
+                    edges.contains(&(
+                        "RunTask(proj:both-cleanup)".into(),
+                        "RunTask(proj:both-parent)".into(),
+                        "required".into()
+                    )),
+                    "missing required edge when running {id}"
+                );
+                assert!(graph.is_cleanup_index(&find_task_index(&graph, "proj:both-cleanup")));
+            }
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn keeps_serial_order_for_a_wait_dependency() {
+            let sandbox = create_sandbox("dep-types");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let task = wg
+                .get_task_from_project("proj", "serial-inner-wait")
+                .unwrap();
+
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+            let edges = map_edges(&graph);
+
+            // Waits on the first to start, but serially, must run after it completes
+            assert!(edges.contains(&(
+                "RunTask(proj:s-second)".into(),
+                "RunTask(proj:s-first)".into(),
+                "wait".into()
+            )));
+            assert!(edges.contains(&(
+                "RunTask(proj:s-second)".into(),
+                "RunTask(proj:s-first)".into(),
+                "required".into()
+            )));
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn shares_a_cleanup_between_tasks() {
+            let sandbox = create_sandbox("dep-types");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            for id in ["base", "other"] {
+                let task = wg.get_task_from_project("proj", id).unwrap();
+
+                builder
+                    .run_task(&task, &RunRequirements::default())
+                    .await
+                    .unwrap();
+            }
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+
+            let edges = map_edges(&graph);
+
+            assert!(edges.contains(&(
+                "RunTask(proj:teardown)".into(),
+                "RunTask(proj:base)".into(),
+                "cleanup".into()
+            )));
+            assert!(edges.contains(&(
+                "RunTask(proj:teardown)".into(),
+                "RunTask(proj:other)".into(),
+                "cleanup".into()
+            )));
+            assert_eq!(graph.get_cleanup_indices().len(), 1);
+        }
+
+        // Maps are equal regardless of the order of their keys,
+        // so the same cleanup must not be inserted twice
+        #[tokio::test(flavor = "multi_thread")]
+        async fn shares_a_cleanup_when_env_is_ordered_differently() {
+            let sandbox = create_sandbox("dep-types");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            for id in ["env-first", "env-second"] {
+                let task = wg.get_task_from_project("proj", id).unwrap();
+
+                builder
+                    .run_task(&task, &RunRequirements::default())
+                    .await
+                    .unwrap();
+            }
+
+            let (_, graph) = builder.build();
+            let edges = map_edges(&graph);
+
+            assert!(edges.contains(&(
+                "RunTask(proj:teardown)".into(),
+                "RunTask(proj:env-first)".into(),
+                "cleanup".into()
+            )));
+            assert!(edges.contains(&(
+                "RunTask(proj:teardown)".into(),
+                "RunTask(proj:env-second)".into(),
+                "cleanup".into()
+            )));
+            assert_eq!(graph.get_cleanup_indices().len(), 1);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn expands_cleanups_as_dependents() {
+            let sandbox = create_sandbox("dep-types");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let task = wg.get_task_from_project("proj", "base").unwrap();
+
+            builder
+                .run_task(
+                    &task,
+                    &RunRequirements {
+                        dependents: DownstreamScope::Direct,
+                        ..RunRequirements::default()
+                    },
+                )
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            // The cleanup task is a "dependent" of the task it cleans up, but
+            // it was already inserted as a dependency, so it must not be
+            // duplicated, nor gain a second edge
+            let edges = map_edges(&graph);
+
+            assert_eq!(
+                edges
+                    .iter()
+                    .filter(|(source, target, _)| source == "RunTask(proj:teardown)"
+                        && target.starts_with("RunTask"))
+                    .collect::<Vec<_>>(),
+                vec![&(
+                    "RunTask(proj:teardown)".into(),
+                    "RunTask(proj:base)".into(),
+                    "cleanup".into()
+                )]
+            );
+            assert_eq!(
+                graph
+                    .get_inner_nodes()
+                    .values()
+                    .filter(|node| node.label() == "RunTask(proj:teardown)")
+                    .count(),
+                1
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn errors_when_a_cleanup_would_cycle() {
+            let sandbox = create_sandbox("dep-types");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            // parent -> mid -> cleanup, and then cleanup -> parent
+            let mut task = wg
+                .get_task_from_project("proj", "cycle-parent")
+                .unwrap()
+                .as_ref()
+                .to_owned();
+
+            task.deps.push(TaskDependencyConfig {
+                target: Target::parse("proj:cycle-cleanup").unwrap(),
+                type_of: TaskDependencyType::Cleanup,
+                ..TaskDependencyConfig::default()
+            });
+
+            let error = builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap_err();
+
+            assert!(
+                error.to_string().contains(
+                    "adding a relationship from action RunTask(proj:cycle-cleanup) to RunTask(proj:cycle-parent) would introduce a cycle"
+                ),
+                "{error}"
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn task_graph_relations_are_reversed_for_cleanups() {
+            let sandbox = create_sandbox("dep-types");
+            let container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+
+            let base = wg.get_task_from_project("proj", "base").unwrap();
+            let teardown = wg.get_task_from_project("proj", "teardown").unwrap();
+
+            // The cleanup task is a dependent of the task it cleans up
+            let mut dependents = map_targets(wg.tasks.dependents_of(base.as_ref()));
+
+            assert_eq!(dependents, vec!["proj:teardown"]);
+
+            assert_eq!(
+                map_targets(wg.tasks.dependencies_of(base.as_ref())),
+                vec!["proj:setup"]
+            );
+
+            // And the task is a dependency of its cleanup
+            dependents = map_targets(wg.tasks.dependents_of(teardown.as_ref()));
+
+            assert!(dependents.is_empty());
+
+            assert_eq!(
+                map_targets(wg.tasks.dependencies_of(teardown.as_ref())),
+                vec![
+                    "proj:args-parent",
+                    "proj:base",
+                    "proj:env-first",
+                    "proj:env-second",
+                    "proj:other",
+                    "proj:serial"
+                ]
+            );
         }
     }
 

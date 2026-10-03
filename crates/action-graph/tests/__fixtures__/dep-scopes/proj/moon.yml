@@ -1,0 +1,26 @@
+tasks:
+  prep:
+    command: 'prep'
+
+  # Ran on its own, and by the tasks below, with and
+  # without args, which are separate actions in the graph
+  shared:
+    command: 'shared'
+    deps: ['prep']
+
+  with-args:
+    command: 'with-args'
+    deps:
+      - target: 'shared'
+        args: ['--force']
+
+  without-args:
+    command: 'without-args'
+    deps: ['shared']
+
+  with-cleanup:
+    command: 'with-cleanup'
+    deps:
+      - target: 'shared'
+        args: ['--force']
+        type: 'cleanup'

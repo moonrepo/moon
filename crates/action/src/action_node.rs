@@ -267,7 +267,12 @@ impl Hash for ActionNode {
                     state.write(arg.as_bytes());
                 }
 
-                for (key, value) in &inner.env {
+                // Maps are equal regardless of the order of their keys,
+                // so their hash must not depend on it either
+                let mut env = inner.env.iter().collect::<Vec<_>>();
+                env.sort_by(|a, b| a.0.cmp(b.0));
+
+                for (key, value) in env {
                     state.write(key.as_bytes());
                     if let Some(value) = &value {
                         state.write(value.as_bytes());

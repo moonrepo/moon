@@ -5430,6 +5430,7 @@ dependencies = [
  "scc",
  "serde",
  "tokio",
+ "tokio-util",
 ]
 
 [[package]]
@@ -5474,6 +5475,7 @@ dependencies = [
  "moon_action_context",
  "moon_action_graph",
  "moon_actions",
+ "moon_affected",
  "moon_api",
  "moon_app_context",
  "moon_cache",
@@ -5485,6 +5487,7 @@ dependencies = [
  "moon_process",
  "moon_project",
  "moon_task",
+ "moon_task_runner",
  "moon_test_utils",
  "moon_time",
  "moon_toolchain",

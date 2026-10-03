@@ -1,0 +1,19 @@
+tasks:
+  a:
+    command: 'a'
+    deps: ['b']
+  b:
+    command: 'b'
+    deps: ['c']
+  c:
+    command: 'c'
+    # Runs after `a`, which is currently being loaded when the
+    # lazy builder reaches this dependency
+    deps:
+      - target: 'a'
+        type: 'cleanup'
+  d:
+    command: 'd'
+    deps:
+      - target: 'a'
+        type: 'wait'

@@ -1,0 +1,37 @@
+tasks:
+  build:
+    command: 'build'
+
+  # Enabled for CI, and depends on another task
+  server:
+    command: 'server'
+    deps: ['build']
+    options:
+      persistent: true
+      runInCI: true
+
+  # Enabled for CI, and depends on a persistent task
+  proxy:
+    command: 'proxy'
+    deps: ['server']
+    options:
+      persistent: true
+      runInCI: true
+
+  # Not enabled for CI (the default)
+  watcher:
+    command: 'watcher'
+    deps: ['build']
+    options:
+      persistent: true
+
+  # Waits for a persistent task
+  e2e:
+    command: 'e2e'
+    deps:
+      - target: 'server'
+        type: 'wait'
+      - target: 'stop'
+        type: 'cleanup'
+  stop:
+    command: 'stop'

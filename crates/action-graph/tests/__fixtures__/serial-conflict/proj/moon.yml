@@ -1,0 +1,95 @@
+tasks:
+  # Serial, where the first dependency requires the second, which
+  # contradicts the configured order, so the dependency wins
+  ordered:
+    deps: ['~:first', '~:second']
+    inputs: []
+    options:
+      runDepsInParallel: false
+  first:
+    command: 'first'
+    deps: ['~:second']
+  second:
+    command: 'second'
+
+  # The same, but the first dependency only waits on the second
+  ordered-wait:
+    deps: ['~:first-wait', '~:second']
+    inputs: []
+    options:
+      runDepsInParallel: false
+  first-wait:
+    command: 'first-wait'
+    deps:
+      - target: '~:second'
+        type: 'wait'
+
+  # The first dependency requires the last (which has its own dependency),
+  # so only the last is no longer ordered after the others
+  ordered-three:
+    deps: ['~:head', '~:middle', '~:tail']
+    inputs: []
+    options:
+      runDepsInParallel: false
+  head:
+    command: 'head'
+    deps: ['~:tail']
+  middle:
+    command: 'middle'
+  tail:
+    command: 'tail'
+    deps: ['~:tail-dep']
+  tail-dep:
+    command: 'tail-dep'
+
+  # The last dependency requires the second, which matches the configured
+  # order, while the first requires the last, which contradicts it
+  ordered-chain:
+    deps: ['~:a', '~:b', '~:c']
+    inputs: []
+    options:
+      runDepsInParallel: false
+  a:
+    command: 'a'
+    deps: ['~:c']
+  b:
+    command: 'b'
+  c:
+    command: 'c'
+    deps: ['~:b']
+
+  # Both orders are contradicted: `inner` requires `one` (which is ordered
+  # after it), and `one` requires `two` (which is ordered after it)
+  nested:
+    deps: ['~:inner', '~:one']
+    inputs: []
+    options:
+      runDepsInParallel: false
+  inner:
+    command: 'inner'
+    deps: ['~:one', '~:two']
+    options:
+      runDepsInParallel: false
+  one:
+    command: 'one'
+    deps: ['~:two']
+  two:
+    command: 'two'
+
+  # `teardown` is ordered before `setup`, but it also cleans up after
+  # `cleaned`, which requires `setup`, so it must run after both
+  sequence:
+    deps: ['~:teardown', '~:setup']
+    inputs: []
+    options:
+      runDepsInParallel: false
+  cleaned:
+    command: 'cleaned'
+    deps:
+      - '~:setup'
+      - target: '~:teardown'
+        type: 'cleanup'
+  setup:
+    command: 'setup'
+  teardown:
+    command: 'teardown'

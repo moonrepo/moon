@@ -7,6 +7,7 @@ use scc::hash_map::Entry;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use tokio_util::sync::CancellationToken;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(tag = "state", content = "hash", rename_all = "kebab-case")]
@@ -44,8 +45,25 @@ impl TargetState {
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActionContext {
+    /// Cancelled when the pipeline is aborted (because an action failed),
+    /// so that tasks that have yet to run their command don't.
+    /// @mutable
+    #[serde(skip)]
+    pub abort_token: CancellationToken,
+
     /// Projects and tasks that are affected (via `--affected`).
     pub affected: Option<Affected>,
+
+    /// Cancelled when the pipeline is interrupted (by a signal, like Ctrl+C),
+    /// so that tasks that have yet to run their command don't.
+    /// @mutable
+    #[serde(skip)]
+    pub cancel_token: CancellationToken,
+
+    /// Targets that are depended on to run *after* another task
+    /// (a `cleanup` dependency).
+    #[serde(skip)]
+    pub cleanup_targets: FxHashSet<Target>,
 
     /// Initial target locators passed to `moon run`, `moon ci`, etc.
     pub initial_targets: FxHashSet<TargetLocator>,
@@ -76,6 +94,11 @@ pub struct ActionContext {
 
     /// Files that have currently been changed.
     pub changed_files: FxHashSet<WorkspaceRelativePathBuf>,
+
+    /// Targets that are depended on to run *alongside* another task
+    /// (a `wait` dependency).
+    #[serde(skip)]
+    pub wait_targets: FxHashSet<Target>,
 }
 
 impl ActionContext {
@@ -120,6 +143,25 @@ impl ActionContext {
         self.ignored_dependencies
             .get(target.as_ref())
             .is_some_and(|dependencies| dependencies.contains(dependency.as_ref()))
+    }
+
+    /// Whether the task must always run its command, instead of being hydrated
+    /// from the cache, as another task depends on it running after it (a
+    /// `cleanup` dependency), or alongside it (a `wait` dependency).
+    pub fn should_always_run<T: AsRef<Target>>(&self, target: T) -> bool {
+        let target = target.as_ref();
+
+        self.cleanup_targets.contains(target) || self.wait_targets.contains(target)
+    }
+
+    /// Whether the task must not start its command (or another attempt of it),
+    /// as the pipeline has been interrupted (a signal), or aborted (an action
+    /// failed), and nothing would terminate the process. Cleanup tasks still
+    /// run once the pipeline has been aborted, as they clean up after the
+    /// tasks that have ran.
+    pub fn should_stop<T: AsRef<Target>>(&self, target: T) -> bool {
+        self.cancel_token.is_cancelled()
+            || (self.abort_token.is_cancelled() && !self.cleanup_targets.contains(target.as_ref()))
     }
 
     pub fn set_target_state<T: AsRef<Target>>(&self, target: T, state: TargetState) {

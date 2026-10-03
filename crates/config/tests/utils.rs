@@ -190,6 +190,7 @@ pub fn load_task_config_in_format(format: &str) {
                     target: Target::parse("^:build").unwrap(),
                     optional: Some(true),
                     cache_strategy: None,
+                    ..Default::default()
                 }),
                 TaskDependency::Object(TaskDependencyConfig {
                     args: vec!["--minify".into()],
@@ -197,6 +198,7 @@ pub fn load_task_config_in_format(format: &str) {
                     target: Target::parse("~:build").unwrap(),
                     optional: None,
                     cache_strategy: None,
+                    ..Default::default()
                 }),
             ]),
             env: Some(IndexMap::from_iter([(

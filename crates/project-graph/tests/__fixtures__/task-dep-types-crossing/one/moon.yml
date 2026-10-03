@@ -1,0 +1,14 @@
+# Not a cycle: `cleanup` runs after `parent` (the edge is reversed),
+# and requires `mid`, which requires `parent`.
+tasks:
+  a-parent:
+    command: 'parent'
+    deps:
+      - target: '~:b-cleanup'
+        type: 'cleanup'
+  b-cleanup:
+    command: 'cleanup'
+    deps: ['~:c-mid']
+  c-mid:
+    command: 'mid'
+    deps: ['~:a-parent']

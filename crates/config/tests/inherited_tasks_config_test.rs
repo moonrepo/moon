@@ -448,6 +448,7 @@ implicitDeps:
                         target: Target::parse("~:task").unwrap(),
                         optional: None,
                         cache_strategy: None,
+                        ..Default::default()
                     }),
                 ]
             );

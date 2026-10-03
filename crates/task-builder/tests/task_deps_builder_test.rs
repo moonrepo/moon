@@ -142,6 +142,27 @@ fn build_task_deps_with_querent(project: &mut Project, task: &mut Task, querent:
     .unwrap()
 }
 
+// The message of the error, which (unlike a panic) is not wrapped
+// to the width of the terminal, so it can be matched in full
+fn build_task_deps_error(
+    project: &mut Project,
+    task: &mut Task,
+    data: FxHashMap<Target, TaskOptions>,
+) -> String {
+    TaskDepsBuilder {
+        querent: Box::new(TestQuerent {
+            data,
+            ..Default::default()
+        }),
+        project: Some(project),
+        root_project_id: None,
+        task,
+    }
+    .build()
+    .unwrap_err()
+    .to_string()
+}
+
 mod task_deps_builder {
     use super::*;
 
@@ -211,21 +232,11 @@ mod task_deps_builder {
             task.options.run_in_ci = TaskOptionRunInCI::Enabled(true);
             task.deps.push(dep_typed("no-ci", type_of));
 
-            TaskDepsBuilder {
-                querent: Box::new(TestQuerent {
-                    data: FxHashMap::from_iter([(
-                        Target::parse("project:no-ci").unwrap(),
-                        dep_options,
-                    )]),
-                    ..Default::default()
-                }),
-                project: Some(&mut project),
-                root_project_id: None,
-                task: &mut task,
-            }
-            .build()
-            .unwrap_err()
-            .to_string()
+            build_task_deps_error(
+                &mut project,
+                &mut task,
+                FxHashMap::from_iter([(Target::parse("project:no-ci").unwrap(), dep_options)]),
+            )
         }
 
         #[test]
@@ -448,9 +459,6 @@ mod task_deps_builder {
 
         // An interactive dependency runs in isolation, so nothing can run alongside it
         #[test]
-        #[should_panic(
-            expected = "Task project:task cannot depend on interactive task project:interactive as a wait dependency"
-        )]
         fn errors_for_interactive_wait_dep() {
             let mut project = create_project();
 
@@ -458,7 +466,14 @@ mod task_deps_builder {
             task.deps
                 .push(dep_typed("interactive", TaskDependencyType::Wait));
 
-            build_task_deps_with_data(&mut project, &mut task, interactive_data());
+            let error = build_task_deps_error(&mut project, &mut task, interactive_data());
+
+            assert!(
+                error.contains(
+                    "Task project:task cannot depend on interactive task project:interactive as a wait dependency"
+                ),
+                "{error}"
+            );
         }
 
         #[test]
@@ -534,7 +549,6 @@ mod task_deps_builder {
         }
 
         #[test]
-        #[should_panic(expected = "mark the dependency with type: 'wait' instead")]
         fn suggests_wait_type_for_invalid_persistent_chain() {
             let mut project = create_project();
 
@@ -543,7 +557,12 @@ mod task_deps_builder {
             task.deps
                 .push(dep_typed("persistent", TaskDependencyType::Required));
 
-            build_task_deps_with_data(&mut project, &mut task, persistent_data());
+            let error = build_task_deps_error(&mut project, &mut task, persistent_data());
+
+            assert!(
+                error.contains("mark the dependency with type: 'wait' instead"),
+                "{error}"
+            );
         }
 
         #[test]
@@ -587,9 +606,6 @@ mod task_deps_builder {
         }
 
         #[test]
-        #[should_panic(
-            expected = "Task project:task cannot depend on persistent task project:persistent as a cleanup dependency"
-        )]
         fn errors_for_persistent_cleanup_dep() {
             let mut project = create_project();
 
@@ -598,13 +614,17 @@ mod task_deps_builder {
             task.deps
                 .push(dep_typed("persistent", TaskDependencyType::Cleanup));
 
-            build_task_deps_with_data(&mut project, &mut task, persistent_data());
+            let error = build_task_deps_error(&mut project, &mut task, persistent_data());
+
+            assert!(
+                error.contains(
+                    "Task project:task cannot depend on persistent task project:persistent as a cleanup dependency"
+                ),
+                "{error}"
+            );
         }
 
         #[test]
-        #[should_panic(
-            expected = "Persistent task project:task cannot depend on task project:not-persistent as a cleanup dependency"
-        )]
         fn errors_for_cleanup_dep_of_persistent_task() {
             let mut project = create_project();
 
@@ -613,7 +633,14 @@ mod task_deps_builder {
             task.deps
                 .push(dep_typed("not-persistent", TaskDependencyType::Cleanup));
 
-            build_task_deps_with_data(&mut project, &mut task, not_persistent_data());
+            let error = build_task_deps_error(&mut project, &mut task, not_persistent_data());
+
+            assert!(
+                error.contains(
+                    "Persistent task project:task cannot depend on task project:not-persistent as a cleanup dependency"
+                ),
+                "{error}"
+            );
         }
 
         #[test]
@@ -896,9 +923,6 @@ mod task_deps_builder {
 
         // Only a required dependency on itself is a harmless cycle
         #[test]
-        #[should_panic(
-            expected = "Task project:task cannot depend on itself as a cleanup dependency, as it can't run after itself"
-        )]
         fn errors_for_self_cleanup() {
             let mut project = create_project();
 
@@ -906,13 +930,17 @@ mod task_deps_builder {
             task.deps
                 .push(dep_typed("~:task", TaskDependencyType::Cleanup));
 
-            build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
+            let error = build_task_deps_error(&mut project, &mut task, create_project_task_data());
+
+            assert!(
+                error.contains(
+                    "Task project:task cannot depend on itself as a cleanup dependency, as it can't run after itself"
+                ),
+                "{error}"
+            );
         }
 
         #[test]
-        #[should_panic(
-            expected = "Task project:task cannot depend on itself as a wait dependency, as it can't run alongside itself"
-        )]
         fn errors_for_self_wait() {
             let mut project = create_project();
 
@@ -920,7 +948,14 @@ mod task_deps_builder {
             task.deps
                 .push(dep_typed("~:task", TaskDependencyType::Wait));
 
-            build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
+            let error = build_task_deps_error(&mut project, &mut task, create_project_task_data());
+
+            assert!(
+                error.contains(
+                    "Task project:task cannot depend on itself as a wait dependency, as it can't run alongside itself"
+                ),
+                "{error}"
+            );
         }
 
         #[test]
@@ -1497,9 +1532,6 @@ mod dep_types {
     }
 
     #[test]
-    #[should_panic(
-        expected = "Task project:task depends on task project:build with conflicting types, required and cleanup"
-    )]
     fn errors_for_conflicting_types() {
         let mut project = create_project();
 
@@ -1509,13 +1541,17 @@ mod dep_types {
         task.deps
             .push(dep_typed("~:build", TaskDependencyType::Cleanup));
 
-        build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
+        let error = build_task_deps_error(&mut project, &mut task, create_project_task_data());
+
+        assert!(
+            error.contains(
+                "Task project:task depends on task project:build with conflicting types, required and cleanup"
+            ),
+            "{error}"
+        );
     }
 
     #[test]
-    #[should_panic(
-        expected = "Task project:task depends on task project:build with conflicting types, wait and required"
-    )]
     fn errors_for_conflicting_types_across_scopes() {
         let mut project = create_project();
 
@@ -1525,7 +1561,14 @@ mod dep_types {
         task.deps
             .push(dep_typed("project:build", TaskDependencyType::Required));
 
-        build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
+        let error = build_task_deps_error(&mut project, &mut task, create_project_task_data());
+
+        assert!(
+            error.contains(
+                "Task project:task depends on task project:build with conflicting types, wait and required"
+            ),
+            "{error}"
+        );
     }
 
     #[test]

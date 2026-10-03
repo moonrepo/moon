@@ -386,6 +386,10 @@ mod task_runner {
                     }
 
                     let before = runner.run_with_panic(&context, &node).await.unwrap();
+
+                    // The command fails on Windows when the file already exists
+                    std::fs::remove_file(container.project.root.join("file.txt")).unwrap();
+
                     let result = runner.run_with_panic(&context, &node).await.unwrap();
 
                     assert_eq!(before.hash, result.hash);

@@ -892,13 +892,21 @@ mod action_pipeline {
                     Some(&ActionStatus::Failed)
                 );
                 assert_eq!(
-                    statuses.get("RunTask(dep-types:long-sibling)"),
-                    Some(&ActionStatus::Aborted)
-                );
-                assert_eq!(
                     statuses.get("RunTask(dep-types:failing-cleanup)"),
                     Some(&ActionStatus::Passed)
                 );
+
+                // The sibling is only reported when its process was terminated
+                // before the cleanup completed. On Windows it isn't terminated,
+                // and runs until its own timeout instead, after the pipeline has
+                // stopped receiving results
+                let sibling = statuses.get("RunTask(dep-types:long-sibling)");
+
+                if cfg!(windows) {
+                    assert!(matches!(sibling, None | Some(ActionStatus::Aborted)));
+                } else {
+                    assert_eq!(sibling, Some(&ActionStatus::Aborted));
+                }
             }
 
             // Aborting terminates the running processes, and the process registry

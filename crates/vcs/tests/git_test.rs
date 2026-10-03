@@ -677,6 +677,24 @@ mod git {
         }
 
         #[tokio::test]
+        async fn errors_if_found_repository_fails_to_open() {
+            let sandbox = create_sandbox("vcs");
+            sandbox.enable_git();
+
+            // An empty `core.worktree` fails with a "not found" classification,
+            // which must not be mistaken for a missing repository
+            sandbox.run_git(|cmd| {
+                cmd.args(["config", "core.worktree", ""]);
+            });
+
+            let error = Git::load(sandbox.path(), "master", &["origin".into()])
+                .err()
+                .unwrap();
+
+            assert_eq!(error.to_string(), "Failed to load Git repository.");
+        }
+
+        #[tokio::test]
         async fn different_dirs() {
             let sandbox = create_sandbox("vcs");
             sandbox.create_file("nested/moon/file", "");

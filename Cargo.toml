@@ -34,7 +34,7 @@ futures = "0.3.34"
 httpmock = "0.8.3"
 indexmap = "2.14.2"
 iocraft = "0.8.5"
-libc = "0.2.189"
+libc = "0.2.190"
 md5 = "0.8.1"
 miette = "7.6.0"
 num_cpus = "1.17.0"
@@ -90,8 +90,8 @@ starbase_utils = { version = "0.14.6", default-features = false, features = [
   "miette",
 ] }
 tera = { version = "1.20.1", features = ["preserve_order"] }
-thiserror = "2.0.20"
-tokio = { version = "1.53.1", default-features = false, features = [
+thiserror = "2.0.21"
+tokio = { version = "1.53.2", default-features = false, features = [
   "macros",
   "process",
   "rt-multi-thread",
@@ -107,7 +107,7 @@ tonic-prost = "0.14.6"
 tower = "0.5.3"
 tracing = "0.1.44"
 url = "2.5.8"
-uuid = { version = "1.26.1", features = ["v4"] }
+uuid = { version = "1.27.0", features = ["v4"] }
 windows-sys = { version = "0.61.2", default-features = false }
 
 # proto/plugin related

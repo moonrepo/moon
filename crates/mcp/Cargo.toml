@@ -34,7 +34,7 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
-jsonschema = "0.57.0"
+jsonschema = "0.58.5"
 rustc-hash = { workspace = true }
 serde_json = { workspace = true }
 

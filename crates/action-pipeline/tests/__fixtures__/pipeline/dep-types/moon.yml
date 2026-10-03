@@ -1,0 +1,249 @@
+tasks:
+  # The server signals that it has started, and then waits on the client,
+  # while the client waits on the server to start, and then signals it,
+  # so both must run at the same time (which deadlocks and times out
+  # if the client waits for the server to complete)
+  server:
+    command: 'node ./signal.mjs serve server-started client-done'
+
+  client:
+    command: 'node ./signal.mjs handshake server-started client-done'
+    deps:
+      - target: 'server'
+        type: 'wait'
+
+  # Non-persistent tasks may wait on persistent tasks, but they must
+  # also run in CI (they don't by default), when their waiters do
+  persistent-server:
+    command: 'node ./signal.mjs write persistent-started'
+    options:
+      persistent: true
+      runInCI: true
+
+  persistent-client:
+    command: 'node ./signal.mjs wait persistent-started'
+    deps:
+      - target: 'persistent-server'
+        type: 'wait'
+
+  # A wait dependency that has already failed by the time the task
+  # runs (after its required dependency, which cleans up after the
+  # failed dependency, so always runs after it) skips the task
+  crash:
+    command: 'node ./signal.mjs fail crashed'
+    deps:
+      - target: 'settle'
+        type: 'cleanup'
+
+  settle:
+    command: 'node ./signal.mjs write settled'
+
+  after-crash:
+    command: 'node ./signal.mjs write after-crash-ran'
+    deps:
+      - 'settle'
+      - target: 'crash'
+        type: 'wait'
+
+  # The cleanup only passes when it runs after its parent
+  parent:
+    command: 'node ./signal.mjs write parent-ran'
+    deps:
+      - target: 'cleanup'
+        type: 'cleanup'
+
+  cleanup:
+    command: 'node ./signal.mjs check parent-ran'
+
+  # The cleanup still runs when its parent fails
+  failing-parent:
+    command: 'node ./signal.mjs check missing'
+    deps:
+      - target: 'failing-cleanup'
+        type: 'cleanup'
+
+  failing-cleanup:
+    command: 'node ./signal.mjs write failing-cleaned'
+
+  # The parent is skipped when its dependency fails (or never runs when
+  # bailing), so it never runs its command, and there's nothing to clean up
+  broken:
+    command: 'node ./signal.mjs check missing'
+
+  blocked-parent:
+    command: 'node ./signal.mjs write blocked-ran'
+    deps:
+      - 'broken'
+      - target: 'blocked-cleanup'
+        type: 'cleanup'
+
+  blocked-cleanup:
+    command: 'node ./signal.mjs write blocked-cleaned'
+
+  # Runs for a while, so is still running (and terminated)
+  # when another task aborts the pipeline
+  long-sibling:
+    command: 'node ./signal.mjs wait never-signaled'
+
+  # The cleanup runs for longer than the process registry's
+  # threshold, after which it kills the processes it tracks
+  slow-failing-parent:
+    command: 'node ./signal.mjs check missing'
+    deps:
+      - target: 'slow-cleanup'
+        type: 'cleanup'
+
+  slow-cleanup:
+    command: 'node ./signal.mjs write slow-cleaned 1500'
+
+  # The parent has no command, which is typical for tasks that only
+  # orchestrate their dependencies, but it still ran, so the cleanup runs
+  noop-parent:
+    command: 'noop'
+    deps:
+      - target: 'noop-cleanup'
+        type: 'cleanup'
+
+  noop-cleanup:
+    command: 'node ./signal.mjs write noop-cleaned'
+
+  # The server runs until it's stopped by the cleanup of the task
+  # that waits on it (or it times out, and fails)
+  stoppable-server:
+    command: 'node ./signal.mjs serve stoppable-started stoppable-stop'
+
+  stoppable-client:
+    command: 'node ./signal.mjs wait stoppable-started'
+    deps:
+      - target: 'stoppable-server'
+        type: 'wait'
+      - target: 'stop-server'
+        type: 'cleanup'
+
+  stop-server:
+    command: 'node ./signal.mjs write stoppable-stop'
+
+  # An interactive task runs in isolation, but must not wait on the
+  # server, as it only completes once the cleanup has stopped it
+  interactive-client:
+    command: 'node ./signal.mjs wait stoppable-started'
+    deps:
+      - target: 'stoppable-server'
+        type: 'wait'
+      - target: 'stop-server'
+        type: 'cleanup'
+    options:
+      interactive: true
+
+  # The task is skipped (its dependency fails), but the server
+  # has already been started, so it must still be stopped
+  blocked-client:
+    command: 'node ./signal.mjs wait stoppable-started'
+    deps:
+      - 'broken'
+      - target: 'stoppable-server'
+        type: 'wait'
+      - target: 'stop-server'
+        type: 'cleanup'
+
+  # The task is hydrated from the cache the second time it's ran (it has no
+  # inputs), but the server is started regardless, so it must still be stopped
+  cached-client:
+    command: 'node ./signal.mjs wait stoppable-started'
+    inputs: []
+    deps:
+      - target: 'stoppable-server'
+        type: 'wait'
+      - target: 'stop-server'
+        type: 'cleanup'
+
+  # The cleanup would be hydrated from the cache the second time it's ran
+  # (it has no inputs), but it must run every time that its task runs
+  uncached-parent:
+    command: 'node ./signal.mjs write uncached-parent-ran'
+    deps:
+      - target: 'cacheable-cleanup'
+        type: 'cleanup'
+    options:
+      cache: false
+
+  cacheable-cleanup:
+    command: 'node ./signal.mjs write cacheable-cleaned'
+    inputs: []
+
+  # The server never starts (its dependency fails), so the tasks
+  # that wait on it must be skipped, instead of running without it
+  blocked-server:
+    command: 'node ./signal.mjs write blocked-server-ran'
+    deps: ['broken']
+
+  blocked-server-client:
+    command: 'node ./signal.mjs write blocked-server-client-ran'
+    deps:
+      - target: 'blocked-server'
+        type: 'wait'
+      - target: 'blocked-server-stop'
+        type: 'cleanup'
+
+  blocked-server-stop:
+    command: 'node ./signal.mjs write blocked-server-stopped'
+
+  blocked-persistent-server:
+    command: 'node ./signal.mjs write blocked-persistent-server-ran'
+    deps: ['broken']
+    options:
+      persistent: true
+      runInCI: true
+
+  blocked-persistent-client:
+    command: 'node ./signal.mjs write blocked-persistent-client-ran'
+    deps:
+      - target: 'blocked-persistent-server'
+        type: 'wait'
+      - target: 'blocked-server-stop'
+        type: 'cleanup'
+
+  # A cleanup that another cleanup requires must run for it, even when the
+  # task that it cleans up after never ran (it's blocked by the slow gate)
+  slow-gate:
+    command: 'node ./signal.mjs write gate-done 3000'
+
+  gated-parent:
+    command: 'node ./signal.mjs write gated-ran'
+    deps:
+      - 'slow-gate'
+      - target: 'first-cleanup'
+        type: 'cleanup'
+
+  crashing-parent:
+    command: 'node ./signal.mjs check missing'
+    deps:
+      - target: 'second-cleanup'
+        type: 'cleanup'
+
+  first-cleanup:
+    command: 'node ./signal.mjs write first-cleaned'
+
+  second-cleanup:
+    command: 'node ./signal.mjs check first-cleaned'
+    deps: ['first-cleanup']
+
+  # The waiter is waiting on the mutex (held by the holder) when the crash
+  # aborts the pipeline, so it must not run its command once it acquires it
+  mutex-holder:
+    command: 'node ./signal.mjs write holder-done 3000'
+    options:
+      mutex: 'held'
+
+  mutex-delay:
+    command: 'node ./signal.mjs write delay-done 200'
+
+  mutex-waiter:
+    command: 'node ./signal.mjs write waiter-ran'
+    deps: ['mutex-delay']
+    options:
+      mutex: 'held'
+      retryCount: 2
+
+  mutex-crash:
+    command: 'node ./signal.mjs fail crash-ran 800'

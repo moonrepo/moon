@@ -86,6 +86,23 @@ fn dep_ignored(target_str: &str) -> TaskDependencyConfig {
     }
 }
 
+// A dependency as declared in configuration
+fn dep_typed(target_str: &str, type_of: TaskDependencyType) -> TaskDependencyConfig {
+    TaskDependencyConfig {
+        target: Target::parse(target_str).unwrap(),
+        type_of,
+        ..Default::default()
+    }
+}
+
+// A dependency after it has been built/resolved
+fn dep_ignored_typed(target_str: &str, type_of: TaskDependencyType) -> TaskDependencyConfig {
+    TaskDependencyConfig {
+        type_of,
+        ..dep_ignored(target_str)
+    }
+}
+
 fn assert_deps_eq(mut actual: Vec<TaskDependencyConfig>, mut expected: Vec<TaskDependencyConfig>) {
     // Order from FxHashMap iteration is not deterministic
     actual.sort_by(|a, b| a.target.as_str().cmp(b.target.as_str()));
@@ -125,8 +142,39 @@ fn build_task_deps_with_querent(project: &mut Project, task: &mut Task, querent:
     .unwrap()
 }
 
+// The message of the error, which (unlike a panic) is not wrapped
+// to the width of the terminal, so it can be matched in full
+fn build_task_deps_error(
+    project: &mut Project,
+    task: &mut Task,
+    data: FxHashMap<Target, TaskOptions>,
+) -> String {
+    TaskDepsBuilder {
+        querent: Box::new(TestQuerent {
+            data,
+            ..Default::default()
+        }),
+        project: Some(project),
+        root_project_id: None,
+        task,
+    }
+    .build()
+    .unwrap_err()
+    .to_string()
+}
+
 mod task_deps_builder {
     use super::*;
+
+    fn allow_failure_data() -> FxHashMap<Target, TaskOptions> {
+        FxHashMap::from_iter([(
+            Target::parse("project:allow-failure").unwrap(),
+            TaskOptions {
+                allow_failure: true,
+                ..Default::default()
+            },
+        )])
+    }
 
     #[test]
     #[should_panic(expected = "Task project:task cannot depend on task project:allow-failure")]
@@ -138,21 +186,98 @@ mod task_deps_builder {
             Target::parse("allow-failure").unwrap(),
         ));
 
-        build_task_deps_with_data(
-            &mut project,
-            &mut task,
-            FxHashMap::from_iter([(
-                Target::parse("project:allow-failure").unwrap(),
-                TaskOptions {
-                    allow_failure: true,
-                    ..Default::default()
-                },
-            )]),
+        build_task_deps_with_data(&mut project, &mut task, allow_failure_data());
+    }
+
+    #[test]
+    fn doesnt_error_if_dep_on_allow_failure_and_cleanup() {
+        let mut project = create_project();
+
+        let mut task = create_task();
+        task.deps
+            .push(dep_typed("allow-failure", TaskDependencyType::Cleanup));
+
+        build_task_deps_with_data(&mut project, &mut task, allow_failure_data());
+
+        assert_eq!(
+            task.deps,
+            vec![dep_ignored_typed(
+                "project:allow-failure",
+                TaskDependencyType::Cleanup
+            )]
         );
+    }
+
+    // The task is skipped when a wait dependency fails before it starts,
+    // which would silently pass the pipeline if the dependency can fail
+    #[test]
+    #[should_panic(expected = "Task project:task cannot depend on task project:allow-failure")]
+    fn errors_if_dep_on_allow_failure_and_wait() {
+        let mut project = create_project();
+
+        let mut task = create_task();
+        task.deps
+            .push(dep_typed("allow-failure", TaskDependencyType::Wait));
+
+        build_task_deps_with_data(&mut project, &mut task, allow_failure_data());
     }
 
     mod run_in_ci {
         use super::*;
+
+        fn get_error(type_of: TaskDependencyType, dep_options: TaskOptions) -> String {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.options.run_in_ci = TaskOptionRunInCI::Enabled(true);
+            task.deps.push(dep_typed("no-ci", type_of));
+
+            build_task_deps_error(
+                &mut project,
+                &mut task,
+                FxHashMap::from_iter([(Target::parse("project:no-ci").unwrap(), dep_options)]),
+            )
+        }
+
+        #[test]
+        fn errors_with_how_to_resolve() {
+            let error = get_error(
+                TaskDependencyType::Required,
+                TaskOptions {
+                    run_in_ci: TaskOptionRunInCI::Enabled(false),
+                    ..Default::default()
+                },
+            );
+
+            for expected in [
+                "because options.runInCI is disabled. Because of this",
+                "- Enable options.runInCI for the dependency, so that both run in CI.",
+                "- Set options.runInCI to skip for the dependency, so that the task runs in CI without it.",
+                "- Disable options.runInCI for the task, so that neither runs in CI.",
+            ] {
+                assert!(error.contains(expected), "{error}");
+            }
+        }
+
+        // Persistent tasks are disabled by default, so it may not have been configured
+        #[test]
+        fn errors_with_the_default_of_persistent_deps() {
+            let error = get_error(
+                TaskDependencyType::Wait,
+                TaskOptions {
+                    persistent: true,
+                    run_in_ci: TaskOptionRunInCI::Enabled(false),
+                    ..Default::default()
+                },
+            );
+
+            assert!(
+                error.contains(
+                    "because options.runInCI is disabled, which is the default for persistent tasks. Because of this"
+                ),
+                "{error}"
+            );
+        }
 
         #[test]
         #[should_panic(expected = "Task project:task cannot depend on task project:no-ci")]
@@ -163,6 +288,59 @@ mod task_deps_builder {
             task.options.run_in_ci = TaskOptionRunInCI::Enabled(true);
             task.deps
                 .push(TaskDependencyConfig::new(Target::parse("no-ci").unwrap()));
+
+            build_task_deps_with_data(
+                &mut project,
+                &mut task,
+                FxHashMap::from_iter([(
+                    Target::parse("project:no-ci").unwrap(),
+                    TaskOptions {
+                        run_in_ci: TaskOptionRunInCI::Enabled(false),
+                        ..Default::default()
+                    },
+                )]),
+            );
+        }
+
+        #[test]
+        fn doesnt_error_if_dep_not_enabled_but_cleanup() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.options.run_in_ci = TaskOptionRunInCI::Enabled(true);
+            task.deps
+                .push(dep_typed("no-ci", TaskDependencyType::Cleanup));
+
+            build_task_deps_with_data(
+                &mut project,
+                &mut task,
+                FxHashMap::from_iter([(
+                    Target::parse("project:no-ci").unwrap(),
+                    TaskOptions {
+                        run_in_ci: TaskOptionRunInCI::Enabled(false),
+                        ..Default::default()
+                    },
+                )]),
+            );
+
+            assert_eq!(
+                task.deps,
+                vec![dep_ignored_typed(
+                    "project:no-ci",
+                    TaskDependencyType::Cleanup
+                )]
+            );
+        }
+
+        // The task would run in CI without the dependency it waits on
+        #[test]
+        #[should_panic(expected = "Task project:task cannot depend on task project:no-ci")]
+        fn errors_if_dep_not_enabled_and_wait() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.options.run_in_ci = TaskOptionRunInCI::Enabled(true);
+            task.deps.push(dep_typed("no-ci", TaskDependencyType::Wait));
 
             build_task_deps_with_data(
                 &mut project,
@@ -266,8 +444,93 @@ mod task_deps_builder {
         }
     }
 
+    mod interactive {
+        use super::*;
+
+        fn interactive_data() -> FxHashMap<Target, TaskOptions> {
+            FxHashMap::from_iter([(
+                Target::parse("project:interactive").unwrap(),
+                TaskOptions {
+                    interactive: true,
+                    ..Default::default()
+                },
+            )])
+        }
+
+        // An interactive dependency runs in isolation, so nothing can run alongside it
+        #[test]
+        fn errors_for_interactive_wait_dep() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.deps
+                .push(dep_typed("interactive", TaskDependencyType::Wait));
+
+            let error = build_task_deps_error(&mut project, &mut task, interactive_data());
+
+            assert!(
+                error.contains(
+                    "Task project:task cannot depend on interactive task project:interactive as a wait dependency"
+                ),
+                "{error}"
+            );
+        }
+
+        #[test]
+        fn doesnt_error_for_interactive_required_dep() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.deps
+                .push(dep_typed("interactive", TaskDependencyType::Required));
+
+            build_task_deps_with_data(&mut project, &mut task, interactive_data());
+
+            assert_eq!(task.deps, vec![dep_ignored("project:interactive")]);
+        }
+
+        #[test]
+        fn doesnt_error_for_interactive_cleanup_dep() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.deps
+                .push(dep_typed("interactive", TaskDependencyType::Cleanup));
+
+            build_task_deps_with_data(&mut project, &mut task, interactive_data());
+
+            assert_eq!(
+                task.deps,
+                vec![dep_ignored_typed(
+                    "project:interactive",
+                    TaskDependencyType::Cleanup
+                )]
+            );
+        }
+    }
+
     mod persistent {
         use super::*;
+
+        fn persistent_data() -> FxHashMap<Target, TaskOptions> {
+            FxHashMap::from_iter([(
+                Target::parse("project:persistent").unwrap(),
+                TaskOptions {
+                    persistent: true,
+                    ..Default::default()
+                },
+            )])
+        }
+
+        fn not_persistent_data() -> FxHashMap<Target, TaskOptions> {
+            FxHashMap::from_iter([(
+                Target::parse("project:not-persistent").unwrap(),
+                TaskOptions {
+                    persistent: false,
+                    ..Default::default()
+                },
+            )])
+        }
 
         #[test]
         #[should_panic(
@@ -282,16 +545,121 @@ mod task_deps_builder {
                 Target::parse("persistent").unwrap(),
             ));
 
-            build_task_deps_with_data(
-                &mut project,
-                &mut task,
-                FxHashMap::from_iter([(
-                    Target::parse("project:persistent").unwrap(),
-                    TaskOptions {
-                        persistent: true,
-                        ..Default::default()
-                    },
-                )]),
+            build_task_deps_with_data(&mut project, &mut task, persistent_data());
+        }
+
+        #[test]
+        fn suggests_wait_type_for_invalid_persistent_chain() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.options.persistent = false;
+            task.deps
+                .push(dep_typed("persistent", TaskDependencyType::Required));
+
+            let error = build_task_deps_error(&mut project, &mut task, persistent_data());
+
+            assert!(
+                error.contains("mark the dependency with type: 'wait' instead"),
+                "{error}"
+            );
+        }
+
+        #[test]
+        fn doesnt_error_for_persistent_dep_when_waiting() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.options.persistent = false;
+            task.deps
+                .push(dep_typed("persistent", TaskDependencyType::Wait));
+
+            build_task_deps_with_data(&mut project, &mut task, persistent_data());
+
+            assert_eq!(
+                task.deps,
+                vec![dep_ignored_typed(
+                    "project:persistent",
+                    TaskDependencyType::Wait
+                )]
+            );
+        }
+
+        #[test]
+        fn doesnt_error_for_persistent_task_with_persistent_wait_dep() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.options.persistent = true;
+            task.deps
+                .push(dep_typed("persistent", TaskDependencyType::Wait));
+
+            build_task_deps_with_data(&mut project, &mut task, persistent_data());
+
+            assert_eq!(
+                task.deps,
+                vec![dep_ignored_typed(
+                    "project:persistent",
+                    TaskDependencyType::Wait
+                )]
+            );
+        }
+
+        #[test]
+        fn errors_for_persistent_cleanup_dep() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.options.persistent = false;
+            task.deps
+                .push(dep_typed("persistent", TaskDependencyType::Cleanup));
+
+            let error = build_task_deps_error(&mut project, &mut task, persistent_data());
+
+            assert!(
+                error.contains(
+                    "Task project:task cannot depend on persistent task project:persistent as a cleanup dependency"
+                ),
+                "{error}"
+            );
+        }
+
+        #[test]
+        fn errors_for_cleanup_dep_of_persistent_task() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.options.persistent = true;
+            task.deps
+                .push(dep_typed("not-persistent", TaskDependencyType::Cleanup));
+
+            let error = build_task_deps_error(&mut project, &mut task, not_persistent_data());
+
+            assert!(
+                error.contains(
+                    "Persistent task project:task cannot depend on task project:not-persistent as a cleanup dependency"
+                ),
+                "{error}"
+            );
+        }
+
+        #[test]
+        fn doesnt_error_for_cleanup_dep_of_non_persistent_task() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.options.persistent = false;
+            task.deps
+                .push(dep_typed("not-persistent", TaskDependencyType::Cleanup));
+
+            build_task_deps_with_data(&mut project, &mut task, not_persistent_data());
+
+            assert_eq!(
+                task.deps,
+                vec![dep_ignored_typed(
+                    "project:not-persistent",
+                    TaskDependencyType::Cleanup
+                )]
             );
         }
 
@@ -551,6 +919,43 @@ mod task_deps_builder {
             build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
 
             assert_eq!(task.deps, vec![]);
+        }
+
+        // Only a required dependency on itself is a harmless cycle
+        #[test]
+        fn errors_for_self_cleanup() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.deps
+                .push(dep_typed("~:task", TaskDependencyType::Cleanup));
+
+            let error = build_task_deps_error(&mut project, &mut task, create_project_task_data());
+
+            assert!(
+                error.contains(
+                    "Task project:task cannot depend on itself as a cleanup dependency, as it can't run after itself"
+                ),
+                "{error}"
+            );
+        }
+
+        #[test]
+        fn errors_for_self_wait() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.deps
+                .push(dep_typed("~:task", TaskDependencyType::Wait));
+
+            let error = build_task_deps_error(&mut project, &mut task, create_project_task_data());
+
+            assert!(
+                error.contains(
+                    "Task project:task cannot depend on itself as a wait dependency, as it can't run alongside itself"
+                ),
+                "{error}"
+            );
         }
 
         #[test]
@@ -1049,6 +1454,197 @@ mod task_deps_builder {
     }
 }
 
+mod dep_types {
+    use super::*;
+
+    fn create_project_task_data() -> FxHashMap<Target, TaskOptions> {
+        FxHashMap::from_iter([
+            (
+                Target::parse("project:build").unwrap(),
+                TaskOptions::default(),
+            ),
+            (
+                Target::parse("project:task").unwrap(),
+                TaskOptions::default(),
+            ),
+        ])
+    }
+
+    #[test]
+    fn preserves_type_through_parent_scope() {
+        let mut project = create_project();
+        project.dependencies = vec![
+            ProjectDependencyConfig::new(Id::raw("foo")),
+            ProjectDependencyConfig::new(Id::raw("bar")),
+        ];
+
+        let mut task = create_task();
+        task.deps
+            .push(dep_typed("^:build", TaskDependencyType::Cleanup));
+
+        build_task_deps_with_data(
+            &mut project,
+            &mut task,
+            FxHashMap::from_iter([
+                (Target::parse("foo:build").unwrap(), TaskOptions::default()),
+                (Target::parse("bar:build").unwrap(), TaskOptions::default()),
+            ]),
+        );
+
+        assert_deps_eq(
+            task.deps.clone(),
+            vec![
+                dep_ignored_typed("bar:build", TaskDependencyType::Cleanup),
+                dep_ignored_typed("foo:build", TaskDependencyType::Cleanup),
+            ],
+        );
+    }
+
+    #[test]
+    fn preserves_type_through_tag_scope() {
+        let mut project = create_project();
+
+        let mut task = create_task();
+        task.deps
+            .push(dep_typed("#pkg:build", TaskDependencyType::Wait));
+
+        build_task_deps_with_querent(
+            &mut project,
+            &mut task,
+            TestQuerent {
+                data: FxHashMap::from_iter([
+                    (Target::parse("foo:build").unwrap(), TaskOptions::default()),
+                    (Target::parse("bar:build").unwrap(), TaskOptions::default()),
+                    (Target::parse("baz:build").unwrap(), TaskOptions::default()),
+                ]),
+                tag_ids: vec![Id::raw("foo"), Id::raw("baz")],
+                ..Default::default()
+            },
+        );
+
+        assert_deps_eq(
+            task.deps.clone(),
+            vec![
+                dep_ignored_typed("baz:build", TaskDependencyType::Wait),
+                dep_ignored_typed("foo:build", TaskDependencyType::Wait),
+            ],
+        );
+    }
+
+    #[test]
+    fn errors_for_conflicting_types() {
+        let mut project = create_project();
+
+        let mut task = create_task();
+        task.deps
+            .push(dep_typed("~:build", TaskDependencyType::Required));
+        task.deps
+            .push(dep_typed("~:build", TaskDependencyType::Cleanup));
+
+        let error = build_task_deps_error(&mut project, &mut task, create_project_task_data());
+
+        assert!(
+            error.contains(
+                "Task project:task depends on task project:build with conflicting types, required and cleanup"
+            ),
+            "{error}"
+        );
+    }
+
+    #[test]
+    fn errors_for_conflicting_types_across_scopes() {
+        let mut project = create_project();
+
+        let mut task = create_task();
+        task.deps
+            .push(dep_typed("~:build", TaskDependencyType::Wait));
+        task.deps
+            .push(dep_typed("project:build", TaskDependencyType::Required));
+
+        let error = build_task_deps_error(&mut project, &mut task, create_project_task_data());
+
+        assert!(
+            error.contains(
+                "Task project:task depends on task project:build with conflicting types, wait and required"
+            ),
+            "{error}"
+        );
+    }
+
+    #[test]
+    fn doesnt_error_for_same_type_with_different_args() {
+        let mut project = create_project();
+
+        let mut task = create_task();
+        task.deps.push(TaskDependencyConfig {
+            args: vec!["--one".into()],
+            ..dep_typed("~:build", TaskDependencyType::Cleanup)
+        });
+        task.deps.push(TaskDependencyConfig {
+            args: vec!["--two".into()],
+            ..dep_typed("build", TaskDependencyType::Cleanup)
+        });
+
+        build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
+
+        assert_eq!(
+            task.deps,
+            vec![
+                TaskDependencyConfig {
+                    args: vec!["--one".into()],
+                    ..dep_ignored_typed("project:build", TaskDependencyType::Cleanup)
+                },
+                TaskDependencyConfig {
+                    args: vec!["--two".into()],
+                    ..dep_ignored_typed("project:build", TaskDependencyType::Cleanup)
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn doesnt_error_for_different_cache_strategies() {
+        let mut project = create_project();
+
+        let mut task = create_task();
+        task.deps.push(TaskDependencyConfig {
+            cache_strategy: Some(TaskDependencyCacheStrategy::Hash),
+            ..dep_typed("~:build", TaskDependencyType::Required)
+        });
+        task.deps.push(TaskDependencyConfig {
+            cache_strategy: Some(TaskDependencyCacheStrategy::Ignored),
+            ..dep_typed("build", TaskDependencyType::Required)
+        });
+
+        build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
+
+        assert_eq!(task.deps.len(), 2);
+    }
+
+    #[test]
+    fn doesnt_error_for_internal_optional_type() {
+        let mut project = create_project();
+
+        // Not configurable, but can be created programmatically,
+        // in which case it's treated as required
+        let mut task = create_task();
+        task.deps
+            .push(dep_typed("~:build", TaskDependencyType::Optional));
+        task.deps
+            .push(dep_typed("build", TaskDependencyType::Required));
+
+        build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
+
+        assert_eq!(
+            task.deps,
+            vec![
+                dep_ignored_typed("project:build", TaskDependencyType::Optional),
+                dep_ignored_typed("project:build", TaskDependencyType::Required),
+            ]
+        );
+    }
+}
+
 mod cache_strategy {
     use super::*;
 
@@ -1136,6 +1732,51 @@ mod cache_strategy {
         assert_eq!(
             deps[0].cache_strategy,
             Some(TaskDependencyCacheStrategy::Outputs)
+        );
+    }
+
+    #[test]
+    fn resolves_to_ignored_for_cleanup_dep_with_outputs() {
+        let deps = build_with_dep(
+            TaskDependencyConfig {
+                type_of: TaskDependencyType::Cleanup,
+                ..dep_with_strategy(None)
+            },
+            true,
+        );
+        assert_eq!(
+            deps[0].cache_strategy,
+            Some(TaskDependencyCacheStrategy::Ignored)
+        );
+    }
+
+    #[test]
+    fn resolves_to_ignored_for_wait_dep_with_outputs() {
+        let deps = build_with_dep(
+            TaskDependencyConfig {
+                type_of: TaskDependencyType::Wait,
+                ..dep_with_strategy(None)
+            },
+            true,
+        );
+        assert_eq!(
+            deps[0].cache_strategy,
+            Some(TaskDependencyCacheStrategy::Ignored)
+        );
+    }
+
+    #[test]
+    fn resolves_to_ignored_for_cleanup_dep_without_outputs() {
+        let deps = build_with_dep(
+            TaskDependencyConfig {
+                type_of: TaskDependencyType::Cleanup,
+                ..dep_with_strategy(None)
+            },
+            false,
+        );
+        assert_eq!(
+            deps[0].cache_strategy,
+            Some(TaskDependencyCacheStrategy::Ignored)
         );
     }
 }

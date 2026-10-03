@@ -18,6 +18,7 @@ pub struct CiArgs {
 #[instrument(skip(session))]
 pub async fn ci(session: MoonSession, args: CiArgs) -> SessionResult {
     let mut targets = args.targets.clone();
+    let mut skip_persistent = false;
 
     if targets.is_empty() && args.plan.is_none() {
         let workspace_graph = session.get_workspace_graph().await?;
@@ -25,6 +26,10 @@ pub async fn ci(session: MoonSession, args: CiArgs) -> SessionResult {
         for task in workspace_graph.get_tasks_unexpanded()? {
             targets.push(TargetLocator::Qualified(task.target.clone()));
         }
+
+        // Persistent tasks never complete, so only run them when another
+        // task depends on them, as none of these have been requested
+        skip_persistent = true;
     }
 
     exec(session, {
@@ -35,6 +40,7 @@ pub async fn ci(session: MoonSession, args: CiArgs) -> SessionResult {
         exec.on_failure = OnFailure::Continue;
         exec.ignore_ci_checks = false;
         exec.ci = Some(true);
+        exec.skip_persistent = skip_persistent;
 
         // Show full output in CI
         if exec.summary.is_none() {

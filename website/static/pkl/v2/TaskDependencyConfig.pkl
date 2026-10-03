@@ -4,6 +4,7 @@
 module TaskDependencyConfig
 
 import "TaskDependencyCacheStrategy.pkl"
+import "TaskDependencyType.pkl"
 
 /// Additional arguments to pass to this dependency when it's ran.
 args: (*Listing<String> | List<String> | Set<String>)?
@@ -23,3 +24,12 @@ optional: Boolean?
 
 /// The target of the depended on task.
 target: String?
+
+/// Controls when this dependency is ran in relation to the current task.
+/// When `required`, runs before the task and must complete successfully.
+/// When `cleanup`, runs after the task has ran its command, even when
+/// the task fails (but not when it was skipped, or hydrated from the cache).
+/// When `wait`, runs before the task, but the task only waits for the
+/// dependency to have started running, not to have completed.
+/// @since 2.6.0
+type: TaskDependencyType.TaskDependencyType?

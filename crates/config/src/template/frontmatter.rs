@@ -7,6 +7,7 @@ config_struct!(
     #[derive(Config)]
     pub struct TemplateFrontmatterConfig {
         #[setting(rename = "$schema")]
+        #[serde(rename = "$schema")]
         pub schema: String,
 
         /// Force overwrite a file at the destination if there is a conflict.

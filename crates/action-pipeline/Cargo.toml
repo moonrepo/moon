@@ -21,6 +21,7 @@ moon_notifier = { path = "../notifier" }
 moon_process = { path = "../process" }
 moon_project = { path = "../project" }
 moon_task = { path = "../task" }
+moon_task_runner = { path = "../task-runner" }
 moon_time = { path = "../time" }
 moon_toolchain = { path = "../toolchain" }
 moon_toolchain_plugin = { path = "../toolchain-plugin" }
@@ -37,6 +38,7 @@ tokio-util = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
+moon_affected = { path = "../affected" }
 moon_test_utils = { path = "../test-utils" }
 opentelemetry_sdk = { workspace = true }
 serde_json = { workspace = true }

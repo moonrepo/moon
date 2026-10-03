@@ -1,0 +1,13 @@
+# The same relationships as `one`, but loaded from the other end.
+tasks:
+  a-mid:
+    command: 'mid'
+    deps: ['~:c-parent']
+  b-cleanup:
+    command: 'cleanup'
+    deps: ['~:a-mid']
+  c-parent:
+    command: 'parent'
+    deps:
+      - target: '~:b-cleanup'
+        type: 'cleanup'

@@ -9,9 +9,9 @@ use moon_common::{
 use moon_config::{
     EnvMap, InheritedTasksConfig, Input, MergeStrategy, ProjectConfig, ProjectDependencyConfig,
     ProjectInput, ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
-    TaskDependencyConfig, TaskOptionAffectedFilesEntry, TaskOptionCache, TaskOptionRunInCI,
-    TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskPriority, TaskType, ToolchainsConfig,
-    is_glob_like, merge_index_map, merge_vec,
+    TaskDependencyConfig, TaskDependencyType, TaskOptionAffectedFilesEntry, TaskOptionCache,
+    TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskPriority, TaskType,
+    ToolchainsConfig, is_glob_like, merge_index_map, merge_vec,
 };
 use moon_config_loader::ConfigLoader;
 use moon_env_var::contains_env_var;
@@ -525,6 +525,33 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         if !global_deps.is_empty() {
+            // Implicit dependencies apply to every task, so filter out those that
+            // can't apply to this task (explicitly configured ones error instead):
+            // - Persistent tasks never complete, so they can't be cleaned up after
+            // - A task can't depend on itself, which happens when the dependency
+            //   references the task by name, as it's inherited by that task too
+            let is_persistent = task.options.persistent;
+
+            let global_deps: Vec<_> = global_deps
+                .into_iter()
+                .filter(|dep| {
+                    if is_persistent && matches!(dep.type_of, TaskDependencyType::Cleanup) {
+                        return false;
+                    }
+
+                    let (scope, scope_value) = dep.target.get_project_scope();
+                    let is_own_project = matches!(scope, TargetProjectScope::OwnSelf)
+                        || (matches!(scope, TargetProjectScope::Id)
+                            && scope_value == self.project_id.as_str());
+
+                    !(is_own_project
+                        && dep
+                            .target
+                            .get_task_id()
+                            .is_ok_and(|task_id| task_id == id.as_str()))
+                })
+                .collect();
+
             task.deps = merge_vec(task.deps, global_deps, MergeStrategy::Append, 1000, true);
         }
 
@@ -550,11 +577,13 @@ impl<'proj> TasksBuilder<'proj> {
             };
         }
 
+        // Persistent tasks never complete, so they would keep CI running,
+        // and must be explicitly enabled instead, regardless of their type
         if !state.set_run_in_ci {
-            task.options.run_in_ci = TaskOptionRunInCI::Enabled(matches!(
-                task.type_of,
-                TaskType::Build | TaskType::Test
-            ));
+            task.options.run_in_ci = TaskOptionRunInCI::Enabled(
+                !task.options.persistent
+                    && matches!(task.type_of, TaskType::Build | TaskType::Test),
+            );
         }
 
         if state.shell_disabled {

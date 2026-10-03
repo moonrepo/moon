@@ -21,6 +21,10 @@ by `runInCI`.
 $ moon ci :build :lint
 ```
 
+[Persistent](../config/project#persistent) tasks are the exception, as they never complete, and
+would keep the pipeline running. Even with `runInCI` enabled, they're only ran for the tasks that
+depend on them, or when explicitly passed as a target, and never on their own.
+
 :::info
 
 View the official [continuous integration guide](../guides/ci) for a more in-depth example of how to

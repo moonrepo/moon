@@ -21,3 +21,27 @@ tasks:
     type: 'run'
     options:
       runInCI: always
+
+  persistent-outputs:
+    outputs:
+      - 'out'
+    options:
+      persistent: true
+  persistent-build-type:
+    type: 'build'
+    options:
+      persistent: true
+  persistent-test-type:
+    type: 'test'
+    options:
+      persistent: true
+  persistent-run-type:
+    options:
+      persistent: true
+
+  persistent-custom:
+    outputs:
+      - 'out'
+    options:
+      persistent: true
+      runInCI: true

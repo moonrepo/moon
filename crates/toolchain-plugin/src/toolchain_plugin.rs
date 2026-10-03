@@ -8,6 +8,7 @@ use moon_plugin::{Plugin, PluginContainer, PluginRegistration, PluginType, inher
 use moon_toolchain::{DependenciesWorkspace, DependenciesWorkspaceRole};
 use proto_core::flow::detect::Detector;
 use proto_core::flow::install::InstallOptions;
+use proto_core::flow::link::Linker;
 use proto_core::flow::locate::{Locator, LocatorResponse};
 use proto_core::flow::manage::Manager;
 use proto_core::flow::resolve::Resolver;
@@ -663,6 +664,9 @@ impl ToolchainPlugin {
                     // We must sync the manifest for tool's not managed by
                     // proto, like Rust (via rustup)
                     manager.sync_manifest().await?;
+                } else {
+                    // Ensure bins/shims exist when tool directory was restored from cache (#2735)
+                    Linker::link(&tool, &spec, false).await?;
                 }
 
                 // Track used at so that proto's auto-clean doesn't remove it

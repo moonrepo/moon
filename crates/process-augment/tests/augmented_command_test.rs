@@ -142,6 +142,42 @@ mod augmented_command {
             assert!(command.paths.iter().any(|path| Path::new(path) == bin_dir));
         }
 
+        #[tokio::test(flavor = "multi_thread")]
+        async fn restores_cached_toolchain_links_without_reinstalling() {
+            let (sandbox, mocker) = create_workspace();
+            install_toolchain_tool(&sandbox, true);
+
+            let executable = format!("tc-tool{}", std::env::consts::EXE_SUFFIX);
+            let bin = mocker.proto_env.store.bin_dir.join(&executable);
+            let shim = mocker.proto_env.store.shims_dir.join(&executable);
+            assert!(!bin.exists());
+            assert!(!shim.exists());
+
+            let app_context = mocker.mock_app_context();
+            let registry = &app_context.toolchain_registry;
+            let toolchain = registry.load("tc-tier3-tool").await.unwrap();
+
+            for _ in 0..2 {
+                let output = toolchain
+                    .setup_toolchain(
+                        SetupToolchainInput {
+                            configured_version: UnresolvedVersionSpec::parse("1.2.3").ok(),
+                            context: registry.create_context(),
+                            ..Default::default()
+                        },
+                        None,
+                        || panic!("cached toolchain should not be reinstalled"),
+                    )
+                    .await
+                    .unwrap();
+
+                assert!(!output.installed);
+                assert!(toolchain.is_setup());
+                assert!(bin.exists());
+                assert!(shim.exists());
+            }
+        }
+
         // Guards the tests above: locating this toolchain must actually be
         // capable of failing, otherwise they would pass for the wrong reason
         // if the plugin ever stopped registering a proto tool

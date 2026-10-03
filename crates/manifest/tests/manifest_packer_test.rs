@@ -132,6 +132,92 @@ mod inherit_output {
     }
 
     #[test]
+    fn records_a_nested_symlinked_directory_as_a_symlink() {
+        // A directory output can contain symlinks to directories -- a pnpm
+        // `node_modules` layout (and so a Next.js standalone build) is made of
+        // them. Following one to hash it as a file fails with EISDIR.
+        let sandbox = create_empty_sandbox();
+        sandbox.create_file("out/pkg/index.js", "contents");
+        sandbox.create_file("out/links/keep.txt", "");
+
+        #[cfg(unix)]
+        std::os::unix::fs::symlink("../pkg", sandbox.path().join("out/links/pkg")).unwrap();
+        #[cfg(windows)]
+        std::os::windows::fs::symlink_dir("../pkg", sandbox.path().join("out/links/pkg")).unwrap();
+
+        let mut packer = ManifestPacker::new(sandbox.path().to_path_buf());
+        packer.inherit_output(sandbox.path().join("out")).unwrap();
+
+        let manifest = packer.pack();
+        let mut paths = manifest
+            .files
+            .iter()
+            .map(|file| file.path.to_string())
+            .collect::<Vec<_>>();
+        paths.sort();
+
+        assert_eq!(paths, vec!["out/links/keep.txt", "out/pkg/index.js"]);
+        assert_eq!(manifest.symlinks.len(), 1);
+        assert_eq!(manifest.symlinks[0].path.as_str(), "out/links/pkg");
+        assert_eq!(manifest.symlinks[0].target.as_str(), "out/pkg");
+    }
+
+    #[test]
+    fn records_a_node_modules_tree_inside_a_directory_output() {
+        // starbase's global glob negations (`node_modules/**`, `.git`) exist for
+        // source globbing. An output tree is not source: whatever the task wrote
+        // belongs in the manifest, or a cache hit restores a partial tree.
+        let sandbox = create_empty_sandbox();
+        sandbox.create_file("out/server.js", "server");
+        sandbox.create_file("out/node_modules/dep/index.js", "dep");
+        sandbox.create_file("out/nested/node_modules/dep/index.js", "nested dep");
+
+        let mut packer = ManifestPacker::new(sandbox.path().to_path_buf());
+        packer.inherit_output(sandbox.path().join("out")).unwrap();
+
+        let manifest = packer.pack();
+        let mut paths = manifest
+            .files
+            .iter()
+            .map(|file| file.path.to_string())
+            .collect::<Vec<_>>();
+        paths.sort();
+
+        assert_eq!(
+            paths,
+            vec![
+                "out/nested/node_modules/dep/index.js",
+                "out/node_modules/dep/index.js",
+                "out/server.js",
+            ]
+        );
+    }
+
+    #[test]
+    fn records_a_relative_symlink_target_relative_to_the_link() {
+        // A relative target resolves from the link's own directory, not the
+        // workspace root, so it must be resolved before containment is tested.
+        let sandbox = create_empty_sandbox();
+        sandbox.create_file("out/a.txt", "contents");
+
+        #[cfg(unix)]
+        std::os::unix::fs::symlink("a.txt", sandbox.path().join("out/link.txt")).unwrap();
+        #[cfg(windows)]
+        std::os::windows::fs::symlink_file("a.txt", sandbox.path().join("out/link.txt")).unwrap();
+
+        let mut packer = ManifestPacker::new(sandbox.path().to_path_buf());
+        packer
+            .inherit_output(sandbox.path().join("out/link.txt"))
+            .unwrap();
+
+        let manifest = packer.pack();
+
+        assert_eq!(manifest.symlinks.len(), 1);
+        assert_eq!(manifest.symlinks[0].path.as_str(), "out/link.txt");
+        assert_eq!(manifest.symlinks[0].target.as_str(), "out/a.txt");
+    }
+
+    #[test]
     fn records_a_symlink_rather_than_its_contents() {
         let sandbox = create_empty_sandbox();
         sandbox.create_file("out/a.txt", "contents");

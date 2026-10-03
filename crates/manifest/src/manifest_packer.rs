@@ -3,10 +3,9 @@ use crate::manifest::{Manifest, ManifestFile, ManifestSymlink};
 use crate::manifest_error::ManifestError;
 use moon_action::Operation;
 use moon_blob::Blob;
-use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
+use moon_common::path::{PathExt, WorkspaceRelativePathBuf, clean_components};
 use moon_hash::Digest;
 use starbase_utils::fs::{self, FsError};
-use starbase_utils::glob::{self, GlobWalkOptions};
 use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
@@ -79,10 +78,21 @@ impl ManifestPacker {
     }
 
     fn insert_dir(&mut self, abs_path: PathBuf) -> miette::Result<()> {
-        for abs_file in
-            glob::walk_fast_with_options(abs_path, ["**/*"], GlobWalkOptions::default().files())?
-        {
-            self.insert_file(abs_file)?;
+        // Read the tree rather than glob it: a glob set applies the global
+        // negations (`node_modules/**`, `.git`), which exist for source
+        // globbing and would drop those subtrees from a task's own output.
+        for entry in fs::read_dir_all(abs_path)? {
+            // Entries are typed from the directory read, which doesn't follow
+            // links, so a symlink arrives as a symlink. Hashing one as a file
+            // follows it, which fails outright for a link to a directory.
+            if entry
+                .file_type()
+                .is_ok_and(|file_type| file_type.is_symlink())
+            {
+                self.insert_symlink(entry.path())?;
+            } else {
+                self.insert_file(entry.path())?;
+            }
         }
 
         Ok(())
@@ -110,7 +120,21 @@ impl ManifestPacker {
             error: Box::new(error),
         })?;
 
-        if !link.starts_with(&self.workspace_root) {
+        // A link target is stored verbatim, so a relative one resolves from the
+        // link's own directory, not the workspace root. Resolve before testing
+        // containment, otherwise every relative link looks external.
+        let target = if link.is_absolute() {
+            link.clone()
+        } else {
+            clean_components(
+                abs_path
+                    .parent()
+                    .unwrap_or(self.workspace_root.as_path())
+                    .join(&link),
+            )
+        };
+
+        if !target.starts_with(&self.workspace_root) {
             return Err(ManifestError::OutputSymlinkOutsideOfWorkspace {
                 output: abs_path,
                 target: link,
@@ -123,7 +147,7 @@ impl ManifestPacker {
         self.manifest.symlinks.push(ManifestSymlink {
             modified_at: metadata.modified().ok(),
             path: self.resolve_rel_path(&abs_path)?,
-            target: self.resolve_rel_path(&link)?,
+            target: self.resolve_rel_path(&target)?,
             unix_mode: extract_unix_mode(&metadata),
         });
 

@@ -174,7 +174,8 @@ tasks:
       cache: false
 ```
 
-> The task only waits for the server to _start_, not to complete, and the cleanup stops it.
+> The task only waits for the server to _start_, not to complete, and the cleanup stops it. If the
+> task runs in CI, also enable `runInCI` for `app:serve`, as servers don't run in CI by default.
 
 #### Clean up after a task, even when it fails
 

@@ -194,6 +194,9 @@ tasks:
         type: 'cleanup'
 ```
 
+> Servers (persistent tasks) don't run in CI by default, and a task that runs in CI can't wait on
+> one that doesn't, so also enable [`runInCI`](./config/project#runinci) for `web:serve`.
+
 ## Using file groups
 
 Once you're familiar with configuring tasks, you may notice certain inputs being repeated

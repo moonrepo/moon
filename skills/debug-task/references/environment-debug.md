@@ -21,14 +21,14 @@ for deep debugging of moon tasks.
 moon provides several environment variables that reveal internal state during task execution. Set
 them before running `moon run`:
 
-| Variable                   | What it reveals                                                                                                                    |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `MOON_DEBUG_DAEMON`        | Debug output from the daemon server.                                                                                               |
-| `MOON_DEBUG_MCP`           | Debug output from MCP server interactions.                                                                                         |
-| `MOON_DEBUG_PROCESS_ENV`   | All environment variables passed to the child process (by default only `MOON_*` keys are logged). Requires `--log debug` or lower. |
-| `MOON_DEBUG_PROCESS_INPUT` | Full stdin passed to the child process. By default moon truncates this.                                                            |
-| `MOON_DEBUG_REMOTE`        | Debug output from remote caching — connection errors, sync status.                                                                 |
-| `MOON_DEBUG_WASM`          | Debug output from WASM plugins — loading, execution, memory profiles.                                                              |
+| Variable                   | What it reveals                                                                                                                                                                                                                                                                                                                                                   |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MOON_DEBUG_DAEMON`        | Adds gRPC transport (`tonic`) logs for daemon RPCs to the main process's log. The daemon server's own logs always go to `.moon/cache/daemon/server.log` (`moon daemon logs`).                                                                                                                                                                                     |
+| `MOON_DEBUG_MCP`           | Debug output from MCP server interactions.                                                                                                                                                                                                                                                                                                                        |
+| `MOON_DEBUG_PROCESS_ENV`   | Logs **every** variable moon explicitly sets on the command (task `env`, plugin-injected and activated variables, `MOON_*`) — by default only `MOON_*`/`PROTO_*` keys are logged. Variables inherited from the shell and `PATH` additions are never shown, and a task `env` value is shown even when a shell value overrides it. Requires `--log debug` or lower. |
+| `MOON_DEBUG_PROCESS_INPUT` | Logs the full stdin in the "Running command" debug line, which otherwise truncates input over 200 bytes. The input itself is never truncated. Requires `--log debug` or lower.                                                                                                                                                                                    |
+| `MOON_DEBUG_REMOTE`        | Debug output from remote caching — connection errors, sync status.                                                                                                                                                                                                                                                                                                |
+| `MOON_DEBUG_WASM`          | Debug output from WASM plugins — loading, execution, memory profiles.                                                                                                                                                                                                                                                                                             |
 
 ### Usage
 
@@ -70,7 +70,7 @@ env | grep '^MOON_'
 
 ### Environment variables in task config
 
-Tasks can declare env vars that affect both execution and hashing:
+Tasks can declare env vars that are passed to the process and included in the hash:
 
 ```yaml
 tasks:
@@ -80,12 +80,14 @@ tasks:
       NODE_ENV: 'production'
 ```
 
-Env vars declared in `env` are included in the hash. If you change `NODE_ENV` from `production` to
-`development`, the hash changes and the cache misses.
+The **configured** values in `env` are included in the hash. If you change `NODE_ENV` from
+`production` to `development` in the config, the hash changes and the cache misses.
 
-Env vars **not** declared in `env` (but present in the shell) are still passed to the process, but
-they don't affect the hash. This means a different `NODE_ENV` in your shell won't trigger a cache
-miss unless it's in the config.
+But a task's `env` value is only applied when the variable **isn't already set** in the shell — an
+exported shell value wins at runtime, while the hash still uses the configured value. And env vars
+**not** declared in `env` (but present in the shell) are passed to the process without affecting the
+hash. So neither way makes a different shell `NODE_ENV` cause a cache miss. To hash the **actual**
+value from the environment, add it to `inputs` with the `$` prefix (`inputs: ['$NODE_ENV']`).
 
 <sup>v2.5+</sup> A task's resolved `env` can also include variables inherited from a
 **workspace-level `env`** in `.moon/tasks/**/*` files, merged beneath the project's own `env`
@@ -101,12 +103,15 @@ variable can appear in the process without being configured anywhere:
 - Only toolchains with a configured `version` that have been setup are activated.
 - Variables already configured for the command (task `env`, or those injected by toolchain plugins)
   are never overridden. When a task has multiple toolchains, the **first** one wins.
+- Activated variables **do** override the same variable exported in the shell (like a `JAVA_HOME`
+  set by CI), and they take precedence over `options.envFile` values for the same key (env files are
+  loaded afterwards, and only fill missing keys).
 - `MOON_TOOLCHAIN_FORCE_GLOBALS` disables activation (along with toolchain paths).
-- `moon toolchain info <id>` lists `activate_environment` under the tier 3 APIs when a toolchain
-  supports it.
+- `moon toolchain info <id>` lists `activate_environment` under the tier 3 APIs, marked 🟢 when the
+  toolchain implements it (⚫️ otherwise).
 
 ```bash
-# See the final environment (including activated variables) passed to the process
+# See the variables moon sets on the command (including activated ones)
 MOON_DEBUG_PROCESS_ENV=true moon run <project>:<task> --log debug --force
 ```
 
@@ -119,15 +124,15 @@ Activated variables are not part of the task's hash, like other variables that a
 
 Control verbosity with the `--log` global option or `MOON_LOG` environment variable.
 
-| Level     | What you see                                                                 |
-| --------- | ---------------------------------------------------------------------------- |
-| `off`     | Nothing                                                                      |
-| `error`   | Only errors                                                                  |
-| `warn`    | Warnings and above                                                           |
-| `info`    | (default) Status messages, task output                                       |
-| `debug`   | Internal decisions — hash generation, cache checks, toolchain resolution     |
-| `trace`   | Everything — network requests, child process details, file system operations |
-| `verbose` | Like `trace` plus span information (timing, nesting)                         |
+| Level     | What you see                                                                                                                          |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `off`     | Nothing                                                                                                                               |
+| `error`   | Only errors                                                                                                                           |
+| `warn`    | Warnings and above                                                                                                                    |
+| `info`    | (default) Status messages, task output                                                                                                |
+| `debug`   | Internal decisions — hash generation, cache checks, toolchain resolution                                                              |
+| `trace`   | Everything from moon's own crates (moon, proto, starbase, warpgate) — network requests, child process details, file system operations |
+| `verbose` | `trace` for **all** crates (including third-party dependencies), with span-name prefixes showing nesting                              |
 
 ### Recommendations
 
@@ -137,8 +142,8 @@ Control verbosity with the `--log` global option or `MOON_LOG` environment varia
 - **Escalate to `trace`** only if `debug` doesn't reveal the problem. <sup>v2.4+</sup> `trace` was
   made _significantly_ more verbose and is now primarily intended for agents and deep diagnostics —
   it may be too spammy for normal debugging, so pipe it to a file.
-- **Use `verbose`** for performance profiling. The span information shows exactly how long each
-  operation took.
+- **Use `verbose`** when you need logs from third-party crates, or to see which span a log line is
+  nested in. It doesn't show timing — for performance, use `--dump` (trace profile) or `--otel`.
 
 ```bash
 # Debug level (recommended starting point)
@@ -208,22 +213,24 @@ lower-level action graph below.
 ### `moon action-graph` — visualize the dependency graph
 
 ```bash
-# Open interactive visualization in browser
-moon action-graph <project>:<task>
+# Print the graph (use these as an agent)
+moon action-graph <project>:<task> --dot
+moon action-graph <project>:<task> --json
 
 # Focus on a specific target and include its dependents
-moon action-graph <project>:<task> --dependents
+moon action-graph <project>:<task> --dependents --dot
 
-# Export for external tools
-moon action-graph <project>:<task> --dot > graph.dot
-moon action-graph <project>:<task> --json > graph.json
+# Open an interactive visualization in the browser (humans only — starts a local web server and
+# blocks until interrupted)
+moon action-graph <project>:<task>
 ```
 
 The action graph shows every action moon will take to run a target: toolchain setup, dependency
 installation, project sync, and task execution. It's the best tool for diagnosing:
 
 - Why a task depends on something unexpected
-- Why a task is blocked (look for persistent nodes, or <sup>v2.6+</sup> `wait` deps that never exit)
+- Why a pipeline never finishes (a requested persistent task runs until interrupted, by design; or
+  <sup>v2.6+</sup> a `wait` dep that is never stopped)
 - <sup>v2.6+</sup> Where cleanups run — a `cleanup` dep is linked as a _dependent_ of the task it
   cleans up after (the edge is reversed)
 - Whether tasks are running in parallel or serial
@@ -243,9 +250,11 @@ moon hash <hash> --json
 
 <sup>v2.6+</sup> Hash manifests are stored as blobs in the local content-addressable cache
 (`.moon/cache/blobs/`) instead of `.moon/cache/hashes/<hash>.json`, so `moon hash` is the way to
-read them. "Unable to find a hash manifest" means it was never stored, or was garbage collected
-along with other unreferenced blobs (`moon clean`, or after a pipeline when the daemon is connected)
-— re-run the task with `--force` to regenerate it.
+read them. "Unable to find a hash manifest" means it was never stored, or was garbage collected: no
+task manifest references a hash manifest, so any garbage collection deletes hash manifests older
+than an hour (regardless of `--lifetime`). GC runs on `moon clean`, and after a successful pipeline
+when the daemon is connected and `pipeline.autoCleanCache` is enabled (the default). Re-running the
+task regenerates the manifest.
 
 > For interpreting hash diffs in cache investigations, see `cache-issues.md`.
 
@@ -264,19 +273,23 @@ moon query tasks --project <project>
 moon query tasks --tags quality
 ```
 
+The MQL query is a **positional** argument — `moon query` has no `--query` flag (only `moon run` and
+`moon exec` do).
+
 **MQL `tag` vs `taskTag`** (v2.3+): MQL's `tag` field is a legacy alias for `projectTag` (project
-tags), while `taskTag` matches task tags. On task queries, `taskTag` matches the task's own tags,
-and `projectTag`/`tag` match the task's parent project's tags.
+tags), while `taskTag` matches task tags. On task queries, only `taskTag` works — `projectTag`/`tag`
+(like other project fields, except `project`) silently match **nothing**. To filter by project tags,
+query projects instead, or use `--project <regex>` on task queries.
 
 ```bash
-moon query tasks --tags quality                    # by task tag (regex flag)
-moon query tasks --query "taskTag=quality"         # by task tag (MQL)
-moon query tasks --query "tag=quality"             # by parent project tag (alias of projectTag)
-moon query projects --query "taskTag=quality"      # projects containing a task tagged quality
+moon query tasks --tags quality              # by task tag (regex flag)
+moon query tasks "taskTag=quality"           # by task tag (MQL)
+moon query projects "projectTag=frontend"    # by project tag
+moon query projects "taskTag=quality"        # projects containing a task tagged quality
 ```
 
-> In v2.3–v2.4, no tag field worked on task queries — they silently matched nothing. Fixed in v2.5;
-> use the `--tags` flag on older versions.
+> In v2.3–v2.4, no tag field worked on task queries — they silently matched nothing. v2.5 fixed
+> `taskTag` only; use the `--tags` flag on older versions.
 
 ---
 
@@ -343,7 +356,8 @@ Quick reference for where moon stores internal state:
 
 ```
 .moon/cache/
-  blobs/<prefix>/<hash>           # Hash manifests (v2.6+), and CAS outputs (when enabled)
+  blobs/<ab>/<cdef…>              # First 2 hash chars / rest of the hash; hash manifests (v2.6+)
+                                  # and CAS outputs (when enabled)
   daemon/                         # Daemon server state and logs
   hashes/<hash>.json              # Hash manifest — before v2.6 only (now in blobs/)
   outputs/<hash>.tar.gz           # Archived task outputs (legacy / default)
@@ -363,12 +377,14 @@ All paths are relative to the workspace root. The `.moon/cache/` directory shoul
 > `outputs/`. See `cache-issues.md` § Experimental caching layers. <sup>v2.6+</sup> The local CAS is
 > always enabled, as it stores hash manifests, so `blobs/` exists even with the experiment off.
 
-> <sup>v2.5+</sup> Two additions change where to look. With `cache.unstable_sharedWorktreeCache`
-> enabled, `blobs/` and `manifests/` move to the **base checkout's** `.moon/cache` (or
-> `~/.moon/cache/shared` for bare clones) — the worktree's own copies may be empty. In v2.6+, this
-> includes hash manifests, since they're blobs. And with the daemon enabled, archive/hydrate errors
-> are recorded only in `.moon/cache/daemon/server.log` (`moon daemon logs`), not in the main process
-> output — a failed hydrate surfaces as a plain cache miss (the task re-runs).
+> <sup>v2.5+</sup> Two additions change where to look. With `cache.sharedWorktreeCache` (alias
+> `unstable_sharedWorktreeCache`) enabled, and moon running inside a git worktree, `blobs/` and
+> `manifests/` move to the **base checkout's** `.moon/cache` (or `~/.moon/cache/shared` when the
+> repository root has no moon config) — the worktree's own copies may be empty. In v2.6+, this
+> includes hash manifests, since they're blobs. And with the daemon enabled (and outputs going to
+> the local CAS or a remote cache), archive/hydrate storage errors are recorded only in
+> `.moon/cache/daemon/server.log` (`moon daemon logs`), not in the main process output — a failed
+> hydrate surfaces as a plain cache miss (the task re-runs).
 
 ---
 
@@ -440,15 +456,17 @@ moon hash <hash1> <hash2>
 ### "My pipeline hangs"
 
 ```bash
-# 1. Visualize the graph
-moon action-graph <project>:<task>
+# 1. Visualize the graph (always pass --dot or --json as an agent; without them the
+#    command starts a web server and blocks)
+moon action-graph <project>:<task> --dot
 
-# 2. Look for persistent task nodes with dependents
+# 2. Is a persistent task part of the run? It runs until interrupted, by design.
+#    (A non-persistent task with a required dep on one is a build error, not a hang.)
 # 3. v2.6+: look for `wait` deps without a `cleanup` dep that stops them
 moon task <project>:<task>   # deps labeled "(wait)" / "(cleanup)"
 
-# 4. Restructure deps so persistent tasks are leaf nodes, or (v2.6+) wait on
-#    them and stop them with a cleanup dep
+# 4. Look for long-running commands that aren't marked `persistent`, and for a
+#    persistent/wait task holding a `mutex` that another task needs
 ```
 
 ### "My cleanup dependency didn't run" <sup>v2.6+</sup>

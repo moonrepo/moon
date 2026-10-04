@@ -870,6 +870,20 @@ tasks:
         type: 'cleanup'
 ```
 
+Since `e2e` runs in CI (it's a `test` task), it can only wait on a dependency that also runs in CI.
+Tasks named `serve` (as well as `dev` and `start`) are given the [`server`](#preset) preset, which
+makes them persistent and disables [`runInCI`](#runinci), so enable it for the server explicitly.
+It's then only ran in CI for the tasks that wait on it.
+
+```yaml title="web/moon.yml" {6}
+tasks:
+  serve:
+    command: 'vite preview'
+    options:
+      # Required for `e2e` to wait on it in CI
+      runInCI: true
+```
+
 Cleanup dependencies:
 
 - Run once this task has ran its command, whether it passed or failed. A task with a `noop` command,

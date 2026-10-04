@@ -36,28 +36,36 @@ moon project <project> --json
 ```
 
 Compare the project against the `inheritedBy` conditions in the global task file. In the JSON,
-project tags live under `.config.tags`, not at the top level.
+project tags live under `.config.tags`, not at the top level. For languages, compare
+`.config.language` — inheritance matches the **configured** language, so a language moon only
+_detected_ (the top-level `.language`) doesn't satisfy `inheritedBy.languages`; set `language`
+explicitly. Toolchains, on the other hand, match configured, inferred, and detected toolchains, so
+they don't need to be declared.
 
 Common inheritance failures:
 
-- Project doesn't have the right `toolchains` set (e.g., global task requires `toolchain: 'node'`
-  but project doesn't declare it)
+- Project doesn't use the right toolchain (e.g., global task requires `toolchain: 'node'`, but the
+  project neither configures nor is detected as using it)
 - Multiple `inheritedBy` fields are defined and the project doesn't satisfy them all — every defined
   field must match (an implicit AND across fields). Explicit `and`/`or`/`not` clauses only exist for
-  `tags` and `toolchains`; `languages`/`layers`/`stacks` are plain OR-lists. There are also `files`
-  and `order` conditions.
+  `tags` and `toolchains`; `languages`/`layers`/`stacks` are plain OR-lists. There's also a `files`
+  condition (at least one of the listed project-relative files must exist). `order` isn't a
+  condition — it only controls the order configs are inherited in.
 - Project explicitly excludes the task via `workspace.inheritedTasks.exclude`
 - Project renames the task via `workspace.inheritedTasks.rename`
-- Project doesn't `include` the global task file (check for `include` directives)
+- Project restricts inheritance with `workspace.inheritedTasks.include` — an allowlist of task IDs
+  (when set, only those are inherited; `[]` inherits none)
 - <sup>v2.3+</sup> The user expected `:#tag` to match the task, but the task's own `tags` field is
   missing the tag — or `options.mergeTags: 'replace'` dropped inherited tags. See
   `config-mistakes.md` § Task tags and `#tag` targets.
 
 **Check 3: Is the task ID spelled correctly?**
 
-Task IDs support unicode alphanumeric characters plus `/`, `.`, `_`, and `-`, with an optional
-leading `@` (see `ID_PATTERN` in the `starbase_id` crate for the full regex). Check for typos,
-especially with similar names (e.g., `build` vs `buildApp`).
+Task IDs support unicode alphanumeric characters plus `/`, `.`, `_`, and `-` (see `ID_PATTERN` in
+the `starbase_id` crate for the full regex). A leading `@` is accepted by the ID pattern, but only
+works for **project** IDs in targets — a task ID starting with `@` can be configured, but can't be
+targeted (`moon run proj:@x` fails with an invalid target format error). Check for typos, especially
+with similar names (e.g., `build` vs `buildApp`).
 
 **Fix:** Add the task to the project config, fix the `inheritedBy` conditions, or correct the task
 ID.
@@ -74,19 +82,28 @@ moon run <project>:<task> --log debug --force
 
 **Check 1: Was `--affected` used?**
 
-`--affected` restricts execution to tasks whose inputs changed since the base branch. If no inputs
-changed, the task is skipped entirely.
+`--affected` restricts execution to tasks whose inputs changed. In CI (or with an explicit
+`--base`/`MOON_BASE`), that's compared against the base branch; **locally**, with no base or head,
+only uncommitted working-tree changes count. If no inputs changed, the task is skipped entirely.
 
 ```bash
-# Run without --affected to confirm
+# Run without --affected to confirm (--force also skips affected checks)
 moon run <project>:<task> --force
 ```
 
-<sup>v2.4+</sup> If `--affected` runs _nothing_ (or the wrong set) in CI, suspect a **shallow git
-clone**. moon reworked merge-base resolution in v2.4 and now needs full history to diff revisions
-accurately — with a depth-1 clone it can't resolve the merge base, and logs a warning when it fails.
-Use a full clone, or a blobless partial clone (`git clone --filter=blob:none`, or
-`filter: 'blob:none'` with `actions/checkout`) which keeps history while deferring file downloads.
+If `--affected` behaves oddly in CI, suspect a **shallow git clone**. There are two cases:
+
+- **No explicit base** — moon detects the shallow checkout up front, warns "Detected a shallow
+  checkout, unable to run Git commands to determine changed files", and **disables** affected
+  filtering for `moon run`/`ci`/`exec` (so everything runs; `moon query … --affected` gets an empty
+  list instead).
+- **Explicit base** (`--base`, `MOON_BASE`, or a detected PR base) — moon warns that "changed files
+  may be inaccurate" and diffs anyway. <sup>v2.4+</sup> If the merge base can't be resolved (it was
+  reworked in v2.4), moon warns and diffs directly against the base — the wrong set.
+
+Use a full clone (`fetch-depth: 0` with `actions/checkout`), or a blobless partial clone that keeps
+history (`git clone --filter=blob:none`; with `actions/checkout`, `filter: 'blob:none'` together
+with `fetch-depth: 0`).
 
 <sup>v2.5+</sup> Affected tracking now runs on an **async implementation by default**
 (`experiments.asyncAffectedTracking`). If the affected set changed after upgrading and the clone
@@ -105,11 +122,11 @@ moon task <project>:<task> --json
 # Check options.runInCI and state.setRunInCi
 ```
 
-If `state.setRunInCi` is `true`, `runInCI` was set explicitly in config or applied by a preset. If
-the key is **absent** (it's omitted from the JSON when false), the value defaulted from the task
-type (build/test tasks run in CI, others don't) — and <sup>v2.6+</sup> persistent tasks default to
-off regardless of their type. See `config-mistakes.md` § `runInCI` variants for the full table of
-values and their local/CI behavior.
+If `state.setRunInCi` is `true`, `runInCI` was set explicitly in config, applied by a preset, or
+forced off by `interactive: true`. If the key is **absent** (it's omitted from the JSON when false),
+the value defaulted from the task type (build/test tasks run in CI, others don't) — and
+<sup>v2.6+</sup> persistent tasks default to off regardless of their type. See `config-mistakes.md`
+§ `runInCI` variants for the full table of values and their local/CI behavior.
 
 **Check 3: Is the `os` option filtering this platform out?**
 
@@ -169,8 +186,8 @@ moon task <project>:<task> --json
 
 A `cleanup` dep is skipped when there's nothing to clean up (the task it cleans up after was
 skipped, or hydrated from the cache), and never runs when the pipeline is interrupted by a signal. A
-task with a `wait` dep is skipped when that dep already failed, or was skipped, before the task
-started.
+task with a `wait` dep is skipped when that dep already failed, or was skipped (other than by its
+own `condition` checks, which count as complete), before the task started.
 
 ```bash
 moon run <project>:<task> --log debug 2>&1 | grep -i "clean"
@@ -214,27 +231,32 @@ moon run <project>:<task> --log debug --force 2>&1 | grep -i "toolchain\|version
 
 **Check 5: Are environment variables correct?**
 
-Use `MOON_DEBUG_PROCESS_ENV=true` to reveal all env vars passed to the process. See
-`environment-debug.md` for all debug env vars and log levels.
+Use `MOON_DEBUG_PROCESS_ENV=true` with `--log debug` to log every variable moon sets on the command
+(task `env`, plugin-injected and activated variables). Variables inherited from the shell aren't
+shown — and a task's `env` value only applies when the shell doesn't already export that variable.
+See `environment-debug.md` for all debug env vars and log levels.
 
 <sup>v2.6+</sup> Toolchains that have been setup also **activate their environment** when the
 command is built, which can set variables (like `JAVA_HOME`) and prepend paths to `PATH`. They never
-override variables the task already configures, and when a task has multiple toolchains, the
+override variables the task already configures (but **do** override the same variables exported in
+the shell, and beat `options.envFile` values), and when a task has multiple toolchains, the
 **first** one wins. If the wrong tool or variable wins, check the order of the task's `toolchains`.
 
 **Check 6: Is `timeout` or `allowFailure` involved?**
 
 Check `options.timeout` and `options.allowFailure` in the JSON output. If `allowFailure: true`, the
-task reports success even on failure — check stderr at
-`.moon/cache/states/<project>/<task>/stderr.log`. See `config-mistakes.md` for details on both
-options.
+task is still marked as failed, but the pipeline continues and moon's exit code ignores it (a "Task
+… has failed, but is marked to allow failures, continuing pipeline" warning is logged) — check
+stderr at `.moon/cache/states/<project>/<task>/stderr.log`. See `config-mistakes.md` for details on
+both options.
 
 **Check 7: Did a `requirement` or `fingerprint` check fail?** <sup>v2.4+</sup>
 
 `checks` run **before** the task. A `requirement` check that exits non-zero raises
 `RequirementCheckFailed` ("Task X is unable to run as the requirement check `<script>` failed"), and
-a `fingerprint` script that crashes raises `FingerprintCheckFailed` — in both cases the task never
-executes.
+a `fingerprint` script that exits non-zero raises `FingerprintCheckFailed` ("Task X failed to run
+fingerprint check `<script>`") during hashing — in both cases the task never executes. A check
+script that fails to spawn at all is fatal for every check type, with the raw process error.
 
 ```bash
 moon task <project>:<task> --json          # inspect the `checks` array
@@ -266,8 +288,10 @@ one edge to a different scope so the cycle crosses the partition boundary, are t
 
 Invalid `cleanup`/`wait` relationships are rejected before anything runs: a persistent task as (or
 with) a `cleanup` dep, a `wait` dep on an interactive task, a task depending on itself, or the same
-dep with two different types. A `required` dep on a persistent task errors too, and suggests
-`type: 'wait'` instead. See `config-mistakes.md` § Task builder validation errors.
+dep with two different types. A **non-persistent** task with a `required` dep on a persistent task
+errors too (`PersistentDepRequirement`, which suggests `type: 'wait'`) — though in CI-enabled tasks
+the `runInCI` mismatch error usually fires first. See `config-mistakes.md` § Task builder validation
+errors.
 
 **Fix:** Switch `command` to `script` for shell syntax. Fix the binary path or toolchain. Correct
 the working directory. If a check is failing, fix (or remove) the offending check script. See
@@ -326,8 +350,9 @@ cat .moon/cache/states/<project>/snapshot.json
 ```
 
 The snapshot's `inherited.layers` field shows which global config files were merged for each task.
-Check merge strategies (`mergeArgs`, `mergeDeps`, `mergeEnv`, `mergeInputs`, `mergeOutputs`,
-`mergeTags` <sup>v2.3+</sup>, `mergeToolchains`) — the default for args is `append`.
+Check merge strategies (`mergeArgs`, `mergeChecks` <sup>v2.4+</sup>, `mergeDeps`, `mergeEnv`,
+`mergeInputs`, `mergeOutputs`, `mergeTags` <sup>v2.3+</sup>, `mergeToolchains`, and the umbrella
+`merge` that sets them all) — every one defaults to `append`.
 
 > See `config-mistakes.md` for common inheritance bugs.
 
@@ -348,9 +373,13 @@ a persistent one until moon is exited.
 moon task <project>:<task>   # deps labeled "(wait)" and "(cleanup)"
 ```
 
+**Check 3: Is a long-running task holding a `mutex`?** A persistent or `wait` task holds its `mutex`
+for as long as it runs, so another task with the same mutex waits forever.
+
 **Fix:** Add a `cleanup` dep that stops the waited-on task, and make sure the stopped process exits
-successfully (handle `SIGTERM`) — otherwise it counts as a failure and fails the pipeline. See
-`config-mistakes.md` § Task dep `type`.
+successfully (handle `SIGTERM`) — otherwise it counts as a failure and fails the pipeline. Remove
+the shared `mutex` from long-running tasks. See `config-mistakes.md` § Task dep `type` and § `mutex`
+contention.
 
 ---
 
@@ -359,17 +388,17 @@ successfully (handle `SIGTERM`) — otherwise it counts as a failure and fails t
 ### Check 1: Dependency chain bottleneck
 
 ```bash
-moon action-graph <project>:<task>
+moon action-graph <project>:<task> --dot
 ```
 
 Visualize the graph and look for:
 
 - Long serial chains where tasks could run in parallel.
 - Tasks that don't need to depend on each other but do.
-- A persistent task in the dependency chain (it never "finishes," blocking everything downstream).
-  Before v2.6, persistent tasks also ran **last**, after every other action in the pipeline, so a
-  dev server could sit waiting on unrelated tasks; in v2.6+ they start as soon as their own deps
-  complete.
+- Before v2.6, persistent tasks ran **last**, after every other action in the pipeline, so a dev
+  server could sit waiting on unrelated tasks; in v2.6+ they start as soon as their own deps
+  complete. (A non-persistent task can't have a `required` dep on a persistent one — that's a build
+  error, not a slowdown.)
 
 ### Check 2: Cache, inputs, mutex, or retries
 

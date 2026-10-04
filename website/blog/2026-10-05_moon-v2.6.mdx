@@ -80,6 +80,10 @@ A few things worth knowing about how these behave:
   that stops them, as seen above.
 - Wait dependencies can be [persistent](/docs/config/project#persistent), and they don't count
   towards the pipeline's concurrency limit, so they never block the tasks waiting on them.
+- Wait dependencies are still subject to [`runInCI`](/docs/config/project#runinci): a task that
+  runs in CI can't wait on one that doesn't. Since servers don't run in CI by default (tasks named
+  `serve` are persistent automatically), enable `runInCI` for `web:serve` in the example above. See
+  [persistent tasks in CI](#persistent-tasks-in-ci) below.
 - Since neither type completes before the task runs, they don't contribute to the task's
   [hash](/docs/concepts/cache#hashing), and they always run their command instead of being hydrated
   from the cache.
@@ -296,11 +300,11 @@ experiments:
 A few changes in this release may be noticeable when upgrading, so we want to call them out
 directly.
 
-- **Caches will be invalidated once.** A task's resolved `toolchains` list was previously ordered by
-  an internal hash set, instead of by what was configured. It's now deterministic (configured
-  toolchains first, followed by the toolchains they require), which also fixes the
-  `$taskToolchain` token. Since this list is part of a task's hash, every task will miss the cache
-  on its first run after upgrading.
+- **Some caches will be invalidated once.** A task's resolved `toolchains` list was previously
+  ordered by an internal hash set, instead of by what was configured. It's now deterministic
+  (configured toolchains first, followed by the toolchains they require), which also fixes the
+  `$taskToolchain` token. Since this list is part of a task's hash, tasks that run against multiple
+  toolchains (like `node` and `npm`) will miss the cache on their first run after upgrading.
 - **Persistent tasks no longer run in CI by default**, even when they define `outputs` or a `type`
   of `build` or `test`. See [persistent tasks in CI](#persistent-tasks-in-ci) above.
 - **`moon check` exits with a non-zero code when there's nothing to check**, instead of prompting

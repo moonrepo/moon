@@ -6,9 +6,7 @@ use crate::git::common::create_command;
 use crate::vcs::{Vcs, VcsHookEnvironment};
 use async_trait::async_trait;
 use git_url_parse::types::provider::GenericProvider;
-use gix::{
-    discover::Error as RepoError, discover::upwards::Error as UpwardsError, repository::Kind,
-};
+use gix::repository::Kind;
 use miette::IntoDiagnostic;
 use moon_common::path::{
     PathExt, RelativePathBuf, WorkspaceRelativePath, WorkspaceRelativePathBuf, clean_components,
@@ -182,14 +180,10 @@ impl Git {
                 }
             }
             Err(error) => {
-                if let RepoError::Discover(inner) = &error
-                    && matches!(
-                        inner,
-                        UpwardsError::NoGitRepository { .. }
-                            | UpwardsError::NoGitRepositoryWithinCeiling { .. }
-                            | UpwardsError::NoGitRepositoryWithinFs { .. }
-                    )
-                {
+                // gix errors are untyped, and opening a found repository can
+                // also fail with a "not found" classification, so re-run only
+                // the upwards search to determine that no repository exists
+                if gix::discover::upwards(workspace_root).is_err_and(|error| error.is_not_found()) {
                     debug!("Unable to find .git, falling back to workspace root");
 
                     worktree.git_dir = workspace_root.join(".git");

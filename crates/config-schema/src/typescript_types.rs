@@ -65,6 +65,7 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
                 "TaskOptionAffectedFilesConfig".into(),
                 "TaskOptionAffectedFilesEntry".into(),
                 "TaskOptionEnvFile".into(),
+                "TaskOptionEnvOverride".into(),
                 "TaskOptionsConfig".into(),
                 "TaskOutputStyle".into(),
                 "TaskPreset".into(),

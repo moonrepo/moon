@@ -5,6 +5,31 @@ use schematic::schema::{StringType, UnionType};
 use schematic::{Config, ConfigEnum, Schema, SchemaBuilder, Schematic, ValidateError};
 use std::env::consts;
 
+fn validate_env_override<C>(
+    value: &TaskOptionEnvOverride,
+    _options: &PartialTaskOptionsConfig,
+    _ctx: &C,
+    _finalize: bool,
+) -> Result<(), ValidateError> {
+    if let TaskOptionEnvOverride::Keys(keys) = value {
+        for key in keys {
+            if key.is_empty() {
+                return Err(ValidateError::new(
+                    "an empty variable name is not supported",
+                ));
+            }
+
+            if key.eq_ignore_ascii_case("PATH") {
+                return Err(ValidateError::new(
+                    "PATH cannot be overridden, as it would remove toolchain paths",
+                ));
+            }
+        }
+    }
+
+    Ok(())
+}
+
 fn validate_interactive<C>(
     enabled: &bool,
     options: &PartialTaskOptionsConfig,
@@ -130,6 +155,50 @@ impl Schematic for TaskOptionEnvFile {
         schema.union(UnionType::new_any([
             schema.infer::<bool>(),
             schema.infer::<String>(),
+            schema.infer::<Vec<String>>(),
+        ]))
+    }
+}
+
+config_untagged_enum!(
+    /// Which task environment variables override system environment variables.
+    pub enum TaskOptionEnvOverride {
+        /// All variables, or none.
+        Enabled(bool),
+        /// Only the listed variables.
+        Keys(Vec<String>),
+    }
+);
+
+impl Default for TaskOptionEnvOverride {
+    fn default() -> Self {
+        Self::Enabled(false)
+    }
+}
+
+impl TaskOptionEnvOverride {
+    /// Whether the task's value for the variable should override the system's.
+    /// `PATH` is never overridden, as it would remove toolchain paths.
+    pub fn should_override(&self, key: &str) -> bool {
+        if key.eq_ignore_ascii_case("PATH") {
+            return false;
+        }
+
+        match self {
+            Self::Enabled(enabled) => *enabled,
+            Self::Keys(keys) => keys.iter().any(|k| k == key),
+        }
+    }
+}
+
+impl Schematic for TaskOptionEnvOverride {
+    fn schema_name() -> Option<String> {
+        Some("TaskOptionEnvOverride".into())
+    }
+
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.union(UnionType::new_any([
+            schema.infer::<bool>(),
             schema.infer::<Vec<String>>(),
         ]))
     }
@@ -283,6 +352,14 @@ config_struct!(
         /// running the task.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub env_file: Option<TaskOptionEnvFile>,
+
+        /// Override system environment variables with the task's `env`, instead
+        /// of only setting them when missing. When a list of variable names,
+        /// only those variables will be overridden.
+        /// @since 2.6.0
+        #[setting(validate = validate_env_override)]
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub env_override: Option<TaskOptionEnvOverride>,
 
         /// Expect the task to fail, and fail the entire action pipeline if it
         /// passes. Useful for checks that are known to be broken, which should

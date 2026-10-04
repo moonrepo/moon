@@ -343,6 +343,38 @@ mod exec {
         }
 
         #[test]
+        fn system_env_vars_take_precedence() {
+            let sandbox = create_pipeline_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg(target("envNoOverride"))
+                    .env("TEST_FOO", "system");
+            });
+
+            assert
+                .success()
+                .stdout(predicate::str::contains("foo=system"));
+        }
+
+        #[test]
+        fn task_env_vars_can_override_system() {
+            let sandbox = create_pipeline_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg(target("envOverride"))
+                    .env("TEST_FOO", "system")
+                    .env("TEST_BAR", "system");
+            });
+
+            // Only the listed variable is overridden
+            assert
+                .success()
+                .stdout(predicate::str::contains("foo=task bar=system"));
+        }
+
+        #[test]
         fn inherits_moon_env_vars() {
             let sandbox = create_pipeline_sandbox();
             let id = target("envVarsMoon");

@@ -76,7 +76,7 @@ moon task <project>:<task> --json
   _after_ the task, even when it fails), or `wait` (the task only waits for it to _start_). The
   human-readable `moon task` output labels the non-required ones, like `db:stop (cleanup)`.
 - `options` — check `persistent`, `runInCI`, `cache`, `affectedFiles`, `mutex`, `timeout`,
-  `retryCount`, `allowFailure`, `expectFailure`, and `os`.
+  `retryCount`, `allowFailure`, `expectFailure`, `envOverride`, and `os`.
 - `env` — in v2.5+, environment variables can also be inherited from a **workspace-level `env`** in
   `.moon/tasks/**/*` (merged into the project's `env`, project wins), and the project can change the
   merge behavior via `workspace.mergeStrategies.env`. A variable with a surprising value may come

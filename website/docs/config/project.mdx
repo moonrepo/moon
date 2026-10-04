@@ -773,6 +773,9 @@ tasks:
           NODE_ENV: 'production'
 ```
 
+Like a task's own [`env`](#env-1), these variables will not override system variables, unless the
+dependency enables [`envOverride`](#envoverride).
+
 > Dependencies of inherited tasks will be excluded and renamed according to the
 > [`workspace.inheritedTasks`](#inheritedtasks) setting. This process _only_ uses filters from the
 > current project, and not filters from dependent projects. Furthermore, `args` and `env` are not
@@ -958,7 +961,9 @@ along with every other running task.
 <HeadingApiLink to="/api/types/interface/TaskConfig#env" />
 
 The `env` field is map of strings that are passed as environment variables when running the command.
-Variables defined here will take precedence over those loaded with [`envFile`](#envfile).
+Variables defined here will take precedence over those loaded with [`envFile`](#envfile), but not
+over system variables (those already set in the shell or CI), unless
+[`envOverride`](#envoverride) is enabled.
 
 ```yaml title="moon.yml" {4,5}
 tasks:
@@ -968,8 +973,8 @@ tasks:
       NODE_ENV: 'production'
 ```
 
-Variables also support substitution using the syntax `${VAR_NAME}`. When using substitution, only
-variables in the current process can be referenced, and not those currently defined in `env`.
+Variables also support substitution using the syntax `${VAR_NAME}`. When using substitution,
+variables in the current process can be referenced, as well as those defined before it in `env`.
 
 ```yaml title="moon.yml" {4,5}
 tasks:
@@ -1512,8 +1517,9 @@ tasks:
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#envFile" />
 
 A boolean or path to a `.env` file (also know as dotenv file) that defines a collection of
-[environment variables](#env-1) for the current task. Variables will be loaded on project creation,
-but will _not_ override those defined in [`env`](#env-1).
+[environment variables](#env-1) for the current task. Variables will be loaded just before the task
+runs, but will _not_ override those defined in [`env`](#env-1), or system variables, even when
+[`envOverride`](#envoverride) is enabled.
 
 Variables defined in the file support value substitution/expansion by wrapping the variable name in
 curly brackets, such as `${VAR_NAME}`.
@@ -1555,6 +1561,49 @@ tasks:
         - '.env'
         - '.env.production'
 ```
+
+#### `envOverride`<VersionLabel version="2.6.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#envOverride" />
+
+By default, variables defined in the task's [`env`](#env-1) (and [`deps.*.env`](#args--env)) are
+only set when the system does not already define them, so that variables set in the shell or CI,
+like `KEY=value moon run ...`, take precedence. When enabled, the task's variables will override
+system variables instead.
+
+```yaml title="moon.yml" {7}
+tasks:
+  test:
+    command: 'jest'
+    env:
+      NODE_ENV: 'test'
+    options:
+      envOverride: true
+```
+
+Since `true` also overrides variables inherited from the project or workspace `env`, a list of
+variable names can be provided instead, so that only those variables are overridden.
+
+```yaml title="moon.yml" {8}
+tasks:
+  test:
+    command: 'jest'
+    env:
+      NODE_ENV: 'test'
+      TZ: 'UTC'
+    options:
+      envOverride: ['NODE_ENV', 'TZ']
+```
+
+To still prefer the system value for a specific variable, fallback to it with substitution, like
+`LOG_LEVEL: '${LOG_LEVEL:-info}'`.
+
+:::info
+
+`PATH` is never overridden, as it would remove the paths of toolchains. Variables loaded with
+[`envFile`](#envfile) are not overridden either.
+
+:::
 
 #### `expectFailure`<VersionLabel version="2.6.0" />
 

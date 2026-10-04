@@ -703,4 +703,82 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
     }
+
+    mod env_override {
+        use super::*;
+        use moon_task::TaskOptionEnvOverride;
+
+        async fn get_overridden_keys(
+            env_override: TaskOptionEnvOverride,
+            dep_env: &[(String, Option<String>)],
+        ) -> Vec<String> {
+            let sandbox = create_sandbox("inputs");
+            let (wg, app) = mock_workspace(sandbox.path()).await;
+            let (vcs_config, _) = create_hasher_configs();
+            let project = wg.get_project("root").unwrap();
+
+            let mut task = wg
+                .get_task_from_project("root", "envFile")
+                .unwrap()
+                .as_ref()
+                .clone();
+            task.env.clear();
+            task.env.insert("KEY".into(), Some("value".into()));
+            task.env.insert("PATH".into(), Some("/bin".into()));
+            task.env.insert("UNSET".into(), None);
+            task.options.env_override = env_override;
+
+            let mut hasher = TaskHasher::new(&app, &project, &task, &vcs_config);
+            hasher.hash_env(dep_env.iter().map(|(key, value)| (key, value)));
+
+            hasher
+                .hash()
+                .env_override
+                .into_iter()
+                .map(String::from)
+                .collect()
+        }
+
+        // So that existing hashes are unchanged
+        #[tokio::test(flavor = "multi_thread")]
+        async fn empty_when_disabled() {
+            assert!(
+                get_overridden_keys(TaskOptionEnvOverride::Enabled(false), &[])
+                    .await
+                    .is_empty()
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn includes_overridden_values() {
+            assert_eq!(
+                get_overridden_keys(TaskOptionEnvOverride::Enabled(true), &[]).await,
+                ["KEY"]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn includes_listed_values_that_exist() {
+            assert_eq!(
+                get_overridden_keys(
+                    TaskOptionEnvOverride::Keys(vec!["KEY".into(), "MISSING".into()]),
+                    &[]
+                )
+                .await,
+                ["KEY"]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn includes_dep_values() {
+            assert_eq!(
+                get_overridden_keys(
+                    TaskOptionEnvOverride::Enabled(true),
+                    &[("DEP".into(), Some("value".into()))]
+                )
+                .await,
+                ["DEP", "KEY"]
+            );
+        }
+    }
 }

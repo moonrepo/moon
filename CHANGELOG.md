@@ -87,6 +87,10 @@
       a signal) don't satisfy the expectation, nor do timeouts or signals.
     - The task is never cached, and is not retried after failing as expected, or passing.
     - Cannot be combined with `allowFailure` or `persistent`.
+  - Added a new `options.envOverride` task setting, which allows the task's `env` (and `deps.*.env`)
+    to override system environment variables (those set in the shell or CI), instead of only being set
+    when missing. Supports `true` for all variables, or a list of variable names, like
+    `['NODE_ENV', 'TZ']`. `PATH` and `envFile` variables are never overridden (#2679).
 - **Toolchains**
   - Added support for the proto `activate_environment` plugin function to toolchains. When building
     a command (for tasks and toolchain operations), the environment of each toolchain that has been
@@ -96,6 +100,8 @@
 
 #### 🐞 Fixes
 
+- Fixed an issue where a task dependency's `env` (`deps.*.env`) would override system environment
+  variables, instead of only being set when missing, like the task's `env`.
 - Fixed an issue where a task's resolved `toolchains` list was ordered by an internal hash set,
   instead of by what was configured. The toolchains configured for a task (or inherited from the
   project) now come first, followed by any toolchains they require. This also fixes the

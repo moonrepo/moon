@@ -83,6 +83,23 @@ tasks:
     inputs:
       - '*.sh'
 
+  envOverride:
+    script: 'echo "foo=$TEST_FOO bar=$TEST_BAR"'
+    env:
+      TEST_FOO: task
+      TEST_BAR: task
+    options:
+      envOverride: ['TEST_FOO']
+    inputs:
+      - '*.sh'
+
+  envNoOverride:
+    script: 'echo "foo=$TEST_FOO"'
+    env:
+      TEST_FOO: task
+    inputs:
+      - '*.sh'
+
   runFromProject:
     command: bash
     args: ./cwd.sh

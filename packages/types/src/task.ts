@@ -28,6 +28,7 @@ export interface TaskOptions {
 	cacheKey?: string | null;
 	cacheLifetime?: string | null;
 	envFiles?: string[] | null;
+	envOverride: boolean | string[];
 	expectFailure: boolean;
 	inferInputs: boolean;
 	internal: boolean;

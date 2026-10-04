@@ -725,6 +725,10 @@ impl<'proj> TasksBuilder<'proj> {
                 options.env_files = self.resolve_env_files(id, env_file)?;
             }
 
+            if let Some(env_override) = &config.env_override {
+                options.env_override = env_override.to_owned();
+            }
+
             if let Some(expect_failure) = &config.expect_failure {
                 options.expect_failure = *expect_failure;
             }

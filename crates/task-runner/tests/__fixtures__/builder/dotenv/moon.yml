@@ -44,3 +44,19 @@ tasks:
       INHERIT_FROM_FILE: null
     options:
       envFile: '.env.unset'
+
+  override-all:
+    env:
+      KEY1: value1
+      PATH: '/custom/bin'
+      UNSET_ME: null
+    options:
+      envFile: '.env'
+      envOverride: true
+
+  override-keys:
+    env:
+      KEY1: value1
+      KEY2: value2
+    options:
+      envOverride: ['KEY1']

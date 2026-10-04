@@ -328,6 +328,52 @@ mod command_builder {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn cannot_overwrite_system_env_via_task_dep() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+            let command = container
+                .create_command_with_config(ActionContext::default(), |_, node| {
+                    if let ActionNode::RunTask(inner) = node {
+                        inner.env.insert("KEY".into(), Some("overwritten".into()));
+                        inner.env.insert("UNSET_ME".into(), None);
+                    }
+                })
+                .await;
+
+            assert_eq!(
+                command.env.get(&OsString::from("KEY")).unwrap(),
+                &Env::SetIfMissing(OsString::from("overwritten"))
+            );
+            assert_eq!(
+                command.env.get(&OsString::from("UNSET_ME")).unwrap(),
+                &Env::Unset
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn can_overwrite_system_env_via_task_dep_when_overridden() {
+            let container =
+                TaskRunnerContainer::new_for_project("builder", "dotenv", "override-keys").await;
+            let command = container
+                .create_command_with_config(ActionContext::default(), |_, node| {
+                    if let ActionNode::RunTask(inner) = node {
+                        inner.env.insert("KEY1".into(), Some("from-dep".into()));
+                        inner.env.insert("KEY2".into(), Some("from-dep".into()));
+                    }
+                })
+                .await;
+
+            // Only the listed variable overrides the system
+            assert_eq!(
+                command.env.get(&OsString::from("KEY1")).unwrap(),
+                &Env::Set(OsString::from("from-dep"))
+            );
+            assert_eq!(
+                command.env.get(&OsString::from("KEY2")).unwrap(),
+                &Env::SetIfMissing(OsString::from("from-dep"))
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn cannot_overwrite_built_in_env() {
             let container = TaskRunnerContainer::new("builder", "base").await;
             let command = container
@@ -359,6 +405,67 @@ mod command_builder {
                 command.env.get(&OsString::from("KEY1")).unwrap(),
                 &Env::SetIfMissing(OsString::from("value1"))
             );
+        }
+
+        mod env_override {
+            use super::*;
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_overwrite_system_env_from_task_env() {
+                let container =
+                    TaskRunnerContainer::new_for_project("builder", "dotenv", "override-all").await;
+                let command = container.create_command(ActionContext::default()).await;
+
+                assert_eq!(
+                    command.env.get(&OsString::from("KEY1")).unwrap(),
+                    &Env::Set(OsString::from("value1"))
+                );
+                assert_eq!(
+                    command.env.get(&OsString::from("UNSET_ME")).unwrap(),
+                    &Env::Unset
+                );
+            }
+
+            // Overriding would remove the paths of toolchains
+            #[tokio::test(flavor = "multi_thread")]
+            async fn cannot_overwrite_system_path() {
+                let container =
+                    TaskRunnerContainer::new_for_project("builder", "dotenv", "override-all").await;
+                let command = container.create_command(ActionContext::default()).await;
+
+                assert_eq!(
+                    command.env.get(&OsString::from("PATH")).unwrap(),
+                    &Env::SetIfMissing(OsString::from("/custom/bin"))
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn cannot_overwrite_system_env_from_env_file() {
+                let container =
+                    TaskRunnerContainer::new_for_project("builder", "dotenv", "override-all").await;
+                container.env_bag.set("KEY3", "system");
+
+                let command = container.create_command(ActionContext::default()).await;
+
+                assert!(!command.contains_env("KEY3"));
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn only_overwrites_listed_system_env() {
+                let container =
+                    TaskRunnerContainer::new_for_project("builder", "dotenv", "override-keys")
+                        .await;
+                let command = container.create_command(ActionContext::default()).await;
+
+                assert_eq!(
+                    command.env.get(&OsString::from("KEY1")).unwrap(),
+                    &Env::Set(OsString::from("value1"))
+                );
+                assert_eq!(
+                    command.env.get(&OsString::from("KEY2")).unwrap(),
+                    &Env::SetIfMissing(OsString::from("value2"))
+                );
+            }
         }
 
         #[tokio::test(flavor = "multi_thread")]

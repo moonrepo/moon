@@ -7,6 +7,7 @@ import "MergeStrategy.pkl"
 import "TaskOperatingSystem.pkl"
 import "TaskOptionAffectedFilesEntry.pkl"
 import "TaskOptionEnvFile.pkl"
+import "TaskOptionEnvOverride.pkl"
 import "TaskOutputStyle.pkl"
 import "TaskPriority.pkl"
 import "TaskUnixShell.pkl"
@@ -35,6 +36,12 @@ cacheLifetime: String?
 /// Loads and sets environment variables from the `.env` file(s) when
 /// running the task.
 envFile: TaskOptionEnvFile.TaskOptionEnvFile?
+
+/// Override system environment variables with the task's `env`, instead
+/// of only setting them when missing. When a list of variable names,
+/// only those variables will be overridden.
+/// @since 2.6.0
+envOverride: TaskOptionEnvOverride.TaskOptionEnvOverride?
 
 /// Expect the task to fail, and fail the entire action pipeline if it
 /// passes. Useful for checks that are known to be broken, which should

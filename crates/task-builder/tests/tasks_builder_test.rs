@@ -1179,6 +1179,41 @@ tasks:
         }
     }
 
+    mod env_override {
+        use super::*;
+        use moon_task::TaskOptionEnvOverride;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn inherits_from_shared_options() {
+            let sandbox = create_sandbox("builder");
+            sandbox.create_file(
+                "env-override/moon.yml",
+                r"
+taskOptions:
+  envOverride: true
+tasks:
+  inherits: {}
+  overrides:
+    options:
+      envOverride: ['NODE_ENV']
+",
+            );
+
+            let tasks = TasksBuilderContainer::new(sandbox.path())
+                .build_tasks("env-override")
+                .await;
+
+            assert_eq!(
+                tasks.get("inherits").unwrap().options.env_override,
+                TaskOptionEnvOverride::Enabled(true)
+            );
+            assert_eq!(
+                tasks.get("overrides").unwrap().options.env_override,
+                TaskOptionEnvOverride::Keys(vec!["NODE_ENV".into()])
+            );
+        }
+    }
+
     mod expect_failure_conflicts {
         use super::*;
 

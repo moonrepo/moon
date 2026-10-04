@@ -1668,6 +1668,87 @@ options:
             //             }
         }
 
+        mod env_override {
+            use super::*;
+            use moon_config::TaskOptionEnvOverride;
+
+            #[test]
+            fn supports_bool() {
+                let config = test_parse_config(
+                    r"
+options:
+  envOverride: true
+",
+                    load_config_from_code,
+                );
+
+                assert_eq!(
+                    config.options.env_override,
+                    Some(TaskOptionEnvOverride::Enabled(true))
+                );
+            }
+
+            #[test]
+            fn supports_list() {
+                let config = test_parse_config(
+                    r"
+options:
+  envOverride: ['NODE_ENV', 'TZ']
+",
+                    load_config_from_code,
+                );
+
+                assert_eq!(
+                    config.options.env_override,
+                    Some(TaskOptionEnvOverride::Keys(vec![
+                        "NODE_ENV".into(),
+                        "TZ".into()
+                    ]))
+                );
+            }
+
+            #[test]
+            #[should_panic(expected = "PATH cannot be overridden")]
+            fn errors_for_path() {
+                test_parse_config(
+                    r"
+options:
+  envOverride: ['Path']
+",
+                    load_config_from_code,
+                );
+            }
+
+            #[test]
+            #[should_panic(expected = "an empty variable name is not supported")]
+            fn errors_for_empty_name() {
+                test_parse_config(
+                    r"
+options:
+  envOverride: ['']
+",
+                    load_config_from_code,
+                );
+            }
+
+            #[test]
+            fn never_overrides_path() {
+                for value in [
+                    TaskOptionEnvOverride::Enabled(true),
+                    TaskOptionEnvOverride::Keys(vec!["PATH".into()]),
+                ] {
+                    assert!(!value.should_override("PATH"));
+                    assert!(!value.should_override("Path"));
+                }
+
+                assert!(TaskOptionEnvOverride::Enabled(true).should_override("TZ"));
+                assert!(!TaskOptionEnvOverride::Enabled(false).should_override("TZ"));
+                assert!(
+                    !TaskOptionEnvOverride::Keys(vec!["NODE_ENV".into()]).should_override("TZ")
+                );
+            }
+        }
+
         mod interactive {
             use super::*;
 

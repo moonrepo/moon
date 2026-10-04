@@ -312,6 +312,8 @@ export type TaskOptionAffectedFilesEntry = boolean | 'args' | 'env' | TaskOption
 
 export type TaskOptionEnvFile = boolean | string | string[];
 
+export type TaskOptionEnvOverride = boolean | string[];
+
 /** The strategy in which to merge two configuration values. */
 export type MergeStrategy = 'append' | 'prepend' | 'preserve' | 'replace';
 
@@ -381,6 +383,13 @@ export interface TaskOptionsConfig {
 	 * running the task.
 	 */
 	envFile?: TaskOptionEnvFile | null;
+	/**
+	 * Override system environment variables with the task's `env`, instead
+	 * of only setting them when missing. When a list of variable names,
+	 * only those variables will be overridden.
+	 * @since 2.6.0
+	 */
+	envOverride?: TaskOptionEnvOverride | null;
 	/**
 	 * Expect the task to fail, and fail the entire action pipeline if it
 	 * passes. Useful for checks that are known to be broken, which should
@@ -876,6 +885,13 @@ export interface PartialTaskOptionsConfig {
 	 * running the task.
 	 */
 	envFile?: TaskOptionEnvFile | null;
+	/**
+	 * Override system environment variables with the task's `env`, instead
+	 * of only setting them when missing. When a list of variable names,
+	 * only those variables will be overridden.
+	 * @since 2.6.0
+	 */
+	envOverride?: TaskOptionEnvOverride | null;
 	/**
 	 * Expect the task to fail, and fail the entire action pipeline if it
 	 * passes. Useful for checks that are known to be broken, which should

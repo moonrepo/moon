@@ -1,7 +1,8 @@
 use moon_common::cacheable;
 use moon_config::{
     Input, MergeStrategy, TaskOperatingSystem, TaskOptionAffectedFilesPattern, TaskOptionCache,
-    TaskOptionRunInCI, TaskOutputStyle, TaskPriority, TaskUnixShell, TaskWindowsShell,
+    TaskOptionEnvOverride, TaskOptionRunInCI, TaskOutputStyle, TaskPriority, TaskUnixShell,
+    TaskWindowsShell,
 };
 use std::fmt;
 
@@ -36,6 +37,8 @@ cacheable!(
 
         #[serde(skip_serializing_if = "Option::is_none")]
         pub env_files: Option<Vec<Input>>,
+
+        pub env_override: TaskOptionEnvOverride,
 
         pub expect_failure: bool,
 
@@ -106,6 +109,7 @@ impl Default for TaskOptions {
             cache_key: None,
             cache_lifetime: None,
             env_files: None,
+            env_override: TaskOptionEnvOverride::default(),
             expect_failure: false,
             infer_inputs: false,
             internal: false,

@@ -47,9 +47,10 @@
     backoff. Previously, a single failed blob download would fail the task with
     `task_runner::missing_outputs` (#2680).
     - Added a new `remote.cache.retryCount` setting, which defaults to `3`, and can be set to `0` to
-      disable retries. Can also be set with the `MOON_REMOTE_CACHE_RETRY_COUNT` environment variable.
-    - The HTTP remote cache is now disabled when its host is unreachable while connecting, instead of
-      every request failing, as each request would have exhausted its retries.
+      disable retries. Can also be set with the `MOON_REMOTE_CACHE_RETRY_COUNT` environment
+      variable.
+    - The HTTP remote cache is now disabled when its host is unreachable while connecting, instead
+      of every request failing, as each request would have exhausted its retries.
 - **Configuration**
   - Added Pkl modules for every configuration file, which are generated to `.moon/cache/schemas/pkl`
     when `pkl` is installed. A `.pkl` config that amends (or extends) its module is type checked by
@@ -82,14 +83,15 @@
     pipeline if it passes instead, with an error to remove the setting. Useful for checks that are
     known to be broken, like after enabling a stricter compiler or lint rule during a migration, so
     that future regressions are caught once fixed (#2536).
-    - Unlike `allowFailure`, other tasks can depend on the task, as an expected failure is successful.
-    - Exit codes `126` (command not executable), `127` (command not found), and `129`-`192` (killed by
-      a signal) don't satisfy the expectation, nor do timeouts or signals.
+    - Unlike `allowFailure`, other tasks can depend on the task, as an expected failure is
+      successful.
+    - Exit codes `126` (command not executable), `127` (command not found), and `129`-`192` (killed
+      by a signal) don't satisfy the expectation, nor do timeouts or signals.
     - The task is never cached, and is not retried after failing as expected, or passing.
     - Cannot be combined with `allowFailure` or `persistent`.
   - Added a new `options.envOverride` task setting, which allows the task's `env` (and `deps.*.env`)
-    to override system environment variables (those set in the shell or CI), instead of only being set
-    when missing. Supports `true` for all variables, or a list of variable names, like
+    to override system environment variables (those set in the shell or CI), instead of only being
+    set when missing. Supports `true` for all variables, or a list of variable names, like
     `['NODE_ENV', 'TZ']`. `PATH` and `envFile` variables are never overridden (#2679).
 - **Toolchains**
   - Added support for the proto `activate_environment` plugin function to toolchains. When building

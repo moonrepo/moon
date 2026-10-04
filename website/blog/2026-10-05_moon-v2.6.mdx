@@ -23,12 +23,17 @@ image: ./img/moon/v2.6.png
 
 This release is all about what happens _around_ your tasks. Dependencies can now run after a task to
 clean up after it, or alongside it as a long-running sidekick. Persistent tasks no longer wait in
-line until the very end of the pipeline. The OpenTelemetry integration from last release now emits
-metrics, and Pkl configs can finally be type checked.
+line until the very end of the pipeline. Tasks can expect to fail, and override the shell's
+environment. The OpenTelemetry integration from last release now emits metrics, and Pkl configs can
+finally be type checked.
 
 <!--truncate-->
 
-## Cleanup and wait dependencies
+## Task improvements
+
+The first round of changes apply to tasks and their options.
+
+### Cleanup and wait dependencies
 
 Task [`deps`](/docs/config/project#deps) have always meant one thing: "run this before me, and make
 sure it passes". That's perfect for builds and code generation, but it falls apart the moment a task
@@ -106,6 +111,87 @@ Cleanup dependencies are _not_ ran when the pipeline is interrupted by a signal,
 Ctrl+C.
 
 :::
+
+### Expected failures
+
+The [`allowFailure`](/docs/config/project#allowfailure) task option is handy for advisory checks, but
+it's often reached for in a different situation: a check that's known to be broken, like after
+enabling a stricter compiler or lint rule midway through a migration. Once the failures are fixed,
+nothing tells you, so the option lingers, and future regressions slip through unnoticed.
+
+In v2.6, the new [`expectFailure`](/docs/config/project#expectfailure) task option covers this case.
+The task _must_ fail, and once it passes, the pipeline fails with an error asking you to remove the
+setting.
+
+```yaml title="moon.yml" {5}
+tasks:
+  typecheck:
+    command: 'tsc --build'
+    options:
+      expectFailure: true
+```
+
+Unlike `allowFailure`, an expected failure is treated as a success, so other tasks _can_ depend on
+it, like bundling the JavaScript that `tsc` still emits. A few more details:
+
+- Only a failure of the command itself is expected. A command that couldn't run (exit code `126` or
+  `127`), or was killed by a signal, fails as normal, so a typo can't pass as the expected failure.
+- The task is never cached, and isn't retried, so a fix is noticed on the very next run.
+- It can't be combined with `allowFailure` or `persistent`.
+
+### Overriding system environment variables
+
+Since v2, variables set in your shell or CI take precedence over a task's
+[`env`](/docs/config/project#env-1), so that `KEY=value moon run ...` works as you'd expect. That's
+the right default, but sometimes a task needs a specific value regardless, like `NODE_ENV=test` for
+tests, while CI exports `NODE_ENV=production`.
+
+In v2.6, the new [`envOverride`](/docs/config/project#envoverride) task option lets the task's
+variables win instead, either for all of them, or only those listed.
+
+```yaml title="moon.yml" {8}
+tasks:
+  test:
+    command: 'jest'
+    env:
+      NODE_ENV: 'test'
+      TZ: 'UTC'
+    options:
+      envOverride: ['NODE_ENV', 'TZ'] # or `true`
+```
+
+Variables loaded with [`envFile`](/docs/config/project#envfile) are not overridden, and neither is
+`PATH`, as that would remove the paths of toolchains. To keep a specific variable configurable from
+the shell, fall back to it with substitution, like `LOG_LEVEL: '${LOG_LEVEL:-info}'`.
+
+### Output style from the command line
+
+The [`outputStyle`](/docs/config/project#outputstyle) task option controls how a task's output is
+displayed, but it's configured per task, and it doesn't apply to primary targets (those you
+explicitly requested on the command line). That's a sensible default locally, but in CI, you
+typically want the opposite: successful tasks should stay quiet, while failures print in full.
+
+In v2.6, [`moon run`](/docs/commands/run), [`moon ci`](/docs/commands/ci),
+[`moon check`](/docs/commands/check), and [`moon exec`](/docs/commands/exec) support a new
+`--output-style` option, which overrides the style for _all_ tasks in that run. Since it was
+requested explicitly, it also applies to primary targets.
+
+```shell
+$ moon ci :test :lint --output-style buffer-only-failure --summary minimal
+```
+
+> Interactive tasks are the exception, as they must remain attached to the terminal, and always
+> stream their output.
+
+Prefer to configure it once? The new
+[`explicitTaskOutputStyle`](/docs/config/workspace#explicittaskoutputstyle) experiment applies each
+task's configured `outputStyle` to primary targets as well.
+
+```yaml title=".moon/workspace.yml"
+experiments:
+  explicitTaskOutputStyle: true
+```
+
 
 ## Persistent tasks run within the pipeline
 
@@ -258,7 +344,7 @@ toolchain that has been setup is now activated. This may set environment variabl
 directories to `PATH`, exactly as proto would. We were careful to keep this from stepping on your
 toes though:
 
-- Variables that are already configured, like a task's [`env`](/docs/config/project#env), are never
+- Variables that are already configured, like a task's [`env`](/docs/config/project#env-1), are never
   overridden.
 - When a task has multiple toolchains, the first configured toolchain takes precedence.
 - Only toolchains that have actually been setup are activated, as their tool directory wouldn't
@@ -267,33 +353,25 @@ toes though:
 For plugin authors, `activate_environment` is now listed as a tier 3 function in
 [`moon toolchain info`](/docs/commands/toolchain/info).
 
-## Output style from the command line
+## Remote cache retries
 
-The [`outputStyle`](/docs/config/project#outputstyle) task option controls how a task's output is
-displayed, but it's configured per task, and it doesn't apply to primary targets (those you
-explicitly requested on the command line). That's a sensible default locally, but in CI, you
-typically want the opposite: successful tasks should stay quiet, while failures print in full.
+When using an HTTP based [remote cache](/docs/guides/remote-cache), a single failed request (like a
+`503` from a CDN under load) would fail the entire task with missing outputs, even though trying
+again would have succeeded. In v2.6, requests that fail with a transient error (connection failures,
+timeouts, and `5xx`, `408`, or `429` responses) are now retried up to 3 times, with exponential
+backoff. The amount can be customized with the new
+[`remote.cache.retryCount`](/docs/config/workspace#retrycount) setting, or `0` to disable retries.
 
-In v2.6, [`moon run`](/docs/commands/run), [`moon ci`](/docs/commands/ci),
-[`moon check`](/docs/commands/check), and [`moon exec`](/docs/commands/exec) support a new
-`--output-style` option, which overrides the style for _all_ tasks in that run. Since it was
-requested explicitly, it also applies to primary targets.
-
-```shell
-$ moon ci :test :lint --output-style buffer-only-failure --summary minimal
+```yaml title=".moon/workspace.yml" {5}
+remote:
+  api: 'http'
+  host: 'https://your-host.com'
+  cache:
+    retryCount: 5
 ```
 
-> Interactive tasks are the exception, as they must remain attached to the terminal, and always
-> stream their output.
-
-Prefer to configure it once? The new
-[`explicitTaskOutputStyle`](/docs/config/workspace#explicittaskoutputstyle) experiment applies each
-task's configured `outputStyle` to primary targets as well.
-
-```yaml title=".moon/workspace.yml"
-experiments:
-  explicitTaskOutputStyle: true
-```
+Furthermore, if the remote host is unreachable when moon first connects to it, the remote cache is
+now disabled for that run, instead of every request failing (and retrying) on its own.
 
 ## Upgrade notes
 
@@ -314,6 +392,11 @@ directly.
   some renamed settings under the wrong keys. They now match the JSON schemas and `@moonrepo/types`:
   `type` instead of `typeOf`, `runInCI` instead of `runInCi`, and `$schema` instead of `schema`. If
   you have scripts that parse this output, double check them!
+- **`deps.*.env` no longer overrides system variables.** A dependency's
+  [`env`](/docs/config/project#args--env) was applied along with moon's built-in variables, so it
+  took precedence over variables set in the shell or CI, contrary to the documented order. It's now
+  only set when the variable is missing, like a task's `env`, unless the dependency enables
+  [`envOverride`](/docs/config/project#envoverride).
 - **The MCP server now requires the `2026-07-28` protocol.** [`moon mcp`](/docs/commands/mcp) has
   moved to the stateless MCP protocol, so older protocol versions (`2025-11-25` and below) and the
   `initialize` handshake are no longer supported. Make sure your MCP client is up to date.
@@ -327,6 +410,8 @@ of changes, but here's a few more worth calling out:
   dependencies that follow them, as a persistent dependency never completes.
 - Updated [`moon sync config-schemas`](/docs/commands/sync/config-schemas) to also generate the new
   Pkl modules.
+- Added an `args` setting to toolchain `bins` entries, for passing additional arguments to the
+  install command, like feature flags. Support depends on each toolchain.
 - Moved hash manifests out of `.moon/cache/hashes`, and into the local content-addressable cache as
   blobs. As such, the local cache backend is now always enabled, while storing task _outputs_ in it
   remains gated by the [`casOutputsCache`](/docs/config/workspace#casoutputscache) experiment.

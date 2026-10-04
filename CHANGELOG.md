@@ -54,6 +54,9 @@
   - Added Pkl modules for every configuration file, which are generated to `.moon/cache/schemas/pkl`
     when `pkl` is installed. A `.pkl` config that amends (or extends) its module is type checked by
     Pkl itself, and editors with Pkl support provide completion and documentation for each setting.
+  - Added an `args` setting to toolchain `bins` entries, which passes additional arguments to the
+    install command, like feature flags (`--no-default-features --features postgres`). Support is
+    dependent on each toolchain plugin (#2708).
 - **Experiments**
   - Added a new `experiments.explicitTaskOutputStyle` setting, which applies a task's
     `options.outputStyle` to all targets, instead of only transitive (non-primary) ones. Can also be

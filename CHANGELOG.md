@@ -124,6 +124,8 @@
   from the workspace sync action, which has no dependencies to walk. Edges that are implied by a
   longer path don't change the order that actions run in.
 - Updated proto to [v0.62.2](https://github.com/moonrepo/proto/releases/tag/v0.62.0) from 0.60.2.
+- Updated Rust to v1.99.0.
+- Updated dependencies.
 
 ## 2.5.6
 

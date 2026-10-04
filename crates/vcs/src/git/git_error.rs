@@ -35,13 +35,13 @@ pub enum GitError {
     #[error("Failed to load Git repository.")]
     RepositoryLoadFailed {
         #[source]
-        error: Box<gix::discover::Error>,
+        error: Box<gix::Error>,
     },
 
     #[diagnostic(code(git::submodules::load_failed))]
     #[error("Failed to load Git submodules.")]
     SubmodulesLoadFailed {
         #[source]
-        error: Box<gix::submodule::modules::Error>,
+        error: Box<gix::Error>,
     },
 }

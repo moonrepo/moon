@@ -16,7 +16,7 @@ moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_env_var = { path = "../env-var" }
 moon_hash = { path = "../hash" }
-async-compression = { version = "0.4", features = ["tokio", "zstd"] }
+async-compression = { version = "0.4.50", features = ["tokio", "zstd"] }
 async-trait = { workspace = true }
 bazel-remote-apis = { workspace = true }
 miette = { workspace = true }

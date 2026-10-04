@@ -15,3 +15,7 @@ tasks:
     inputs:
       - project: 'external'
         group: 'docs'
+
+  none:
+    command: noop
+    inputs: []

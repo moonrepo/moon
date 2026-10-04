@@ -24,7 +24,8 @@ The following conditions are supported:
 
 - `file`, `files` - Inherit for projects that contain specific files (does not support globs).
 - `language`, `languages` - Inherit for projects that belong to specific
-  [`language`](../config/project#language)s.
+  [`language`](../config/project#language)s. The language must be explicitly configured in
+  `moon.*`, as a detected language is not used for inheritance.
 - `layer`, `layers` - Inherit for projects that belong to specific
   [`layer`](../config/project#layer)s.
 - `stack`, `stacks` - Inherit for projects that belong to specific

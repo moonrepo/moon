@@ -119,9 +119,9 @@
 - Hash manifests are now stored as blobs in the local content-addressable cache, instead of as
   individual files in `.moon/cache/hashes`. The local cache backend is now always enabled, as it
   backs these manifests; storing task _outputs_ in it remains gated by the `cas_outputs_cache`
-  experiment. Blobs that no task manifest references (like hash manifests) are now garbage
-  collected once older than the cache lifetime, instead of after an hour, while blobs of evicted
-  task manifests are still removed after an hour.
+  experiment. Blobs that no task manifest references (like hash manifests) are now garbage collected
+  once older than the cache lifetime, instead of after an hour, while blobs of evicted task
+  manifests are still removed after an hour.
 - Removed the action graph's "transitive reduction", which never removed any edges, as it started
   from the workspace sync action, which has no dependencies to walk. Edges that are implied by a
   longer path don't change the order that actions run in.

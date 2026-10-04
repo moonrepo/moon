@@ -250,11 +250,12 @@ moon hash <hash> --json
 
 <sup>v2.6+</sup> Hash manifests are stored as blobs in the local content-addressable cache
 (`.moon/cache/blobs/`) instead of `.moon/cache/hashes/<hash>.json`, so `moon hash` is the way to
-read them. "Unable to find a hash manifest" means it was never stored, or was garbage collected: no
-task manifest references a hash manifest, so any garbage collection deletes hash manifests older
-than an hour (regardless of `--lifetime`). GC runs on `moon clean`, and after a successful pipeline
-when the daemon is connected and `pipeline.autoCleanCache` is enabled (the default). Re-running the
-task regenerates the manifest.
+read them. "Unable to find a hash manifest" means it was never stored, or was garbage collected:
+hash manifests are removed once they're older than the cache lifetime (`moon clean --lifetime`, or
+`pipeline.cacheLifetime` for the post-pipeline clean; both default to 7 days), counted from when
+they were first written — later runs with the same hash don't refresh them. GC runs on `moon clean`,
+and after a successful pipeline when the daemon is connected and `pipeline.autoCleanCache` is
+enabled (the default). Re-running the task regenerates the manifest.
 
 > For interpreting hash diffs in cache investigations, see `cache-issues.md`.
 

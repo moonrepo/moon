@@ -47,8 +47,9 @@ The hash manifest shows every source that contributed to the hash. If the file y
 listed, it's not in `inputs`.
 
 > <sup>v2.6+</sup> If `moon hash` reports "Unable to find a hash manifest", the manifest was
-> probably garbage collected (any GC removes hash manifests older than an hour). Re-run the task to
-> regenerate it — on a cache hit, compare against a fresh `--force` run instead.
+> probably garbage collected (GC removes hash manifests once they're older than the cache lifetime,
+> counted from when they were first written). Re-run the task to regenerate it — on a cache hit,
+> compare against a fresh `--force` run instead.
 
 ### Common causes
 

@@ -144,36 +144,32 @@ config_struct!(
 
         /// Condition that matches against literal files within a project.
         /// If multiple values are provided, at least 1 file needs to exist.
-        #[setting(alias = "file")]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(alias = "file", skip_serializing_if = "Option::is_none")]
         pub files: Option<OneOrMany<FilePath>>,
 
         /// Condition that matches against a project's `language`.
         /// If multiple values are provided, it matches using an OR operator.
-        #[setting(alias = "language")]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(alias = "language", skip_serializing_if = "Option::is_none")]
         pub languages: Option<OneOrMany<LanguageType>>,
 
         /// Condition that matches against a project's `layer`.
         /// If multiple values are provided, it matches using an OR operator.
-        #[setting(alias = "layer")]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(alias = "layer", skip_serializing_if = "Option::is_none")]
         pub layers: Option<OneOrMany<LayerType>>,
 
         /// Condition that matches against a project's `stack`.
         /// If multiple values are provided, it matches using an OR operator.
-        #[setting(alias = "stack")]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(alias = "stack", skip_serializing_if = "Option::is_none")]
         pub stacks: Option<OneOrMany<StackType>>,
 
         /// Condition that matches against a tag within the project.
-        #[setting(alias = "tag", nested)]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[setting(nested)]
+        #[serde(alias = "tag", skip_serializing_if = "Option::is_none")]
         pub tags: Option<InheritedConditionConfig>,
 
         /// Condition that matches against a toolchain detected for a project.
-        #[setting(alias = "toolchain", nested)]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[setting(nested)]
+        #[serde(alias = "toolchain", skip_serializing_if = "Option::is_none")]
         pub toolchains: Option<InheritedConditionConfig>,
     }
 );

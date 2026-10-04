@@ -42,10 +42,10 @@ config_struct!(
         ///
         /// @since 2.5.0
         #[setting(
-            alias = "unstable_sharedWorktreeCache",
             env = "MOON_CACHE_SHARED_WORKTREE_CACHE",
             parse_env = env::parse_bool,
         )]
+        #[serde(rename = "unstable_sharedWorktreeCache")]
         pub shared_worktree_cache: bool,
     }
 );

@@ -44,20 +44,7 @@ export interface CacheConfig {
 	 *
 	 * @env MOON_CACHE_SHARED_WORKTREE_CACHE
 	 */
-	unstable_sharedWorktreeCache?: boolean;
-	/**
-	 * Whether to use a shared worktree cache. When enabled, the cache is
-	 * shared between all VCS worktrees on the same machine. When disabled,
-	 * each worktree has its own cache.
-	 *
-	 * Only blobs and manifests will be shared, as they are portable.
-	 * Hashes, locks, states, and more will not be, as they are worktree-specific.
-	 *
-	 * @since 2.5.0
-	 *
-	 * @env MOON_CACHE_SHARED_WORKTREE_CACHE
-	 */
-	sharedWorktreeCache: boolean;
+	unstable_sharedWorktreeCache: boolean;
 }
 
 /** How to order ownership rules within the generated file. */
@@ -671,22 +658,6 @@ export interface WorkspaceConfig {
 	/** Configures boundaries and constraints between projects. */
 	constraints: ConstraintsConfig;
 	/**
-	 * Enables a daemon that will process heavy tasks in the background,
-	 * greatly increasing performance of the main thread/executable.
-	 * @since 2.2.0
-	 *
-	 * @env MOON_DAEMON
-	 */
-	unstable_daemon?: boolean;
-	/**
-	 * Enables a daemon that will process heavy tasks in the background,
-	 * greatly increasing performance of the main thread/executable.
-	 * @since 2.2.0
-	 *
-	 * @env MOON_DAEMON
-	 */
-	daemon: boolean;
-	/**
 	 * The default/main project within the workspace. When a task is
 	 * ran without a project, the default will be used.
 	 * @since 2.0.0
@@ -731,6 +702,14 @@ export interface WorkspaceConfig {
 	 * @env MOON_TELEMETRY
 	 */
 	telemetry?: boolean;
+	/**
+	 * Enables a daemon that will process heavy tasks in the background,
+	 * greatly increasing performance of the main thread/executable.
+	 * @since 2.2.0
+	 *
+	 * @env MOON_DAEMON
+	 */
+	unstable_daemon: boolean;
 	/**
 	 * Configures the version control system (VCS). Also known as
 	 * source code management (SCM).
@@ -781,19 +760,6 @@ export interface PartialCacheConfig {
 	 * @env MOON_CACHE_SHARED_WORKTREE_CACHE
 	 */
 	unstable_sharedWorktreeCache?: boolean | null;
-	/**
-	 * Whether to use a shared worktree cache. When enabled, the cache is
-	 * shared between all VCS worktrees on the same machine. When disabled,
-	 * each worktree has its own cache.
-	 *
-	 * Only blobs and manifests will be shared, as they are portable.
-	 * Hashes, locks, states, and more will not be, as they are worktree-specific.
-	 *
-	 * @since 2.5.0
-	 *
-	 * @env MOON_CACHE_SHARED_WORKTREE_CACHE
-	 */
-	sharedWorktreeCache?: boolean | null;
 }
 
 /** Configures code ownership rules for generating a `CODEOWNERS` file. */
@@ -1357,22 +1323,6 @@ export interface PartialWorkspaceConfig {
 	/** Configures boundaries and constraints between projects. */
 	constraints?: PartialConstraintsConfig | null;
 	/**
-	 * Enables a daemon that will process heavy tasks in the background,
-	 * greatly increasing performance of the main thread/executable.
-	 * @since 2.2.0
-	 *
-	 * @env MOON_DAEMON
-	 */
-	unstable_daemon?: boolean | null;
-	/**
-	 * Enables a daemon that will process heavy tasks in the background,
-	 * greatly increasing performance of the main thread/executable.
-	 * @since 2.2.0
-	 *
-	 * @env MOON_DAEMON
-	 */
-	daemon?: boolean | null;
-	/**
 	 * The default/main project within the workspace. When a task is
 	 * ran without a project, the default will be used.
 	 * @since 2.0.0
@@ -1417,6 +1367,14 @@ export interface PartialWorkspaceConfig {
 	 * @env MOON_TELEMETRY
 	 */
 	telemetry?: boolean | null;
+	/**
+	 * Enables a daemon that will process heavy tasks in the background,
+	 * greatly increasing performance of the main thread/executable.
+	 * @since 2.2.0
+	 *
+	 * @env MOON_DAEMON
+	 */
+	unstable_daemon?: boolean | null;
 	/**
 	 * Configures the version control system (VCS). Also known as
 	 * source code management (SCM).

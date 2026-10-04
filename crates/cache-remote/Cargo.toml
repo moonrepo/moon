@@ -21,6 +21,10 @@ async-trait = { workspace = true }
 bazel-remote-apis = { workspace = true }
 miette = { workspace = true }
 reqwest = { workspace = true, features = ["gzip", "json", "zstd"] }
+reqwest-middleware = { version = "0.5.2", default-features = false, features = [
+	"json",
+] }
+reqwest-retry = { version = "0.9.1", default-features = false }
 rustc-hash = { workspace = true }
 serde_json = { workspace = true }
 starbase_utils = { workspace = true }
@@ -29,6 +33,7 @@ tokio = { workspace = true, features = ["fs", "io-util"] }
 tokio-util = { workspace = true, features = ["io"] }
 tracing = { workspace = true }
 uuid = { workspace = true }
+warpgate = { workspace = true, features = ["miette"] }
 zstd = "0.13.3"
 
 # gRPC

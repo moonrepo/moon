@@ -5822,6 +5822,8 @@ dependencies = [
  "moon_env_var",
  "moon_hash",
  "reqwest",
+ "reqwest-middleware",
+ "reqwest-retry",
  "rustc-hash",
  "serde_json",
  "starbase_sandbox",
@@ -5833,6 +5835,7 @@ dependencies = [
  "tower",
  "tracing",
  "uuid",
+ "warpgate",
  "zstd 0.13.3",
 ]
 

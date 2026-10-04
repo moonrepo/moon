@@ -42,6 +42,14 @@
     experiment. Blobs that no task manifest references (like hash manifests) are now garbage
     collected once older than the cache lifetime, instead of after an hour, while blobs of evicted
     task manifests are still removed after an hour.
+  - Added request retries to the HTTP remote cache, which retries a request that failed with a
+    transient error (connection failure, timeout, `5xx`, `408`, or `429` response) with exponential
+    backoff. Previously, a single failed blob download would fail the task with
+    `task_runner::missing_outputs` (#2680).
+    - Added a new `remote.cache.retryCount` setting, which defaults to `3`, and can be set to `0` to
+      disable retries. Can also be set with the `MOON_REMOTE_CACHE_RETRY_COUNT` environment variable.
+    - The HTTP remote cache is now disabled when its host is unreachable while connecting, instead of
+      every request failing, as each request would have exhausted its retries.
 - **Configuration**
   - Added Pkl modules for every configuration file, which are generated to `.moon/cache/schemas/pkl`
     when `pkl` is installed. A `.pkl` config that amends (or extends) its module is type checked by

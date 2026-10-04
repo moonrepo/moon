@@ -911,6 +911,26 @@ remote:
     localReadOnly: true
 ```
 
+#### `retryCount`<VersionLabel version="2.6.0" />
+
+<HeadingApiLink to="/api/types/interface/RemoteCacheConfig#retryCount" />
+
+The maximum number of times to retry a request that failed with a transient error, like a connection
+failure, a timeout, or a `5xx`, `408`, or `429` response. Retries use exponential backoff. Defaults
+to `3`, and `0` disables retries.
+
+```yaml title=".moon/workspace.yml" {3}
+remote:
+  cache:
+    retryCount: 5
+```
+
+:::info
+
+Retries are only applied to HTTP based APIs, not gRPC.
+
+:::
+
 #### `verifyIntegrity`<VersionLabel version="1.36.0" />
 
 <HeadingApiLink to="/api/types/interface/RemoteCacheConfig#verifyIntegrity" />

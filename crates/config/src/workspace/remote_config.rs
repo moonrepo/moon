@@ -85,6 +85,13 @@ config_struct!(
         #[serde(default, skip_serializing_if = "is_false")]
         pub local_read_only: bool,
 
+        /// The maximum number of times to retry a request that failed with
+        /// a transient error (connection failure, timeout, 5xx, 429, etc),
+        /// using exponential backoff. Only applies to HTTP APIs.
+        /// @since 2.6.0
+        #[setting(default = 3)]
+        pub retry_count: u8,
+
         /// When downloading blobs, verify the digests/hashes in the response
         /// match the associated blob contents. This will reduce performance
         /// but ensure partial or corrupted blobs won't cause failures.

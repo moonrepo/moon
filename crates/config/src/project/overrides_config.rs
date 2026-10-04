@@ -45,8 +45,7 @@ config_struct!(
         /// A single toolchain, or list of toolchains, to inherit for
         /// this project and all of its tasks.
         /// @since 1.31.0
-        #[setting(alias = "defaults")]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, alias = "defaults", skip_serializing_if = "Option::is_none")]
         pub default: Option<OneOrMany<Id>>,
 
         /// Overrides workspace-level toolchains by their identifier.

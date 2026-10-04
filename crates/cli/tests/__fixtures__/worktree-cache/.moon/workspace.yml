@@ -1,6 +1,6 @@
 projects:
   app: 'app'
 cache:
-  sharedWorktreeCache: true
+  unstable_sharedWorktreeCache: true
 experiments:
   casOutputsCache: true

@@ -103,13 +103,12 @@ config_struct!(
     /// Docs: https://moonrepo.dev/docs/config/project
     #[derive(Config)]
     pub struct ProjectConfig {
-        #[setting(rename = "$schema")]
         #[serde(rename = "$schema")]
         pub schema: String,
 
         /// Other projects that this project depends on.
-        #[setting(nested, alias = "deps")]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[setting(nested)]
+        #[serde(default, alias = "deps", skip_serializing_if = "Vec::is_empty")]
         pub depends_on: Vec<ProjectDependsOn>,
 
         /// Configures Docker integration for this project.

@@ -23,7 +23,10 @@ Our smart hashing currently takes the following sources into account:
 - Output targets (`outputs`).
 - Environment variables (`env`).
 - Dependencies between projects (`dependsOn`) and tasks (`deps`). Task dependency contribution can
-  be tuned per-dependency via [`cacheStrategy`](../config/project#cache-strategy).
+  be tuned per-dependency via [`cacheStrategy`](../config/project#cache-strategy), while `cleanup`
+  and `wait` [dependency types](../config/project#type) never contribute, as they don't complete
+  before the task runs.
+- Toolchains the task runs against (`toolchains`).
 - **For Deno tasks**:
   - Deno version.
   - `deno.json`/`deps.ts` imports, import maps, and scopes.
@@ -82,17 +85,14 @@ The following diagram outlines our cache folder structure and why each piece exi
 	# A content-addressable storage (CAS) layer for storing blobs of data, which are
 	# referenced by their hash. This is used for both local and remote caching.
 	blobs/
-		<prefix>/<hash>/
+		# Also stores the hash manifest of every ran task (as of v2.6), which contains
+		# all sources used to generate the hash. Exists purely for debugging purposes.
+		<prefix>/<hash>
 
 	# Contains the daemon's socket, log, and state files.
 	daemon/
 		# The daemon's state file, which contains metadata about the daemon process.
 		daemon.json
-
-	# Stores hash manifests of every ran task. Exists purely for debugging purposes.
-	hashes/
-		# Contents includes all sources used to generate the hash.
-		<hash>.json
 
 	# File system locks for parallel processes.
 	locks/
@@ -110,6 +110,10 @@ The following diagram outlines our cache folder structure and why each piece exi
 	# JSON schemas for validating configuration files.
 	schemas/
 		<schema>.json
+
+		# Pkl modules for type checking configuration files (as of v2.6).
+		pkl/
+			<Module>.pkl
 
 	# State information about anything and everything within moon. Toolchain,
 	# dependencies, projects, running targets, etc.

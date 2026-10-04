@@ -117,8 +117,9 @@ Let's copy the hash and move on to the next step.
 
 ## Inspect the hash manifest
 
-With the hash in hand, let's dig deeper into moon's internals, by inspecting the hash manifest at
-`.moon/cache/hashes/<hash>.json`, or running the [`moon hash`](../commands/hash) command:
+With the hash in hand, let's dig deeper into moon's internals, by inspecting the hash manifest with
+the [`moon hash`](../commands/hash) command. As of v2.6, manifests are stored as blobs in the local
+content-addressable cache (`.moon/cache/blobs`), instead of `.moon/cache/hashes/<hash>.json`.
 
 ```shell
 moon hash <hash>

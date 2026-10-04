@@ -104,15 +104,22 @@ impl StorageBackend for LocalStorage {
             .and_then(parse_byte_size);
 
         // 1. Evict stale manifests (the GC roots) and collect the blob digests
-        //    the survivors still reference. Runs on a blocking thread: it's all
-        //    synchronous filesystem reads and JSON parsing.
-        let (keep, removed, saved) =
+        //    the survivors still reference, and those only the evicted ones
+        //    referenced. Runs on a blocking thread: it's all synchronous
+        //    filesystem reads and JSON parsing.
+        let (keep, released, removed, saved) =
             spawn_blocking(move || evict_manifests(manifests, lifetime, max_size))
                 .await
                 .into_diagnostic()??;
 
-        // 2. Sweep blobs no surviving manifest references (past the ingest grace).
-        let blob_stats = blobs.retain(Arc::new(keep), BLOB_GRACE).await?;
+        // 2. Sweep blobs no surviving manifest references. Blobs released by an
+        //    evicted manifest are swept past the ingest grace (so the size budget
+        //    is enforced), while blobs that no manifest references at all (like
+        //    hash manifests, which mark actions as having ran) live out the
+        //    lifetime, as nothing else keeps them alive.
+        let blob_stats = blobs
+            .retain_with_released(Arc::new(keep), Arc::new(released), BLOB_GRACE, lifetime)
+            .await?;
 
         Ok(BlobCleanStats {
             blobs_removed: removed + blob_stats.blobs_removed,
@@ -247,11 +254,14 @@ impl StorageBackend for LocalStorage {
 /// bytes would exceed it. Blob sizes come from the digests themselves, so the
 /// budget never has to stat the blob store. An older manifest whose blobs are
 /// already retained costs nothing and is kept "for free".
+///
+/// Returns the blob hashes that surviving manifests reference (kept), and the
+/// hashes that only evicted manifests referenced (released).
 fn evict_manifests(
     manifests: Arc<CasStore>,
     lifetime: Duration,
     max_size: Option<u64>,
-) -> miette::Result<(FxHashSet<ContentHash>, usize, u64)> {
+) -> miette::Result<(FxHashSet<ContentHash>, FxHashSet<ContentHash>, usize, u64)> {
     let now = SystemTime::now();
 
     struct Entry {
@@ -285,6 +295,7 @@ fn evict_manifests(
     entries.sort_by_key(|entry| std::cmp::Reverse(entry.mtime));
 
     let mut keep = FxHashSet::default();
+    let mut released = FxHashSet::default();
     let mut keep_size: u64 = 0;
     let mut removed = 0;
     let mut saved = 0;
@@ -305,6 +316,8 @@ fn evict_manifests(
             let _ = fs::remove_file(&entry.path);
             removed += 1;
             saved += entry.file_size;
+
+            released.extend(entry.digests.into_iter().map(|digest| digest.hash));
         } else {
             for digest in entry.digests {
                 let size = digest.size.max(0) as u64;
@@ -316,7 +329,10 @@ fn evict_manifests(
         }
     }
 
-    Ok((keep, removed, saved))
+    // A blob shared with a surviving manifest is still kept
+    released.retain(|hash| !keep.contains(hash));
+
+    Ok((keep, released, removed, saved))
 }
 
 /// Parse a human-readable byte size such as `"10gb"`, `"512mib"`, or `"2048"`.

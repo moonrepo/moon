@@ -230,7 +230,6 @@ config_struct!(
         /// When `wait`, runs before the task, but the task only waits for the
         /// dependency to have started running, not to have completed.
         /// @since 2.6.0
-        #[setting(rename = "type")]
         #[serde(
             default,
             rename = "type",
@@ -317,8 +316,8 @@ config_struct!(
         /// Other tasks that this task depends on, and must run to completion
         /// before this task is ran. Can depend on sibling tasks, or tasks in
         /// other projects, using targets.
-        #[setting(nested, validate = validate_deps, alias = "dependsOn")]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[setting(nested, validate = validate_deps)]
+        #[serde(default, alias = "dependsOn", skip_serializing_if = "Option::is_none")]
         pub deps: Option<Vec<TaskDependency>>,
 
         /// A map of environment variables that will be set in the child
@@ -369,13 +368,11 @@ config_struct!(
 
         /// A toolchain, or list of toolchains, in which the task will inherit
         /// functionality from.
-        #[setting(alias = "toolchain")]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, alias = "toolchain", skip_serializing_if = "Option::is_none")]
         pub toolchains: Option<OneOrMany<Id>>,
 
         /// The type of task, primarily used for categorical reasons. When not provided,
         /// will be automatically determined based on configured outputs.
-        #[setting(rename = "type")]
         #[serde(default, rename = "type", skip_serializing_if = "Option::is_none")]
         pub type_of: Option<TaskType>,
     }

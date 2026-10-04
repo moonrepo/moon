@@ -2,6 +2,8 @@
 title: Toolchain
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 The toolchain is an internal layer for downloading, installing, and managing tools (languages,
 dependency managers, libraries, and binaries) that are required at runtime. We embrace this approach
 over relying on these tools "existing" in the current environment, as it ensures the following
@@ -19,6 +21,29 @@ necessary tools, _and_ to keep them in sync as time passes.
 The toolchain is built around [proto](/proto), our stand-alone multi-language version manager. moon
 will piggyback of proto's toolchain found at `~/.proto` and reuse any tools available, or download
 and install them if they're missing.
+
+When running a task (or a toolchain operation, like installing dependencies), moon prepends the
+executables of each toolchain that the task runs against to `PATH`, so that the correct version of
+each tool is used.
+
+### Environment activation<VersionLabel version="2.6.0" />
+
+Some tools require more than an executable on `PATH`, like Java, which expects a `JAVA_HOME`
+environment variable. When a toolchain's plugin implements proto's `activate_environment` function
+(the same function that powers [`proto activate`](/docs/proto/commands/activate)), moon will
+activate its environment when building the command, which may set environment variables, and
+prepend additional paths to `PATH`.
+
+- Only toolchains that have a configured `version`, and have been setup, are activated, as their
+  tool directory won't exist otherwise.
+- Variables that are already configured for the command, like a task's
+  [`env`](../config/project#env-1), or those injected by toolchain plugins, are never overridden.
+- When a task runs against multiple [toolchains](../config/project#toolchains), the first
+  configured toolchain takes precedence for both variables and paths.
+- Environments are not activated when [forcing globals](#force-disabling).
+
+To check whether a toolchain supports this, run [`moon toolchain info`](../commands/toolchain/info)
+and look for `activate_environment` in the tier 3 functions.
 
 ### Force disabling
 

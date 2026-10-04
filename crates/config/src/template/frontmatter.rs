@@ -6,7 +6,6 @@ config_struct!(
     /// Docs: https://moonrepo.dev/docs/config/template#frontmatter
     #[derive(Config)]
     pub struct TemplateFrontmatterConfig {
-        #[setting(rename = "$schema")]
         #[serde(rename = "$schema")]
         pub schema: String,
 

@@ -1,0 +1,335 @@
+---
+slug: moon-v2.6
+title: moon v2.6 - Cleanup and wait task dependencies, OpenTelemetry metrics, Pkl type checking, and more
+authors: [milesj]
+tags:
+  [
+    tasks,
+    dependencies,
+    persistent,
+    pipeline,
+    ci,
+    otel,
+    telemetry,
+    metrics,
+    observability,
+    pkl,
+    config,
+    toolchains,
+    environment,
+  ]
+image: ./img/moon/v2.6.png
+---
+
+This release is all about what happens _around_ your tasks. Dependencies can now run after a task to
+clean up after it, or alongside it as a long-running sidekick. Persistent tasks no longer wait in
+line until the very end of the pipeline. The OpenTelemetry integration from last release now emits
+metrics, and Pkl configs can finally be type checked.
+
+<!--truncate-->
+
+## Cleanup and wait dependencies
+
+Task [`deps`](/docs/config/project#deps) have always meant one thing: "run this before me, and make
+sure it passes". That's perfect for builds and code generation, but it falls apart the moment a task
+needs something to be _running_ (a database for integration tests, a server for end-to-end tests)
+and then needs it gone again afterwards. Until now, that usually meant a shell script that starts
+everything in the background, traps a few signals, and hopes for the best.
+
+In v2.6, dependencies support a new [`type`](/docs/config/project#type) setting, which controls
+_when_ the dependency runs in relation to the task:
+
+- `required` (default) - Runs before the task, and must complete successfully. Exactly what you're
+  used to.
+- `cleanup` - Runs _after_ the task has ran its command, even when the task fails. Ideal for tearing
+  things down, like stopping a database or removing temporary files.
+- `wait` - Runs before the task, but the task only waits for the dependency to _start_ running, not
+  to complete. Ideal for long-running dependencies, like a server that the task sends requests to.
+
+Put them together, and an entire end-to-end testing workflow fits into a single task:
+
+```yaml title="moon.yml"
+tasks:
+  e2e:
+    command: 'playwright test'
+    deps:
+      # Start the database, and wait for it to complete
+      - 'db:start'
+      # Start the server, and run the tests alongside it
+      - target: 'web:serve'
+        type: 'wait'
+      # Stop the server and database once the tests have ran, pass or fail
+      - target: 'web:stop'
+        type: 'cleanup'
+      - target: 'db:stop'
+        type: 'cleanup'
+    options:
+      # Don't hydrate from the cache, as the server would be stopped right after it started
+      cache: false
+```
+
+A few things worth knowing about how these behave:
+
+- Cleanup dependencies run once the task has ran its command, whether it passed or failed, and even
+  when a failure aborts the pipeline. They're skipped when there's nothing to clean up, like when
+  the task was hydrated from the cache, _unless_ the task has already started a `wait` dependency,
+  since stopping it is usually the cleanup's whole job.
+- Wait dependencies only need to have _started_, which isn't the same as being _ready_. If your
+  server takes a moment before it accepts connections, poll a health check before sending requests.
+- Wait dependencies are not stopped once the task completes, so pair them with a cleanup dependency
+  that stops them, as seen above.
+- Wait dependencies can be [persistent](/docs/config/project#persistent), and they don't count
+  towards the pipeline's concurrency limit, so they never block the tasks waiting on them.
+- Wait dependencies are still subject to [`runInCI`](/docs/config/project#runinci): a task that
+  runs in CI can't wait on one that doesn't. Since servers don't run in CI by default (tasks named
+  `serve` are persistent automatically), enable `runInCI` for `web:serve` in the example above. See
+  [persistent tasks in CI](#persistent-tasks-in-ci) below.
+- Since neither type completes before the task runs, they don't contribute to the task's
+  [hash](/docs/concepts/cache#hashing), and they always run their command instead of being hydrated
+  from the cache.
+
+Cleanup dependencies also work great with [task inheritance](/docs/config/tasks#implicitdeps). For
+example, any project can define a `teardown` task that runs after its other tasks, without each task
+having to opt-in individually. And don't worry, the `teardown` task won't try to clean up after
+itself!
+
+```yaml title=".moon/tasks/all.yml"
+implicitDeps:
+  - target: '~:teardown'
+    type: 'cleanup'
+    optional: true
+```
+
+:::caution
+
+Cleanup dependencies are _not_ ran when the pipeline is interrupted by a signal, like pressing
+Ctrl+C.
+
+:::
+
+## Persistent tasks run within the pipeline
+
+[Persistent tasks](/docs/concepts/task#persistent) (servers, watchers, anything that never exits)
+have always been tricky in a dependency graph. Our answer since v1.6 has been to collect them all,
+and run them _last_ as a single batch, once every other action in the pipeline had finished. It
+worked, but it also meant your dev server sat around waiting on completely unrelated tasks before it
+was allowed to boot.
+
+In v2.6, persistent tasks run as soon as they're reached in the action graph, like any other task.
+They still run in parallel and never block the actions that come after them, but they now start as
+soon as their own dependencies have completed, and a persistent task no longer holds up the
+persistent tasks that depend on it.
+
+```shell
+# The servers start as soon as they're ready, while docs continue to build
+$ moon run api:dev web:dev docs:build
+```
+
+And since a non-persistent task can now [wait](#cleanup-and-wait-dependencies) for a persistent task
+to start, servers can finally be used as dependencies of regular tasks, instead of only of other
+persistent tasks.
+
+### Persistent tasks in CI
+
+We also took a hard look at how persistent tasks behave in CI, as a task that never completes is a
+great way to keep a pipeline running until it times out. Persistent tasks now _never_ run in CI by
+default, even when they define `outputs`, or have a `type` of `build` or `test`. When you need one
+in CI, like a server for end-to-end tests, explicitly enable
+[`runInCI`](/docs/config/project#runinci).
+
+```yaml title="moon.yml"
+tasks:
+  serve:
+    command: 'vite preview'
+    options:
+      persistent: true
+      runInCI: true
+```
+
+Even then, it's only ran for the tasks that depend on it, or when explicitly passed as a target, and
+never on its own. So [`moon ci`](/docs/commands/ci) will start the server for your `e2e` task, but
+it won't start it just because a file in the project changed. The same goes for
+[`moon check`](/docs/commands/check), which now only runs persistent tasks when another task
+depends on them, instead of never completing.
+
+And if you forget to enable it, the `run_in_ci_mismatch` error (a task that runs in CI depends on a
+task that doesn't) now explains exactly how to resolve it.
+
+### A faster pipeline
+
+To make all of this possible, we rewrote the action pipeline's job dispatcher, and made it 10-15x
+faster while we were in there. Dependency relationships are now extracted from the action graph
+once up front, and completed jobs unblock their dependents incrementally, instead of re-traversing
+the graph every time the dispatcher checks what's next. Additionally, interactive tasks now only
+block the pipeline until they themselves have completed, instead of until every task that was
+already running has completed.
+
+## OpenTelemetry metrics
+
+In v2.5, we shipped [OpenTelemetry](/docs/commands/overview#opentelemetry) support for traces and
+logs, with a little disclaimer that metrics were supported, but that we didn't emit any yet. Well,
+now we do! When `--otel` (or `MOON_OTEL`) is enabled, moon records
+[metrics](/docs/commands/overview#metrics) for every task, action, and operation that runs within
+the pipeline.
+
+| Metric                      | Instrument | Description                                     |
+| :-------------------------- | :--------- | :---------------------------------------------- |
+| `moon.task.runs`            | Counter    | Number of tasks ran within the pipeline.        |
+| `moon.task.duration`        | Histogram  | Duration of tasks in milliseconds.              |
+| `moon.action.executions`    | Counter    | Number of actions executed within the pipeline. |
+| `moon.action.duration`      | Histogram  | Duration of actions in milliseconds.            |
+| `moon.operation.executions` | Counter    | Number of operations executed within an action. |
+| `moon.operation.duration`   | Histogram  | Duration of operations in milliseconds.         |
+
+Task metrics are the ones to reach for when building dashboards, as they're labeled with the
+`target`, `project`, `task`, `toolchains`, `status`, and whether the task was `flaky` (passed only
+after a retry). That means you can finally graph questions like "how long does `build` take across
+the entire workspace?", "which project is the most expensive in CI?", or "what's our cache hit rate
+this week?" (compare the `cached` and `cached-from-remote` statuses against the total).
+
+Action and operation metrics go one level deeper. Actions cover the pipeline as a whole (syncing
+projects, setting up toolchains, installing dependencies), while operations are the individual
+steps _within_ an action, like generating a hash, hydrating outputs from the cache, or executing the
+command. Operations are purposefully not labeled by target or project, to keep cardinality in check;
+traces provide that level of detail instead.
+
+```shell
+$ export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"
+$ moon --otel ci
+```
+
+:::caution
+
+Since the `target` attribute is recorded for every task that runs, the cardinality of the
+`moon.task.*` and `moon.action.*` metrics scales with the number of tasks in your workspace. If your
+observability backend complains, drop or aggregate away the attribute within your OTEL collector.
+
+:::
+
+## Type checking for Pkl configs
+
+[Pkl](/docs/config/overview#pkl) has been a supported configuration format since v1.29, but until
+now, moon was the only one that knew what a valid config looked like, and you'd only find out about
+a typo once moon loaded the file. In v2.6, every configuration file has a Pkl module that types its
+settings, which is generated to `.moon/cache/schemas/pkl` (when `pkl` is installed), right
+alongside the JSON schemas.
+
+A config that `amends` its module is [type checked](/docs/config/overview#type-checking) by Pkl
+itself, which reports unknown settings and invalid values when the config is evaluated. And editors
+with Pkl support, like the [VS Code extension](https://pkl-lang.org/vscode/current/index.html), now
+provide completion and documentation for every setting.
+
+```pkl title=".moon/workspace.pkl"
+amends "./cache/schemas/pkl/WorkspaceConfig.pkl"
+
+projects = List("apps/*", "packages/*")
+```
+
+For project configs, a
+[triple-dot URI](https://pkl-lang.org/main/current/language-reference/index.html#triple-dot-module-uris)
+resolves the module by searching each parent directory in turn, so the same line works for a
+project at any depth (except the workspace root itself, which uses a `./` path).
+
+```pkl title="moon.pkl"
+amends ".../.moon/cache/schemas/pkl/ProjectConfig.pkl"
+
+tasks {
+  ["build"] {
+    command = "vite build"
+    deps = List("^:build")
+  }
+}
+```
+
+Toolchains and extensions are configured by plugins, whose settings can't be known ahead of time, so
+`.moon/toolchains.pkl` and `.moon/extensions.pkl` should `extends` their modules instead, which
+allows additional settings. View the [official documentation](/docs/config/overview#type-checking)
+for the full rundown, including how to create settings that accept multiple shapes.
+
+## Toolchain environment activation
+
+Some tools need more than a binary on `PATH` to work correctly. Java expects `JAVA_HOME`, package
+managers want to know where globals live, and so on. proto has handled this for a while through the
+`activate_environment` plugin function (the same one that powers `proto activate`), but moon never
+called it, so tasks ran with a less complete environment than your shell did.
+
+In v2.6, when moon builds a command (for tasks and toolchain operations), the environment of each
+toolchain that has been setup is now activated. This may set environment variables, and prepend
+directories to `PATH`, exactly as proto would. We were careful to keep this from stepping on your
+toes though:
+
+- Variables that are already configured, like a task's [`env`](/docs/config/project#env), are never
+  overridden.
+- When a task has multiple toolchains, the first configured toolchain takes precedence.
+- Only toolchains that have actually been setup are activated, as their tool directory wouldn't
+  exist otherwise.
+
+For plugin authors, `activate_environment` is now listed as a tier 3 function in
+[`moon toolchain info`](/docs/commands/toolchain/info).
+
+## Output style from the command line
+
+The [`outputStyle`](/docs/config/project#outputstyle) task option controls how a task's output is
+displayed, but it's configured per task, and it doesn't apply to primary targets (those you
+explicitly requested on the command line). That's a sensible default locally, but in CI, you
+typically want the opposite: successful tasks should stay quiet, while failures print in full.
+
+In v2.6, [`moon run`](/docs/commands/run), [`moon ci`](/docs/commands/ci),
+[`moon check`](/docs/commands/check), and [`moon exec`](/docs/commands/exec) support a new
+`--output-style` option, which overrides the style for _all_ tasks in that run. Since it was
+requested explicitly, it also applies to primary targets.
+
+```shell
+$ moon ci :test :lint --output-style buffer-only-failure --summary minimal
+```
+
+> Interactive tasks are the exception, as they must remain attached to the terminal, and always
+> stream their output.
+
+Prefer to configure it once? The new
+[`explicitTaskOutputStyle`](/docs/config/workspace#explicittaskoutputstyle) experiment applies each
+task's configured `outputStyle` to primary targets as well.
+
+```yaml title=".moon/workspace.yml"
+experiments:
+  explicitTaskOutputStyle: true
+```
+
+## Upgrade notes
+
+A few changes in this release may be noticeable when upgrading, so we want to call them out
+directly.
+
+- **Some caches will be invalidated once.** A task's resolved `toolchains` list was previously
+  ordered by an internal hash set, instead of by what was configured. It's now deterministic
+  (configured toolchains first, followed by the toolchains they require), which also fixes the
+  `$taskToolchain` token. Since this list is part of a task's hash, tasks that run against multiple
+  toolchains (like `node` and `npm`) will miss the cache on their first run after upgrading.
+- **Persistent tasks no longer run in CI by default**, even when they define `outputs` or a `type`
+  of `build` or `test`. See [persistent tasks in CI](#persistent-tasks-in-ci) above.
+- **`moon check` exits with a non-zero code when there's nothing to check**, instead of prompting
+  for tasks to run (or failing in non-TTY environments).
+- **JSON output uses the documented keys.** Project configuration within JSON output
+  (`moon project --json`, `moon query projects`, MCP responses, and webhook payloads) serialized
+  some renamed settings under the wrong keys. They now match the JSON schemas and `@moonrepo/types`:
+  `type` instead of `typeOf`, `runInCI` instead of `runInCi`, and `$schema` instead of `schema`. If
+  you have scripts that parse this output, double check them!
+- **The MCP server now requires the `2026-07-28` protocol.** [`moon mcp`](/docs/commands/mcp) has
+  moved to the stateless MCP protocol, so older protocol versions (`2025-11-25` and below) and the
+  `initialize` handshake are no longer supported. Make sure your MCP client is up to date.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v2.6.0) for a full list
+of changes, but here's a few more worth calling out:
+
+- Updated `runDepsInParallel` (when disabled) to skip persistent dependencies when ordering the
+  dependencies that follow them, as a persistent dependency never completes.
+- Updated [`moon sync config-schemas`](/docs/commands/sync/config-schemas) to also generate the new
+  Pkl modules.
+- Moved hash manifests out of `.moon/cache/hashes`, and into the local content-addressable cache as
+  blobs. As such, the local cache backend is now always enabled, while storing task _outputs_ in it
+  remains gated by the [`casOutputsCache`](/docs/config/workspace#casoutputscache) experiment.
+- Updated proto to [v0.62.2](https://github.com/moonrepo/proto/releases/tag/v0.62.0) from 0.60.2,
+  which includes [Swift support and immutable lockfiles](./proto-v0.61), and
+  [community plugins and Zig support](./proto-v0.62).

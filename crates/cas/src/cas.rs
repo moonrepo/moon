@@ -293,6 +293,20 @@ impl CasStore {
         crate::gc::retain(self, keep, grace).await
     }
 
+    /// Reachability sweep like `retain`, but objects that were never referenced
+    /// (not in `keep` nor `released`) are spared for `unreferenced_grace`
+    /// instead, while `released` objects (only referenced by evicted manifests)
+    /// are removed once past `grace`.
+    pub async fn retain_with_released(
+        &self,
+        keep: Arc<FxHashSet<ContentHash>>,
+        released: Arc<FxHashSet<ContentHash>>,
+        grace: Duration,
+        unreferenced_grace: Duration,
+    ) -> miette::Result<BlobCleanStats> {
+        crate::gc::retain_with_released(self, keep, released, grace, unreferenced_grace).await
+    }
+
     /// Update a blob's mtime to now, keeping it alive through GC.
     pub fn touch(&self, hash: &ContentHash) -> miette::Result<()> {
         let path = self.object_path_with_exists_check(hash)?;

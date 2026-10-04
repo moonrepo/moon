@@ -5976,7 +5976,7 @@ dependencies = [
 
 [[package]]
 name = "moon_config"
-version = "2.2.1"
+version = "2.2.2"
 dependencies = [
  "deserialize_untagged_verbose_error",
  "deserialize_untagged_verbose_error_macro",

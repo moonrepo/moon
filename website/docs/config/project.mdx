@@ -1833,7 +1833,8 @@ tasks:
 Because tasks run only once per pipeline, serializing a dependency's subtree also delays any task
 within it that is shared with _other_ targets in the same run (like `moon ci`), which can reduce
 parallelism. When multiple parents request conflicting orderings for a shared task, the ordering
-that would introduce a cycle is skipped.
+that would introduce a cycle is skipped. Likewise, when the configured order contradicts a
+dependency between the dependencies themselves, the dependency takes precedence.
 
 :::
 
@@ -1863,6 +1864,11 @@ tasks:
 [Persistent](#persistent) tasks default to `false` instead, and must be explicitly enabled to run in
 CI. Once enabled, they're only ran for the tasks that depend on them, or when explicitly passed as a
 target, and never on their own, as they would keep the pipeline running.
+
+A task that runs in CI can't depend on a task that doesn't, and an error is raised when this
+happens. To resolve it, either enable this setting for the dependency (both run in CI), set it to
+`skip` for the dependency (the task runs in CI without it), or disable it for the task (neither runs
+in CI).
 
 #### `runInSyncPhase`<VersionLabel version="2.1.0" />
 

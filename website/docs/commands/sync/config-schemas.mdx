@@ -8,8 +8,8 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 <VersionLabel version="1.27.0" header />
 
 The `moon sync config-schemas` command will manually generate JSON schemas to `.moon/cache/schemas`,
-and [Pkl modules](../../config/overview#type-checking) to `.moon/cache/schemas/pkl` (if `pkl` is installed), for all our different
-configuration files.
+and [Pkl modules](../../config/overview#type-checking) to `.moon/cache/schemas/pkl` (if `pkl` is
+installed), for all our different configuration files.
 
 ```shell
 $ moon sync config-schemas
@@ -17,4 +17,5 @@ $ moon sync config-schemas
 
 ### Options
 
-- `--force` - Bypass cache and force create files.
+- `--force` - Bypass cache and force create files. Pkl modules are only regenerated when this option
+  is passed, or when they do not exist.

@@ -104,10 +104,23 @@ task as a child process, derived from a [target](../concepts/target). Tasks can 
 tasks, and they'll be effectively orchestrated and executed by running in topological order using a
 thread pool.
 
+As of v2.6, how a task dependency is linked in the graph depends on its
+[type](../config/project#type):
+
+- `required` - The dependency is linked as a dependency of the task, so it must complete before the
+  task runs.
+- `cleanup` - The relationship is reversed, and the dependency is linked as a _dependent_ of the
+  task, so it runs once the task has completed. When a failure aborts the pipeline, cleanup actions
+  for tasks that have already ran are still ran.
+- `wait` - The dependency is linked as a dependency of the task, but the task is unblocked as soon
+  as the dependency has _started_. These actions don't count towards the
+  [concurrency](../commands/overview#concurrency) limit.
+
 ### Run interactive task
 
 Like the base run task, but runs the [task interactively](../concepts/task#interactive) with stdin
-capabilities. All interactive tasks are run in isolation in the graph.
+capabilities. All interactive tasks are run in isolation in the graph, so no other actions are
+started until the interactive task has completed.
 
 ### Run persistent task
 

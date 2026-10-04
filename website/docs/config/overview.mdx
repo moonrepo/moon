@@ -119,10 +119,10 @@ proto install pkl --pin
 
 To start using Pkl in moon, simply:
 
-- Install [Pkl](#installing-pkl) and the
-  [VS Code extension](https://pkl-lang.org/vscode/current/index.html).
+- Install [Pkl](#pkl) and the [VS Code extension](https://pkl-lang.org/vscode/current/index.html).
 - Create configs with the `.pkl` extension.
-- Amend the [module](#type-checking) of each config, so that Pkl type checks it.
+- Amend (or extend) the [module](#type-checking) of each config, so that Pkl type checks it.
+  <VersionLabel version="2.6.0" />
 
 :::info
 
@@ -135,9 +135,14 @@ We highly suggest reading the Pkl
 #### Type checking<VersionLabel version="2.6.0" />
 
 Every configuration file has a Pkl module that types its settings, which is generated to
-`.moon/cache/schemas/pkl`, alongside the [JSON schemas](#schema-validation). A config that amends its module
-is type checked by Pkl itself, which reports unknown settings and invalid values when the config is
-evaluated, and editors with Pkl support provide completion and documentation for each setting.
+`.moon/cache/schemas/pkl`, alongside the [JSON schemas](#schema-validation). A config that amends
+its module is type checked by Pkl itself, which reports unknown settings and invalid values when the
+config is evaluated, and editors with Pkl support provide completion and documentation for each
+setting.
+
+The modules are generated automatically when moon runs (only when the `pkl` binary is available),
+if they do not exist yet. To regenerate them, for example after upgrading moon to a version with new
+settings, run [`moon sync config-schemas --force`](../commands/sync/config-schemas).
 
 <Tabs
   groupId="configs"
@@ -203,7 +208,7 @@ and custom `project` metadata of a `moon.pkl`.
 extends "./cache/schemas/pkl/ToolchainsConfig.pkl"
 
 proto {
-  version = "0.60.0"
+  version = "0.62.2"
 }
 
 node {

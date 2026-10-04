@@ -159,6 +159,35 @@ tasks:
 
 > The `persistent` setting is required for this to work.
 
+#### Run a task alongside a server
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    # ...
+    deps:
+      - target: 'app:serve'
+        type: 'wait'
+      - target: 'app:stop'
+        type: 'cleanup'
+    options:
+      cache: false
+```
+
+> The task only waits for the server to _start_, not to complete, and the cleanup stops it.
+
+#### Clean up after a task, even when it fails
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    # ...
+    deps:
+      - 'db:start'
+      - target: 'db:stop'
+        type: 'cleanup'
+```
+
 ## Languages
 
 #### Run system binaries available on `PATH`

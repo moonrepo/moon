@@ -68,6 +68,9 @@ OUTPUTS
   - packages/runtime/cjs
 ```
 
+Dependencies that don't run before the task are labeled with their [type](../config/project#type),
+like `db:stop (cleanup)` or `web:serve (wait)`. <VersionLabel version="2.6.0" />
+
 ### Configuration
 
 - [`tasks`](../config/tasks#tasks) in `.moon/tasks/*`

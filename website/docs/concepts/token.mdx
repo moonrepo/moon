@@ -455,8 +455,12 @@ tasks:
 
 - `$target` - Fully-qualified target that is currently running.
 - `$task` - ID of the task that is currently running. Does not include the project ID.
-- `$taskToolchain` - The toolchain that task will run against, as defined in
-  [`moon.*`](../config/project). <VersionLabel version="1.31.0" />
+- `$taskToolchain` - The primary toolchain that task will run against, which is the first
+  [toolchain](../config/project#toolchains) configured for the task (or inherited from the project),
+  like `node`. <VersionLabel version="1.31.0" />
+- `$taskToolchains` - All toolchains that the task will run against, comma separated, like
+  `node,npm`. Configured toolchains come first, followed by related toolchains (like a package
+  manager that requires the configured toolchain). <VersionLabel version="1.31.0" />
 - `$taskType` - The [type of task](./task#types), based on its configured settings.
 
 ```yaml

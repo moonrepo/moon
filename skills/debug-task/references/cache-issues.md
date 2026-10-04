@@ -1,8 +1,8 @@
 # Cache issues: Diagnosis and fixes
 
 moon's cache is powered by content-based hashing. Every task run generates a hash from multiple
-sources (command, args, inputs, outputs, env, dependencies, etc). If the hash matches a previous
-run, moon skips execution and restores the cached output.
+sources (command, args, inputs, outputs, env, dependencies, toolchains, etc). If the hash matches a
+previous run, moon skips execution and restores the cached output.
 
 When the cache behaves unexpectedly, it's almost always because the inputs to the hash don't match
 what you think they should.
@@ -93,6 +93,13 @@ tasks:
 
 See [Dependency cache strategies](#dependency-cache-strategies) for the full picture.
 
+**The dep that changed is a `cleanup` or `wait` dep** <sup>v2.6+</sup>:
+
+`cleanup` and `wait` deps never contribute to the task's hash, as they don't complete before the
+task runs — their `cacheStrategy` can only be `ignored`. Changing a server that the task waits on
+won't invalidate the task. If the task's results depend on it, track its source files in the task's
+`inputs`, or make it a `required` dep.
+
 **Environment variable not included:**
 
 If the task's behavior changes based on an env var (like `NODE_ENV`), but that var isn't declared in
@@ -181,6 +188,19 @@ build manifests with dates — cause the hash to differ even when the source has
 
 If `package-lock.json`, `yarn.lock`, etc, is in `inputs`, any dependency change invalidates the
 cache for every task. This is usually correct behavior, but can be surprising.
+
+**Every task re-ran once after upgrading to v2.6:**
+
+Expected. A task's resolved `toolchains` list is part of its hash, and was previously ordered by an
+internal hash set. In v2.6 it's ordered by configuration (configured toolchains first, then the ones
+they require), which changes every hash once. The next run should hit the cache — if it doesn't, the
+cause is something else.
+
+**The task is used as a `cleanup` or `wait` dep** <sup>v2.6+</sup>:
+
+A task that's ran as a `cleanup` or `wait` dep always runs its command and is never hydrated from
+the cache, since the task depending on it relies on it actually running (like starting a server).
+This is by design, not a cache miss.
 
 **A `fingerprint` check with volatile output** <sup>v2.4+</sup>:
 
@@ -331,6 +351,10 @@ moon task <project>:<task> --json
 Each entry under `deps` shows its resolved `cacheStrategy`. If you didn't set it, the field reflects
 the default chosen for you.
 
+<sup>v2.6+</sup> Only `required` deps (the default `type`) can use `hash` or `outputs`. `cleanup`
+and `wait` deps don't complete before the task runs, so they're always `ignored`, and configuring
+another strategy is a validation error.
+
 Mechanism note for `'outputs'`: the dep's output files and globs are injected into the consuming
 task's **inputs** by the expander (the hash itself only records a marker for the strategy). So in
 `moon hash` output, an upstream's `dist/` files showing up as this task's inputs is expected, not a
@@ -464,6 +488,10 @@ per-hash `.tar.gz` archives under `.moon/cache/outputs/`. The CAS lives in **sib
   only happens during garbage collection (`moon clean`, or the post-pipeline cleanup when a daemon
   is connected) — never at write time, so the cache can temporarily exceed the limit.
 
+<sup>v2.6+</sup> The local CAS is **always enabled**, as it stores the hash manifest of every ran
+task (previously `.moon/cache/hashes/<hash>.json`). The experiment now only controls whether task
+_outputs_ are stored in it — so `blobs/` existing doesn't mean the experiment is on.
+
 **Quick toggle for diagnosis:**
 
 ```yaml
@@ -501,15 +529,16 @@ experiments:
 
 The `cache.unstable_sharedWorktreeCache` setting (or the `MOON_CACHE_SHARED_WORKTREE_CACHE`
 environment variable) shares the CAS between all git worktrees of a repository on the same machine.
-It requires the `casOutputsCache` experiment.
+Sharing task outputs requires the `casOutputsCache` experiment.
 
 **What changes when it's on:**
 
 - `blobs/` and `manifests/` live in the **base checkout's** `.moon/cache` directory (or
   `~/.moon/cache/shared` for bare clones) — a worktree's own `.moon/cache/blobs/` being empty or
   absent is normal, not a corruption sign.
-- Hashes, locks, and states remain worktree-specific, so `lastRun.json`, `stdout.log`, and hash
-  manifests are still local to each worktree.
+- Locks and states remain worktree-specific, so `lastRun.json` and `stdout.log` are still local to
+  each worktree. Hash manifests were also local before v2.6; <sup>v2.6+</sup> they're stored as
+  blobs, so they're shared along with everything else in `blobs/`.
 - A cache hit in a fresh worktree may hydrate from a task that ran in a _different_ worktree. If the
   restored outputs look wrong, diff the hash manifests from both worktrees before blaming the
   restore itself.
@@ -563,6 +592,7 @@ These commands are useful for any cache investigation:
 
 ```bash
 # Inspect a hash manifest (all sources that generated the hash)
+# v2.6+: manifests are blobs in .moon/cache/blobs/ — read them through this command
 moon hash <hash>
 
 # Compare two hashes (see exactly what changed)

@@ -23,9 +23,10 @@ describes the mistake, why it happens, how to detect it, and how to fix it.
 14. [Cache lifetime and cache key](#cache-lifetime-and-cache-key)
 15. [Task tags and `#tag` targets](#task-tags-and-tag-targets) — v2.3+
 16. [Task dep `cacheStrategy`](#task-dep-cachestrategy) — v2.3+
-17. [Task checks](#task-checks) — v2.4+
-18. [Project-level `taskOptions`](#project-level-taskoptions) — v2.4+
-19. [Task builder validation errors](#task-builder-validation-errors)
+17. [Task dep `type`: `cleanup` and `wait`](#task-dep-type-cleanup-and-wait) — v2.6+
+18. [Task checks](#task-checks) — v2.4+
+19. [Project-level `taskOptions`](#project-level-taskoptions) — v2.4+
+20. [Task builder validation errors](#task-builder-validation-errors)
 
 ---
 
@@ -169,6 +170,11 @@ The corresponding merge-strategy options are `mergeArgs`, `mergeChecks` <sup>v2.
 `mergeToolchains` — plus an umbrella `merge` option that sets all eight at once (the specific
 options override it).
 
+> <sup>v2.6+</sup> Before v2.6, a task's resolved `toolchains` were ordered by an internal hash set,
+> so `append` and `prepend` produced the same (arbitrary) order, and `$taskToolchain` could expand
+> to a required toolchain (like `npm`) instead of the configured one (like `node`). The order is now
+> preserved, and the first toolchain is the primary one.
+
 ```yaml
 # Global: args = ['--check']
 # Project: args = ['--fix']
@@ -302,18 +308,29 @@ tasks:
       runInCI: 'always' # Override the preset's runInCI: false
 ```
 
+> <sup>v2.6+</sup> A persistent task with `runInCI` enabled is still only ran in CI for the tasks
+> that depend on it, or when explicitly passed as a target — never on its own (like when `moon ci`
+> detects it as affected). See [Persistent tasks](#persistent-tasks-blocking-the-pipeline).
+
 ---
 
 ## Persistent tasks blocking the pipeline
 
 A persistent task (`options.persistent: true` or `preset: 'server'`) is one that runs continuously —
-a dev server, a file watcher, a background process. moon handles persistent tasks specially: they
-run **last** and **in parallel**, after all non-persistent dependencies complete.
+a dev server, a file watcher, a background process. moon handles persistent tasks specially, as they
+never complete:
+
+- **Before v2.6**, they were collected and ran **last** as a single batch, in parallel, once every
+  other action in the pipeline had finished.
+- **In v2.6+**, they run as soon as they're reached in the action graph (once their own deps have
+  completed), alongside other tasks, and they never block the actions that come after them. A
+  persistent task also no longer holds up the persistent tasks that depend on it.
 
 ### The problem
 
-If a non-persistent task lists a persistent task in `deps`, moon produces a **hard error**. moon
-validates dep chains and rejects this configuration before execution starts.
+If a non-persistent task lists a persistent task in `deps` as a `required` dependency (the default),
+moon produces a **hard error** (`PersistentDepRequirement`) when tasks are built, before execution
+starts, as the dependent would never run.
 
 ```yaml
 # ERROR: integration-test depends on dev-server, which is persistent
@@ -334,11 +351,30 @@ tasks:
 moon action-graph <project>:<task>
 
 # Look for a persistent task node with edges pointing to it from other tasks
+# Dependency types are labeled in the human-readable output (v2.6+)
+moon task <project>:<task>
 ```
 
 ### How to fix
 
-**Option 1: Remove the dependency.** Run the server and tests separately:
+**Option 1 (v2.6+): Wait for it to start, then stop it.** A `wait` dependency only waits for the
+server to _start_, and a `cleanup` dependency stops it once the tests have ran (pass or fail). See
+[Task dep `type`](#task-dep-type-cleanup-and-wait).
+
+```yaml
+tasks:
+  integration-test:
+    command: 'cypress run'
+    deps:
+      - target: '~:dev-server'
+        type: 'wait'
+      - target: '~:dev-server-stop'
+        type: 'cleanup'
+    options:
+      cache: false # otherwise a cache hit starts the server, only to stop it right away
+```
+
+**Option 2: Remove the dependency.** Run the server and tests separately:
 
 ```bash
 # In one terminal
@@ -348,8 +384,8 @@ moon run app:dev-server
 moon run app:integration-test
 ```
 
-**Option 2: Use a script that manages both.** Create a script that starts the server, waits for it
-to be ready, runs tests, then kills the server:
+**Option 3 (before v2.6): Use a script that manages both.** Create a script that starts the server,
+waits for it to be ready, runs tests, then kills the server:
 
 ```yaml
 tasks:
@@ -357,8 +393,26 @@ tasks:
     script: 'start-server-and-test "vite dev" http://localhost:3000 "cypress run"'
 ```
 
-**Option 3: Restructure so persistent tasks are leaf nodes.** Persistent tasks should not have
-dependents. They should be the last thing that runs.
+### Persistent tasks in CI and `moon check`
+
+A task that never completes keeps a CI pipeline running until it times out, so in v2.6+:
+
+- Persistent tasks default to `runInCI: false`, even when they define `outputs` or have a `type` of
+  `build` or `test`. Before v2.6, such a task could run in CI by default and hang the pipeline.
+- When `runInCI` is explicitly enabled, a persistent task is only ran in CI for the tasks that
+  depend on it (like a `wait` dependency), or when explicitly passed as a target — never on its own,
+  like when `moon ci` detects it as affected.
+- `moon check` only runs persistent tasks when another task that it runs depends on them. If the
+  checked projects have no build or test tasks, it reports that there's nothing to check and exits
+  with a non-zero code (instead of prompting for tasks to run).
+
+### Persistent deps and `runDepsInParallel: false`
+
+<sup>v2.6+</sup> When `runDepsInParallel` is disabled, a persistent dep never completes, so it's
+skipped when ordering the deps that follow it — those are ordered against the previous dep that does
+complete. Only `required` deps are ordered at all; `wait` and `cleanup` deps don't complete before
+the task runs. And when the configured order contradicts a dependency between the deps themselves,
+the dependency wins.
 
 ---
 
@@ -515,13 +569,23 @@ downstream tasks that depend on a `'skip'` task won't break in CI.
 **`'always'`** — the task always runs in CI regardless of affected status. Useful for tasks like
 `deploy` that should run on every merge to main, even if no inputs changed.
 
+**Persistent tasks** <sup>v2.6+</sup> — default to `false` regardless of their type, and when
+enabled, only run for the tasks that depend on them, or when explicitly targeted. See
+[Persistent tasks in CI](#persistent-tasks-in-ci-and-moon-check).
+
+**A CI task depending on a non-CI task** — raises `RunInCiDepRequirement`
+(`task_builder::dependency::run_in_ci_mismatch`). In v2.6+, the error lists the three fixes: enable
+`runInCI` for the dependency (both run in CI), set it to `'skip'` for the dependency (the task runs
+in CI without it), or disable it for the task (neither runs in CI). A persistent dependency hits
+this by default, as its `runInCI` defaults to `false`.
+
 ### How to detect
 
 ```bash
 moon task <project>:<task> --json | grep -i runci
 # Also check state.setRunInCi — true means runInCI was set explicitly OR by a
 # preset; the key is omitted entirely when it defaulted from the task type
-# (build/test → run in CI)
+# (build/test → run in CI), and in v2.6+ also from persistence (persistent → off)
 ```
 
 ---
@@ -624,6 +688,12 @@ tasks:
 If a task "sometimes passes," check if `retryCount` is set — the task might be flaky but passing on
 retries. Note `retryCount: 2` means up to 3 total attempts.
 
+<sup>v2.6+</sup> A task is no longer retried once the pipeline has been aborted (because another
+task failed) or interrupted (like with Ctrl+C), and a task that hadn't started its command yet (it
+was still hashing, or waiting on a `mutex`) doesn't start it. Before v2.6, these could spawn
+processes that were never terminated and kept running after moon exited — if a user reports orphan
+processes on an older version, this is a likely cause.
+
 ---
 
 ## `os` platform filtering
@@ -664,6 +734,25 @@ If the user reports "my task runs but I see no output," check `outputStyle`. A v
 `'buffer-only-failure'` (with a passing task) suppresses output entirely.
 
 The `server` and `utility` presets both set `outputStyle: 'stream'`.
+
+### Primary vs transitive targets
+
+`outputStyle` only applies to **transitive** targets (deps of what was requested). **Primary**
+targets — those explicitly passed on the command line — always display their output, regardless of
+the configured style. So the same task can show output in `moon run app:build` but not when it runs
+as a dep of another target.
+
+- <sup>v2.6+</sup> Enabling `experiments.explicitTaskOutputStyle` (or
+  `MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE`) applies the configured style to primary targets as
+  well — check for it when a primary target's output is unexpectedly hidden.
+- <sup>v2.6+</sup> The `--output-style <style>` option on `moon run`, `moon ci`, `moon check`, and
+  `moon exec` overrides the style for **all** tasks in that run, including primary targets. For
+  example, `moon ci --output-style buffer-only-failure` keeps passing tasks quiet. Check the CI
+  script for this flag before blaming the task config.
+- Interactive tasks always stream, as they must stay attached to the terminal.
+- Before v2.6, a primary target's `outputStyle` was incorrectly applied in CI, or when the task was
+  hydrated from the cache — so on older versions, primary output going missing in CI is a known
+  issue rather than a config mistake.
 
 ---
 
@@ -822,6 +911,103 @@ moon task <project>:<task> --json
 
 ---
 
+## Task dep `type`: `cleanup` and `wait`
+
+Available in v2.6+.
+
+Each entry in `deps` has a `type` that controls **when** the dep runs in relation to the task:
+
+| Type                 | Runs                               | Task waits for it to…                  |
+| -------------------- | ---------------------------------- | -------------------------------------- |
+| `required` (default) | Before the task                    | Complete successfully                  |
+| `cleanup`            | After the task has ran its command | (runs after, even when the task fails) |
+| `wait`               | Before the task, then alongside it | _Start_ running (not complete)         |
+
+```yaml
+tasks:
+  e2e:
+    command: 'playwright test'
+    deps:
+      - 'db:start' # required
+      - target: 'web:serve'
+        type: 'wait'
+      - target: 'web:stop'
+        type: 'cleanup'
+      - target: 'db:stop'
+        type: 'cleanup'
+    options:
+      cache: false
+```
+
+Both `cleanup` and `wait` deps never contribute to the task's hash, and always run their command
+instead of being hydrated from the cache, as the task relies on them running.
+
+### Cleanup dep didn't run
+
+Cleanups are skipped when there's **nothing to clean up** — the task didn't run its command because
+it was skipped, or hydrated from the cache. The exceptions: the task already started a `wait` dep
+(which the cleanup typically stops), the cleanup was explicitly passed as a target, or another task
+depends on it. Look for this in the logs:
+
+```bash
+moon run <project>:<task> --log debug 2>&1 | grep -i "clean"
+# "Skipping cleanup job, as there's nothing to clean up"                  → expected skip
+# "Pipeline was aborted, running cleanup jobs for the jobs that have ran" → abort path
+```
+
+Other reasons a cleanup won't run:
+
+- The pipeline was **interrupted by a signal** (Ctrl+C). Cleanups only run when a _failure_ aborts
+  the pipeline, not a signal. A cleanup that was already running when another task failed is
+  terminated along with every other task.
+- The cleanup has `runInCI` disabled, and the pipeline is running in CI — even after the task it
+  cleans up after. (Conversely, `moon ci` and `moon check` select tasks on their own, so a cleanup
+  they select runs like any other task. Mark cleanup-only tasks as `internal`.)
+- The cleanup's **own** deps hadn't completed when a failure aborted the pipeline, so it couldn't
+  run. Cleanups should be self-contained.
+
+Shared cleanups (same `args`/`env`) run once, after all of the tasks that depend on them. They also
+still run when the task's deps don't, like with `--upstream none`.
+
+### Wait dep problems
+
+- **The task can't connect to the dep** — `wait` only waits for the dep to have _started_, not to be
+  _ready_ (accepting connections). The task should poll a health check before sending requests.
+- **The task was skipped** — a `wait` dep that already failed, or was skipped, by the time the task
+  runs skips the task. If it fails _after_ the task started, the task keeps running, unless the
+  failure aborts the pipeline (like with `moon run`).
+- **The pipeline never finishes** — `wait` deps are not stopped when the task completes. A
+  non-persistent one keeps the pipeline running until it exits; a persistent one until moon is
+  exited. Pair it with a `cleanup` dep that stops it, and make sure the dep **exits successfully**
+  when stopped (handle `SIGTERM`), otherwise it counts as a failed task and fails the pipeline.
+- **A server starts and is immediately stopped** — `wait` deps start before the task's cache is
+  checked, so on a cache hit the dep starts and its cleanup stops it right away. Disable `cache` on
+  tasks that wait on long-running deps.
+- `wait` deps don't count towards the pipeline's concurrency limit, so they never prevent the task
+  from running.
+
+### Inheritance
+
+`cleanup` deps inherited through `implicitDeps` are not inherited by persistent tasks, and deps that
+reference the inheriting task itself (like `~:teardown` for the `teardown` task) are dropped. A task
+can't depend on the same task with two different types — if both come from inheritance, use
+`mergeDeps`, or the `workspace.inheritedTasks` exclude/rename filters, to resolve it.
+
+### How to inspect
+
+```bash
+# Human-readable: non-required deps are labeled, like "web:serve (wait)"
+moon task <project>:<task>
+
+# Machine-readable: dep entries have a `type` (omitted when `required`)
+moon task <project>:<task> --json
+
+# Cleanups are linked as dependents of the task in the graph (the edge is reversed)
+moon action-graph <project>:<task>
+```
+
+---
+
 ## Task checks
 
 Available in v2.4+.
@@ -971,17 +1157,35 @@ If a task unexpectedly stopped caching, retries, or picked up a `mutex`/`timeout
 moon's task builder validates configuration at build time and produces specific errors. If you see
 one of these, here's what it means:
 
-**`PersistentDepRequirement`** — a non-persistent task depends on a persistent task. This is always
-a configuration error because the persistent task never finishes. Fix: remove the dependency or
-restructure the task graph.
+**`PersistentDepRequirement`** — a non-persistent task has a `required` dep on a persistent task.
+This is always a configuration error because the persistent task never finishes. Fix: in v2.6+,
+change the dep to `type: 'wait'`; otherwise remove the dependency or restructure the task graph.
 
 **`AllowFailureDepRequirement`** — a task depends on a task with `allowFailure: true`. This is a
 hard error: moon rejects the configuration, because a failing dependency would still let the
-dependent task run, producing incorrect results.
+dependent task run, producing incorrect results. <sup>v2.6+</sup> `cleanup` deps are exempt, as they
+run after the task.
 
 **`RunInCiDepRequirement`** — a task that runs in CI depends on a task that doesn't run in CI
 (`runInCI: false`). The dependency won't execute in CI, so the dependent task may fail or produce
-incorrect results.
+incorrect results. In v2.6+, the error lists how to resolve it (see
+[`runInCI` variants](#runinci-variants)), and persistent deps hit it by default.
+
+**Dependency type errors** <sup>v2.6+</sup> — raised for invalid `cleanup`/`wait` relationships
+(diagnostic codes under `task_builder::dependency::`):
+
+- `persistent_cleanup_dep` — a persistent task used as a `cleanup` dep (it would never complete).
+- `persistent_cleanup_task` — a persistent task with a `cleanup` dep (it never completes, so the
+  cleanup would run at the wrong time).
+- `interactive_wait_dep` — a `wait` dep on an interactive task (interactive tasks run in isolation,
+  so nothing can run alongside them).
+- `self_reference` — a task with a `cleanup` or `wait` dep on itself.
+- `conflicting_types` — the same dep listed with two different types, often via inheritance (use
+  `mergeDeps` or the `workspace.inheritedTasks` filters).
+
+Config validation also rejects a `cleanup`/`wait` dep with `cacheStrategy: 'hash'` or `'outputs'`
+("only supported for required dependencies; use ignored instead"), and `type: 'optional'` (use the
+`optional` field instead).
 
 **`InvalidCommandSyntax` / `UnsupportedCommandSyntax`** — the `command` field contains shell syntax
 (pipes, redirects, `&&`) that should use `script` instead.

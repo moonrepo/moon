@@ -3,23 +3,21 @@ name: debug-task
 description: >-
   Diagnose and fix moon tasks that are broken, misconfigured, or behaving unexpectedly. Use this
   skill when a moon task is failing, not running, skipped, hanging, producing stale or wrong output,
-  cached when it shouldn't be, re-running every time when it should be cached, or when outputs are
-  empty or missing after a cache hit. Also covers pipeline hangs and freezes, tasks that only work
-  in CI but not locally (or vice versa), tasks skipped by --affected, and task inheritance not
-  applying to a project. Activate on any mention of "moon run" or "moon task" combined with a
-  problem — errors, stale cache, missing outputs, wrong results, "nothing to do", or unexpected
-  behavior. Also use for task options like persistent, runInCI, allowFailure, affectedFiles, mutex,
-  timeout, or cacheLifetime, and for task checks (requirement, condition, fingerprint) that make a
-  task fail, skip, or re-run, and project-level taskOptions defaults. This skill is for diagnosing
-  existing tasks, not for creating new tasks, setting up workspaces, configuring toolchains, or
-  learning moon concepts.
+  cached when it shouldn't be, re-running every time, or missing outputs after a cache hit. Also
+  covers pipeline hangs, tasks that only work in CI but not locally (or vice versa), tasks skipped
+  by --affected, and task inheritance not applying to a project. Activate on any mention of "moon
+  run" or "moon task" combined with a problem — errors, stale cache, missing outputs, wrong results,
+  "nothing to do", or unexpected behavior. Also use for task options (persistent, runInCI,
+  allowFailure, affectedFiles, mutex, timeout, outputStyle, cacheLifetime), task checks, cleanup and
+  wait dependencies, and project-level taskOptions. Not for creating new tasks, setting up
+  workspaces, configuring toolchains, or learning moon concepts.
 license: MIT
 allowed-tools: Bash(moon:*) Read
 compatibility: >-
   Requires moon >= 2.0.0 CLI installed and a configured moon workspace.
 metadata:
   moon-version-min: '2.0.0'
-  moon-version-tested: '2.5.0'
+  moon-version-tested: '2.6.0'
   category: 'debugging'
   ecosystem: 'moonrepo'
 ---
@@ -67,16 +65,23 @@ moon task <project>:<task> --json
   artifacts. In v2.3+, outputs also affect the **default `cacheStrategy`** of any task that depends
   on this one (see Step 4).
 - `toolchains` — is the correct toolchain(s) assigned? An incorrect toolchain means wrong tool
-  versions.
+  versions. <sup>v2.6+</sup> The order is significant: configured toolchains come first, followed by
+  the ones they require, and the **first** is the primary (used by `$taskToolchain`, and wins when
+  toolchain environments are activated and paths are prepended to `PATH`).
 - `deps` — are task dependencies correct and complete? In v2.3+, each dep entry can carry a
   `cacheStrategy` (`hash` / `ignored` / `outputs`) that controls whether the dep contributes to this
-  task's cache hash. If omitted, the default depends on whether the dep declares outputs.
+  task's cache hash. If omitted, the default depends on whether the dep declares outputs. In v2.6+,
+  each dep also has a `type`: `required` (default, runs before and must pass), `cleanup` (runs
+  _after_ the task, even when it fails), or `wait` (the task only waits for it to _start_). The
+  human-readable `moon task` output labels the non-required ones, like `db:stop (cleanup)`.
 - `options` — check `persistent`, `runInCI`, `cache`, `affectedFiles`, `mutex`, `timeout`,
   `retryCount`, `allowFailure`, and `os`.
 - `env` — in v2.5+, environment variables can also be inherited from a **workspace-level `env`** in
   `.moon/tasks/**/*` (merged into the project's `env`, project wins), and the project can change the
   merge behavior via `workspace.mergeStrategies.env`. A variable with a surprising value may come
-  from a layer outside the task.
+  from a layer outside the task. In v2.6+, toolchains that have been setup can also **activate their
+  environment** (like `JAVA_HOME`), which sets variables the task config never mentions — but never
+  overrides variables the task already configures.
 - `checks` <sup>v2.4+</sup> — shell scripts that run **before** the task. Their type determines the
   outcome: a `requirement` failing makes the task **fail**, all `condition` checks passing makes the
   task **skip**, and a `fingerprint` folds script output into the task hash. A surprising fail,
@@ -92,7 +97,14 @@ moon task <project>:<task> --json
   Use `script` instead.
 - Empty `outputs` on a build task — cache will never restore artifacts.
 - `inputs: ['**/*']` — too broad, cache invalidates on every change.
-- A `persistent` task in a `deps` chain — moon produces a hard error at runtime.
+- A non-persistent task with a `required` dep on a `persistent` task — a hard error when tasks are
+  built. In v2.6+, use `type: 'wait'` to only wait for it to start.
+- A `wait` dep <sup>v2.6+</sup> with no `cleanup` dep that stops it — a waited-on task is never
+  stopped for you, so a non-persistent one keeps the pipeline running until it exits, and a
+  persistent one keeps it running until moon is exited.
+- A `wait` dep on a task that has caching enabled <sup>v2.6+</sup> — waited-on deps are started
+  before the cache is checked, so on a cache hit the server starts and is then immediately stopped
+  by its cleanup. Disable `cache` on tasks that wait on long-running deps.
 - `command: 'noop'` or `nop` / `no-op` — the task is intentionally a no-op and does nothing. moon
   treats these specially.
 - `runInCI: 'only'` — task runs in CI but NOT locally (common surprise).
@@ -151,6 +163,11 @@ moon hash <hash1> <hash2>
 moon hash 0b55b234 2388552f
 ```
 
+<sup>v2.6+</sup> Hash manifests are stored as blobs in the local content-addressable cache
+(`.moon/cache/blobs/`), not as `.moon/cache/hashes/<hash>.json` files, so always read them through
+`moon hash`. If it reports "Unable to find a hash manifest", the manifest may have been garbage
+collected — re-run the task with `--force` to regenerate it.
+
 > For cache file locations, hash interpretation, and the `--force` vs `--cache off` comparison, see
 > `references/cache-issues.md`.
 
@@ -158,31 +175,38 @@ moon hash 0b55b234 2388552f
 
 Use this table to jump to the right reference:
 
-| Symptom                                                         | Likely cause                                                                                                                                                                                 | Quick check                                                                 | Reference                       |
-| --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------- |
-| Task doesn't exist                                              | Inheritance not applied — check `inheritedBy` conditions in `.moon/tasks/**/*` against project's `toolchains`, `stack`, `layer`, `tags` via `moon project <name> --json`                     | `moon task <target> --json`                                                 | `references/config-mistakes.md` |
-| "Nothing to do"                                                 | `--affected` + no changes, `runInCI: false`, or `inheritedBy` mismatch (global task not inherited)                                                                                           | Check flags, `options.runInCI`, and `inheritedBy`                           | `references/decision-tree.md`   |
-| `--affected` misses changed files <sup>v2.4+</sup>              | Shallow git clone in CI — merge base can't be resolved, so diffs are inaccurate (moon now logs a warning)                                                                                    | Check clone depth; use full history or `--filter=blob:none`                 | `references/decision-tree.md`   |
-| Task fails: "requirement check failed" <sup>v2.4+</sup>         | A `requirement` check script exited non-zero, so the task refuses to run                                                                                                                     | `moon task <target> --json` — inspect `checks`                              | `references/config-mistakes.md` |
-| Task skipped, not affected/CI-related <sup>v2.4+</sup>          | All `condition` checks passed, so the task was intentionally skipped                                                                                                                         | `moon run <target> --log debug` — look for "conditional checks have passed" | `references/config-mistakes.md` |
-| Task errors on execution                                        | Wrong `command`/`script`, bad toolchain                                                                                                                                                      | `moon run <target> --log debug`                                             | `references/config-mistakes.md` |
-| Stale cache (cached when it shouldn't be)                       | Inputs too narrow, missing `env` vars, or dep `cacheStrategy: 'ignored'` (the v2.3 default for output-less deps)                                                                             | `moon hash <hash>`                                                          | `references/cache-issues.md`    |
-| Cache miss (re-runs every time)                                 | Inputs too broad, volatile outputs, or dep `cacheStrategy: 'hash'` propagating upstream churn                                                                                                | `moon hash <h1> <h2>`                                                       | `references/cache-issues.md`    |
-| Cache miss from a `fingerprint` check <sup>v2.4+</sup>          | A `fingerprint` check's script output is volatile (timestamps, PIDs), changing the hash every run                                                                                            | `moon hash <h1> <h2>` — look for the check hash                             | `references/cache-issues.md`    |
-| Outputs not restored after cache hit                            | `outputs` misconfigured; or <sup>v2.5+</sup> a daemon-side archive/hydrate failure — swallowed by the main process, logged only by the daemon (a failed hydrate becomes a silent cache miss) | Check `.moon/cache/outputs/`; `moon daemon logs`                            | `references/cache-issues.md`    |
-| Env var has unexpected value <sup>v2.5+</sup>                   | Workspace-level `env` in `.moon/tasks/**/*` merged in, or `workspace.mergeStrategies.env` changed the merge behavior                                                                         | `moon task <target> --json` — inspect `env`                                 | `references/config-mistakes.md` |
-| Cache behaves differently across git worktrees <sup>v2.5+</sup> | `cache.unstable_sharedWorktreeCache` shares blobs/manifests via the base checkout's `.moon/cache`                                                                                            | Check the setting and `MOON_CACHE_SHARED_WORKTREE_CACHE`                    | `references/cache-issues.md`    |
-| New dependency cycle error after upgrading to v2.5              | Async graph building (now default) validates cycles strictly, per dependency-scope partition                                                                                                 | Set `experiments.asyncGraphBuilding: false` to confirm                      | `references/decision-tree.md`   |
-| Build re-runs on every upstream input change <sup>v2.3+</sup>   | Dep using default `cacheStrategy: 'hash'` instead of `'outputs'`                                                                                                                             | `moon task <target> --json` — inspect dep entries                           | `references/cache-issues.md`    |
-| Task not matched by `#tag` target <sup>v2.3+</sup>              | Missing `tags` on the task, or `mergeTags` dropped them during inheritance                                                                                                                   | `moon task <target> --json` — check `tags`                                  | `references/config-mistakes.md` |
-| Task hangs / pipeline stuck                                     | Persistent task in `deps` chain (hard error in v2)                                                                                                                                           | `moon action-graph <target>`                                                | `references/config-mistakes.md` |
-| Task is slow                                                    | Dep chain bottleneck, no parallelism                                                                                                                                                         | `moon action-graph <target>`                                                | `references/decision-tree.md`   |
-| Task does nothing (no-op)                                       | Command is `noop`/`nop`/`no-op`                                                                                                                                                              | `moon task <target> --json`                                                 | `references/config-mistakes.md` |
-| Task fails silently                                             | `allowFailure: true` hiding errors                                                                                                                                                           | Check `options.allowFailure`                                                | `references/config-mistakes.md` |
-| Task skipped locally                                            | `runInCI: 'only'` set                                                                                                                                                                        | Check `options.runInCI`                                                     | `references/config-mistakes.md` |
-| Task skipped in CI                                              | `runInCI: false` or `'skip'`                                                                                                                                                                 | Check `options.runInCI`                                                     | `references/config-mistakes.md` |
-| Mutex contention / deadlock                                     | Two tasks share same `mutex`                                                                                                                                                                 | Check `options.mutex`                                                       | `references/config-mistakes.md` |
-| Task times out                                                  | `timeout` option set too low                                                                                                                                                                 | Check `options.timeout`                                                     | `references/config-mistakes.md` |
+| Symptom                                                             | Likely cause                                                                                                                                                                                 | Quick check                                                                 | Reference                         |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | --------------------------------- |
+| Task doesn't exist                                                  | Inheritance not applied — check `inheritedBy` conditions in `.moon/tasks/**/*` against project's `toolchains`, `stack`, `layer`, `tags` via `moon project <name> --json`                     | `moon task <target> --json`                                                 | `references/config-mistakes.md`   |
+| "Nothing to do"                                                     | `--affected` + no changes, `runInCI: false`, or `inheritedBy` mismatch (global task not inherited)                                                                                           | Check flags, `options.runInCI`, and `inheritedBy`                           | `references/decision-tree.md`     |
+| `--affected` misses changed files <sup>v2.4+</sup>                  | Shallow git clone in CI — merge base can't be resolved, so diffs are inaccurate (moon now logs a warning)                                                                                    | Check clone depth; use full history or `--filter=blob:none`                 | `references/decision-tree.md`     |
+| Task fails: "requirement check failed" <sup>v2.4+</sup>             | A `requirement` check script exited non-zero, so the task refuses to run                                                                                                                     | `moon task <target> --json` — inspect `checks`                              | `references/config-mistakes.md`   |
+| Task skipped, not affected/CI-related <sup>v2.4+</sup>              | All `condition` checks passed, so the task was intentionally skipped                                                                                                                         | `moon run <target> --log debug` — look for "conditional checks have passed" | `references/config-mistakes.md`   |
+| Task errors on execution                                            | Wrong `command`/`script`, bad toolchain                                                                                                                                                      | `moon run <target> --log debug`                                             | `references/config-mistakes.md`   |
+| Stale cache (cached when it shouldn't be)                           | Inputs too narrow, missing `env` vars, or dep `cacheStrategy: 'ignored'` (the v2.3 default for output-less deps)                                                                             | `moon hash <hash>`                                                          | `references/cache-issues.md`      |
+| Cache miss (re-runs every time)                                     | Inputs too broad, volatile outputs, or dep `cacheStrategy: 'hash'` propagating upstream churn                                                                                                | `moon hash <h1> <h2>`                                                       | `references/cache-issues.md`      |
+| Cache miss from a `fingerprint` check <sup>v2.4+</sup>              | A `fingerprint` check's script output is volatile (timestamps, PIDs), changing the hash every run                                                                                            | `moon hash <h1> <h2>` — look for the check hash                             | `references/cache-issues.md`      |
+| Outputs not restored after cache hit                                | `outputs` misconfigured; or <sup>v2.5+</sup> a daemon-side archive/hydrate failure — swallowed by the main process, logged only by the daemon (a failed hydrate becomes a silent cache miss) | Check `.moon/cache/outputs/`; `moon daemon logs`                            | `references/cache-issues.md`      |
+| Env var has unexpected value <sup>v2.5+</sup>                       | Workspace-level `env` in `.moon/tasks/**/*` merged in, or `workspace.mergeStrategies.env` changed the merge behavior                                                                         | `moon task <target> --json` — inspect `env`                                 | `references/config-mistakes.md`   |
+| Cache behaves differently across git worktrees <sup>v2.5+</sup>     | `cache.unstable_sharedWorktreeCache` shares blobs/manifests via the base checkout's `.moon/cache`                                                                                            | Check the setting and `MOON_CACHE_SHARED_WORKTREE_CACHE`                    | `references/cache-issues.md`      |
+| New dependency cycle error after upgrading to v2.5                  | Async graph building (now default) validates cycles strictly, per dependency-scope partition                                                                                                 | Set `experiments.asyncGraphBuilding: false` to confirm                      | `references/decision-tree.md`     |
+| Build re-runs on every upstream input change <sup>v2.3+</sup>       | Dep using default `cacheStrategy: 'hash'` instead of `'outputs'`                                                                                                                             | `moon task <target> --json` — inspect dep entries                           | `references/cache-issues.md`      |
+| Task not matched by `#tag` target <sup>v2.3+</sup>                  | Missing `tags` on the task, or `mergeTags` dropped them during inheritance                                                                                                                   | `moon task <target> --json` — check `tags`                                  | `references/config-mistakes.md`   |
+| Task hangs / pipeline stuck                                         | <sup>v2.6+</sup> A `wait` dep that is never stopped by a `cleanup` dep, or a persistent task that was explicitly targeted (a `required` dep on a persistent task is a build error)           | `moon action-graph <target>`; `moon task <target>` for dep types            | `references/config-mistakes.md`   |
+| Cleanup dep didn't run <sup>v2.6+</sup>                             | The task was hydrated from the cache or skipped (nothing to clean up), the pipeline was interrupted by a signal (Ctrl+C), or the cleanup has `runInCI` disabled                              | `moon run <target> --log debug` — look for "nothing to clean up"            | `references/config-mistakes.md`   |
+| Task can't reach a `wait` dep (connection refused) <sup>v2.6+</sup> | `wait` only waits for the dep to _start_, not to be _ready_                                                                                                                                  | Poll a health check before sending requests                                 | `references/config-mistakes.md`   |
+| Persistent task doesn't run in CI <sup>v2.6+</sup>                  | Persistent tasks default to `runInCI: false`; when enabled, they only run for the tasks that depend on them, or when explicitly targeted                                                     | `moon task <target> --json` — inspect `options.runInCI`                     | `references/config-mistakes.md`   |
+| Output not displayed (or displayed when it shouldn't be)            | `outputStyle` applies to transitive targets only; primary targets always display output, unless <sup>v2.6+</sup> `explicitTaskOutputStyle` is enabled or `--output-style` is passed          | Check `options.outputStyle` and the command line                            | `references/config-mistakes.md`   |
+| Every task re-runs once after upgrading to v2.6                     | A task's `toolchains` list (part of its hash) is now ordered by configuration instead of hash order, which invalidates every cache once                                                      | Expected; the second run should hit the cache                               | `references/cache-issues.md`      |
+| `moon hash` can't find a manifest <sup>v2.6+</sup>                  | Hash manifests are blobs in the local CAS, and may have been garbage collected                                                                                                               | `moon run <target> --force`, then `moon hash` the new hash                  | `references/cache-issues.md`      |
+| Env var set that the config doesn't mention <sup>v2.6+</sup>        | A toolchain activated its environment (like `JAVA_HOME`)                                                                                                                                     | `MOON_DEBUG_PROCESS_ENV=true moon run <target> --log debug`                 | `references/environment-debug.md` |
+| Task is slow                                                        | Dep chain bottleneck, no parallelism                                                                                                                                                         | `moon action-graph <target>`                                                | `references/decision-tree.md`     |
+| Task does nothing (no-op)                                           | Command is `noop`/`nop`/`no-op`                                                                                                                                                              | `moon task <target> --json`                                                 | `references/config-mistakes.md`   |
+| Task fails silently                                                 | `allowFailure: true` hiding errors                                                                                                                                                           | Check `options.allowFailure`                                                | `references/config-mistakes.md`   |
+| Task skipped locally                                                | `runInCI: 'only'` set                                                                                                                                                                        | Check `options.runInCI`                                                     | `references/config-mistakes.md`   |
+| Task skipped in CI                                                  | `runInCI: false` or `'skip'`                                                                                                                                                                 | Check `options.runInCI`                                                     | `references/config-mistakes.md`   |
+| Mutex contention / deadlock                                         | Two tasks share same `mutex`                                                                                                                                                                 | Check `options.mutex`                                                       | `references/config-mistakes.md`   |
+| Task times out                                                      | `timeout` option set too low                                                                                                                                                                 | Check `options.timeout`                                                     | `references/config-mistakes.md`   |
 
 ### Step 5: Validate the fix
 
@@ -219,8 +243,9 @@ These are the issues that come up most often. For details and fixes, see
 - **Overly broad `inputs`** — `**/*` invalidates cache on every change; be specific.
 - **Volatile outputs** — timestamps or absolute paths in build artifacts cause permanent cache
   misses.
-- **Persistent task in `deps`** — hard error; tasks named `dev`/`start`/`serve` auto-get `server`
-  preset.
+- **Persistent task in `deps`** — a `required` dep on a persistent task is a hard error; tasks named
+  `dev`/`start`/`serve` auto-get the `server` preset. In v2.6+, depend on it with `type: 'wait'`,
+  and pair it with a `cleanup` dep that stops it.
 - **`--affected` vs `--force` confusion** — `--affected` restricts; `--force` bypasses cache
   (they're opposites).
 - **`allowFailure: true` hiding errors** — the failure is still recorded and displayed, but the
@@ -254,6 +279,16 @@ These are the issues that come up most often. For details and fixes, see
 - **Workspace-level `env` is a new inheritance layer** <sup>v2.5+</sup> — `.moon/tasks/**/*` files
   can define `env` inherited by all matching projects. Project values win on conflict, unless
   `workspace.mergeStrategies.env` says otherwise (`append`, `prepend`, `preserve`, `replace`).
+- **Expecting a `cleanup` dep to always run** <sup>v2.6+</sup> — cleanups are skipped when there's
+  nothing to clean up (the task was hydrated from the cache or skipped, and didn't start a `wait`
+  dep), and they never run when the pipeline is interrupted by a signal like Ctrl+C.
+- **`cleanup` and `wait` deps don't affect the cache** <sup>v2.6+</sup> — they never contribute to
+  the task's hash (their `cacheStrategy` can only be `ignored`), and they always run their command
+  instead of being hydrated.
+- **Persistent tasks run within the pipeline** <sup>v2.6+</sup> — they no longer wait until every
+  other task has finished; they start as soon as their own deps complete. In CI, they're skipped
+  unless `runInCI` is explicitly enabled, and even then only run for their dependents or when
+  explicitly targeted. `moon check` skips them unless another task depends on them.
 
 ---
 
@@ -262,9 +297,9 @@ These are the issues that come up most often. For details and fixes, see
 Each reference file covers a specific problem domain in depth. Load them only when the diagnostic
 flow points you there — don't load everything upfront.
 
-| Reference                         | When to load                                                                                                                                                               |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `references/decision-tree.md`     | When the symptom doesn't match the quick table above, or you need a systematic walk-through of all possibilities.                                                          |
-| `references/cache-issues.md`      | When the problem is clearly cache-related: unexpected hits, unexpected misses, outputs not restoring.                                                                      |
-| `references/config-mistakes.md`   | When the task config is wrong: command vs script, inheritance bugs, presets, persistent tasks, affectedFiles, mutex, timeout, retries, runInCI variants, allowFailure, os. |
-| `references/environment-debug.md` | When you need to go deeper with env vars, log levels, trace profiles, or inspection tools.                                                                                 |
+| Reference                         | When to load                                                                                                                                                                                                                 |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `references/decision-tree.md`     | When the symptom doesn't match the quick table above, or you need a systematic walk-through of all possibilities.                                                                                                            |
+| `references/cache-issues.md`      | When the problem is clearly cache-related: unexpected hits, unexpected misses, outputs not restoring.                                                                                                                        |
+| `references/config-mistakes.md`   | When the task config is wrong: command vs script, inheritance bugs, presets, persistent tasks, dependency types (`cleanup`/`wait`), affectedFiles, mutex, timeout, retries, runInCI variants, allowFailure, os, outputStyle. |
+| `references/environment-debug.md` | When you need to go deeper with env vars, log levels, trace profiles, or inspection tools.                                                                                                                                   |

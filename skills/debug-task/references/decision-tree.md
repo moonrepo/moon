@@ -107,8 +107,9 @@ moon task <project>:<task> --json
 
 If `state.setRunInCi` is `true`, `runInCI` was set explicitly in config or applied by a preset. If
 the key is **absent** (it's omitted from the JSON when false), the value defaulted from the task
-type (build/test tasks run in CI, others don't). See `config-mistakes.md` § `runInCI` variants for
-the full table of values and their local/CI behavior.
+type (build/test tasks run in CI, others don't) — and <sup>v2.6+</sup> persistent tasks default to
+off regardless of their type. See `config-mistakes.md` § `runInCI` variants for the full table of
+values and their local/CI behavior.
 
 **Check 3: Is the `os` option filtering this platform out?**
 
@@ -152,6 +153,32 @@ moon run <project>:<task> --log debug --force 2>&1 | grep -i "condition"
 
 See `config-mistakes.md` § Task checks.
 
+**Check 7: Is it a persistent task in CI, or in `moon check`?** <sup>v2.6+</sup>
+
+Persistent tasks never complete, so `moon ci` only runs them (with `runInCI` explicitly enabled) for
+the tasks that depend on them, or when explicitly passed as a target — never because they're
+affected. `moon check` likewise only runs them when another task depends on them, and exits with a
+non-zero code when the checked projects have no build or test tasks at all.
+
+```bash
+moon task <project>:<task> --json
+# Check options.persistent and options.runInCI
+```
+
+**Check 8: Is it a `cleanup` dep, or does it wait on a dep that failed?** <sup>v2.6+</sup>
+
+A `cleanup` dep is skipped when there's nothing to clean up (the task it cleans up after was
+skipped, or hydrated from the cache), and never runs when the pipeline is interrupted by a signal. A
+task with a `wait` dep is skipped when that dep already failed, or was skipped, before the task
+started.
+
+```bash
+moon run <project>:<task> --log debug 2>&1 | grep -i "clean"
+# "Skipping cleanup job, as there's nothing to clean up"  → expected skip
+```
+
+See `config-mistakes.md` § Task dep `type`.
+
 **Fix:** Remove `--affected` if you want to force execution. Set `runInCI: 'always'` if the task
 must always run in CI. Remove or change the `os` option if platform filtering is unwanted. Use
 `--force` to bypass the cache. If a `condition` check is skipping the task, adjust or remove the
@@ -189,6 +216,11 @@ moon run <project>:<task> --log debug --force 2>&1 | grep -i "toolchain\|version
 
 Use `MOON_DEBUG_PROCESS_ENV=true` to reveal all env vars passed to the process. See
 `environment-debug.md` for all debug env vars and log levels.
+
+<sup>v2.6+</sup> Toolchains that have been setup also **activate their environment** when the
+command is built, which can set variables (like `JAVA_HOME`) and prepend paths to `PATH`. They never
+override variables the task already configures, and when a task has multiple toolchains, the
+**first** one wins. If the wrong tool or variable wins, check the order of the task's `toolchains`.
 
 **Check 6: Is `timeout` or `allowFailure` involved?**
 
@@ -229,6 +261,13 @@ MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING=false moon run <project>:<task>
 
 If the error names two projects, inspect their `dependsOn` scopes — breaking the cycle, or moving
 one edge to a different scope so the cycle crosses the partition boundary, are the real fixes.
+
+**Check 9: Is it a dependency type error at task-build time?** <sup>v2.6+</sup>
+
+Invalid `cleanup`/`wait` relationships are rejected before anything runs: a persistent task as (or
+with) a `cleanup` dep, a `wait` dep on an interactive task, a task depending on itself, or the same
+dep with two different types. A `required` dep on a persistent task errors too, and suggests
+`type: 'wait'` instead. See `config-mistakes.md` § Task builder validation errors.
 
 **Fix:** Switch `command` to `script` for shell syntax. Fix the binary path or toolchain. Correct
 the working directory. If a check is failing, fix (or remove) the offending check script. See
@@ -294,6 +333,27 @@ Check merge strategies (`mergeArgs`, `mergeDeps`, `mergeEnv`, `mergeInputs`, `me
 
 ---
 
+## Does the pipeline finish?
+
+### NO — it keeps running after the task completed
+
+**Check 1: Was a persistent task requested?** Persistent tasks (servers, watchers) never exit by
+design — `moon run app:dev` runs until you stop it.
+
+**Check 2: Is there a `wait` dep without a matching `cleanup`?** <sup>v2.6+</sup> Waited-on deps are
+not stopped when the task completes. A non-persistent one keeps the pipeline running until it exits;
+a persistent one until moon is exited.
+
+```bash
+moon task <project>:<task>   # deps labeled "(wait)" and "(cleanup)"
+```
+
+**Fix:** Add a `cleanup` dep that stops the waited-on task, and make sure the stopped process exits
+successfully (handle `SIGTERM`) — otherwise it counts as a failure and fails the pipeline. See
+`config-mistakes.md` § Task dep `type`.
+
+---
+
 ## Is the task slow?
 
 ### Check 1: Dependency chain bottleneck
@@ -307,6 +367,9 @@ Visualize the graph and look for:
 - Long serial chains where tasks could run in parallel.
 - Tasks that don't need to depend on each other but do.
 - A persistent task in the dependency chain (it never "finishes," blocking everything downstream).
+  Before v2.6, persistent tasks also ran **last**, after every other action in the pipeline, so a
+  dev server could sit waiting on unrelated tasks; in v2.6+ they start as soon as their own deps
+  complete.
 
 ### Check 2: Cache, inputs, mutex, or retries
 

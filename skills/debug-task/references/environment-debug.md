@@ -57,15 +57,16 @@ says. When "the config says X but moon does Y", check for these first:
 env | grep '^MOON_'
 ```
 
-| Variable                                            | Overrides                                                     |
-| --------------------------------------------------- | ------------------------------------------------------------- |
-| `MOON_DAEMON`                                       | `unstable_daemon` — enables/disables the background daemon    |
-| `MOON_EXPERIMENT_*`                                 | Any `experiments.*` flag (async graph/affected, hashing, CAS) |
-| `MOON_CACHE`                                        | The `--cache` mode (`read`, `read-write`, `write`, `off`)     |
-| `MOON_CACHE_CAS_MAX_SIZE` <sup>v2.5+</sup>          | `cache.cas.maxSize` — CAS eviction limit                      |
-| `MOON_CACHE_CAS_VERIFY_INTEGRITY` <sup>v2.5+</sup>  | `cache.cas.verifyIntegrity`                                   |
-| `MOON_CACHE_SHARED_WORKTREE_CACHE` <sup>v2.5+</sup> | `cache.unstable_sharedWorktreeCache`                          |
-| `MOON_BASE` / `MOON_HEAD`                           | Base/head revisions for affected detection                    |
+| Variable                                            | Overrides                                                                                                                                                                |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `MOON_DAEMON`                                       | `unstable_daemon` — enables/disables the background daemon                                                                                                               |
+| `MOON_EXPERIMENT_*`                                 | Any `experiments.*` flag (async graph/affected, hashing, CAS, output style)                                                                                              |
+| `MOON_TOOLCHAIN_FORCE_GLOBALS`                      | Uses tools from `PATH` instead of the toolchain (`true`, or a list of tool IDs) — their paths aren't prepended, and <sup>v2.6+</sup> their environments aren't activated |
+| `MOON_CACHE`                                        | The `--cache` mode (`read`, `read-write`, `write`, `off`)                                                                                                                |
+| `MOON_CACHE_CAS_MAX_SIZE` <sup>v2.5+</sup>          | `cache.cas.maxSize` — CAS eviction limit                                                                                                                                 |
+| `MOON_CACHE_CAS_VERIFY_INTEGRITY` <sup>v2.5+</sup>  | `cache.cas.verifyIntegrity`                                                                                                                                              |
+| `MOON_CACHE_SHARED_WORKTREE_CACHE` <sup>v2.5+</sup> | `cache.unstable_sharedWorktreeCache`                                                                                                                                     |
+| `MOON_BASE` / `MOON_HEAD`                           | Base/head revisions for affected detection                                                                                                                               |
 
 ### Environment variables in task config
 
@@ -91,6 +92,26 @@ miss unless it's in the config.
 (project wins on conflict, unless `workspace.mergeStrategies.env` changes the strategy). If a
 variable has a value that appears nowhere in the project config, check the global task files. See
 `config-mistakes.md` § Workspace-inherited env.
+
+<sup>v2.6+</sup> Toolchains can also **activate their environment** when moon builds a command (for
+tasks and toolchain operations), via proto's `activate_environment` plugin function — the same one
+behind `proto activate`. This may set variables (like `JAVA_HOME`) and prepend paths to `PATH`, so a
+variable can appear in the process without being configured anywhere:
+
+- Only toolchains with a configured `version` that have been setup are activated.
+- Variables already configured for the command (task `env`, or those injected by toolchain plugins)
+  are never overridden. When a task has multiple toolchains, the **first** one wins.
+- `MOON_TOOLCHAIN_FORCE_GLOBALS` disables activation (along with toolchain paths).
+- `moon toolchain info <id>` lists `activate_environment` under the tier 3 APIs when a toolchain
+  supports it.
+
+```bash
+# See the final environment (including activated variables) passed to the process
+MOON_DEBUG_PROCESS_ENV=true moon run <project>:<task> --log debug --force
+```
+
+Activated variables are not part of the task's hash, like other variables that aren't declared in
+`env`.
 
 ---
 
@@ -153,7 +174,8 @@ Shows the fully resolved task configuration after inheritance, merging, and toke
 is the single most useful debugging command — always start here.
 
 **Tip:** Running `moon task <project>:<task>` without `--json` also displays all available `PATH`s
-for the resolved toolchain.
+for the resolved toolchain. <sup>v2.6+</sup> It also labels deps that don't run before the task with
+their type, like `db:stop (cleanup)` or `web:serve (wait)`.
 
 ### `moon project` — inspect project metadata
 
@@ -201,7 +223,9 @@ The action graph shows every action moon will take to run a target: toolchain se
 installation, project sync, and task execution. It's the best tool for diagnosing:
 
 - Why a task depends on something unexpected
-- Why a task is blocked (look for persistent nodes)
+- Why a task is blocked (look for persistent nodes, or <sup>v2.6+</sup> `wait` deps that never exit)
+- <sup>v2.6+</sup> Where cleanups run — a `cleanup` dep is linked as a _dependent_ of the task it
+  cleans up after (the edge is reversed)
 - Whether tasks are running in parallel or serial
 
 ### `moon hash` — inspect and compare hashes
@@ -216,6 +240,12 @@ moon hash <hash1> <hash2>
 # JSON output
 moon hash <hash> --json
 ```
+
+<sup>v2.6+</sup> Hash manifests are stored as blobs in the local content-addressable cache
+(`.moon/cache/blobs/`) instead of `.moon/cache/hashes/<hash>.json`, so `moon hash` is the way to
+read them. "Unable to find a hash manifest" means it was never stored, or was garbage collected
+along with other unreferenced blobs (`moon clean`, or after a pipeline when the daemon is connected)
+— re-run the task with `--force` to regenerate it.
 
 > For interpreting hash diffs in cache investigations, see `cache-issues.md`.
 
@@ -289,8 +319,21 @@ moon --otel run <project>:<task>
 moon --otel --otel-logs run <project>:<task> --log debug
 ```
 
+<sup>v2.6+</sup> `--otel` also exports **metrics**, which are useful for spotting trends across many
+runs rather than debugging a single one:
+
+- `moon.task.runs` / `moon.task.duration` — labeled with `target`, `project`, `task`, `toolchains`,
+  `status` (`passed`, `failed`, `cached`, `cached-from-remote`, `skipped`), and `flaky` (passed only
+  after a retry). Group by `target` to find slow or flaky tasks, or compare cached statuses against
+  the total for a cache hit rate.
+- `moon.action.*` and `moon.operation.*` — per action (sync, setup, install, run) and per operation
+  within an action (hash generation, hydration, execution), for finding where time goes.
+
+Persistent tasks are not recorded, as they never complete. `OTEL_METRICS_EXPORTER=none` disables
+metrics while keeping traces.
+
 See the [OpenTelemetry docs](https://moonrepo.dev/docs/commands/overview#opentelemetry) for
-transports and the full env var list.
+transports, the full env var list, and all metric attributes.
 
 ---
 
@@ -300,8 +343,9 @@ Quick reference for where moon stores internal state:
 
 ```
 .moon/cache/
+  blobs/<prefix>/<hash>           # Hash manifests (v2.6+), and CAS outputs (when enabled)
   daemon/                         # Daemon server state and logs
-  hashes/<hash>.json              # Hash manifest — what was hashed
+  hashes/<hash>.json              # Hash manifest — before v2.6 only (now in blobs/)
   outputs/<hash>.tar.gz           # Archived task outputs (legacy / default)
   states/<project>/
     snapshot.json                 # Project snapshot (resolved tasks, config)
@@ -316,14 +360,15 @@ All paths are relative to the workspace root. The `.moon/cache/` directory shoul
 > When `experiments.casOutputsCache` is enabled (v2.3+), new task outputs are stored in a
 > content-addressable store at `.moon/cache/manifests/` and `.moon/cache/blobs/` (prefix-sharded by
 > hash; renamed in v2.4 from `ac/` and `cas/`) — per-hash `.tar.gz` files stop being created in
-> `outputs/`. See `cache-issues.md` § Experimental caching layers.
+> `outputs/`. See `cache-issues.md` § Experimental caching layers. <sup>v2.6+</sup> The local CAS is
+> always enabled, as it stores hash manifests, so `blobs/` exists even with the experiment off.
 
 > <sup>v2.5+</sup> Two additions change where to look. With `cache.unstable_sharedWorktreeCache`
 > enabled, `blobs/` and `manifests/` move to the **base checkout's** `.moon/cache` (or
-> `~/.moon/cache/shared` for bare clones) — the worktree's own copies may be empty. And with the
-> daemon enabled, archive/hydrate errors are recorded only in `.moon/cache/daemon/server.log`
-> (`moon daemon logs`), not in the main process output — a failed hydrate surfaces as a plain cache
-> miss (the task re-runs).
+> `~/.moon/cache/shared` for bare clones) — the worktree's own copies may be empty. In v2.6+, this
+> includes hash manifests, since they're blobs. And with the daemon enabled, archive/hydrate errors
+> are recorded only in `.moon/cache/daemon/server.log` (`moon daemon logs`), not in the main process
+> output — a failed hydrate surfaces as a plain cache miss (the task re-runs).
 
 ---
 
@@ -399,5 +444,28 @@ moon hash <hash1> <hash2>
 moon action-graph <project>:<task>
 
 # 2. Look for persistent task nodes with dependents
-# 3. Restructure deps so persistent tasks are leaf nodes
+# 3. v2.6+: look for `wait` deps without a `cleanup` dep that stops them
+moon task <project>:<task>   # deps labeled "(wait)" / "(cleanup)"
+
+# 4. Restructure deps so persistent tasks are leaf nodes, or (v2.6+) wait on
+#    them and stop them with a cleanup dep
 ```
+
+### "My cleanup dependency didn't run" <sup>v2.6+</sup>
+
+```bash
+# 1. Confirm the dep type
+moon task <project>:<task>
+
+# 2. Look for the skip reason
+moon run <project>:<task> --log debug 2>&1 | grep -i "clean"
+#   "Skipping cleanup job, as there's nothing to clean up"
+#     → the task was hydrated from the cache or skipped, and didn't start a wait dep
+#   "Pipeline was aborted, running cleanup jobs for the jobs that have ran"
+#     → a failure aborted the pipeline; cleanups still run for tasks that ran
+
+# 3. Interrupted with Ctrl+C? Cleanups don't run on signals.
+# 4. In CI? A cleanup with runInCI disabled doesn't run there.
+```
+
+See `config-mistakes.md` § Task dep `type`.

@@ -76,7 +76,7 @@ moon task <project>:<task> --json
   _after_ the task, even when it fails), or `wait` (the task only waits for it to _start_). The
   human-readable `moon task` output labels the non-required ones, like `db:stop (cleanup)`.
 - `options` — check `persistent`, `runInCI`, `cache`, `affectedFiles`, `mutex`, `timeout`,
-  `retryCount`, `allowFailure`, and `os`.
+  `retryCount`, `allowFailure`, `expectFailure`, and `os`.
 - `env` — in v2.5+, environment variables can also be inherited from a **workspace-level `env`** in
   `.moon/tasks/**/*` (merged into the project's `env`, project wins), and the project can change the
   merge behavior via `workspace.mergeStrategies.env`. A variable with a surprising value may come
@@ -119,6 +119,9 @@ moon task <project>:<task> --json
   (`moon task --json` shows `command: noop` with cleared args/outputs).
 - `allowFailure: true` — the failure is still recorded and displayed, but the pipeline continues and
   moon exits successfully, so it's easy to miss.
+- `expectFailure: true` <sup>v2.6+</sup> — the task passes when its command fails, and fails with
+  "was expected to fail, but it passed" once the underlying problem is fixed (remove the setting).
+  It's never cached, and exit codes 126/127 or a signal don't count as the expected failure.
 - A `condition` check present <sup>v2.4+</sup> — the task will **skip** whenever all conditions
   pass. A task that "never runs" may have a condition that always passes.
 - A `fingerprint` check present <sup>v2.4+</sup> — its script output is hashed, so volatile output

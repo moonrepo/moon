@@ -1442,6 +1442,10 @@ tasks:
       allowFailure: true
 ```
 
+> If the task is known to be broken and should be fixed, like during a migration, use
+> [`expectFailure`](#expectfailure) instead, which fails the pipeline once the task passes, so that
+> the setting can be removed.
+
 #### `cache`
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#cache" />
@@ -1551,6 +1555,40 @@ tasks:
         - '.env'
         - '.env.production'
 ```
+
+#### `expectFailure`<VersionLabel version="2.6.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#expectFailure" />
+
+Expects the task to fail, and fails the entire pipeline if it passes instead. This is useful for
+checks that are known to be broken, for example, after enabling a stricter compiler or lint rule
+during a migration. Once the failure has been fixed, the task fails with an error asking to remove
+this setting, so that future regressions are caught. When enabled, the following changes occur:
+
+- The task only satisfies the expectation when its command exits with a non-zero exit code, except
+  for `126` (command not executable), `127` (command not found), and `129`-`192` (killed by a
+  signal). A task that times out, or is killed by a signal, also fails as normal.
+- When the task fails as expected, it's treated as successful, so other tasks _can_ depend on it.
+- When the task passes, it's not retried with [`retryCount`](#retrycount), nor when it fails as
+  expected.
+- The task is never cached, and always runs its command, so that a fix is never hidden by a cached
+  result.
+
+```yaml title="moon.yml" {5}
+tasks:
+  typecheck:
+    command: 'tsc --build'
+    options:
+      expectFailure: true
+```
+
+:::info
+
+This setting cannot be combined with [`allowFailure`](#allowfailure), as a task that unexpectedly
+passes would be allowed to fail, nor with [`persistent`](#persistent), as a persistent task never
+exits.
+
+:::
 
 #### `inferInputs`<VersionLabel version="1.31.0" />
 

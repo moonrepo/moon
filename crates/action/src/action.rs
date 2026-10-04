@@ -67,6 +67,8 @@ pub struct Action {
     #[serde(skip)]
     pub error_report: Option<miette::Report>,
 
+    pub expect_failure: bool,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub finished_at: Option<NaiveDateTime>,
 
@@ -97,6 +99,7 @@ impl Action {
             duration: None,
             error: None,
             error_report: None,
+            expect_failure: false,
             finished_at: None,
             flaky: false,
             label: node.label(),

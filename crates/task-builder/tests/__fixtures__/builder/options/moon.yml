@@ -32,6 +32,14 @@ tasks:
     options:
       envFile: false
 
+  expect-failure:
+    options:
+      expectFailure: true
+  expect-failure-cache:
+    options:
+      cache: true
+      expectFailure: true
+
   interactive:
     options:
       interactive: true

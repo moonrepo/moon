@@ -296,6 +296,7 @@ pub fn load_tasks_config_in_format(format: &str) {
                 cache_key: None,
                 cache_lifetime: None,
                 env_file: Some(TaskOptionEnvFile::File(FilePath(".env".into()))),
+                expect_failure: None,
                 infer_inputs: None,
                 interactive: Some(false),
                 internal: Some(true),

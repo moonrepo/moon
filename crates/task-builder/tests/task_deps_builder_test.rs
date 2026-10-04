@@ -222,6 +222,31 @@ mod task_deps_builder {
         build_task_deps_with_data(&mut project, &mut task, allow_failure_data());
     }
 
+    // An expected failure passes, so dependents can rely on it
+    #[test]
+    fn doesnt_error_if_dep_on_expect_failure() {
+        for type_of in [TaskDependencyType::Required, TaskDependencyType::Wait] {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.deps.push(dep_typed("expect-failure", type_of));
+
+            build_task_deps_with_data(
+                &mut project,
+                &mut task,
+                FxHashMap::from_iter([(
+                    Target::parse("project:expect-failure").unwrap(),
+                    TaskOptions {
+                        expect_failure: true,
+                        ..Default::default()
+                    },
+                )]),
+            );
+
+            assert_eq!(task.deps.len(), 1);
+        }
+    }
+
     mod run_in_ci {
         use super::*;
 

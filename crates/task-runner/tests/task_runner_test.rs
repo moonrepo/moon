@@ -563,6 +563,74 @@ mod task_runner {
             }
         }
 
+        mod expect_failure {
+            use super::*;
+
+            async fn run(task_id: &str) -> (TaskRunnerContainer, moon_task_runner::TaskRunResult) {
+                let container = TaskRunnerContainer::new_os("runner", task_id).await;
+                container.sandbox.enable_git();
+
+                let result = container
+                    .create_runner()
+                    .run(&ActionContext::default(), &container.create_action_node())
+                    .await
+                    .unwrap();
+
+                (container, result)
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn passes_when_failed() {
+                let (_container, result) = run("expect-failure").await;
+
+                assert!(result.error.is_none());
+                assert!(result.hash.is_some());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn errors_when_passed() {
+                let (_container, result) = run("expect-failure-passes").await;
+
+                let error = result.error.unwrap().to_string();
+
+                assert!(
+                    error.contains("was expected to fail, but it passed"),
+                    "unexpected error: {error}"
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn errors_with_reason_when_command_not_found() {
+                let (_container, result) = run("expect-failure-not-found").await;
+
+                let error = result.error.unwrap().to_string();
+
+                assert!(
+                    error.contains("exited with code 127 (command not found)"),
+                    "unexpected error: {error}"
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn running_again_reexecutes_task() {
+                let container = TaskRunnerContainer::new_os("runner", "expect-failure").await;
+                container.sandbox.enable_git();
+
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
+                let context = ActionContext::default();
+
+                for _ in 0..2 {
+                    let result = runner.run_with_panic(&context, &node).await.unwrap();
+
+                    // hash + exec
+                    assert_eq!(result.operations.len(), 2);
+                    assert!(result.operations[1].meta.is_task_execution());
+                    assert_eq!(result.operations[1].status, ActionStatus::Passed);
+                }
+            }
+        }
+
         mod without_cache {
             use super::*;
 

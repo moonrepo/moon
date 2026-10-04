@@ -15,6 +15,20 @@ tasks:
     options:
       allowFailure: true
 
+  expectFailure:
+    command: 'exit 1'
+    options:
+      expectFailure: true
+
+  expectFailureButPasses:
+    command: 'exit 0'
+    options:
+      expectFailure: true
+
+  dependsOnExpectFailure:
+    command: 'exit 0'
+    deps: ['expectFailure']
+
   buildType:
     command: 'exit 0'
     type: 'build'

@@ -75,6 +75,15 @@
   - Changed `runDepsInParallel` (when disabled) to skip persistent dependencies when ordering the
     dependencies that follow them, as a persistent dependency never completes. Those dependencies
     are now ordered against the previous dependency that does complete.
+  - Added a new `options.expectFailure` task setting, which expects the task to fail, and fails the
+    pipeline if it passes instead, with an error to remove the setting. Useful for checks that are
+    known to be broken, like after enabling a stricter compiler or lint rule during a migration, so
+    that future regressions are caught once fixed (#2536).
+    - Unlike `allowFailure`, other tasks can depend on the task, as an expected failure is successful.
+    - Exit codes `126` (command not executable), `127` (command not found), and `129`-`192` (killed by
+      a signal) don't satisfy the expectation, nor do timeouts or signals.
+    - The task is never cached, and is not retried after failing as expected, or passing.
+    - Cannot be combined with `allowFailure` or `persistent`.
 - **Toolchains**
   - Added support for the proto `activate_environment` plugin function to toolchains. When building
     a command (for tasks and toolchain operations), the environment of each toolchain that has been

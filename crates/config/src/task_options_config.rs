@@ -284,6 +284,13 @@ config_struct!(
         #[serde(skip_serializing_if = "Option::is_none")]
         pub env_file: Option<TaskOptionEnvFile>,
 
+        /// Expect the task to fail, and fail the entire action pipeline if it
+        /// passes. Useful for checks that are known to be broken, which should
+        /// be re-enabled once fixed. The task is never cached.
+        /// @since 2.6.0
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub expect_failure: Option<bool>,
+
         /// Automatically infer inputs from file groups or environment variables
         /// that were utilized within `command`, `script`, `args`, and `env`.
         /// @since 1.31.0

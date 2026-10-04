@@ -1271,6 +1271,7 @@ checks:
                 r"
 options:
   cache: false
+  expectFailure: true
   runDepsInParallel: false
   mergeDeps: replace
   mergeTags: replace
@@ -1281,6 +1282,7 @@ options:
             let opts = config.options;
 
             assert_eq!(opts.cache, Some(TaskOptionCache::Enabled(false)));
+            assert_eq!(opts.expect_failure, Some(true));
             assert_eq!(opts.run_deps_in_parallel, Some(false));
             assert_eq!(opts.merge_deps, Some(MergeStrategy::Replace));
             assert_eq!(opts.merge_tags, Some(MergeStrategy::Replace));

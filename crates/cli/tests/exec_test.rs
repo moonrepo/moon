@@ -712,6 +712,46 @@ mod exec {
         }
 
         #[test]
+        fn passes_when_expected_to_fail() {
+            let sandbox = create_pipeline_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("shared:expectFailure");
+            });
+
+            assert.success().stdout(
+                predicate::str::contains("expected failure, exit code 1")
+                    .and(predicate::str::contains("Tasks: 1 completed")),
+            );
+        }
+
+        #[test]
+        fn fails_when_expected_to_fail_but_passes() {
+            let sandbox = create_pipeline_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("shared:expectFailureButPasses");
+            });
+
+            assert.failure().code(1).stderr(predicate::str::contains(
+                "Task shared:expectFailureButPasses was expected to fail, but it passed.",
+            ));
+        }
+
+        #[test]
+        fn runs_dependents_of_expected_failure() {
+            let sandbox = create_pipeline_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("shared:dependsOnExpectFailure");
+            });
+
+            assert
+                .success()
+                .stdout(predicate::str::contains("Tasks: 2 completed"));
+        }
+
+        #[test]
         fn runs_noop() {
             let sandbox = create_cases_sandbox();
 

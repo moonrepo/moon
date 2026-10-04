@@ -382,6 +382,13 @@ export interface TaskOptionsConfig {
 	 */
 	envFile?: TaskOptionEnvFile | null;
 	/**
+	 * Expect the task to fail, and fail the entire action pipeline if it
+	 * passes. Useful for checks that are known to be broken, which should
+	 * be re-enabled once fixed. The task is never cached.
+	 * @since 2.6.0
+	 */
+	expectFailure?: boolean | null;
+	/**
 	 * Automatically infer inputs from file groups or environment variables
 	 * that were utilized within `command`, `script`, `args`, and `env`.
 	 * @since 1.31.0
@@ -869,6 +876,13 @@ export interface PartialTaskOptionsConfig {
 	 * running the task.
 	 */
 	envFile?: TaskOptionEnvFile | null;
+	/**
+	 * Expect the task to fail, and fail the entire action pipeline if it
+	 * passes. Useful for checks that are known to be broken, which should
+	 * be re-enabled once fixed. The task is never cached.
+	 * @since 2.6.0
+	 */
+	expectFailure?: boolean | null;
 	/**
 	 * Automatically infer inputs from file groups or environment variables
 	 * that were utilized within `command`, `script`, `args`, and `env`.

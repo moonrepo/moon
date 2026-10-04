@@ -1470,6 +1470,19 @@
           ],
           "markdownDescription": "Loads and sets environment variables from the `.env` file(s) when running the task."
         },
+        "expectFailure": {
+          "title": "expectFailure",
+          "description": "Expect the task to fail, and fail the entire action pipeline if it passes. Useful for checks that are known to be broken, which should be re-enabled once fixed. The task is never cached. @since 2.6.0",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Expect the task to fail, and fail the entire action pipeline if it passes. Useful for checks that are known to be broken, which should be re-enabled once fixed. The task is never cached. @since 2.6.0"
+        },
         "inferInputs": {
           "title": "inferInputs",
           "description": "Automatically infer inputs from file groups or environment variables that were utilized within command, script, args, and env. @since 1.31.0",

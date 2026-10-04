@@ -658,6 +658,20 @@ moon task <project>:<task> --json
 # Check options.allowFailure
 ```
 
+### `expectFailure` <sup>v2.6+</sup>
+
+The stricter alternative for known-broken checks: the task passes when its command fails, and fails
+with `task_runner::unexpected_pass` once the command passes, prompting the setting to be removed.
+Unlike `allowFailure`, other tasks can depend on it. Surprises:
+
+- Exit codes `126`/`127` (command not executable/found), `129`-`192` (killed by a signal), timeouts,
+  and signals fail with `task_runner::unexpected_failure`, so a typo in the command is not an
+  expected failure.
+- The task is never cached (`options.cache` is forced to `false`), and is not retried after an
+  expected failure or an unexpected pass.
+- Combining it with `allowFailure` or `persistent`, including through `taskOptions` defaults, is a
+  task build error (`ExpectFailureConflict`).
+
 ---
 
 ## `mutex` contention
@@ -1225,6 +1239,10 @@ the task.
 hard error: moon rejects the configuration, because a failing dependency would still let the
 dependent task run, producing incorrect results. <sup>v2.6+</sup> `cleanup` deps are exempt, as they
 run after the task.
+
+**`ExpectFailureConflict`** <sup>v2.6+</sup> — a task enables `expectFailure` along with
+`allowFailure` or `persistent` (possibly inherited from `taskOptions` defaults). Fix: disable the
+other option for that task.
 
 **`RunInCiDepRequirement`** — a task that runs in CI depends on a task that doesn't run in CI
 (`runInCI: false`). The dependency won't execute in CI, so the dependent task may fail or produce

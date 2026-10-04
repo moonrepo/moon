@@ -76,6 +76,20 @@ pub enum TasksBuilderError {
     )]
     InteractiveWaitDepRequirement { dep: Target, task: Target },
 
+    #[diagnostic(code(task_builder::options::expect_failure_conflict))]
+    #[error(
+        "Task {} cannot enable both {} and {}, as {}.",
+        .task.style(Style::Label),
+        "options.expectFailure".style(Style::Property),
+        .option.style(Style::Property),
+        .reason,
+    )]
+    ExpectFailureConflict {
+        task: Target,
+        option: &'static str,
+        reason: &'static str,
+    },
+
     #[diagnostic(code(task_builder::dependency::self_reference))]
     #[error(
         "Task {} cannot depend on itself as a {} dependency, as it can't run {} itself.",

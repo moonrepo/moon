@@ -973,6 +973,23 @@ tasks:
         use super::*;
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn expect_failure() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+
+            let tasks = container.build_tasks("options").await;
+
+            // Never cached, even when enabled, so that a fix isn't hidden by
+            // a cached result
+            for id in ["expect-failure", "expect-failure-cache"] {
+                let task = tasks.get(id).unwrap();
+
+                assert!(task.options.expect_failure);
+                assert_eq!(task.options.cache, TaskOptionCache::Enabled(false));
+            }
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn affected_files() {
             let sandbox = create_sandbox("builder");
             let container = TasksBuilderContainer::new(sandbox.path());
@@ -1159,6 +1176,82 @@ tasks:
             let task = tasks.get("os-none").unwrap();
 
             assert_eq!(task.options.os, Some(vec![]));
+        }
+    }
+
+    mod expect_failure_conflicts {
+        use super::*;
+
+        // Created on demand, as a conflict fails the entire project
+        async fn build_tasks(config: &str) {
+            let sandbox = create_sandbox("builder");
+            sandbox.create_file("expect-failure/moon.yml", config);
+
+            TasksBuilderContainer::new(sandbox.path())
+                .build_tasks("expect-failure")
+                .await;
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        #[should_panic(expected = "task_builder::options::expect_failure_conflict")]
+        async fn errors_with_allow_failure() {
+            build_tasks(
+                r"
+tasks:
+  task:
+    options:
+      allowFailure: true
+      expectFailure: true
+",
+            )
+            .await;
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        #[should_panic(expected = "task_builder::options::expect_failure_conflict")]
+        async fn errors_with_allow_failure_from_shared_options() {
+            build_tasks(
+                r"
+taskOptions:
+  allowFailure: true
+tasks:
+  task:
+    options:
+      expectFailure: true
+",
+            )
+            .await;
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        #[should_panic(expected = "task_builder::options::expect_failure_conflict")]
+        async fn errors_with_persistent_from_preset() {
+            build_tasks(
+                r"
+tasks:
+  task:
+    preset: server
+    options:
+      expectFailure: true
+",
+            )
+            .await;
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn allows_allow_failure_disabled() {
+            build_tasks(
+                r"
+taskOptions:
+  allowFailure: true
+tasks:
+  task:
+    options:
+      allowFailure: false
+      expectFailure: true
+",
+            )
+            .await;
         }
     }
 

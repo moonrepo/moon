@@ -103,16 +103,41 @@ pub async fn purge(store: &CasStore) -> miette::Result<BlobCleanStats> {
 /// modified within `grace`. A blob is kept when a surviving manifest still
 /// references it; the grace window protects a freshly-written blob whose
 /// manifest hasn't landed yet (blobs are stored before the manifest).
-#[instrument(skip(store, keep))]
 pub async fn retain(
     store: &CasStore,
     keep: Arc<FxHashSet<ContentHash>>,
     grace: Duration,
 ) -> miette::Result<BlobCleanStats> {
+    retain_with_released(store, keep, Arc::new(FxHashSet::default()), grace, grace).await
+}
+
+/// Reachability sweep that distinguishes why an object is unreferenced:
+///
+/// - Objects in `keep` are always kept.
+/// - Objects in `released` were only referenced by manifests that have been
+///   evicted, and are removed once older than `grace`.
+/// - Objects that no manifest has ever referenced, like hash manifests that
+///   are stored on their own, are removed once older than `unreferenced_grace`
+///   (and never sooner than `grace`, as they may be mid-ingest).
+#[instrument(skip(store, keep, released))]
+pub async fn retain_with_released(
+    store: &CasStore,
+    keep: Arc<FxHashSet<ContentHash>>,
+    released: Arc<FxHashSet<ContentHash>>,
+    grace: Duration,
+    unreferenced_grace: Duration,
+) -> miette::Result<BlobCleanStats> {
     let now = SystemTime::now();
+    let unreferenced_grace = unreferenced_grace.max(grace);
     let mut set = JoinSet::new();
 
-    debug!(roots = keep.len(), ?grace, "Running CAS reachability sweep");
+    debug!(
+        roots = keep.len(),
+        released = released.len(),
+        ?grace,
+        ?unreferenced_grace,
+        "Running CAS reachability sweep"
+    );
 
     for shard_entry in fs::read_dir(&store.objects_dir)? {
         let shard_path = shard_entry.path();
@@ -122,6 +147,7 @@ pub async fn retain(
         }
 
         let keep = Arc::clone(&keep);
+        let released = Arc::clone(&released);
 
         set.spawn_blocking(move || {
             let mut stats = BlobCleanStats::default();
@@ -135,23 +161,30 @@ pub async fn retain(
             for blob_entry in fs::read_dir(&shard_path)? {
                 let blob_path = blob_entry.path();
 
-                let reachable = blob_path
+                let hash = blob_path
                     .file_name()
                     .and_then(|name| name.to_str())
-                    .and_then(|suffix| ContentHash::from_hex(format!("{prefix}{suffix}")).ok())
-                    .is_some_and(|hash| keep.contains(&hash));
+                    .and_then(|suffix| ContentHash::from_hex(format!("{prefix}{suffix}")).ok());
 
-                if reachable {
+                if hash.as_ref().is_some_and(|hash| keep.contains(hash)) {
                     continue;
                 }
 
+                // Objects that were released by an evicted manifest (or aren't
+                // valid objects) only get the ingest grace, while objects that
+                // were never referenced by a manifest live out the full window
+                let window = match &hash {
+                    Some(hash) if !released.contains(hash) => unreferenced_grace,
+                    _ => grace,
+                };
+
                 let metadata = fs::metadata(&blob_path)?;
 
-                // Unreferenced, but spare it if it was written within the grace
-                // window (it may be mid-ingest, manifest not yet stored).
+                // Unreferenced, but spare it if it was written within the
+                // window (it may be mid-ingest, manifest not yet stored)
                 let within_grace = metadata
                     .modified()
-                    .map(|modified| now.duration_since(modified).unwrap_or_default() <= grace)
+                    .map(|modified| now.duration_since(modified).unwrap_or_default() <= window)
                     .unwrap_or(false);
 
                 if within_grace {

@@ -185,8 +185,9 @@ Can also be enabled with the `MOON_CACHE_CAS_VERIFY_INTEGRITY` environment varia
 <HeadingApiLink to="/api/types/interface/CacheConfig#sharedWorktreeCache" />
 
 Shares the content-addressable storage (CAS) cache between all VCS worktrees on the same machine,
-instead of each worktree maintaining its own isolated cache. Only blobs and manifests are shared,
-as they are portable, while hashes, locks, states, and more remain worktree-specific.
+instead of each worktree maintaining its own isolated cache. Only blobs (which includes hash
+manifests as of v2.6) and manifests are shared, as they are portable, while locks, states, and more
+remain worktree-specific.
 
 The shared cache is stored in the base checkout's `.moon/cache` directory, or in
 `~/.moon/cache/shared` when the repository root has no checkout (bare clones).
@@ -464,6 +465,9 @@ experiments:
 Can also be enabled with the `MOON_EXPERIMENT_CAS_OUTPUTS_CACHE` environment variable.
 
 > The CAS layer can be tuned through the top-level [`cache`](#cache) setting.
+
+> As of v2.6, the local CAS layer is always enabled, as it stores the hash manifest of every ran
+> task. This experiment only controls whether task _outputs_ are stored in it.
 
 ### `explicitTaskOutputStyle`<VersionLabel version="2.6.0" />
 

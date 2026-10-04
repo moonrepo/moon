@@ -189,8 +189,8 @@ OTLP payloads can be delivered over HTTP (`http/protobuf`) or gRPC (`grpc`). The
 selected with the standard environment variables, where the per-signal variable takes precedence
 over the generic one:
 
-- `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL`, `OTEL_EXPORTER_OTLP_LOGS_PROTOCOL` - The transport for an
-  individual signal.
+- `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL`, `OTEL_EXPORTER_OTLP_METRICS_PROTOCOL`,
+  `OTEL_EXPORTER_OTLP_LOGS_PROTOCOL` - The transport for an individual signal.
 - `OTEL_EXPORTER_OTLP_PROTOCOL` - The transport for all signals. When not set, defaults to
   `http/protobuf`.
 

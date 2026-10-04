@@ -81,7 +81,8 @@ config_struct!(
     #[derive(Config)]
     #[config(allow_unknown_fields)]
     pub struct ToolchainsConfig {
-        #[setting(default = "./cache/schemas/toolchains.json", rename = "$schema")]
+        #[setting(default = "./cache/schemas/toolchains.json")]
+        #[serde(rename = "$schema")]
         pub schema: String,
 
         /// Extends one or many toolchain configuration files.

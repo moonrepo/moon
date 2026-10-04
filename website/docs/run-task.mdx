@@ -31,7 +31,9 @@ When this command is ran, it will do the following:
 ## Running dependents
 
 moon will _always_ run upstream dependencies ([`deps`](./config/project#deps)) before running the
-primary target, as their outputs may be required for the primary target to function correctly.
+primary target, as their outputs may be required for the primary target to function correctly. The
+exceptions are `cleanup` and `wait` dependencies, which run after or alongside the primary target,
+based on their [`type`](./config/project#type).
 
 However, if you're working on a project that is shared and consumed by other projects, you may want
 to verify that downstream dependents have not been indirectly broken by any changes. This can be

@@ -180,6 +180,23 @@ tasks:
       - '^:build'
 ```
 
+Dependencies can also run _after_ a task to clean up after it, or _alongside_ it, like a server that
+the task sends requests to, with the [`type`](./config/project#type) setting.
+
+```yaml title="<project>/moon.yml"
+tasks:
+  e2e:
+    # ...
+    deps:
+      - target: 'web:serve'
+        type: 'wait'
+      - target: 'web:stop'
+        type: 'cleanup'
+```
+
+> Servers (persistent tasks) don't run in CI by default, and a task that runs in CI can't wait on
+> one that doesn't, so also enable [`runInCI`](./config/project#runinci) for `web:serve`.
+
 ## Using file groups
 
 Once you're familiar with configuring tasks, you may notice certain inputs being repeated

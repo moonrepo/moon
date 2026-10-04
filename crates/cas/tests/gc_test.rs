@@ -163,3 +163,94 @@ mod retain {
         assert!(!store.contains_object(&orphan.hash));
     }
 }
+
+mod retain_with_released {
+    use super::*;
+    use moon_hash::ContentHash;
+    use rustc_hash::FxHashSet;
+    use std::sync::Arc;
+
+    const GRACE: Duration = Duration::from_secs(3600);
+    const LIFETIME: Duration = Duration::from_secs(86400);
+
+    fn set(hashes: &[&ContentHash]) -> Arc<FxHashSet<ContentHash>> {
+        Arc::new(hashes.iter().map(|hash| (*hash).clone()).collect())
+    }
+
+    #[tokio::test]
+    async fn sweeps_released_blobs_past_grace() {
+        let sandbox = create_empty_sandbox();
+        let store = create_store(&sandbox);
+
+        let released = store.store_bytes(b"released").unwrap();
+        backdate_mtime(
+            &store.object_path(&released.hash),
+            Duration::from_secs(7200),
+        );
+
+        let result = store
+            .retain_with_released(set(&[]), set(&[&released.hash]), GRACE, LIFETIME)
+            .await
+            .unwrap();
+
+        assert_eq!(result.blobs_removed, 1);
+        assert!(!store.contains_object(&released.hash));
+    }
+
+    #[tokio::test]
+    async fn keeps_unreferenced_blobs_within_window() {
+        let sandbox = create_empty_sandbox();
+        let store = create_store(&sandbox);
+
+        let unreferenced = store.store_bytes(b"unreferenced").unwrap();
+        backdate_mtime(
+            &store.object_path(&unreferenced.hash),
+            Duration::from_secs(7200),
+        );
+
+        let result = store
+            .retain_with_released(set(&[]), set(&[]), GRACE, LIFETIME)
+            .await
+            .unwrap();
+
+        assert_eq!(result.blobs_removed, 0);
+        assert!(store.contains_object(&unreferenced.hash));
+    }
+
+    #[tokio::test]
+    async fn sweeps_unreferenced_blobs_past_window() {
+        let sandbox = create_empty_sandbox();
+        let store = create_store(&sandbox);
+
+        let unreferenced = store.store_bytes(b"unreferenced").unwrap();
+        backdate_mtime(
+            &store.object_path(&unreferenced.hash),
+            Duration::from_secs(172800),
+        );
+
+        let result = store
+            .retain_with_released(set(&[]), set(&[]), GRACE, LIFETIME)
+            .await
+            .unwrap();
+
+        assert_eq!(result.blobs_removed, 1);
+        assert!(!store.contains_object(&unreferenced.hash));
+    }
+
+    #[tokio::test]
+    async fn window_is_never_shorter_than_grace() {
+        let sandbox = create_empty_sandbox();
+        let store = create_store(&sandbox);
+
+        // Freshly written, so possibly mid-ingest
+        let pending = store.store_bytes(b"pending").unwrap();
+
+        let result = store
+            .retain_with_released(set(&[]), set(&[]), GRACE, Duration::from_secs(1))
+            .await
+            .unwrap();
+
+        assert_eq!(result.blobs_removed, 0);
+        assert!(store.contains_object(&pending.hash));
+    }
+}

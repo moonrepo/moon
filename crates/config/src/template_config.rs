@@ -12,7 +12,7 @@ macro_rules! var_setting {
             #[derive(Config)]
             pub struct $name {
                 /// The default value of the variable if none was provided.
-                #[setting(alias = "defaultValue")]
+                #[serde(alias = "defaultValue")]
                 pub default: $ty,
 
                 /// Marks the variable as internal, and won't be overwritten via CLI arguments.
@@ -126,7 +126,8 @@ config_struct!(
     #[derive(Config)]
     pub struct TemplateVariableEnumSetting {
         /// The default value of the variable if none was provided.
-        #[setting(alias = "defaultValue", nested, validate = validate_enum_default)]
+        #[setting(nested, validate = validate_enum_default)]
+        #[serde(alias = "defaultValue")]
         pub default: TemplateVariableEnumDefault,
 
         /// Marks the variable as internal, and won't be overwritten via CLI arguments.
@@ -269,7 +270,6 @@ config_struct!(
     /// Docs: https://moonrepo.dev/docs/config/template
     #[derive(Config)]
     pub struct TemplateConfig {
-        #[setting(rename = "$schema")]
         #[serde(rename = "$schema")]
         pub schema: String,
 

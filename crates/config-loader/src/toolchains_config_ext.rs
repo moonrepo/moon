@@ -10,24 +10,24 @@ pub struct ToolchainsConfigExt;
 
 impl ToolchainsConfigExt {
     pub fn get_plugin_locator(id: &Id) -> Option<PluginLocator> {
-        let node_depman_version = "1.1.0";
+        let node_depman_version = "1.1.1";
 
         match id.as_str() {
-            "bun" => Some(locate("bun_toolchain", "1.0.4")),
-            "deno" => Some(locate("deno_toolchain", "1.1.1")),
-            "go" => Some(locate("go_toolchain", "1.5.1")),
-            "javascript" => Some(locate("javascript_toolchain", "1.3.1")),
-            "node" => Some(locate("node_toolchain", "1.0.4")),
+            "bun" => Some(locate("bun_toolchain", "1.0.5")),
+            "deno" => Some(locate("deno_toolchain", "1.1.2")),
+            "go" => Some(locate("go_toolchain", "1.5.2")),
+            "javascript" => Some(locate("javascript_toolchain", "1.3.2")),
+            "node" => Some(locate("node_toolchain", "1.0.5")),
             "npm" => Some(locate("node_depman_toolchain", node_depman_version)),
             "pnpm" => Some(locate("node_depman_toolchain", node_depman_version)),
-            "rust" => Some(locate("rust_toolchain", "1.0.9")),
-            "typescript" => Some(locate("typescript_toolchain", "1.1.4")),
+            "rust" => Some(locate("rust_toolchain", "1.0.10")),
+            "typescript" => Some(locate("typescript_toolchain", "1.1.5")),
             "unstable_nub" => Some(locate("node_depman_toolchain", node_depman_version)),
-            "unstable_python" => Some(locate("python_toolchain", "0.3.0")),
-            "unstable_pip" => Some(locate("python_pip_toolchain", "0.1.4")),
-            "unstable_poetry" => Some(locate("python_poetry_toolchain", "0.1.2")),
-            "unstable_uv" => Some(locate("python_uv_toolchain", "0.1.5")),
-            "unstable_ruby" => Some(locate("ruby_toolchain", "0.1.1")),
+            "unstable_python" => Some(locate("python_toolchain", "0.3.1")),
+            "unstable_pip" => Some(locate("python_pip_toolchain", "0.1.5")),
+            "unstable_poetry" => Some(locate("python_poetry_toolchain", "0.1.3")),
+            "unstable_uv" => Some(locate("python_uv_toolchain", "0.1.6")),
+            "unstable_ruby" => Some(locate("ruby_toolchain", "0.1.2")),
             "yarn" => Some(locate("node_depman_toolchain", node_depman_version)),
             "system" => Some(PluginLocator::Data(Box::new(DataLocator {
                 data: "data://system_toolchain".into(),

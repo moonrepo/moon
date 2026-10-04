@@ -11,6 +11,14 @@ models to interact with external tools and services through a unified interface.
 contains an MCP server that you can register with your code editor to allow LLMs to use moon
 directly.
 
+:::info
+
+As of v2.6, the MCP server implements the stateless MCP `2026-07-28` protocol, so your client (code
+editor, AI agent, etc) must support this protocol version. Older protocol versions (`2025-11-25` and
+below) and the `initialize` handshake are no longer supported.
+
+:::
+
 ## Setup
 
 ### Claude Code

@@ -61,13 +61,23 @@ impl Condition<'_> {
         haystack: &FieldValues,
         needles: &[T],
     ) -> miette::Result<bool> {
+        // Negated operators (`!=`, `!~`) match only when none of the needles
+        // match the positive form, so an empty list always matches
+        let negated = matches!(
+            self,
+            Condition::Field {
+                op: ComparisonOperator::NotEqual | ComparisonOperator::NotLike,
+                ..
+            }
+        );
+
         for needle in needles {
-            if self.matches(haystack, needle)? {
-                return Ok(true);
+            if self.matches(haystack, needle)? != negated {
+                return Ok(!negated);
             }
         }
 
-        Ok(false)
+        Ok(negated)
     }
 
     pub fn matches_enum<T: PartialEq>(&self, haystack: &[T], needle: &T) -> miette::Result<bool> {

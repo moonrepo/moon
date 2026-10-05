@@ -1,8 +1,0 @@
-releases:
-  "@moonrepo/types": minor
-
-declined:
-  - "@moonrepo/report"
-  - "@moonrepo/visualizer"
-  - "moon-console"
-  - website

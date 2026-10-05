@@ -8,6 +8,7 @@ function mockReport(): RunReport {
 		actions: [
 			{
 				allowFailure: false,
+				expectFailure: false,
 				createdAt: '2022-09-12T22:50:12.621680Z',
 				duration: {
 					secs: 0,
@@ -27,6 +28,7 @@ function mockReport(): RunReport {
 			},
 			{
 				allowFailure: false,
+				expectFailure: false,
 				createdAt: '2022-09-12T22:50:12.932177Z',
 				duration: {
 					secs: 1922,
@@ -46,6 +48,7 @@ function mockReport(): RunReport {
 			},
 			{
 				allowFailure: false,
+				expectFailure: false,
 				createdAt: '2022-09-12T22:50:12.932228Z',
 				duration: {
 					secs: 64,
@@ -65,6 +68,7 @@ function mockReport(): RunReport {
 			},
 			{
 				allowFailure: false,
+				expectFailure: false,
 				createdAt: '2022-09-12T22:50:12.932311Z',
 				duration: {
 					secs: 34,

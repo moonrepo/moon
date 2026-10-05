@@ -100,6 +100,12 @@
     prepend paths to `PATH`. Variables that are already configured, like a task's `env`, are not
     overridden, and the first toolchain configured for a task takes precedence (#2568).
 
+#### 🧰 Toolchains
+
+- **Deno, Go, Rust**
+  - Added `bins.*.args` support, which are custom arguments passed their respective install command.
+    Bins with args are installed in separate commands.
+
 #### 🐞 Fixes
 
 - Fixed an issue where a task dependency's `env` (`deps.*.env`) would override system environment

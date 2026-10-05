@@ -156,6 +156,30 @@ mod http_remote_storage {
         }
 
         #[tokio::test]
+        async fn errors_when_status_never_responds() {
+            // Accepts connections but never answers
+            let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+            let sandbox = create_empty_sandbox();
+
+            let mut remote = RemoteConfig {
+                host: Some(format!("http://{}", listener.local_addr().unwrap())),
+                ..Default::default()
+            };
+            remote.cache.instance_name = INSTANCE.to_owned();
+            remote.cache.connect_timeout = 1;
+
+            let mut context = CacheContext::new(sandbox.path());
+            context.remote_config = Arc::new(remote);
+
+            let storage = HttpRemoteStorage::new(context).unwrap();
+            let start = std::time::Instant::now();
+
+            assert!(storage.connect().await.is_err());
+            assert!(!storage.is_readable());
+            assert!(start.elapsed() < std::time::Duration::from_secs(3));
+        }
+
+        #[tokio::test]
         async fn retries_status_after_transient_error() {
             let host = serve_sequence(vec![(503, ""), (200, "")]).await;
             let sandbox = create_empty_sandbox();

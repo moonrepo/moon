@@ -881,6 +881,26 @@ Compression is only applied to gRPC based APIs, not HTTP.
 
 :::
 
+#### `connectTimeout`<VersionLabel version="2.6.1" />
+
+<HeadingApiLink to="/api/types/interface/RemoteCacheConfig#connectTimeout" />
+
+The number of seconds to wait for the host to respond while connecting. When exceeded, remote
+caching is disabled for the current run, instead of every task waiting on the connection. Defaults
+to `5`.
+
+```yaml title=".moon/workspace.yml" {3}
+remote:
+  cache:
+    connectTimeout: 10
+```
+
+:::info
+
+This timeout is only applied to HTTP based APIs, not gRPC.
+
+:::
+
 #### `instanceName`
 
 <HeadingApiLink to="/api/types/interface/RemoteCacheConfig#instanceName" />

@@ -783,6 +783,12 @@
             }
           ]
         },
+        "connectTimeout": {
+          "title": "connectTimeout",
+          "description": "The number of seconds to wait for the host to respond while connecting. When exceeded, remote caching is disabled for the current run. Only applies to HTTP APIs. @since 2.6.1",
+          "default": 5,
+          "type": "number"
+        },
         "instanceName": {
           "title": "instanceName",
           "description": "Unique instance name for blobs. Will be used as a folder name.",

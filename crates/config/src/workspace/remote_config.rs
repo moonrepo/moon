@@ -74,6 +74,13 @@ config_struct!(
         /// @since 1.31.0
         pub compression: RemoteCompression,
 
+        /// The number of seconds to wait for the host to respond while
+        /// connecting. When exceeded, remote caching is disabled for the
+        /// current run. Only applies to HTTP APIs.
+        /// @since 2.6.1
+        #[setting(default = 5)]
+        pub connect_timeout: u64,
+
         /// Unique instance name for blobs. Will be used as a folder name.
         #[setting(default = "moon-outputs")]
         pub instance_name: String,

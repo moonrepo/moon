@@ -163,11 +163,18 @@ impl StorageBackend for HttpRemoteStorage {
 
         // Ignore errors since this endpoint is non-standard, unless the host
         // is unreachable, as every request would then exhaust its retries
-        match client
-            .get(format!("{}/status", config.get_host()))
-            .send()
-            .await
-        {
+        // A host that accepts connections but never answers must be disabled,
+        // otherwise every read and write waits on the connection
+        let status = tokio::time::timeout(
+            Duration::from_secs(config.cache.connect_timeout),
+            client.get(format!("{}/status", config.get_host())).send(),
+        )
+        .await
+        .map_err(|_| RemoteError::HttpConnectTimeout {
+            seconds: config.cache.connect_timeout,
+        })?;
+
+        match status {
             Ok(response) => {
                 let status = response.status();
                 let code = status.as_u16();

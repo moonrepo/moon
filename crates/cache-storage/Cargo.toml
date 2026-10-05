@@ -28,6 +28,7 @@ tracing = { workspace = true }
 [dev-dependencies]
 serial_test = { workspace = true }
 starbase_sandbox = { workspace = true }
+tokio = { workspace = true, features = ["test-util"] }
 
 [lints]
 workspace = true

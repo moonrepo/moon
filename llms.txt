@@ -64,7 +64,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Task inheritance](https://moonrepo.dev/docs/concepts/task-inheritance): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [Tasks](https://moonrepo.dev/docs/concepts/task): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [Tokens](https://moonrepo.dev/docs/concepts/token): import VersionLabel from '@site/src/components/Docs/VersionLabel';
-- [Toolchain](https://moonrepo.dev/docs/concepts/toolchain): The toolchain is an internal layer for downloading, installing, and managing tools (languages,
+- [Toolchain](https://moonrepo.dev/docs/concepts/toolchain): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [Workspace](https://moonrepo.dev/docs/concepts/workspace): A workspace is a directory that contains [projects](./project), manages a [toolchain](./toolchain),
 - [.moon/extensions](https://moonrepo.dev/docs/config/extensions): import Tabs from '@theme/Tabs';
 - [Overview](https://moonrepo.dev/docs/config/overview): import Tabs from '@theme/Tabs';
@@ -296,3 +296,4 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [moon v2.5 - OpenTelemetry, shared worktree caching, async engine by default, and more](https://moonrepo.dev/blog/2026-08-14_moon-v2.5): This release is about speed you can feel and visibility you can graph. The async engine we've been
 - [proto v0.61 - Swift support, GPG verification, and immutable lockfiles](https://moonrepo.dev/blog/2026-08-22_proto-v0.61): A new language joins the toolchain, downloads can now be verified with GPG signatures, and
 - [proto v0.62 - Community plugins, shell deactivation, and Zig support](https://moonrepo.dev/blog/2026-09-03_proto-v0.62): Dozens of community tools now install by name alone, shell activation learned how to turn itself
+- [moon v2.6 - Cleanup and wait task dependencies, OpenTelemetry metrics, Pkl type checking, and more](https://moonrepo.dev/blog/2026-10-05_moon-v2.6): This release is all about what happens _around_ your tasks. Dependencies can now run after a task to

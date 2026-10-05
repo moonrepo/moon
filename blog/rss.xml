@@ -4,10 +4,276 @@
         <title>moonrepo Blog</title>
         <link>https://moonrepo.dev/blog</link>
         <description>moonrepo Blog</description>
-        <lastBuildDate>Thu, 03 Sep 2026 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Mon, 05 Oct 2026 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
+        <item>
+            <title><![CDATA[moon v2.6 - Cleanup and wait task dependencies, OpenTelemetry metrics, Pkl type checking, and more]]></title>
+            <link>https://moonrepo.dev/blog/moon-v2.6</link>
+            <guid>https://moonrepo.dev/blog/moon-v2.6</guid>
+            <pubDate>Mon, 05 Oct 2026 00:00:00 GMT</pubDate>
+            <description><![CDATA[This release is all about what happens around your tasks. Dependencies can now run after a task to]]></description>
+            <content:encoded><![CDATA[<p>This release is all about what happens <em>around</em> your tasks. Dependencies can now run after a task to
+clean up after it, or alongside it as a long-running sidekick. Persistent tasks no longer wait in
+line until the very end of the pipeline. Tasks can expect to fail, and override the shell's
+environment. The OpenTelemetry integration from last release now emits metrics, and Pkl configs can
+finally be type checked.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="task-improvements">Task improvements<a href="https://moonrepo.dev/blog/moon-v2.6#task-improvements" class="hash-link" aria-label="Direct link to Task improvements" title="Direct link to Task improvements" translate="no">​</a></h2>
+<p>The first round of changes apply to tasks and their options.</p>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="cleanup-and-wait-dependencies">Cleanup and wait dependencies<a href="https://moonrepo.dev/blog/moon-v2.6#cleanup-and-wait-dependencies" class="hash-link" aria-label="Direct link to Cleanup and wait dependencies" title="Direct link to Cleanup and wait dependencies" translate="no">​</a></h3>
+<p>Task <a class="" href="https://moonrepo.dev/docs/config/project#deps"><code>deps</code></a> have always meant one thing: "run this before me, and make
+sure it passes". That's perfect for builds and code generation, but it falls apart the moment a task
+needs something to be <em>running</em> (a database for integration tests, a server for end-to-end tests)
+and then needs it gone again afterwards. Until now, that usually meant a shell script that starts
+everything in the background, traps a few signals, and hopes for the best.</p>
+<p>In v2.6, dependencies support a new <a class="" href="https://moonrepo.dev/docs/config/project#type"><code>type</code></a> setting, which controls
+<em>when</em> the dependency runs in relation to the task:</p>
+<ul>
+<li class=""><code>required</code> (default) - Runs before the task, and must complete successfully. Exactly what you're
+used to.</li>
+<li class=""><code>cleanup</code> - Runs <em>after</em> the task has ran its command, even when the task fails. Ideal for tearing
+things down, like stopping a database or removing temporary files.</li>
+<li class=""><code>wait</code> - Runs before the task, but the task only waits for the dependency to <em>start</em> running, not
+to complete. Ideal for long-running dependencies, like a server that the task sends requests to.</li>
+</ul>
+<p>Put them together, and an entire end-to-end testing workflow fits into a single task:</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">e2e</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'playwright test'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">deps</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token comment" style="color:#97a1af;font-style:italic"># Start the database, and wait for it to complete</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'db:start'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token comment" style="color:#97a1af;font-style:italic"># Start the server, and run the tests alongside it</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token key atrule">target</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'web:serve'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">        </span><span class="token key atrule">type</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'wait'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token comment" style="color:#97a1af;font-style:italic"># Stop the server and database once the tests have ran, pass or fail</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token key atrule">target</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'web:stop'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">        </span><span class="token key atrule">type</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'cleanup'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token key atrule">target</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'db:stop'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">        </span><span class="token key atrule">type</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'cleanup'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token comment" style="color:#97a1af;font-style:italic"># Don't hydrate from the cache, as the server would be stopped right after it started</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">cache</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">false</span><br></div></code></pre></div></div>
+<p>A few things worth knowing about how these behave:</p>
+<ul>
+<li class="">Cleanup dependencies run once the task has ran its command, whether it passed or failed, and even
+when a failure aborts the pipeline. They're skipped when there's nothing to clean up, like when
+the task was hydrated from the cache, <em>unless</em> the task has already started a <code>wait</code> dependency,
+since stopping it is usually the cleanup's whole job.</li>
+<li class="">Wait dependencies only need to have <em>started</em>, which isn't the same as being <em>ready</em>. If your
+server takes a moment before it accepts connections, poll a health check before sending requests.</li>
+<li class="">Wait dependencies are not stopped once the task completes, so pair them with a cleanup dependency
+that stops them, as seen above.</li>
+<li class="">Wait dependencies can be <a class="" href="https://moonrepo.dev/docs/config/project#persistent">persistent</a>, and they don't count
+towards the pipeline's concurrency limit, so they never block the tasks waiting on them.</li>
+<li class="">Wait dependencies are still subject to <a class="" href="https://moonrepo.dev/docs/config/project#runinci"><code>runInCI</code></a>: a task that
+runs in CI can't wait on one that doesn't. Since servers don't run in CI by default (tasks named
+<code>serve</code> are persistent automatically), enable <code>runInCI</code> for <code>web:serve</code> in the example above. See
+<a href="https://moonrepo.dev/blog/moon-v2.6#persistent-tasks-in-ci" class="">persistent tasks in CI</a> below.</li>
+<li class="">Since neither type completes before the task runs, they don't contribute to the task's
+<a class="" href="https://moonrepo.dev/docs/concepts/cache#hashing">hash</a>, and they always run their command instead of being hydrated
+from the cache.</li>
+</ul>
+<p>Cleanup dependencies also work great with <a class="" href="https://moonrepo.dev/docs/config/tasks#implicitdeps">task inheritance</a>. For
+example, any project can define a <code>teardown</code> task that runs after its other tasks, without each task
+having to opt-in individually. And don't worry, the <code>teardown</code> task won't try to clean up after
+itself!</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/tasks/all.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">implicitDeps</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token key atrule">target</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'~:teardown'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">type</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'cleanup'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">optional</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></div></code></pre></div></div>
+<div class="theme-admonition theme-admonition-caution admonition_WCGJ alert alert--warning"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"></path></svg></span>caution</div><div class="admonitionContent_pbrs"><p>Cleanup dependencies are <em>not</em> ran when the pipeline is interrupted by a signal, like pressing
+Ctrl+C.</p></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="expected-failures">Expected failures<a href="https://moonrepo.dev/blog/moon-v2.6#expected-failures" class="hash-link" aria-label="Direct link to Expected failures" title="Direct link to Expected failures" translate="no">​</a></h3>
+<p>The <a class="" href="https://moonrepo.dev/docs/config/project#allowfailure"><code>allowFailure</code></a> task option is handy for advisory checks, but
+it's often reached for in a different situation: a check that's known to be broken, like after
+enabling a stricter compiler or lint rule midway through a migration. Once the failures are fixed,
+nothing tells you, so the option lingers, and future regressions slip through unnoticed.</p>
+<p>In v2.6, the new <a class="" href="https://moonrepo.dev/docs/config/project#expectfailure"><code>expectFailure</code></a> task option covers this case.
+The task <em>must</em> fail, and once it passes, the pipeline fails with an error asking you to remove the
+setting.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">typecheck</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'tsc --build'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line theme-code-block-highlighted-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">expectFailure</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></div></code></pre></div></div>
+<p>Unlike <code>allowFailure</code>, an expected failure is treated as a success, so other tasks <em>can</em> depend on
+it, like bundling the JavaScript that <code>tsc</code> still emits. A few more details:</p>
+<ul>
+<li class="">Only a failure of the command itself is expected. A command that couldn't run (exit code <code>126</code> or
+<code>127</code>), or was killed by a signal, fails as normal, so a typo can't pass as the expected failure.</li>
+<li class="">The task is never cached, and isn't retried, so a fix is noticed on the very next run.</li>
+<li class="">It can't be combined with <code>allowFailure</code> or <code>persistent</code>.</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="overriding-system-environment-variables">Overriding system environment variables<a href="https://moonrepo.dev/blog/moon-v2.6#overriding-system-environment-variables" class="hash-link" aria-label="Direct link to Overriding system environment variables" title="Direct link to Overriding system environment variables" translate="no">​</a></h3>
+<p>Since v2, variables set in your shell or CI take precedence over a task's
+<a class="" href="https://moonrepo.dev/docs/config/project#env-1"><code>env</code></a>, so that <code>KEY=value moon run ...</code> works as you'd expect. That's
+the right default, but sometimes a task needs a specific value regardless, like <code>NODE_ENV=test</code> for
+tests, while CI exports <code>NODE_ENV=production</code>.</p>
+<p>In v2.6, the new <a class="" href="https://moonrepo.dev/docs/config/project#envoverride"><code>envOverride</code></a> task option lets the task's
+variables win instead, either for all of them, or only those listed.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">test</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'jest'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">env</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">NODE_ENV</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'test'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">TZ</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'UTC'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line theme-code-block-highlighted-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">envOverride</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'NODE_ENV'</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'TZ'</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"> </span><span class="token comment" style="color:#97a1af;font-style:italic"># or `true`</span><br></div></code></pre></div></div>
+<p>Variables loaded with <a class="" href="https://moonrepo.dev/docs/config/project#envfile"><code>envFile</code></a> are not overridden, and neither is
+<code>PATH</code>, as that would remove the paths of toolchains. To keep a specific variable configurable from
+the shell, fall back to it with substitution, like <code>LOG_LEVEL: '${LOG_LEVEL:-info}'</code>.</p>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="output-style-from-the-command-line">Output style from the command line<a href="https://moonrepo.dev/blog/moon-v2.6#output-style-from-the-command-line" class="hash-link" aria-label="Direct link to Output style from the command line" title="Direct link to Output style from the command line" translate="no">​</a></h3>
+<p>The <a class="" href="https://moonrepo.dev/docs/config/project#outputstyle"><code>outputStyle</code></a> task option controls how a task's output is
+displayed, but it's configured per task, and it doesn't apply to primary targets (those you
+explicitly requested on the command line). That's a sensible default locally, but in CI, you
+typically want the opposite: successful tasks should stay quiet, while failures print in full.</p>
+<p>In v2.6, <a class="" href="https://moonrepo.dev/docs/commands/run"><code>moon run</code></a>, <a class="" href="https://moonrepo.dev/docs/commands/ci"><code>moon ci</code></a>,
+<a class="" href="https://moonrepo.dev/docs/commands/check"><code>moon check</code></a>, and <a class="" href="https://moonrepo.dev/docs/commands/exec"><code>moon exec</code></a> support a new
+<code>--output-style</code> option, which overrides the style for <em>all</em> tasks in that run. Since it was
+requested explicitly, it also applies to primary targets.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon ci :test :lint --output-style buffer-only-failure </span><span class="token parameter variable" style="color:#fef9c3">--summary</span><span class="token plain"> minimal</span><br></div></code></pre></div></div>
+<blockquote>
+<p>Interactive tasks are the exception, as they must remain attached to the terminal, and always
+stream their output.</p>
+</blockquote>
+<p>Prefer to configure it once? The new
+<a class="" href="https://moonrepo.dev/docs/config/workspace#explicittaskoutputstyle"><code>explicitTaskOutputStyle</code></a> experiment applies each
+task's configured <code>outputStyle</code> to primary targets as well.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">experiments</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">explicitTaskOutputStyle</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></div></code></pre></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="persistent-tasks-run-within-the-pipeline">Persistent tasks run within the pipeline<a href="https://moonrepo.dev/blog/moon-v2.6#persistent-tasks-run-within-the-pipeline" class="hash-link" aria-label="Direct link to Persistent tasks run within the pipeline" title="Direct link to Persistent tasks run within the pipeline" translate="no">​</a></h2>
+<p><a class="" href="https://moonrepo.dev/docs/concepts/task#persistent">Persistent tasks</a> (servers, watchers, anything that never exits)
+have always been tricky in a dependency graph. Our answer since v1.6 has been to collect them all,
+and run them <em>last</em> as a single batch, once every other action in the pipeline had finished. It
+worked, but it also meant your dev server sat around waiting on completely unrelated tasks before it
+was allowed to boot.</p>
+<p>In v2.6, persistent tasks run as soon as they're reached in the action graph, like any other task.
+They still run in parallel and never block the actions that come after them, but they now start as
+soon as their own dependencies have completed, and a persistent task no longer holds up the
+persistent tasks that depend on it.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># The servers start as soon as they're ready, while docs continue to build</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon run api:dev web:dev docs:build</span><br></div></code></pre></div></div>
+<p>And since a non-persistent task can now <a href="https://moonrepo.dev/blog/moon-v2.6#cleanup-and-wait-dependencies" class="">wait</a> for a persistent task
+to start, servers can finally be used as dependencies of regular tasks, instead of only of other
+persistent tasks.</p>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="persistent-tasks-in-ci">Persistent tasks in CI<a href="https://moonrepo.dev/blog/moon-v2.6#persistent-tasks-in-ci" class="hash-link" aria-label="Direct link to Persistent tasks in CI" title="Direct link to Persistent tasks in CI" translate="no">​</a></h3>
+<p>We also took a hard look at how persistent tasks behave in CI, as a task that never completes is a
+great way to keep a pipeline running until it times out. Persistent tasks now <em>never</em> run in CI by
+default, even when they define <code>outputs</code>, or have a <code>type</code> of <code>build</code> or <code>test</code>. When you need one
+in CI, like a server for end-to-end tests, explicitly enable
+<a class="" href="https://moonrepo.dev/docs/config/project#runinci"><code>runInCI</code></a>.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">serve</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'vite preview'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">persistent</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">runInCI</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></div></code></pre></div></div>
+<p>Even then, it's only ran for the tasks that depend on it, or when explicitly passed as a target, and
+never on its own. So <a class="" href="https://moonrepo.dev/docs/commands/ci"><code>moon ci</code></a> will start the server for your <code>e2e</code> task, but
+it won't start it just because a file in the project changed. The same goes for
+<a class="" href="https://moonrepo.dev/docs/commands/check"><code>moon check</code></a>, which now only runs persistent tasks when another task
+depends on them, instead of never completing.</p>
+<p>And if you forget to enable it, the <code>run_in_ci_mismatch</code> error (a task that runs in CI depends on a
+task that doesn't) now explains exactly how to resolve it.</p>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="a-faster-pipeline">A faster pipeline<a href="https://moonrepo.dev/blog/moon-v2.6#a-faster-pipeline" class="hash-link" aria-label="Direct link to A faster pipeline" title="Direct link to A faster pipeline" translate="no">​</a></h3>
+<p>To make all of this possible, we rewrote the action pipeline's job dispatcher, and made it 10-15x
+faster while we were in there. Dependency relationships are now extracted from the action graph
+once up front, and completed jobs unblock their dependents incrementally, instead of re-traversing
+the graph every time the dispatcher checks what's next. Additionally, interactive tasks now only
+block the pipeline until they themselves have completed, instead of until every task that was
+already running has completed.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="opentelemetry-metrics">OpenTelemetry metrics<a href="https://moonrepo.dev/blog/moon-v2.6#opentelemetry-metrics" class="hash-link" aria-label="Direct link to OpenTelemetry metrics" title="Direct link to OpenTelemetry metrics" translate="no">​</a></h2>
+<p>In v2.5, we shipped <a class="" href="https://moonrepo.dev/docs/commands/overview#opentelemetry">OpenTelemetry</a> support for traces and
+logs, with a little disclaimer that metrics were supported, but that we didn't emit any yet. Well,
+now we do! When <code>--otel</code> (or <code>MOON_OTEL</code>) is enabled, moon records
+<a class="" href="https://moonrepo.dev/docs/commands/overview#metrics">metrics</a> for every task, action, and operation that runs within
+the pipeline.</p>
+<table><thead><tr><th style="text-align:left">Metric</th><th style="text-align:left">Instrument</th><th style="text-align:left">Description</th></tr></thead><tbody><tr><td style="text-align:left"><code>moon.task.runs</code></td><td style="text-align:left">Counter</td><td style="text-align:left">Number of tasks ran within the pipeline.</td></tr><tr><td style="text-align:left"><code>moon.task.duration</code></td><td style="text-align:left">Histogram</td><td style="text-align:left">Duration of tasks in milliseconds.</td></tr><tr><td style="text-align:left"><code>moon.action.executions</code></td><td style="text-align:left">Counter</td><td style="text-align:left">Number of actions executed within the pipeline.</td></tr><tr><td style="text-align:left"><code>moon.action.duration</code></td><td style="text-align:left">Histogram</td><td style="text-align:left">Duration of actions in milliseconds.</td></tr><tr><td style="text-align:left"><code>moon.operation.executions</code></td><td style="text-align:left">Counter</td><td style="text-align:left">Number of operations executed within an action.</td></tr><tr><td style="text-align:left"><code>moon.operation.duration</code></td><td style="text-align:left">Histogram</td><td style="text-align:left">Duration of operations in milliseconds.</td></tr></tbody></table>
+<p>Task metrics are the ones to reach for when building dashboards, as they're labeled with the
+<code>target</code>, <code>project</code>, <code>task</code>, <code>toolchains</code>, <code>status</code>, and whether the task was <code>flaky</code> (passed only
+after a retry). That means you can finally graph questions like "how long does <code>build</code> take across
+the entire workspace?", "which project is the most expensive in CI?", or "what's our cache hit rate
+this week?" (compare the <code>cached</code> and <code>cached-from-remote</code> statuses against the total).</p>
+<p>Action and operation metrics go one level deeper. Actions cover the pipeline as a whole (syncing
+projects, setting up toolchains, installing dependencies), while operations are the individual
+steps <em>within</em> an action, like generating a hash, hydrating outputs from the cache, or executing the
+command. Operations are purposefully not labeled by target or project, to keep cardinality in check;
+traces provide that level of detail instead.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ </span><span class="token builtin class-name" style="color:#ff94ff;font-weight:bold">export</span><span class="token plain"> </span><span class="token assign-left variable" style="color:#fef9c3">OTEL_EXPORTER_OTLP_ENDPOINT</span><span class="token operator" style="color:#b7a9f9">=</span><span class="token string" style="color:#c9e166">"http://localhost:4318"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon </span><span class="token parameter variable" style="color:#fef9c3">--otel</span><span class="token plain"> ci</span><br></div></code></pre></div></div>
+<div class="theme-admonition theme-admonition-caution admonition_WCGJ alert alert--warning"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"></path></svg></span>caution</div><div class="admonitionContent_pbrs"><p>Since the <code>target</code> attribute is recorded for every task that runs, the cardinality of the
+<code>moon.task.*</code> and <code>moon.action.*</code> metrics scales with the number of tasks in your workspace. If your
+observability backend complains, drop or aggregate away the attribute within your OTEL collector.</p></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="type-checking-for-pkl-configs">Type checking for Pkl configs<a href="https://moonrepo.dev/blog/moon-v2.6#type-checking-for-pkl-configs" class="hash-link" aria-label="Direct link to Type checking for Pkl configs" title="Direct link to Type checking for Pkl configs" translate="no">​</a></h2>
+<p><a class="" href="https://moonrepo.dev/docs/config/overview#pkl">Pkl</a> has been a supported configuration format since v1.29, but until
+now, moon was the only one that knew what a valid config looked like, and you'd only find out about
+a typo once moon loaded the file. In v2.6, every configuration file has a Pkl module that types its
+settings, which is generated to <code>.moon/cache/schemas/pkl</code> (when <code>pkl</code> is installed), right
+alongside the JSON schemas.</p>
+<p>A config that <code>amends</code> its module is <a class="" href="https://moonrepo.dev/docs/config/overview#type-checking">type checked</a> by Pkl
+itself, which reports unknown settings and invalid values when the config is evaluated. And editors
+with Pkl support, like the <a href="https://pkl-lang.org/vscode/current/index.html" target="_blank" rel="noopener noreferrer" class="">VS Code extension</a>, now
+provide completion and documentation for every setting.</p>
+<div class="language-pkl codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.pkl</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-pkl codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token plain">amends "./cache/schemas/pkl/WorkspaceConfig.pkl"</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">projects = List("apps/*", "packages/*")</span><br></div></code></pre></div></div>
+<p>For project configs, a
+<a href="https://pkl-lang.org/main/current/language-reference/index.html#triple-dot-module-uris" target="_blank" rel="noopener noreferrer" class="">triple-dot URI</a>
+resolves the module by searching each parent directory in turn, so the same line works for a
+project at any depth (except the workspace root itself, which uses a <code>./</code> path).</p>
+<div class="language-pkl codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.pkl</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-pkl codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token plain">amends ".../.moon/cache/schemas/pkl/ProjectConfig.pkl"</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">tasks {</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  ["build"] {</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    command = "vite build"</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    deps = List("^:build")</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  }</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">}</span><br></div></code></pre></div></div>
+<p>Toolchains and extensions are configured by plugins, whose settings can't be known ahead of time, so
+<code>.moon/toolchains.pkl</code> and <code>.moon/extensions.pkl</code> should <code>extends</code> their modules instead, which
+allows additional settings. View the <a class="" href="https://moonrepo.dev/docs/config/overview#type-checking">official documentation</a>
+for the full rundown, including how to create settings that accept multiple shapes.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="toolchain-environment-activation">Toolchain environment activation<a href="https://moonrepo.dev/blog/moon-v2.6#toolchain-environment-activation" class="hash-link" aria-label="Direct link to Toolchain environment activation" title="Direct link to Toolchain environment activation" translate="no">​</a></h2>
+<p>Some tools need more than a binary on <code>PATH</code> to work correctly. Java expects <code>JAVA_HOME</code>, package
+managers want to know where globals live, and so on. proto has handled this for a while through the
+<code>activate_environment</code> plugin function (the same one that powers <code>proto activate</code>), but moon never
+called it, so tasks ran with a less complete environment than your shell did.</p>
+<p>In v2.6, when moon builds a command (for tasks and toolchain operations), the environment of each
+toolchain that has been setup is now activated. This may set environment variables, and prepend
+directories to <code>PATH</code>, exactly as proto would. We were careful to keep this from stepping on your
+toes though:</p>
+<ul>
+<li class="">Variables that are already configured, like a task's <a class="" href="https://moonrepo.dev/docs/config/project#env-1"><code>env</code></a>, are never
+overridden.</li>
+<li class="">When a task has multiple toolchains, the first configured toolchain takes precedence.</li>
+<li class="">Only toolchains that have actually been setup are activated, as their tool directory wouldn't
+exist otherwise.</li>
+</ul>
+<p>For plugin authors, <code>activate_environment</code> is now listed as a tier 3 function in
+<a class="" href="https://moonrepo.dev/docs/commands/toolchain/info"><code>moon toolchain info</code></a>.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="remote-cache-retries">Remote cache retries<a href="https://moonrepo.dev/blog/moon-v2.6#remote-cache-retries" class="hash-link" aria-label="Direct link to Remote cache retries" title="Direct link to Remote cache retries" translate="no">​</a></h2>
+<p>When using an HTTP based <a class="" href="https://moonrepo.dev/docs/guides/remote-cache">remote cache</a>, a single failed request (like a
+<code>503</code> from a CDN under load) would fail the entire task with missing outputs, even though trying
+again would have succeeded. In v2.6, requests that fail with a transient error (connection failures,
+timeouts, and <code>5xx</code>, <code>408</code>, or <code>429</code> responses) are now retried up to 3 times, with exponential
+backoff. The amount can be customized with the new
+<a class="" href="https://moonrepo.dev/docs/config/workspace#retrycount"><code>remote.cache.retryCount</code></a> setting, or <code>0</code> to disable retries.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">remote</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">api</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'http'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">host</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'https://your-host.com'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">cache</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line theme-code-block-highlighted-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">retryCount</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token number" style="color:#94dded">5</span><br></div></code></pre></div></div>
+<p>Furthermore, if the remote host is unreachable when moon first connects to it, the remote cache is
+now disabled for that run, instead of every request failing (and retrying) on its own.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="upgrade-notes">Upgrade notes<a href="https://moonrepo.dev/blog/moon-v2.6#upgrade-notes" class="hash-link" aria-label="Direct link to Upgrade notes" title="Direct link to Upgrade notes" translate="no">​</a></h2>
+<p>A few changes in this release may be noticeable when upgrading, so we want to call them out
+directly.</p>
+<ul>
+<li class=""><strong>Some caches will be invalidated once.</strong> A task's resolved <code>toolchains</code> list was previously
+ordered by an internal hash set, instead of by what was configured. It's now deterministic
+(configured toolchains first, followed by the toolchains they require), which also fixes the
+<code>$taskToolchain</code> token. Since this list is part of a task's hash, tasks that run against multiple
+toolchains (like <code>node</code> and <code>npm</code>) will miss the cache on their first run after upgrading.</li>
+<li class=""><strong>Persistent tasks no longer run in CI by default</strong>, even when they define <code>outputs</code> or a <code>type</code>
+of <code>build</code> or <code>test</code>. See <a href="https://moonrepo.dev/blog/moon-v2.6#persistent-tasks-in-ci" class="">persistent tasks in CI</a> above.</li>
+<li class=""><strong><code>moon check</code> exits with a non-zero code when there's nothing to check</strong>, instead of prompting
+for tasks to run (or failing in non-TTY environments).</li>
+<li class=""><strong>JSON output uses the documented keys.</strong> Project configuration within JSON output
+(<code>moon project --json</code>, <code>moon query projects</code>, MCP responses, and webhook payloads) serialized
+some renamed settings under the wrong keys. They now match the JSON schemas and <code>@moonrepo/types</code>:
+<code>type</code> instead of <code>typeOf</code>, <code>runInCI</code> instead of <code>runInCi</code>, and <code>$schema</code> instead of <code>schema</code>. If
+you have scripts that parse this output, double check them!</li>
+<li class=""><strong><code>deps.*.env</code> no longer overrides system variables.</strong> A dependency's
+<a class="" href="https://moonrepo.dev/docs/config/project#args--env"><code>env</code></a> was applied along with moon's built-in variables, so it
+took precedence over variables set in the shell or CI, contrary to the documented order. It's now
+only set when the variable is missing, like a task's <code>env</code>, unless the dependency enables
+<a class="" href="https://moonrepo.dev/docs/config/project#envoverride"><code>envOverride</code></a>.</li>
+<li class=""><strong>The MCP server now requires the <code>2026-07-28</code> protocol.</strong> <a class="" href="https://moonrepo.dev/docs/commands/mcp"><code>moon mcp</code></a> has
+moved to the stateless MCP protocol, so older protocol versions (<code>2025-11-25</code> and below) and the
+<code>initialize</code> handshake are no longer supported. Make sure your MCP client is up to date.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v2.6#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v2.6.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full list
+of changes, but here's a few more worth calling out:</p>
+<ul>
+<li class="">Updated <code>runDepsInParallel</code> (when disabled) to skip persistent dependencies when ordering the
+dependencies that follow them, as a persistent dependency never completes.</li>
+<li class="">Updated <a class="" href="https://moonrepo.dev/docs/commands/sync/config-schemas"><code>moon sync config-schemas</code></a> to also generate the new
+Pkl modules.</li>
+<li class="">Added an <code>args</code> setting to toolchain <code>bins</code> entries, for passing additional arguments to the
+install command, like feature flags. Support depends on each toolchain.</li>
+<li class="">Moved hash manifests out of <code>.moon/cache/hashes</code>, and into the local content-addressable cache as
+blobs. As such, the local cache backend is now always enabled, while storing task <em>outputs</em> in it
+remains gated by the <a class="" href="https://moonrepo.dev/docs/config/workspace#casoutputscache"><code>casOutputsCache</code></a> experiment.</li>
+<li class="">Updated proto to <a href="https://github.com/moonrepo/proto/releases/tag/v0.62.0" target="_blank" rel="noopener noreferrer" class="">v0.62.2</a> from 0.60.2,
+which includes <a class="" href="https://moonrepo.dev/blog/proto-v0.61">Swift support and immutable lockfiles</a>, and
+<a class="" href="https://moonrepo.dev/blog/proto-v0.62">community plugins and Zig support</a>.</li>
+</ul>]]></content:encoded>
+            <category>tasks</category>
+            <category>dependencies</category>
+            <category>persistent</category>
+            <category>pipeline</category>
+            <category>ci</category>
+            <category>otel</category>
+            <category>telemetry</category>
+            <category>metrics</category>
+            <category>observability</category>
+            <category>pkl</category>
+            <category>config</category>
+            <category>toolchains</category>
+            <category>environment</category>
+        </item>
         <item>
             <title><![CDATA[proto v0.62 - Community plugins, shell deactivation, and Zig support]]></title>
             <link>https://moonrepo.dev/blog/proto-v0.62</link>
@@ -2225,114 +2491,6 @@ and appreciate your help. Feel free to ping us on Discord!</p>]]></content:encod
             <category>backend</category>
             <category>plugin</category>
             <category>lockfile</category>
-        </item>
-        <item>
-            <title><![CDATA[moon v1.39 - Improved task inputs, better proto integration, and project layers]]></title>
-            <link>https://moonrepo.dev/blog/moon-v1.39</link>
-            <guid>https://moonrepo.dev/blog/moon-v1.39</guid>
-            <pubDate>Thu, 24 Jul 2025 00:00:00 GMT</pubDate>
-            <description><![CDATA[This is a rather small release, but it does include some important changes to task inputs, and]]></description>
-            <content:encoded><![CDATA[<p>This is a rather small release, but it does include some important changes to task inputs, and
-proto's integration.</p>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="improved-task-inputs">Improved task inputs<a href="https://moonrepo.dev/blog/moon-v1.39#improved-task-inputs" class="hash-link" aria-label="Direct link to Improved task inputs" title="Direct link to Improved task inputs" translate="no">​</a></h2>
-<p>A few months ago we introduced an
-<a href="https://github.com/moonrepo/moon/issues/1985" target="_blank" rel="noopener noreferrer" class="">RFC for improving task inputs</a> that introduces new
-syntax, functionality, and input types. In this release, we have implemented a portion of the RFC
-for testing before we implement the rest. Continue reading for more details!</p>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="new-formats">New formats<a href="https://moonrepo.dev/blog/moon-v1.39#new-formats" class="hash-link" aria-label="Direct link to New formats" title="Direct link to New formats" translate="no">​</a></h3>
-<p>To start, we are introducing 2 new formats for configuring task inputs, a URI format and an object
-format, both of which support custom parameters.</p>
-<h4 class="anchor anchorTargetStickyNavbar_tleR" id="uris">URIs<a href="https://moonrepo.dev/blog/moon-v1.39#uris" class="hash-link" aria-label="Direct link to URIs" title="Direct link to URIs" translate="no">​</a></h4>
-<p>URIs should be rather familiar, as they are a string prefixed with a scheme (<code>://</code>), followed by a
-value, and an optional list of query parameters (<code>?</code>). Currently files can be specified using the
-<a class="" href="https://moonrepo.dev/docs/config/project#file-paths"><code>file://</code> scheme</a>, and globs with the
-<a class="" href="https://moonrepo.dev/docs/config/project#glob-patterns"><code>glob://</code> scheme</a>. Environment variables do not support URIs.</p>
-<div class="language-yml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">inputs</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'file:///*.config.js?optional'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'glob://src/**/*.ts'</span><br></div></code></pre></div></div>
-<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>Files and globs can still be configured using literal strings. The URI format can be used when
-customizing parameters!</p></div></div>
-<h4 class="anchor anchorTargetStickyNavbar_tleR" id="objects">Objects<a href="https://moonrepo.dev/blog/moon-v1.39#objects" class="hash-link" aria-label="Direct link to Objects" title="Direct link to Objects" translate="no">​</a></h4>
-<p>Objects provide an alternative to strings, allowing you to customize parameters in a standard and
-familiar format. Files can be specified using the <a class="" href="https://moonrepo.dev/docs/config/project#file-paths"><code>file</code> key</a>, and
-globs with the <a class="" href="https://moonrepo.dev/docs/config/project#glob-patterns"><code>glob</code> key</a>. Environment variables do not
-support objects.</p>
-<div class="language-yml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">inputs</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token key atrule">file</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'/*.config.js'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">        </span><span class="token key atrule">optional</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token key atrule">glob</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'src/**/*.ts'</span><br></div></code></pre></div></div>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="new-parameters">New parameters<a href="https://moonrepo.dev/blog/moon-v1.39#new-parameters" class="hash-link" aria-label="Direct link to New parameters" title="Direct link to New parameters" translate="no">​</a></h3>
-<p>As mentioned above, file and glob inputs now support parameters, which can be customized using URI
-and object formats. The following parameters are available:</p>
-<h4 class="anchor anchorTargetStickyNavbar_tleR" id="files">Files<a href="https://moonrepo.dev/blog/moon-v1.39#files" class="hash-link" aria-label="Direct link to Files" title="Direct link to Files" translate="no">​</a></h4>
-<ul>
-<li class=""><code>content</code> (<code>string</code>) - When determining affected state, will match against the file's content
-using the defined regex pattern, instead of relying on file existence.</li>
-<li class=""><code>optional</code> (<code>boolean</code>) - When hashing and set to <code>true</code> and the file is missing, will not log a
-warning. When set to <code>false</code> and the file is missing, will fail with an error. Defaults to logging
-a warning.</li>
-</ul>
-<h4 class="anchor anchorTargetStickyNavbar_tleR" id="globs">Globs<a href="https://moonrepo.dev/blog/moon-v1.39#globs" class="hash-link" aria-label="Direct link to Globs" title="Direct link to Globs" translate="no">​</a></h4>
-<ul>
-<li class=""><code>cache</code> (<code>boolean</code>) - When gathering inputs for hashing, defines whether the glob results should
-be cached for the duration of the moon process. Defaults to <code>true</code>.</li>
-</ul>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="better-proto-integration">Better proto integration<a href="https://moonrepo.dev/blog/moon-v1.39#better-proto-integration" class="hash-link" aria-label="Direct link to Better proto integration" title="Direct link to Better proto integration" translate="no">​</a></h2>
-<p>In previous versions of moon, we would automatically install <a class="" href="https://moonrepo.dev/proto">proto</a> for you based on
-certain conditions. This logic was applied to all <code>moon</code> sub-commands, which was not necessary, as
-it was only required for task running related commands.</p>
-<p>To improve this, we have integrated proto into the action pipeline through a new action,
-<code>SetupProto</code>, which runs before any <code>SetupToolchain</code> action. With this, proto is only installed when
-required by that specific toolchain, and not for every command.</p>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="new-proto-setting">New <code>proto</code> setting<a href="https://moonrepo.dev/blog/moon-v1.39#new-proto-setting" class="hash-link" aria-label="Direct link to new-proto-setting" title="Direct link to new-proto-setting" translate="no">​</a></h3>
-<p>Additionally, we are introducing a <a class="" href="https://moonrepo.dev/docs/config/toolchain#proto"><code>proto</code></a> setting in
-<a class="" href="https://moonrepo.dev/docs/config/toolchain"><code>.moon/toolchain.yml</code></a>, which can be used to control the integration of
-proto in moon. To start, you can now customize the proto version! This is extremely useful if you
-want to test new proto features, or need to rollback to an older version.</p>
-<div class="language-yml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/toolchain.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">proto</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">version</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'0.51.4'</span><br></div></code></pre></div></div>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.39#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h3>
-<p>Lastly, proto has been upgrade to <a href="https://github.com/moonrepo/proto/releases/tag/v0.51.0" target="_blank" rel="noopener noreferrer" class="">v0.51</a>,
-which includes 2 major features: lockfiles and custom registries. However, we have yet to test these
-features thoroughly in moon, so they are not "officially" supported yet, but you can still use them
-if you wish. We will be adding support for these features in the future.</p>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="project-layers">Project layers<a href="https://moonrepo.dev/blog/moon-v1.39#project-layers" class="hash-link" aria-label="Direct link to Project layers" title="Direct link to Project layers" translate="no">​</a></h2>
-<p>Project layers may sound like a new feature, but they are simply a rename of the project type. Going
-forward, the <code>type</code> setting in <a class="" href="https://moonrepo.dev/docs/config/project"><code>moon.yml</code></a> has been renamed to
-<a class="" href="https://moonrepo.dev/docs/config/project#layer"><code>layer</code></a>, but backwards compatibility will be maintained until v2. Why
-the rename?</p>
-<p>The term "layer" better reflects the purpose and functionality of this concept, as it defines a
-layer (the <a class="" href="https://moonrepo.dev/docs/config/project#layer"><code>layer</code></a> setting) within the development stack (the
-<a class="" href="https://moonrepo.dev/docs/config/project#stack"><code>stack</code></a> setting), and helps to enforce proper relationships. This
-change aims to improve clarity and consistency in our configuration.</p>
-<p>For example, the following layers are available, from highest to lowest. Layers can then depend on
-lower layers, but not higher layers. Except for automations and applications, they can also depend
-on themself.</p>
-<table><thead><tr><th>Layer</th><th>Description</th></tr></thead><tbody><tr><td><code>automation</code></td><td>An automated testing suite, like E2E, integration, or visual tests.</td></tr><tr><td><code>application</code></td><td>An application of any kind.</td></tr><tr><td><code>tool</code></td><td>An internal tool, CLI, one-off script, etc.</td></tr><tr><td><code>library</code></td><td>A self-contained, shareable, and publishable set of code.</td></tr><tr><td><code>scaffolding</code></td><td>Templates or generators for scaffolding.</td></tr><tr><td><code>configuration</code></td><td>Configuration files or infrastructure.</td></tr><tr><td><code>unknown</code></td><td>When not configured.</td></tr></tbody></table>
-<p>Because of this rename, the following changes have been made:</p>
-<ul>
-<li class=""><code>type</code> --&gt; <code>layer</code> in <code>moon.yml</code></li>
-<li class=""><code>--type</code> --&gt; <code>--layer</code> in <code>moon query projects</code></li>
-<li class=""><code>projectType</code> --&gt; <code>projectLayer</code> for MQL</li>
-<li class=""><code>$projectType</code> --&gt; <code>$projectLayer</code> for task tokens</li>
-<li class=""><code>enforceProjectTypeRelationships</code> --&gt; <code>enforceLayerRelationships</code> in <code>.moon/workspace.yml</code></li>
-</ul>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes-1">Other changes<a href="https://moonrepo.dev/blog/moon-v1.39#other-changes-1" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.39.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full list
-of changes.</p>
-<ul>
-<li class="">Added unstable support for bubbling up logs from WASM plugins.</li>
-<li class="">Updated the <code>@moonrepo/cli</code> npm package to no longer rely on postinstall scripts.</li>
-<li class="">Improved argument quoting for commands and scripts.</li>
-</ul>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="whats-next">What's next?<a href="https://moonrepo.dev/blog/moon-v1.39#whats-next" class="hash-link" aria-label="Direct link to What's next?" title="Direct link to What's next?" translate="no">​</a></h2>
-<p>With toolchains plugins being stabilized more, we'd like to focus on some other areas.</p>
-<ul>
-<li class="">Better command line argument parsing/joining (especially for task <code>args</code>)</li>
-<li class="">Pkl configuration improvements</li>
-<li class="">WASM toolchain documentation</li>
-</ul>]]></content:encoded>
-            <category>task</category>
-            <category>input</category>
-            <category>uri</category>
-            <category>object</category>
-            <category>proto</category>
-            <category>project</category>
-            <category>layer</category>
         </item>
     </channel>
 </rss>

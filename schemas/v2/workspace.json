@@ -36,11 +36,6 @@
         }
       ]
     },
-    "daemon": {
-      "title": "daemon",
-      "description": "Enables a daemon that will process heavy tasks in the background, greatly increasing performance of the main thread/executable. @since 2.2.0",
-      "type": "boolean"
-    },
     "defaultProject": {
       "title": "defaultProject",
       "description": "The default/main project within the workspace. When a task is ran without a project, the default will be used. @since 2.0.0",
@@ -221,12 +216,6 @@
             }
           ],
           "markdownDescription": "Configures aspects of the content-addressable storage (CAS) cache. @since 2.3.0"
-        },
-        "sharedWorktreeCache": {
-          "title": "sharedWorktreeCache",
-          "description": "Whether to use a shared worktree cache. When enabled, the cache is shared between all VCS worktrees on the same machine. When disabled, each worktree has its own cache.  Only blobs and manifests will be shared, as they are portable. Hashes, locks, states, and more will not be, as they are worktree-specific.  @since 2.5.0",
-          "type": "boolean",
-          "markdownDescription": "Whether to use a shared worktree cache. When enabled, the cache is shared between all VCS worktrees on the same machine. When disabled, each worktree has its own cache.  Only blobs and manifests will be shared, as they are portable. Hashes, locks, states, and more will not be, as they are worktree-specific.  @since 2.5.0"
         },
         "unstable_sharedWorktreeCache": {
           "title": "unstable_sharedWorktreeCache",
@@ -505,6 +494,12 @@
           "description": "Store task outputs in a local CAS (content-addressable storage) cache. @since 2.3.0",
           "type": "boolean",
           "markdownDescription": "Store task outputs in a local CAS (content-addressable storage) cache. @since 2.3.0"
+        },
+        "explicitTaskOutputStyle": {
+          "title": "explicitTaskOutputStyle",
+          "description": "Always use the task's outputStyle option, even when running the task as a primary target. @since 2.6.0",
+          "type": "boolean",
+          "markdownDescription": "Always use the task's `outputStyle` option, even when running the task as a primary target. @since 2.6.0"
         },
         "nativeFileHashing": {
           "title": "nativeFileHashing",
@@ -799,6 +794,12 @@
           "description": "When local, only download matching blobs and do not upload new blobs. Blobs will only be uploaded in CI environments. @since 1.40.0",
           "type": "boolean"
         },
+        "retryCount": {
+          "title": "retryCount",
+          "description": "The maximum number of times to retry a request that failed with a transient error (connection failure, timeout, 5xx, 429, etc), using exponential backoff. Only applies to HTTP APIs. @since 2.6.0",
+          "default": 3,
+          "type": "number"
+        },
         "verifyIntegrity": {
           "title": "verifyIntegrity",
           "description": "When downloading blobs, verify the digests/hashes in the response match the associated blob contents. This will reduce performance but ensure partial or corrupted blobs won't cause failures. @since 1.36.0",
@@ -1056,12 +1057,15 @@
           "$ref": "#/definitions/WorkspaceProjectsConfig"
         },
         {
+          "description": "Using glob patterns. Suffix with moon.* to be distinct.",
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "markdownDescription": "Using glob patterns. Suffix with `moon.*` to be distinct."
         },
         {
+          "description": "Using a map of identifiers to file source paths.",
           "type": "object",
           "additionalProperties": {
             "type": "string"
@@ -1073,7 +1077,7 @@
       ]
     },
     "WorkspaceProjectsConfig": {
-      "description": "Configures projects in the workspace, using both globs and explicit source paths.",
+      "description": "Using both glob patterns and file source paths.",
       "type": "object",
       "properties": {
         "globFormat": {

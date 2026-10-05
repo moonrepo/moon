@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.d7a89b72.js" defer="defer"></script>
-<script src="/assets/js/main.32cbfc1b.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.89e2533b.js" defer="defer"></script>
+<script src="/assets/js/main.c807ce47.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -42,7 +42,9 @@ below, our project is <code>app</code>, the task is <code>build</code>, and the 
 </ul>
 <h2 class="anchor anchorTargetStickyNavbar_tleR" id="running-dependents">Running dependents<a href="#running-dependents" class="hash-link" aria-label="Direct link to Running dependents" title="Direct link to Running dependents" translate="no">​</a></h2>
 <p>moon will <em>always</em> run upstream dependencies (<a class="" href="/docs/config/project#deps"><code>deps</code></a>) before running the
-primary target, as their outputs may be required for the primary target to function correctly.</p>
+primary target, as their outputs may be required for the primary target to function correctly. The
+exceptions are <code>cleanup</code> and <code>wait</code> dependencies, which run after or alongside the primary target,
+based on their <a class="" href="/docs/config/project#type"><code>type</code></a>.</p>
 <p>However, if you&#x27;re working on a project that is shared and consumed by other projects, you may want
 to verify that downstream dependents have not been indirectly broken by any changes. This can be
 achieved by passing the <code>--downstream</code> option (aliased as <code>--dependents</code>), which will run dependent

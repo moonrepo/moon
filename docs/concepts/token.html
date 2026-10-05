@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.d7a89b72.js" defer="defer"></script>
-<script src="/assets/js/main.32cbfc1b.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.89e2533b.js" defer="defer"></script>
+<script src="/assets/js/main.c807ce47.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -174,8 +174,12 @@ string.</p>
 <ul>
 <li class=""><code>$target</code> - Fully-qualified target that is currently running.</li>
 <li class=""><code>$task</code> - ID of the task that is currently running. Does not include the project ID.</li>
-<li class=""><code>$taskToolchain</code> - The toolchain that task will run against, as defined in
-<a class="" href="/docs/config/project"><code>moon.*</code></a>. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.31.0</span></li>
+<li class=""><code>$taskToolchain</code> - The primary toolchain that task will run against, which is the first
+<a class="" href="/docs/config/project#toolchains">toolchain</a> configured for the task (or inherited from the project),
+like <code>node</code>. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.31.0</span></li>
+<li class=""><code>$taskToolchains</code> - All toolchains that the task will run against, comma separated, like
+<code>node,npm</code>. Configured toolchains come first, followed by related toolchains (like a package
+manager that requires the configured toolchain). <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.31.0</span></li>
 <li class=""><code>$taskType</code> - The <a class="" href="/docs/concepts/task#types">type of task</a>, based on its configured settings.</li>
 </ul>
 <div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Configured as</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;example $target&#x27;</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Resolves to</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;example&#x27;</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;web:build&#x27;</span><br></div></code></pre></div></div>

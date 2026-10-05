@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.d7a89b72.js" defer="defer"></script>
-<script src="/assets/js/main.32cbfc1b.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.89e2533b.js" defer="defer"></script>
+<script src="/assets/js/main.c807ce47.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -26,6 +26,10 @@
 command for verifying the current state of a project, instead of running multiple
 <a class="" href="/docs/commands/run"><code>moon run</code></a> commands.</p>
 <div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Check project by name</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon check app</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Check multiple projects by name</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon check client server</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Check closest project from current working directory</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon check </span><span class="token parameter variable" style="color:#fef9c3">--closest</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Check ALL projects (may be costly)</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon check </span><span class="token parameter variable" style="color:#fef9c3">--all</span><br></div></code></pre></div></div>
+<p><a class="" href="/docs/config/project#persistent">Persistent</a> tasks are the exception, as they never complete, and
+neither would the check. They&#x27;re only ran when another task that is ran depends on them.</p>
+<p>When none of the projects have a build or test task, there&#x27;s nothing to check, and the command exits
+with a non-zero code.</p>
 <h3 class="anchor anchorTargetStickyNavbar_tleR" id="arguments">Arguments<a href="#arguments" class="hash-link" aria-label="Direct link to Arguments" title="Direct link to Arguments" translate="no">​</a></h3>
 <ul>
 <li class=""><code>[...id]</code> - List of project IDs or aliases to explicitly check, as defined in

@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.d7a89b72.js" defer="defer"></script>
-<script src="/assets/js/main.32cbfc1b.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.89e2533b.js" defer="defer"></script>
+<script src="/assets/js/main.c807ce47.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -43,8 +43,10 @@ so on and so forth. However, this isn&#x27;t always true, so this can be disable
 through the <a class="" href="/docs/config/project#runinci"><code>runInCI</code></a> option.</p>
 <div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">dev</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;webpack server&#x27;</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">runInCI</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">false</span><br></div></code></pre></div></div>
 <div class="theme-admonition theme-admonition-caution admonition_WCGJ alert alert--warning"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"></path></svg></span>caution</div><div class="admonitionContent_pbrs"><p>This option <em>must</em> be set to false for tasks that spawn a long-running or never-ending process, like
-HTTP or development servers. To help mitigate this, tasks named <code>dev</code>, <code>start</code>, or <code>serve</code> are false
-by default.</p></div></div>
+HTTP or development servers. To help mitigate this, <a class="" href="/docs/config/project#persistent">persistent</a>
+tasks, and tasks named <code>dev</code>, <code>start</code>, or <code>serve</code>, are false by default. When a persistent task is
+enabled, it&#x27;s only ran for the tasks that depend on it, or when explicitly passed as a target, and
+never on its own.</p></div></div>
 <h2 class="anchor anchorTargetStickyNavbar_tleR" id="integrating">Integrating<a href="#integrating" class="hash-link" aria-label="Direct link to Integrating" title="Direct link to Integrating" translate="no">​</a></h2>
 <p>The following examples can be referenced for setting up moon and its CI workflow in popular
 providers. For GitHub, we&#x27;re using our

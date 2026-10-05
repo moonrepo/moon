@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.d7a89b72.js" defer="defer"></script>
-<script src="/assets/js/main.32cbfc1b.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.89e2533b.js" defer="defer"></script>
+<script src="/assets/js/main.c807ce47.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -42,8 +42,19 @@ top of <code>moon exec</code>, so be sure to check those out for more user-frien
 <li class=""><code>-i</code>, <code>--interactive</code> - Run the pipeline and tasks interactively.</li>
 <li class=""><code>-p</code>, <code>--plan &lt;PATH&gt;</code> - Path to an execution plan JSON file. See the
 <a class="" href="/docs/guides/exec-plan">execution plan guide</a> for more details. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v2.1.0</span></li>
+<li class=""><code>--output-style &lt;STYLE&gt;</code> - Control how output is displayed for <em>all</em> tasks, overriding their
+<a class="" href="/docs/config/project#outputstyle"><code>outputStyle</code></a> option. Supports the same values: &quot;buffer&quot;,
+&quot;buffer-only-failure&quot;, &quot;hash&quot;, &quot;none&quot;, &quot;stream&quot;. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v2.6.0</span></li>
 <li class=""><code>-s</code>, <code>--summary [LEVEL]</code> - Print a summary of all actions that were ran in the pipeline.</li>
 </ul>
+<blockquote>
+<p>Unlike the task option, a style passed on the command line also applies to <em>primary</em> targets, since
+it was requested explicitly. This makes it useful for CI and automation, where you want successful
+tasks to stay quiet but failures to print in full:</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon ci :test :lint --output-style buffer-only-failure </span><span class="token parameter variable" style="color:#fef9c3">--summary</span><span class="token plain"> minimal</span><br></div></code></pre></div></div>
+<p><a class="" href="/docs/config/project#interactive">Interactive</a> tasks are an exception, as they must remain attached
+to the terminal, and so always stream their output.</p>
+</blockquote>
 <h3 class="anchor anchorTargetStickyNavbar_tleR" id="workflow">Workflow<a href="#workflow" class="hash-link" aria-label="Direct link to Workflow" title="Direct link to Workflow" translate="no">​</a></h3>
 <ul>
 <li class=""><code>--ignore-ci-checks</code> - Ignore &quot;run in CI&quot; task checks.</li>

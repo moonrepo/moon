@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.d7a89b72.js" defer="defer"></script>
-<script src="/assets/js/main.32cbfc1b.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.89e2533b.js" defer="defer"></script>
+<script src="/assets/js/main.c807ce47.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -67,13 +67,18 @@ setting.</p>
 <p>Tasks that never complete, like servers and watchers, are known as persistent tasks. Persistent
 tasks are typically problematic when it comes to dependency graphs, because if they run in the
 middle of the graph, subsequent tasks will never run because the persistent task never completes!</p>
-<p>However in moon, this is a non-issue, as we collect all persistent tasks within the action graph and
-run them <em>last as a batch</em>. This is perfect for a few reasons:</p>
+<p>However in moon, this is a non-issue, as persistent tasks are handled uniquely in the pipeline. They
+are ran when they are processed in the action graph, like any other task, but they never block the
+actions that come after them. This is perfect for a few reasons:</p>
 <ul>
 <li class="">All persistent tasks are ran in parallel, so they don&#x27;t block each other.</li>
 <li class="">Running both the backend API and frontend webapp in parallel is a breeze.</li>
+<li class="">Persistent tasks run alongside other tasks, instead of waiting for the entire graph to finish.</li>
 <li class="">Dependencies of persistent tasks are guaranteed to have ran and completed.</li>
 </ul>
+<p>Furthermore, a non-persistent task <em>cannot</em> depend on a persistent task, as it would never run, and
+we error during task building when this happens. Instead, the non-persistent task can wait for the
+persistent task to start with a <a class="" href="/docs/config/project#type"><code>wait</code></a> dependency.</p>
 <p>To mark a task as persistent, enable the <a class="" href="/docs/config/project#persistent"><code>options.persistent</code></a>
 setting.</p>
 <div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">dev</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;start-dev-server&#x27;</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">persistent</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># OR</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">preset</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;server&#x27;</span><br></div></code></pre></div></div>

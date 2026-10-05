@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.d7a89b72.js" defer="defer"></script>
-<script src="/assets/js/main.32cbfc1b.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.89e2533b.js" defer="defer"></script>
+<script src="/assets/js/main.c807ce47.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -101,8 +101,9 @@ of this task/target. This is what moon uses to determine a cache hit/miss, and w
 skip re-running a task.</p>
 <p>Let&#x27;s copy the hash and move on to the next step.</p>
 <h2 class="anchor anchorTargetStickyNavbar_tleR" id="inspect-the-hash-manifest">Inspect the hash manifest<a href="#inspect-the-hash-manifest" class="hash-link" aria-label="Direct link to Inspect the hash manifest" title="Direct link to Inspect the hash manifest" translate="no">​</a></h2>
-<p>With the hash in hand, let&#x27;s dig deeper into moon&#x27;s internals, by inspecting the hash manifest at
-<code>.moon/cache/hashes/&lt;hash&gt;.json</code>, or running the <a class="" href="/docs/commands/hash"><code>moon hash</code></a> command:</p>
+<p>With the hash in hand, let&#x27;s dig deeper into moon&#x27;s internals, by inspecting the hash manifest with
+the <a class="" href="/docs/commands/hash"><code>moon hash</code></a> command. As of v2.6, manifests are stored as blobs in the local
+content-addressable cache (<code>.moon/cache/blobs</code>), instead of <code>.moon/cache/hashes/&lt;hash&gt;.json</code>.</p>
 <div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token plain">moon </span><span class="token builtin class-name" style="color:#ff94ff;font-weight:bold">hash</span><span class="token plain"> </span><span class="token operator" style="color:#b7a9f9">&lt;</span><span class="token plain">hash</span><span class="token operator" style="color:#b7a9f9">&gt;</span><br></div></code></pre></div></div>
 <p>The manifest is JSON and its contents are all the information used to generate its unique hash. This
 information is an array, and breaks down as follows:</p>

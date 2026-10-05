@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.d7a89b72.js" defer="defer"></script>
-<script src="/assets/js/main.32cbfc1b.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.89e2533b.js" defer="defer"></script>
+<script src="/assets/js/main.c807ce47.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -29,6 +29,9 @@ environment, as it does all the heavy lifting necessary for effectively running 
 <p>However, you can also provide a list of targets to explicitly run, which will still be filtered down
 by <code>runInCI</code>.</p>
 <div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon ci :build :lint</span><br></div></code></pre></div></div>
+<p><a class="" href="/docs/config/project#persistent">Persistent</a> tasks are the exception, as they never complete, and
+would keep the pipeline running. Even with <code>runInCI</code> enabled, they&#x27;re only ran for the tasks that
+depend on them, or when explicitly passed as a target, and never on their own.</p>
 <div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>View the official <a class="" href="/docs/guides/ci">continuous integration guide</a> for a more in-depth example of how to
 utilize this command.</p></div></div>
 <h3 class="anchor anchorTargetStickyNavbar_tleR" id="reports">Reports<a href="#reports" class="hash-link" aria-label="Direct link to Reports" title="Direct link to Reports" translate="no">​</a></h3>

@@ -39701,3 +39701,18 @@ of changes, but here's a few more worth calling out:
 - Updated proto to [v0.62.2](https://github.com/moonrepo/proto/releases/tag/v0.62.0) from 0.60.2,
   which includes [Swift support and immutable lockfiles](./proto-v0.61), and
   [community plugins and Zig support](./proto-v0.62).
+
+## What's next for moon?
+
+This release took much longer than expected due to the extensive changes and improvements made to the action pipeline and task dependencies. As such, we had time to reflect on the overall design and architecture of the pipeline and its surrounding systems, and have come to the conclusion that it needs a rework if we are to extend it further.
+
+Because of this, v2.6 will be the last release of the year, as we want to spend the remaining time focusing on v3.0 and what improvements we can bring. So far, we have the following planned:
+
+- Redesign of the action graph and pipeline
+- Reevaluate graph relationships (upstream and downstream)
+- Resolve experimental features
+- Next-generation tokens (v2)
+- VCS plugins
+- Node-based graph caching
+- New website and documentation (first-class LLM support)
+- And much more!

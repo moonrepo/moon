@@ -259,6 +259,19 @@ remains gated by the <a class="" href="https://moonrepo.dev/docs/config/workspac
 <li class="">Updated proto to <a href="https://github.com/moonrepo/proto/releases/tag/v0.62.0" target="_blank" rel="noopener noreferrer" class="">v0.62.2</a> from 0.60.2,
 which includes <a class="" href="https://moonrepo.dev/blog/proto-v0.61">Swift support and immutable lockfiles</a>, and
 <a class="" href="https://moonrepo.dev/blog/proto-v0.62">community plugins and Zig support</a>.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="whats-next-for-moon">What's next for moon?<a href="https://moonrepo.dev/blog/moon-v2.6#whats-next-for-moon" class="hash-link" aria-label="Direct link to What's next for moon?" title="Direct link to What's next for moon?" translate="no">​</a></h2>
+<p>This release took much longer than expected due to the extensive changes and improvements made to the action pipeline and task dependencies. As such, we had time to reflect on the overall design and architecture of the pipeline and its surrounding systems, and have come to the conclusion that it needs a rework if we are to extend it further.</p>
+<p>Because of this, v2.6 will be the last release of the year, as we want to spend the remaining time focusing on v3.0 and what improvements we can bring. So far, we have the following planned:</p>
+<ul>
+<li class="">Redesign of the action graph and pipeline</li>
+<li class="">Reevaluate graph relationships (upstream and downstream)</li>
+<li class="">Resolve experimental features</li>
+<li class="">Next-generation tokens (v2)</li>
+<li class="">VCS plugins</li>
+<li class="">Node-based graph caching</li>
+<li class="">New website and documentation (first-class LLM support)</li>
+<li class="">And much more!</li>
 </ul>]]></content:encoded>
             <category>tasks</category>
             <category>dependencies</category>

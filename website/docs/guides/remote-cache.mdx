@@ -75,6 +75,21 @@ Remote caching can be conditionally enabled by setting the `MOON_REMOTE_HOST` en
 
 :::
 
+#### Retries <VersionLabel version="2.6.0" />
+
+When using the HTTP API, requests that fail with a transient error (connection failures, timeouts,
+and `5xx`, `408`, or `429` responses) are retried up to 3 times, with exponential backoff. This can
+be customized with the [`remote.cache.retryCount`](../config/workspace#retrycount) setting. Retries
+are not supported for gRPC.
+
+```yaml title=".moon/workspace.yml" {5}
+remote:
+  api: 'http'
+  host: 'https://your-host.com:8080'
+  cache:
+    retryCount: 5
+```
+
 #### TLS and mTLS
 
 We have rudimentary support for TLS and mTLS, but it's very unstable, and has not been thoroughly

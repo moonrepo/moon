@@ -21,6 +21,30 @@ tasks:
       shell: true
       retryCount: 3
 
+  expect-failure:
+    command: 'Exit 1'
+    toolchain: system
+    options:
+      shell: true
+      expectFailure: true
+      retryCount: 3
+
+  expect-failure-passes:
+    command: 'Exit 0'
+    toolchain: system
+    options:
+      shell: true
+      expectFailure: true
+      retryCount: 3
+
+  expect-failure-not-found:
+    command: 'Exit 127'
+    toolchain: system
+    options:
+      shell: true
+      expectFailure: true
+      retryCount: 1
+
   retry-slow:
     script: 'Start-Sleep -Seconds 3; Exit 1'
     toolchain: system

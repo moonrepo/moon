@@ -44,6 +44,18 @@ impl<'task> TaskHasher<'task> {
         self.fingerprint.args.sort();
         self.fingerprint.project_deps.sort();
 
+        // The process receives these values instead of the system's,
+        // so toggling the override must invalidate the cache
+        self.fingerprint.env_override = self
+            .fingerprint
+            .env
+            .iter()
+            .filter(|(key, value)| {
+                value.is_some() && self.task.options.env_override.should_override(key)
+            })
+            .map(|(key, _)| *key)
+            .collect();
+
         // Consume the hasher and return the content
         self.fingerprint
     }

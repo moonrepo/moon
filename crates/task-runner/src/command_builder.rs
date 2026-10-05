@@ -7,7 +7,7 @@ use moon_common::path::PathExt;
 use moon_config::{Input, TaskOptionAffectedFilesPattern};
 use moon_env_var::{DotEnv, GlobalEnvBag};
 use moon_process::{Command, ShellType};
-use moon_process_augment::AugmentedCommand;
+use moon_process_augment::{AugmentedCommand, create_task_env};
 use moon_project::Project;
 use moon_task::{Task, TaskCheck};
 use rustc_hash::FxHashMap;
@@ -147,25 +147,11 @@ impl<'task> CommandBuilder<'task> {
     #[instrument(skip_all)]
     fn inject_env(&mut self, hash: &str) -> miette::Result<()> {
         let task = self.task;
-        let mut moon_env = FxHashMap::<String, Option<String>>::default();
-
-        // Inherit task dependent variables
-        if let Some(ActionNode::RunTask(inner)) = &self.node
-            && !inner.env.is_empty()
-        {
-            trace!(
-                task_target = self.task.target.as_str(),
-                env = ?inner.env,
-                "Inheriting env from dependent task"
-            );
-
-            moon_env.extend(inner.env.clone());
-        }
 
         // Inherit moon variables
         let make_path = |path: &Path| Some(path.to_string_lossy().to_string());
 
-        moon_env.extend(FxHashMap::from_iter([
+        let moon_env = FxHashMap::<String, Option<String>>::from_iter([
             (
                 "MOON_CACHE_DIR".into(),
                 make_path(&self.app.cache_engine.cache_dir),
@@ -195,7 +181,7 @@ impl<'task> CommandBuilder<'task> {
             ),
             ("MOON_WORKING_DIR".into(), make_path(&self.app.working_dir)),
             ("PWD".into(), make_path(self.working_dir)),
-        ]));
+        ]);
 
         // Load variables from .env files
         if let Some(env_files) = &self.task.options.env_files {
@@ -286,6 +272,24 @@ impl<'task> CommandBuilder<'task> {
             }
         }
 
+        // Inherit task dependent variables, which override the task's
+        // variables, but follow the same rules for system variables
+        if let Some(ActionNode::RunTask(inner)) = &self.node
+            && !inner.env.is_empty()
+        {
+            trace!(
+                task_target = self.task.target.as_str(),
+                env = ?inner.env,
+                "Inheriting env from dependent task"
+            );
+
+            for (key, value) in &inner.env {
+                self.command
+                    .env_with_behavior(key, create_task_env(task, key, value.as_deref()));
+            }
+        }
+
+        // Moon variables can't be overridden
         self.command.envs_opt(moon_env);
 
         Ok(())

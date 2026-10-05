@@ -113,6 +113,78 @@ mod command_executor {
         }
     }
 
+    mod expect_failure {
+        use super::*;
+
+        async fn execute(
+            task_id: &str,
+        ) -> (
+            TaskReportItem,
+            moon_task_runner::task_executor::TaskExecuteResult,
+        ) {
+            let container = TaskRunnerContainer::new_os("runner", task_id).await;
+            let context = ActionContext::default();
+            let mut item = TaskReportItem {
+                hash: Some("hash123".into()),
+                ..TaskReportItem::default()
+            };
+
+            let result = container
+                .create_command_executor(&context)
+                .await
+                .execute(&context, &mut item)
+                .await
+                .unwrap();
+
+            (item, result)
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn passes_without_retrying_when_failed() {
+            let (item, result) = execute("expect-failure").await;
+
+            assert_eq!(item.attempt_current, 1);
+            assert!(result.error.is_none());
+            assert_eq!(result.run_state, TargetState::Passed("hash123".into()));
+            assert_eq!(result.attempts.len(), 1);
+
+            let attempt = result.attempts.first().unwrap();
+
+            assert_eq!(attempt.status, ActionStatus::Passed);
+            assert_eq!(attempt.get_exec_output().unwrap().exit_code.unwrap(), 1);
+        }
+
+        // Another attempt would only hide the fix if it happened to fail
+        #[tokio::test(flavor = "multi_thread")]
+        async fn fails_without_retrying_when_passed() {
+            let (item, result) = execute("expect-failure-passes").await;
+
+            assert_eq!(item.attempt_current, 1);
+            assert!(result.error.is_none());
+            assert_eq!(result.run_state, TargetState::Failed);
+            assert_eq!(result.attempts.len(), 1);
+
+            let attempt = result.attempts.first().unwrap();
+
+            assert_eq!(attempt.status, ActionStatus::Failed);
+            assert_eq!(attempt.get_exec_output().unwrap().exit_code.unwrap(), 0);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn fails_and_retries_when_command_not_found() {
+            let (item, result) = execute("expect-failure-not-found").await;
+
+            assert_eq!(item.attempt_current, 2);
+            assert_eq!(result.run_state, TargetState::Failed);
+            assert_eq!(result.attempts.len(), 2);
+
+            for attempt in result.attempts.iter() {
+                assert_eq!(attempt.status, ActionStatus::Failed);
+                assert_eq!(attempt.get_exec_output().unwrap().exit_code.unwrap(), 127);
+            }
+        }
+    }
+
     // Running processes are terminated when the pipeline is aborted (or receives
     // a signal), which fails the current attempt, but must not start another,
     // as its process would never be terminated. The process registry is global,

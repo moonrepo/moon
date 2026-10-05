@@ -33,6 +33,19 @@ use std::path::PathBuf;
 // - proto store/shims/bin paths
 // - moon store paths
 
+/// Create the environment variable behavior for a task's variable (from `env`
+/// or `deps.*.env`). A value is only set when the system variable is missing,
+/// unless the task overrides it, while `null` doesn't inherit the system variable.
+pub fn create_task_env(task: &Task, key: &str, value: Option<&str>) -> Env {
+    match value {
+        Some(val) if task.options.env_override.should_override(key) => {
+            Env::Set(OsString::from(val))
+        }
+        Some(val) => Env::SetIfMissing(OsString::from(val)),
+        None => Env::Unset,
+    }
+}
+
 pub struct AugmentedCommand<'app> {
     command: Command,
     bag: &'app GlobalEnvBag,
@@ -85,15 +98,7 @@ impl<'app> AugmentedCommand<'app> {
         }
 
         for (key, value) in &task.env {
-            builder.env_with_behavior(
-                key,
-                match value {
-                    // Only set if system var not set
-                    Some(val) => Env::SetIfMissing(OsString::from(val)),
-                    // Don't inherit system var
-                    None => Env::Unset,
-                },
-            );
+            builder.env_with_behavior(key, create_task_env(task, key, value.as_deref()));
         }
 
         builder

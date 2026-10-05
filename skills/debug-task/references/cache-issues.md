@@ -314,6 +314,17 @@ This happens when:
   daemon is fire-and-forget, so a failed archive stores nothing and the only evidence is in the
   daemon's server logs.
 
+**Remote cache request failures** (HTTP API):
+
+With an HTTP remote cache, a transient error (like a `503` from a CDN under load) on a single blob
+used to drop that blob, so hydration produced a partial set of outputs, and the task failed with
+`task_runner::missing_outputs`. The debug log shows "Failed to retrieve blobs" with the HTTP status.
+<sup>v2.6+</sup> Requests that fail with a transient error (connection failure, timeout, `5xx`,
+`408`, or `429`) are retried with exponential backoff, up to `remote.cache.retryCount` times
+(default `3`, `0` disables). If failures persist, raise the count, or check the remote service. A
+host that's unreachable while connecting disables the remote cache for that run, with a warning.
+Retries don't apply to the gRPC API.
+
 **Daemon errors are swallowed** <sup>v2.5+</sup>:
 
 When the daemon is enabled **and** outputs go to the local CAS (`casOutputsCache`) or a remote

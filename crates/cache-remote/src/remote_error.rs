@@ -47,7 +47,7 @@ pub enum RemoteError {
     #[error("Failed to make HTTP call.")]
     HttpCallFailed {
         #[source]
-        error: Box<reqwest::Error>,
+        error: Box<reqwest_middleware::Error>,
     },
 
     #[diagnostic(code(remote::http::connect_failed))]

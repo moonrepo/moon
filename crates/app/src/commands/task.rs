@@ -61,6 +61,9 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> SessionResult {
 
     let mut modes = vec![];
 
+    if task.options.expect_failure {
+        modes.push("expect failure");
+    }
     if task.is_internal() {
         modes.push("internal");
     }

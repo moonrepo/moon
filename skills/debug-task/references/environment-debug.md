@@ -89,6 +89,16 @@ exported shell value wins at runtime, while the hash still uses the configured v
 hash. So neither way makes a different shell `NODE_ENV` cause a cache miss. To hash the **actual**
 value from the environment, add it to `inputs` with the `$` prefix (`inputs: ['$NODE_ENV']`).
 
+**A variable set in the shell or CI wins over the task's `env` (and <sup>v2.6+</sup> `deps.*.env`,
+which previously overrode it).** Task values are only applied when the system doesn't define the
+variable, so a task with `NODE_ENV: 'test'` still runs with `NODE_ENV=production` if CI exports it,
+while its hash uses `test`. When a task "ignores" its `env`, check the shell (`env | grep <KEY>`),
+then either:
+
+- <sup>v2.6+</sup> enable `options.envOverride: true` (or a list of names, like `['NODE_ENV']`), so
+  the task's values override the system (never `PATH`, and not `envFile` values), or
+- set the variable to `null` to not inherit it from the system, and provide it with `envFile`.
+
 <sup>v2.5+</sup> A task's resolved `env` can also include variables inherited from a
 **workspace-level `env`** in `.moon/tasks/**/*` files, merged beneath the project's own `env`
 (project wins on conflict, unless `workspace.mergeStrategies.env` changes the strategy). If a

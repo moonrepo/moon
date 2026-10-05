@@ -42,10 +42,22 @@
     experiment. Blobs that no task manifest references (like hash manifests) are now garbage
     collected once older than the cache lifetime, instead of after an hour, while blobs of evicted
     task manifests are still removed after an hour.
+  - Added request retries to the HTTP remote cache, which retries a request that failed with a
+    transient error (connection failure, timeout, `5xx`, `408`, or `429` response) with exponential
+    backoff. Previously, a single failed blob download would fail the task with
+    `task_runner::missing_outputs` (#2680).
+    - Added a new `remote.cache.retryCount` setting, which defaults to `3`, and can be set to `0` to
+      disable retries. Can also be set with the `MOON_REMOTE_CACHE_RETRY_COUNT` environment
+      variable.
+    - The HTTP remote cache is now disabled when its host is unreachable while connecting, instead
+      of every request failing, as each request would have exhausted its retries.
 - **Configuration**
   - Added Pkl modules for every configuration file, which are generated to `.moon/cache/schemas/pkl`
     when `pkl` is installed. A `.pkl` config that amends (or extends) its module is type checked by
     Pkl itself, and editors with Pkl support provide completion and documentation for each setting.
+  - Added an `args` setting to toolchain `bins` entries, which passes additional arguments to the
+    install command, like feature flags (`--no-default-features --features postgres`). Support is
+    dependent on each toolchain plugin (#2708).
 - **Experiments**
   - Added a new `experiments.explicitTaskOutputStyle` setting, which applies a task's
     `options.outputStyle` to all targets, instead of only transitive (non-primary) ones. Can also be
@@ -67,6 +79,20 @@
   - Changed `runDepsInParallel` (when disabled) to skip persistent dependencies when ordering the
     dependencies that follow them, as a persistent dependency never completes. Those dependencies
     are now ordered against the previous dependency that does complete.
+  - Added a new `options.expectFailure` task setting, which expects the task to fail, and fails the
+    pipeline if it passes instead, with an error to remove the setting. Useful for checks that are
+    known to be broken, like after enabling a stricter compiler or lint rule during a migration, so
+    that future regressions are caught once fixed (#2536).
+    - Unlike `allowFailure`, other tasks can depend on the task, as an expected failure is
+      successful.
+    - Exit codes `126` (command not executable), `127` (command not found), and `129`-`192` (killed
+      by a signal) don't satisfy the expectation, nor do timeouts or signals.
+    - The task is never cached, and is not retried after failing as expected, or passing.
+    - Cannot be combined with `allowFailure` or `persistent`.
+  - Added a new `options.envOverride` task setting, which allows the task's `env` (and `deps.*.env`)
+    to override system environment variables (those set in the shell or CI), instead of only being
+    set when missing. Supports `true` for all variables, or a list of variable names, like
+    `['NODE_ENV', 'TZ']`. `PATH` and `envFile` variables are never overridden (#2679).
 - **Toolchains**
   - Added support for the proto `activate_environment` plugin function to toolchains. When building
     a command (for tasks and toolchain operations), the environment of each toolchain that has been
@@ -74,8 +100,16 @@
     prepend paths to `PATH`. Variables that are already configured, like a task's `env`, are not
     overridden, and the first toolchain configured for a task takes precedence (#2568).
 
+#### 🧰 Toolchains
+
+- **Deno, Go, Rust**
+  - Added `bins.*.args` support, which are custom arguments passed their respective install command.
+    Bins with args are installed in separate commands.
+
 #### 🐞 Fixes
 
+- Fixed an issue where a task dependency's `env` (`deps.*.env`) would override system environment
+  variables, instead of only being set when missing, like the task's `env`.
 - Fixed an issue where a task's resolved `toolchains` list was ordered by an internal hash set,
   instead of by what was configured. The toolchains configured for a task (or inherited from the
   project) now come first, followed by any toolchains they require. This also fixes the

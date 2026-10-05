@@ -336,6 +336,27 @@ impl<'proj> TasksBuilder<'proj> {
 
         task.preset = preset;
         task.options = self.build_task_options(id, preset, &mut state)?;
+
+        // Validated after options from all layers have been merged
+        if task.options.expect_failure {
+            if task.options.allow_failure {
+                return Err(TasksBuilderError::ExpectFailureConflict {
+                    task: target,
+                    option: "options.allowFailure",
+                    reason: "a task that unexpectedly passes would be allowed to fail",
+                }
+                .into());
+            }
+
+            if task.options.persistent {
+                return Err(TasksBuilderError::ExpectFailureConflict {
+                    task: target,
+                    option: "options.persistent",
+                    reason: "a persistent task never exits",
+                }
+                .into());
+            }
+        }
         task.env = self.inherit_project_env(&target)?;
         state.root_level = is_root_level_source(self.project_source);
 
@@ -704,6 +725,14 @@ impl<'proj> TasksBuilder<'proj> {
                 options.env_files = self.resolve_env_files(id, env_file)?;
             }
 
+            if let Some(env_override) = &config.env_override {
+                options.env_override = env_override.to_owned();
+            }
+
+            if let Some(expect_failure) = &config.expect_failure {
+                options.expect_failure = *expect_failure;
+            }
+
             if let Some(infer_inputs) = &config.infer_inputs {
                 options.infer_inputs = *infer_inputs;
             }
@@ -826,6 +855,12 @@ impl<'proj> TasksBuilder<'proj> {
                 options.run_in_ci = TaskOptionRunInCI::Enabled(false);
                 state.set_run_in_ci = true;
             }
+        }
+
+        // An expected failure always runs, so that a fix is never hidden
+        // by a cached result
+        if options.expect_failure {
+            options.cache = TaskOptionCache::Enabled(false);
         }
 
         Ok(options)

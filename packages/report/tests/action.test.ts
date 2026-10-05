@@ -5,6 +5,7 @@ import { isFlaky, isSlow } from '../src';
 
 const action: Action = {
 	allowFailure: false,
+	expectFailure: false,
 	createdAt: '2022-09-12T22:50:12.932311Z',
 	duration: {
 		secs: 34,

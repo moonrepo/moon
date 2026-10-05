@@ -8,20 +8,77 @@ use moon_config::RemoteConfig;
 use moon_hash::Digest;
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
 use std::sync::Arc;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::TcpListener;
 
 const INSTANCE: &str = "moon-test";
 
+// Retries are disabled by default, so that failures don't wait on backoff
 fn create_storage(sandbox: &Sandbox, host: String) -> HttpRemoteStorage {
+    create_storage_with_retries(sandbox, host, 0)
+}
+
+fn create_storage_with_retries(
+    sandbox: &Sandbox,
+    host: String,
+    retry_count: u8,
+) -> HttpRemoteStorage {
     let mut remote = RemoteConfig {
         host: Some(host),
         ..Default::default()
     };
     remote.cache.instance_name = INSTANCE.to_owned();
+    remote.cache.retry_count = retry_count;
 
     let mut context = CacheContext::new(sandbox.path());
     context.remote_config = Arc::new(remote);
 
     HttpRemoteStorage::new(context).unwrap()
+}
+
+// Responds to each request with the next status and body in the sequence,
+// which httpmock can't do, as its mocks always respond the same way
+async fn serve_sequence(responses: Vec<(u16, &'static str)>) -> String {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+
+    tokio::spawn(async move {
+        for (status, body) in responses {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut request = vec![];
+            let mut buffer = [0; 1024];
+
+            while !request.windows(4).any(|window| window == b"\r\n\r\n") {
+                let size = stream.read(&mut buffer).await.unwrap();
+
+                if size == 0 {
+                    break;
+                }
+
+                request.extend_from_slice(&buffer[..size]);
+            }
+
+            // Close the connection so that each request opens a new one
+            let response = format!(
+                "HTTP/1.1 {status} STATUS\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
+                body.len()
+            );
+
+            stream.write_all(response.as_bytes()).await.unwrap();
+            stream.shutdown().await.unwrap();
+        }
+    });
+
+    format!("http://{address}")
+}
+
+async fn get_unreachable_host() -> String {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+
+    drop(listener);
+
+    format!("http://{address}")
 }
 
 fn digest_of(bytes: &[u8]) -> Digest {
@@ -79,6 +136,34 @@ mod http_remote_storage {
 
             assert!(storage.connect().await.is_err());
             assert!(!storage.is_readable());
+        }
+
+        #[tokio::test]
+        async fn errors_when_host_unreachable() {
+            // Otherwise every request would exhaust its retries before failing.
+            // Covers both the retried and non-retried middleware errors.
+            for retry_count in [0, 1] {
+                let sandbox = create_empty_sandbox();
+                let storage = create_storage_with_retries(
+                    &sandbox,
+                    get_unreachable_host().await,
+                    retry_count,
+                );
+
+                assert!(storage.connect().await.is_err());
+                assert!(!storage.is_readable());
+            }
+        }
+
+        #[tokio::test]
+        async fn retries_status_after_transient_error() {
+            let host = serve_sequence(vec![(503, ""), (200, "")]).await;
+            let sandbox = create_empty_sandbox();
+            let storage = create_storage_with_retries(&sandbox, host, 1);
+
+            storage.connect().await.unwrap();
+
+            assert!(storage.is_readable());
         }
     }
 
@@ -397,6 +482,80 @@ mod http_remote_storage {
             mock.assert_calls_async(1).await;
             assert_eq!(blobs.len(), 1);
             assert_eq!(blobs[0].content.get_bytes().unwrap(), content.as_bytes());
+        }
+
+        #[tokio::test]
+        async fn retries_blob_download_after_transient_error() {
+            let content = "downloaded";
+            let digest = digest_of(content.as_bytes());
+            let host = serve_sequence(vec![(404, ""), (503, ""), (502, ""), (200, content)]).await;
+            let sandbox = create_empty_sandbox();
+            let storage = create_storage_with_retries(&sandbox, host, 2);
+
+            storage.connect().await.unwrap();
+
+            let blobs = storage.retrieve_blobs(vec![digest], false).await.unwrap();
+
+            assert_eq!(blobs.len(), 1);
+            assert_eq!(blobs[0].content.get_bytes().unwrap(), content.as_bytes());
+        }
+
+        #[tokio::test]
+        async fn retries_blob_upload_after_transient_error() {
+            let content = b"uploaded";
+            let digest = digest_of(content);
+            let host = serve_sequence(vec![(404, ""), (429, ""), (200, "")]).await;
+            let sandbox = create_empty_sandbox();
+            let storage = create_storage_with_retries(&sandbox, host, 1);
+
+            storage.connect().await.unwrap();
+
+            let source = BlobInput {
+                content: BlobContent::Inline(Bytes::from_static(content)),
+                digest: digest.clone(),
+            };
+            let stored = storage.store_blobs(vec![source], false).await.unwrap();
+
+            assert_eq!(stored, vec![digest]);
+        }
+
+        #[tokio::test]
+        async fn errors_once_retries_are_exhausted() {
+            let server = MockServer::start_async().await;
+            let content = "unavailable";
+            let digest = digest_of(content.as_bytes());
+            let mock = server.mock(|when, then| {
+                when.method(GET)
+                    .path(format!("/{INSTANCE}/cas/{}", digest.hash));
+                then.status(503);
+            });
+            let sandbox = create_empty_sandbox();
+            let storage = create_storage_with_retries(&sandbox, server.base_url(), 2);
+
+            storage.connect().await.unwrap();
+
+            assert!(storage.retrieve_blobs(vec![digest], false).await.is_err());
+
+            mock.assert_calls_async(3).await;
+        }
+
+        #[tokio::test]
+        async fn does_not_retry_client_errors() {
+            let server = MockServer::start_async().await;
+            let digest = digest_of(b"forbidden");
+            let mock = server.mock(|when, then| {
+                when.method(GET)
+                    .path(format!("/{INSTANCE}/cas/{}", digest.hash));
+                then.status(403);
+            });
+            let sandbox = create_empty_sandbox();
+            let storage = create_storage_with_retries(&sandbox, server.base_url(), 2);
+
+            storage.connect().await.unwrap();
+
+            assert!(storage.retrieve_blobs(vec![digest], false).await.is_err());
+
+            mock.assert_calls_async(1).await;
         }
 
         #[tokio::test]

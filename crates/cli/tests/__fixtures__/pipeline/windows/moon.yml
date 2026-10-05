@@ -104,6 +104,26 @@ tasks:
     inputs:
       - '*.ps1'
 
+  envOverride:
+    script: 'Write-Output "foo=$env:TEST_FOO bar=$env:TEST_BAR"'
+    env:
+      TEST_FOO: task
+      TEST_BAR: task
+    options:
+      envOverride: ['TEST_FOO']
+      windowsShell: pwsh
+    inputs:
+      - '*.ps1'
+
+  envNoOverride:
+    script: 'Write-Output "foo=$env:TEST_FOO"'
+    env:
+      TEST_FOO: task
+    options:
+      windowsShell: pwsh
+    inputs:
+      - '*.ps1'
+
   runFromProject:
     command: pwsh
     args: ./cwd.ps1

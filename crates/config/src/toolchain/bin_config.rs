@@ -7,6 +7,12 @@ config_struct!(
     /// Configures to a tool-specific global binary to install.
     #[derive(Config)]
     pub struct BinConfig {
+        /// Additional arguments to pass to the install command, like
+        /// feature flags. Support is dependent on the toolchain.
+        /// @since 2.6.0
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        pub args: Vec<String>,
+
         /// Name of the binary, with optional version separated by `@`.
         #[setting(validate = validate::not_empty)]
         pub bin: String,

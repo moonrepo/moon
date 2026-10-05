@@ -98,6 +98,7 @@ export interface Action {
 	createdAt: string;
 	duration?: Duration | null;
 	error?: string | null;
+	expectFailure: boolean;
 	finishedAt?: string | null;
 	flaky: boolean;
 	label: string;

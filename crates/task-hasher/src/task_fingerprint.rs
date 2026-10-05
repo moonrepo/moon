@@ -25,6 +25,10 @@ fingerprint!(
         // Environment variables
         pub env: BTreeMap<&'task str, Option<&'task str>>,
 
+        // Environment variables that override system variables (task option `envOverride`)
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub env_override: Vec<&'task str>,
+
         // Input files and globs mapped to a unique hash
         pub inputs: BTreeMap<WorkspaceRelativePathBuf, String>,
 
@@ -64,6 +68,7 @@ impl<'task> TaskFingerprint<'task> {
                 .iter()
                 .map(|(k, v)| (k.as_str(), v.as_deref()))
                 .collect(),
+            env_override: vec![],
             inputs: BTreeMap::new(),
             input_env: BTreeMap::new(),
             outputs: task.outputs.iter().collect(),

@@ -1384,6 +1384,19 @@
         }
       ]
     },
+    "TaskOptionEnvOverride": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
     "TaskOptionsConfig": {
       "description": "Options to control task inheritance, execution, and more.",
       "type": "object",
@@ -1469,6 +1482,32 @@
             }
           ],
           "markdownDescription": "Loads and sets environment variables from the `.env` file(s) when running the task."
+        },
+        "envOverride": {
+          "title": "envOverride",
+          "description": "Override system environment variables with the task's env, instead of only setting them when missing. When a list of variable names, only those variables will be overridden. @since 2.6.0",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskOptionEnvOverride"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Override system environment variables with the task's `env`, instead of only setting them when missing. When a list of variable names, only those variables will be overridden. @since 2.6.0"
+        },
+        "expectFailure": {
+          "title": "expectFailure",
+          "description": "Expect the task to fail, and fail the entire action pipeline if it passes. Useful for checks that are known to be broken, which should be re-enabled once fixed. The task is never cached. @since 2.6.0",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Expect the task to fail, and fail the entire action pipeline if it passes. Useful for checks that are known to be broken, which should be re-enabled once fixed. The task is never cached. @since 2.6.0"
         },
         "inferInputs": {
           "title": "inferInputs",

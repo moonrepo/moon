@@ -1,7 +1,7 @@
 use miette::Diagnostic;
 use moon_common::{Style, Stylize};
 use moon_process::ProcessError;
-use moon_task::Target;
+use moon_task::{Target, TaskExpectedFailure};
 use std::path::PathBuf;
 use thiserror::Error;
 
@@ -16,6 +16,26 @@ pub enum TaskRunnerError {
         target: Target,
         #[source]
         error: Box<ProcessError>,
+    },
+
+    #[diagnostic(code(task_runner::unexpected_pass))]
+    #[error(
+        "Task {} was expected to fail, but it passed.\nIf the failure has been fixed, remove the {} setting.",
+        .target.style(Style::Label),
+        "options.expectFailure".style(Style::Property),
+    )]
+    UnexpectedPass { target: Target },
+
+    #[diagnostic(code(task_runner::unexpected_failure))]
+    #[error(
+        "Task {} was expected to fail, but it {}, which does not satisfy {}.\nOnly a failure of the command itself is expected, not a command that could not run, or was killed by a signal.",
+        .target.style(Style::Label),
+        .outcome,
+        "options.expectFailure".style(Style::Property),
+    )]
+    UnexpectedFailure {
+        target: Target,
+        outcome: TaskExpectedFailure,
     },
 
     #[diagnostic(code(task_runner::hash_check_failed))]

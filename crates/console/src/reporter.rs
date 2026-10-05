@@ -265,6 +265,16 @@ impl MoonReporter {
                 comments.push(comment);
             }
 
+            // Only an expected failure passes with a non-zero exit code
+            if operation.status == ActionStatus::Passed
+                && let Some(code) = operation
+                    .get_exec_output()
+                    .and_then(|output| output.exit_code)
+                && code != 0
+            {
+                comments.push(format!("expected failure, exit code {code}"));
+            }
+
             if let Some(duration) = operation.duration
                 && let Some(elapsed) = time::elapsed_opt(duration)
             {

@@ -18,6 +18,12 @@ instanceName: String?
 /// @since 1.40.0
 localReadOnly: Boolean?
 
+/// The maximum number of times to retry a request that failed with
+/// a transient error (connection failure, timeout, 5xx, 429, etc),
+/// using exponential backoff. Only applies to HTTP APIs.
+/// @since 2.6.0
+retryCount: UInt8?
+
 /// When downloading blobs, verify the digests/hashes in the response
 /// match the associated blob contents. This will reduce performance
 /// but ensure partial or corrupted blobs won't cause failures.

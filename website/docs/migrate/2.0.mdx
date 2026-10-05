@@ -481,6 +481,9 @@ tasks:
       EXAMPLE: null
 ```
 
+Since v2.6, a task can also override system variables with its own variables, by enabling the
+[`options.envOverride`](../config/project#envoverride) setting.
+
 ### Deferred `.env` files
 
 In v1, when `options.envFile` was enabled, the `.env` file(s) were loaded at the time of task

@@ -343,6 +343,38 @@ mod exec {
         }
 
         #[test]
+        fn system_env_vars_take_precedence() {
+            let sandbox = create_pipeline_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg(target("envNoOverride"))
+                    .env("TEST_FOO", "system");
+            });
+
+            assert
+                .success()
+                .stdout(predicate::str::contains("foo=system"));
+        }
+
+        #[test]
+        fn task_env_vars_can_override_system() {
+            let sandbox = create_pipeline_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg(target("envOverride"))
+                    .env("TEST_FOO", "system")
+                    .env("TEST_BAR", "system");
+            });
+
+            // Only the listed variable is overridden
+            assert
+                .success()
+                .stdout(predicate::str::contains("foo=task bar=system"));
+        }
+
+        #[test]
         fn inherits_moon_env_vars() {
             let sandbox = create_pipeline_sandbox();
             let id = target("envVarsMoon");
@@ -709,6 +741,46 @@ mod exec {
                 predicate::str::contains("Tasks: 1 failed")
                     .and(predicate::str::contains("Task shared:willFail failed to run.").not()),
             );
+        }
+
+        #[test]
+        fn passes_when_expected_to_fail() {
+            let sandbox = create_pipeline_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("shared:expectFailure");
+            });
+
+            assert.success().stdout(
+                predicate::str::contains("expected failure, exit code 1")
+                    .and(predicate::str::contains("Tasks: 1 completed")),
+            );
+        }
+
+        #[test]
+        fn fails_when_expected_to_fail_but_passes() {
+            let sandbox = create_pipeline_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("shared:expectFailureButPasses");
+            });
+
+            assert.failure().code(1).stderr(predicate::str::contains(
+                "Task shared:expectFailureButPasses was expected to fail, but it passed.",
+            ));
+        }
+
+        #[test]
+        fn runs_dependents_of_expected_failure() {
+            let sandbox = create_pipeline_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("shared:dependsOnExpectFailure");
+            });
+
+            assert
+                .success()
+                .stdout(predicate::str::contains("Tasks: 2 completed"));
         }
 
         #[test]

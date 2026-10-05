@@ -6,7 +6,7 @@ use moon_config::TaskOutputStyle;
 use moon_console::TaskReportItem;
 use moon_process::{Command, Output, ProcessRegistry, SignalType, format_command_line};
 use moon_project::Project;
-use moon_task::Task;
+use moon_task::{Task, TaskExpectedFailure};
 use std::time::Duration;
 use tokio::sync::broadcast::{Receiver, error::TryRecvError};
 use tokio::task::{self, JoinHandle};
@@ -155,6 +155,7 @@ impl<'task> TaskExecutor<'task> {
                 // Zero and non-zero exit codes
                 Ok(maybe_output) => {
                     let mut is_success = false;
+                    let mut is_unexpected_pass = false;
 
                     if let Some(output) = maybe_output {
                         is_success = output.success();
@@ -171,6 +172,22 @@ impl<'task> TaskExecutor<'task> {
                             output.stdout.to_vec(),
                             output.stderr.to_vec(),
                         );
+
+                        // Only a normal exit can satisfy the expectation (not a
+                        // signal), and not when processes are being terminated
+                        if self.task.options.expect_failure {
+                            let expected = output.code().map(TaskExpectedFailure::from_exit_code);
+
+                            is_unexpected_pass = expected == Some(TaskExpectedFailure::Passed);
+                            is_success = expected.is_some_and(|expected| expected.is_expected())
+                                && !context.should_stop(&self.task.target);
+
+                            attempt.finish(if is_success {
+                                ActionStatus::Passed
+                            } else {
+                                ActionStatus::Failed
+                            });
+                        }
                     } else {
                         debug!(
                             task_target = self.task.target.as_str(),
@@ -198,6 +215,16 @@ impl<'task> TaskExecutor<'task> {
                         );
 
                         run_state = TargetState::from_hash(report_item.hash.as_deref());
+                        break None;
+                    }
+                    // Passed when expected to fail, which another attempt
+                    // would only hide if it happened to fail
+                    else if is_unexpected_pass {
+                        debug!(
+                            task_target = self.task.target.as_str(),
+                            "Task was expected to fail but passed, failing without attempting again",
+                        );
+
                         break None;
                     }
                     // Unsuccessful execution (maybe flaky), attempt again

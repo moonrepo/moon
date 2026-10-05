@@ -14,11 +14,14 @@ use moon_config::RemoteCompression;
 use moon_hash::Digest;
 use reqwest::Client;
 use reqwest::header::HeaderMap;
+use reqwest_middleware::ClientWithMiddleware;
+use reqwest_retry::RetryError;
 use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
 use tracing::{debug, error, warn};
+use warpgate::{HttpOptions, build_http_client, build_http_middleware};
 
 #[derive(Debug)]
 pub struct HttpRemoteStorage {
@@ -27,7 +30,7 @@ pub struct HttpRemoteStorage {
 
     // States
     capabilities: OnceLock<CacheCapabilities>,
-    client: OnceLock<Arc<Client>>,
+    client: OnceLock<Arc<ClientWithMiddleware>>,
 
     // Since HTTP doesn't support batching, we will most likely
     // end up up/downloading too many files in parallel, triggering a
@@ -47,9 +50,14 @@ impl HttpRemoteStorage {
         })
     }
 
-    fn create_client(&self, headers: HeaderMap) -> miette::Result<Client> {
+    fn create_client(&self, headers: HeaderMap) -> miette::Result<ClientWithMiddleware> {
         let config = &self.context.remote_config;
-        let mut client = Client::builder()
+        let options = HttpOptions {
+            retry_count: Some(config.cache.retry_count.into()),
+            ..Default::default()
+        };
+
+        let mut client = build_http_client(&options)?
             .user_agent("moon")
             .gzip(true)
             .zstd(true)
@@ -66,13 +74,17 @@ impl HttpRemoteStorage {
 
         let client = client
             .build()
-            .map_err(|error| map_error("create_client", error, self.context.remote_debug))?;
+            .map_err(|error| map_error("create_client", error.into(), self.context.remote_debug))?;
 
-        Ok(client)
+        // Retries requests that fail with a transient error
+        Ok(build_http_middleware(client, &options)?.build())
     }
 
-    fn get_client(&self) -> Arc<Client> {
-        Arc::clone(self.client.get_or_init(|| Arc::new(Client::new())))
+    fn get_client(&self) -> Arc<ClientWithMiddleware> {
+        Arc::clone(
+            self.client
+                .get_or_init(|| Arc::new(ClientWithMiddleware::from(Client::new()))),
+        )
     }
 
     fn get_endpoint(&self, path: &str, hash: &str) -> String {
@@ -149,24 +161,32 @@ impl StorageBackend for HttpRemoteStorage {
         // Create the client
         let client = self.create_client(headers)?;
 
-        // Ignore errors since this endpoint is non-standard
-        if let Ok(response) = client
+        // Ignore errors since this endpoint is non-standard, unless the host
+        // is unreachable, as every request would then exhaust its retries
+        match client
             .get(format!("{}/status", config.get_host()))
             .send()
             .await
         {
-            let status = response.status();
-            let code = status.as_u16();
+            Ok(response) => {
+                let status = response.status();
+                let code = status.as_u16();
 
-            if !status.is_success() && code != 404 {
-                return Err(RemoteError::HttpConnectFailed {
-                    code,
-                    reason: status
-                        .canonical_reason()
-                        .map(|reason| reason.to_owned())
-                        .unwrap_or_else(|| String::from("Unknown")),
+                if !status.is_success() && code != 404 {
+                    return Err(RemoteError::HttpConnectFailed {
+                        code,
+                        reason: status
+                            .canonical_reason()
+                            .map(|reason| reason.to_owned())
+                            .unwrap_or_else(|| String::from("Unknown")),
+                    }
+                    .into());
                 }
-                .into());
+            }
+            Err(error) => {
+                if is_connect_error(&error) {
+                    return Err(map_error("connect", error, self.context.remote_debug).into());
+                }
             }
         }
 
@@ -192,7 +212,7 @@ impl StorageBackend for HttpRemoteStorage {
                             .json()
                             .await
                             .map_err(|error| RemoteError::HttpCallFailed {
-                                error: Box::new(error),
+                                error: Box::new(error.into()),
                             })?;
 
                     Ok(Some(TaskManifest::from_bazel_action_result(result)?))
@@ -347,7 +367,7 @@ impl StorageBackend for HttpRemoteStorage {
     }
 }
 
-fn map_error(method: &str, error: reqwest::Error, debug: bool) -> RemoteError {
+fn map_error(method: &str, error: reqwest_middleware::Error, debug: bool) -> RemoteError {
     if debug {
         error!("{method}: {:#?}", error);
     }
@@ -364,6 +384,19 @@ fn map_response_error(method: &str, res: reqwest::Response, debug: bool) -> Remo
 
     RemoteError::HttpRequestFailed {
         status: Box::new(res.status()),
+    }
+}
+
+fn is_connect_error(error: &reqwest_middleware::Error) -> bool {
+    match error {
+        reqwest_middleware::Error::Reqwest(error) => error.is_connect(),
+        // The retry middleware wraps the last error it received
+        reqwest_middleware::Error::Middleware(error) => match error.downcast_ref::<RetryError>() {
+            Some(RetryError::WithRetries { err, .. } | RetryError::Error(err)) => {
+                is_connect_error(err)
+            }
+            None => false,
+        },
     }
 }
 

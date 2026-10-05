@@ -16,7 +16,7 @@ use moon_daemon_client::DaemonClient;
 use moon_hash::{ContentHash, ContentHasher};
 use moon_process::ProcessError;
 use moon_project::Project;
-use moon_task::{Task, TaskCheck, TaskCheckFingerprint, TaskCheckType};
+use moon_task::{Task, TaskCheck, TaskCheckFingerprint, TaskCheckType, TaskExpectedFailure};
 use moon_task_hasher::*;
 use moon_time::{is_stale, now_millis};
 use starbase_utils::fs;
@@ -658,14 +658,32 @@ impl<'task> TaskRunner<'task> {
         if let Some(last_attempt) = self.operations.get_last_execution()
             && last_attempt.has_failed()
         {
+            let code = last_attempt
+                .get_exec_output()
+                .and_then(|output| output.exit_code);
+
+            // Explain why the failure was not the expected one, unless it
+            // was, but processes were being terminated
+            if self.task.options.expect_failure
+                && let Some(outcome) = code.map(TaskExpectedFailure::from_exit_code)
+                && !outcome.is_expected()
+            {
+                let target = self.task.target.clone();
+
+                return Err(if outcome == TaskExpectedFailure::Passed {
+                    TaskRunnerError::UnexpectedPass { target }
+                } else {
+                    TaskRunnerError::UnexpectedFailure { target, outcome }
+                }
+                .into());
+            }
+
             return Err(TaskRunnerError::RunFailed {
                 target: self.task.target.clone(),
                 error: Box::new(ProcessError::ExitNonZero {
                     bin: self.task.command.value.clone(),
                     status: last_attempt.get_exec_output_status(),
-                    code: last_attempt
-                        .get_exec_output()
-                        .and_then(|output| output.exit_code),
+                    code,
                 }),
             }
             .into());

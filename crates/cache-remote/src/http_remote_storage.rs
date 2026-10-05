@@ -23,6 +23,11 @@ use tokio::task::JoinSet;
 use tracing::{debug, error, warn};
 use warpgate::{HttpOptions, build_http_client, build_http_middleware};
 
+/// A healthy cache accepts a connection well within this, even over the
+/// internet. A host that doesn't is treated as unreachable and disabled for
+/// the run, instead of every request waiting on it.
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(2);
+
 #[derive(Debug)]
 pub struct HttpRemoteStorage {
     context: CacheContext,
@@ -58,6 +63,7 @@ impl HttpRemoteStorage {
         };
 
         let mut client = build_http_client(&options)?
+            .connect_timeout(CONNECT_TIMEOUT)
             .user_agent("moon")
             .gzip(true)
             .zstd(true)
@@ -163,18 +169,11 @@ impl StorageBackend for HttpRemoteStorage {
 
         // Ignore errors since this endpoint is non-standard, unless the host
         // is unreachable, as every request would then exhaust its retries
-        // A host that accepts connections but never answers must be disabled,
-        // otherwise every read and write waits on the connection
-        let status = tokio::time::timeout(
-            Duration::from_secs(config.cache.connect_timeout),
-            client.get(format!("{}/status", config.get_host())).send(),
-        )
-        .await
-        .map_err(|_| RemoteError::HttpConnectTimeout {
-            seconds: config.cache.connect_timeout,
-        })?;
-
-        match status {
+        match client
+            .get(format!("{}/status", config.get_host()))
+            .send()
+            .await
+        {
             Ok(response) => {
                 let status = response.status();
                 let code = status.as_u16();

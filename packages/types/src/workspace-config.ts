@@ -444,16 +444,6 @@ export interface RemoteCacheConfig {
 	 */
 	compression: RemoteCompression;
 	/**
-	 * The number of seconds to wait for the host to respond while
-	 * connecting. When exceeded, remote caching is disabled for the
-	 * current run. Only applies to HTTP APIs.
-	 * @since 2.6.1
-	 *
-	 * @default 5
-	 * @env MOON_REMOTE_CACHE_CONNECT_TIMEOUT
-	 */
-	connectTimeout?: number;
-	/**
 	 * Unique instance name for blobs. Will be used as a folder name.
 	 *
 	 * @default 'moon-outputs'
@@ -1149,16 +1139,6 @@ export interface PartialRemoteCacheConfig {
 	 * @env MOON_REMOTE_CACHE_COMPRESSION
 	 */
 	compression?: RemoteCompression | null;
-	/**
-	 * The number of seconds to wait for the host to respond while
-	 * connecting. When exceeded, remote caching is disabled for the
-	 * current run. Only applies to HTTP APIs.
-	 * @since 2.6.1
-	 *
-	 * @default 5
-	 * @env MOON_REMOTE_CACHE_CONNECT_TIMEOUT
-	 */
-	connectTimeout?: number | null;
 	/**
 	 * Unique instance name for blobs. Will be used as a folder name.
 	 *

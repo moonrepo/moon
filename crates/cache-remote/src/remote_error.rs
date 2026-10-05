@@ -54,10 +54,6 @@ pub enum RemoteError {
     #[error("Failed to connect to HTTP host ({code} {reason}).")]
     HttpConnectFailed { code: u16, reason: String },
 
-    #[diagnostic(code(remote::http::connect_timeout))]
-    #[error("HTTP host did not respond within {seconds}s.")]
-    HttpConnectTimeout { seconds: u64 },
-
     #[diagnostic(code(remote::http::request_failed))]
     #[error("Failed to make HTTP request ({status}).")]
     HttpRequestFailed { status: Box<reqwest::StatusCode> },

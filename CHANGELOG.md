@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+#### 💥 Breaking
+
+- **Experiments**
+  - Removed the `asyncAffectedTracking` experiment, as the asynchronous affected tracker is now
+    always used, and the synchronous tracker has been removed. The setting must be removed from
+    `.moon/workspace.*`, as unknown settings fail validation, and the
+    `MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING` environment variable no longer has any effect.
+
 ## 2.6.0
 
 #### 🚀 Updates

@@ -9,6 +9,10 @@
     always used, and the synchronous tracker has been removed. The setting must be removed from
     `.moon/workspace.*`, as unknown settings fail validation, and the
     `MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING` environment variable no longer has any effect.
+  - Removed the `nativeFileHashing` experiment, as files are now always hashed natively within
+    moon's task pool, and hashing files through the VCS has been removed. The setting must be
+    removed from `.moon/workspace.*`, as unknown settings fail validation, and the
+    `MOON_EXPERIMENT_NATIVE_FILE_HASHING` environment variable no longer has any effect.
 
 #### 🚀 Updates
 
@@ -31,6 +35,16 @@
       same globs, which most tasks have through inheritance and defaults. Previously, every task
       compiled its own copy, which was the single largest cost of tracking. Changed files are also
       only matched against each distinct glob set once, instead of once per task.
+- **Hasher**
+  - Improved the performance of file hashing.
+    - File hashes are now memoized for the lifetime of the process, and reused while the file's size
+      and modification time are unchanged, so tasks that share inputs only read each file once.
+      Files modified within the last 2 seconds are never memoized, to protect against file systems
+      with coarse timestamps.
+    - Files are now hashed by a bounded set of workers that pull from a shared queue, instead of
+      spawning a blocking task per file.
+    - Each file is now stat-ed once before hashing, instead of twice, and read with a single read
+      when it fits within the hashing buffer.
 
 ## 2.6.0
 

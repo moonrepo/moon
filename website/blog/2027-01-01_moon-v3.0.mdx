@@ -2,7 +2,7 @@
 slug: moon-v3.0
 title: moon v3.0 - ???
 authors: [milesj]
-tags: [async, experiments, affected]
+tags: [async, experiments, affected, hashing]
 # image: ./img/moon/v2.6.png
 ---
 
@@ -12,14 +12,16 @@ TODO
 
 ## Resolved experiments
 
-Over the last few releases, we've rebuilt moon's hottest code paths as asynchronous implementations,
-shipped them behind [experiments](/docs/config/workspace#experiments), and then enabled them by
-default in v2.5. They've since proven themselves, so in v3, the following experiments have been
-resolved. Their implementation is now the _only_ implementation, the previous one has been removed,
-and the setting no longer exists.
+Over the last few releases, we've rebuilt moon's hottest code paths, shipped them behind
+[experiments](/docs/config/workspace#experiments), and then enabled them by default in v2.5.
+They've since proven themselves, so in v3, the following experiments have been resolved. Their
+implementation is now the _only_ implementation, the previous one has been removed, and the setting
+no longer exists.
 
 - `asyncAffectedTracking` (added in v2.2) - Affected projects and tasks are now always tracked
   asynchronously, and the synchronous tracker has been removed.
+- `nativeFileHashing` (added in v2.3) - Files are now always hashed natively within moon's task
+  pool, and hashing files through the VCS has been removed.
 
 Since configuration is strictly validated, moon will fail to load a workspace that still configures
 a resolved experiment, so be sure to remove it.
@@ -27,11 +29,53 @@ a resolved experiment, so be sure to remove it.
 ```diff title=".moon/workspace.yml"
  experiments:
 -  asyncAffectedTracking: true
+-  nativeFileHashing: true
 ```
 
 Their `MOON_EXPERIMENT_*` environment variables, like `MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING`, no
 longer have any effect. If you had disabled one of these experiments to work around an issue,
 please [report it](https://github.com/moonrepo/moon/issues), as it can no longer be disabled.
+
+## Performance improvements
+
+With the experiments resolved, we no longer have to keep two implementations of the same code path
+in lockstep, which freed us up to profile and optimize the remaining one.
+
+### Affected tracking
+
+Affected tracking (used by `--affected`, `moon ci`, and the action graph) is now **up to 100x
+faster** in large workspaces. In our benchmarks, tracking 1,000 tasks went from 715ms to 6.5ms, and
+tracking 1,000 projects went from 3.5ms to 0.2ms.
+
+The single largest cost turned out to be compiling glob sets, which took ~175µs per task, and every
+task compiled its own, even though most tasks share the same globs through inheritance and
+defaults. Compiled glob sets are now cached and shared between tasks, and each changed file is only
+matched against each distinct glob set once. On top of that:
+
+- Tasks and projects that were found to not be affected are no longer checked a second time when
+  building the action graph.
+- Relationships are walked once from every affected task and project, instead of once _per_ affected
+  task and project, which was quadratic for deep dependency chains.
+- Projects are indexed by their source directory, so each changed file only looks up its ancestor
+  directories, instead of every project scanning every changed file.
+- Changed files matched by content (the `content` input setting) are read once, instead of once per
+  task.
+
+### File hashing
+
+Hashing task inputs is now **~25% faster** on a cold run, and **~5x faster** for files that have
+already been hashed. In our benchmarks, hashing 1,000 files went from 13.4ms to 10ms, and to 2.5ms
+when their hashes are reused.
+
+Previously, every task hashed all of its inputs from scratch, so a project's `build`, `test`, and
+`lint` tasks would each read the same files, and workspace-wide files like lockfiles were read by
+every task. File hashes are now memoized for the duration of the process, and reused as long as the
+file's size and modification time are unchanged. This is the same strategy Git uses for its index,
+including its safeguard for recently modified files, which are never memoized, so that file systems
+with coarse timestamps can't serve a stale hash.
+
+Files are also now hashed by a fixed pool of workers, instead of spawning a task per file, and each
+file is stat-ed once instead of twice.
 
 ## Other changes
 

@@ -1,7 +1,5 @@
 use crate::affected::*;
-use crate::project_tracker::ProjectTracker;
-use crate::task_tracker::TaskTracker;
-use moon_async_utils::run_pooled_tasks;
+use moon_async_utils::{get_concurrency, run_pooled_tasks};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{Id, color};
 use moon_env_var::GlobalEnvBag;
@@ -9,9 +7,12 @@ use moon_project::Project;
 use moon_task::{Target, Task, TaskOptionRunInCI};
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
 use rustc_hash::{FxHashMap, FxHashSet};
-use starbase_utils::fs;
+use starbase_utils::fs::{self, FsError};
+use starbase_utils::glob::GlobSet;
 use std::collections::VecDeque;
 use std::fmt;
+use std::io;
+use std::path::Path;
 use std::sync::Arc;
 use tracing::{debug, trace};
 
@@ -20,14 +21,25 @@ pub struct AffectedTracker {
 
     workspace_graph: Arc<WorkspaceGraph>,
     changed_files: Arc<FxHashSet<WorkspaceRelativePathBuf>>,
+    cache: Arc<CheckCache>,
 
     projects: FxHashMap<Id, FxHashSet<AffectedBy>>,
     project_downstream: DownstreamScope,
     project_upstream: UpstreamScope,
 
+    /// Projects that have been checked and are not directly affected by
+    /// the changed files. They may still be marked through a relationship,
+    /// but don't need to be checked again.
+    unaffected_projects: FxHashSet<Id>,
+
     tasks: FxHashMap<Target, FxHashSet<AffectedBy>>,
     task_downstream: DownstreamScope,
     task_upstream: UpstreamScope,
+
+    /// Tasks that have been checked and are not directly affected by the
+    /// changed files, environment variables, or CI. They may still be marked
+    /// through a relationship, but don't need to be checked again.
+    unaffected_tasks: FxHashSet<Target>,
 }
 
 impl AffectedTracker {
@@ -40,12 +52,15 @@ impl AffectedTracker {
         Self {
             workspace_graph,
             changed_files: Arc::new(changed_files),
+            cache: Arc::new(CheckCache::default()),
             projects: FxHashMap::default(),
             project_downstream: DownstreamScope::None,
             project_upstream: UpstreamScope::Deep,
+            unaffected_projects: FxHashSet::default(),
             tasks: FxHashMap::default(),
             task_downstream: DownstreamScope::None,
             task_upstream: UpstreamScope::Deep,
+            unaffected_tasks: FxHashSet::default(),
             ci: false,
         }
     }
@@ -139,73 +154,92 @@ impl AffectedTracker {
         self
     }
 
-    pub fn track_projects(&mut self) -> miette::Result<&mut Self> {
+    pub async fn track_projects(&mut self) -> miette::Result<&mut Self> {
         debug!("Tracking projects and marking any affected");
 
-        for project in self.workspace_graph.get_projects()? {
-            if let Some(affected) = self.is_project_affected(&project) {
-                self.mark_project_affected(&project, affected)?;
+        let projects = self.workspace_graph.get_projects()?;
+
+        // Index projects by their source directory, so that each changed
+        // file only needs to look up its ancestor directories, instead of
+        // every project scanning every changed file
+        let mut root_indexes = vec![];
+        let mut source_indexes: FxHashMap<&str, Vec<usize>> = FxHashMap::default();
+
+        for (index, project) in projects.iter().enumerate() {
+            if project.is_root_level() {
+                root_indexes.push(index);
+            } else {
+                source_indexes
+                    .entry(project.source.as_str().trim_end_matches('/'))
+                    .or_default()
+                    .push(index);
             }
         }
 
+        // A project is affected by the first changed file found within it
+        let mut matched_files: Vec<Option<&WorkspaceRelativePathBuf>> = vec![None; projects.len()];
+
+        for file in self.changed_files.iter() {
+            // If at the root, any file affects it
+            if !file.as_str().starts_with('.') {
+                for index in &root_indexes {
+                    matched_files[*index].get_or_insert(file);
+                }
+            }
+
+            let mut dir = file.parent();
+
+            while let Some(current) = dir {
+                if current.as_str().is_empty() {
+                    break;
+                }
+
+                if let Some(indexes) = source_indexes.get(current.as_str()) {
+                    for index in indexes {
+                        matched_files[*index].get_or_insert(file);
+                    }
+                }
+
+                dir = current.parent();
+            }
+        }
+
+        let mut affected_projects = vec![];
+
+        for (index, file) in matched_files.into_iter().enumerate() {
+            match file {
+                Some(file) => affected_projects.push((
+                    Arc::clone(&projects[index]),
+                    AffectedBy::ChangedFile(file.to_owned()),
+                )),
+                None => {
+                    self.unaffected_projects.insert(projects[index].id.clone());
+                }
+            };
+        }
+
+        self.mark_projects_affected(affected_projects)?;
+
         Ok(self)
     }
 
-    pub async fn track_projects_async(&mut self) -> miette::Result<&mut Self> {
-        debug!("Tracking projects and marking any affected");
-
-        let downstream = self.project_downstream;
-        let upstream = self.project_upstream;
-
-        run_pooled_tasks(
-            VecDeque::from_iter(self.workspace_graph.get_projects()?),
-            |project| {
-                let changed_files = Arc::clone(&self.changed_files);
-                let workspace_graph = Arc::clone(&self.workspace_graph);
-
-                Ok(ProjectTracker {
-                    changed_files,
-                    downstream,
-                    project,
-                    tracked: FxHashMap::default(),
-                    upstream,
-                    workspace_graph,
-                }
-                .track())
-            },
-            |tracker| {
-                for (project_id, affected) in tracker.tracked {
-                    self.projects
-                        .entry(project_id)
-                        .or_default()
-                        .extend(affected);
-                }
-
-                Ok(())
-            },
-        )
-        .await?;
-
-        Ok(self)
-    }
-
-    pub fn is_project_affected(&self, project: &Project) -> Option<AffectedBy> {
+    pub fn is_project_affected(&mut self, project: &Project) -> Option<AffectedBy> {
         if self.is_project_marked_ignoring_relations(project) {
             return Some(AffectedBy::AlreadyMarked);
         }
 
-        if project.is_root_level() {
-            // If at the root, any file affects it
-            self.changed_files
-                .iter()
-                .find(|file| !file.as_str().starts_with('.'))
-                .map(|file| AffectedBy::ChangedFile(file.to_owned()))
-        } else {
-            self.changed_files
-                .iter()
-                .find(|file| file.starts_with(&project.source))
-                .map(|file| AffectedBy::ChangedFile(file.to_owned()))
+        // Was already checked, so don't check again
+        if self.unaffected_projects.contains(&project.id) {
+            return None;
         }
+
+        let affected = is_project_directly_affected(project, &self.changed_files);
+
+        if affected.is_none() {
+            self.unaffected_projects.insert(project.id.clone());
+        }
+
+        affected
     }
 
     pub fn is_project_marked(&self, project: &Project) -> bool {
@@ -233,10 +267,7 @@ impl AffectedTracker {
         if affected == AffectedBy::AlreadyMarked {
             // May have been already marked through an indirect dep,
             // but that doesn't mean its own deps have been checked!
-            self.track_project_dependencies(project, 0, &mut FxHashSet::default())?;
-            self.track_project_dependents(project, 0, &mut FxHashSet::default())?;
-
-            return Ok(());
+            return self.track_project_relations(&[project]);
         }
 
         trace!(
@@ -249,45 +280,91 @@ impl AffectedTracker {
             .or_default()
             .insert(affected);
 
-        self.track_project_dependencies(project, 0, &mut FxHashSet::default())?;
-        self.track_project_dependents(project, 0, &mut FxHashSet::default())?;
+        self.track_project_relations(&[project])
+    }
+
+    fn mark_projects_affected(
+        &mut self,
+        projects: Vec<(Arc<Project>, AffectedBy)>,
+    ) -> miette::Result<()> {
+        let mut marked = Vec::with_capacity(projects.len());
+
+        for (project, affected) in projects {
+            trace!(
+                project_id = project.id.as_str(),
+                "Marking project as affected"
+            );
+
+            self.projects
+                .entry(project.id.clone())
+                .or_default()
+                .insert(affected);
+
+            marked.push(project);
+        }
+
+        let marked = marked
+            .iter()
+            .map(|project| project.as_ref())
+            .collect::<Vec<_>>();
+
+        self.track_project_relations(&marked)
+    }
+
+    /// Walk the relationships of the provided projects, which have all been
+    /// marked as affected, and mark their dependencies and dependents. Every
+    /// project is visited once, no matter how many of the provided projects
+    /// reach it, so the work is bound by the size of the graph.
+    fn track_project_relations(&mut self, projects: &[&Project]) -> miette::Result<()> {
+        self.track_project_dependencies(projects)?;
+        self.track_project_dependents(projects)?;
 
         Ok(())
     }
 
-    fn track_project_dependencies(
-        &mut self,
-        project: &Project,
-        depth: u16,
-        cycle: &mut FxHashSet<Id>,
-    ) -> miette::Result<()> {
-        if cycle.contains(&project.id) {
+    fn track_project_dependencies(&mut self, projects: &[&Project]) -> miette::Result<()> {
+        if self.project_upstream == UpstreamScope::None {
+            trace!("Not tracking project dependencies as upstream scope is none");
+
             return Ok(());
         }
 
-        cycle.insert(project.id.clone());
+        let deep = self.project_upstream == UpstreamScope::Deep;
+        let mut visited = FxHashSet::default();
+        let mut queue = VecDeque::new();
 
-        if self.project_upstream == UpstreamScope::None {
+        for project in projects {
             trace!(
                 project_id = project.id.as_str(),
-                "Not tracking project dependencies as upstream scope is none"
+                "Tracking {} project dependencies",
+                if deep { "deep" } else { "direct" }
             );
 
-            return Ok(());
+            self.visit_project_dependencies(project, deep, &mut visited, &mut queue);
         }
 
-        if depth == 0 {
-            if self.project_upstream == UpstreamScope::Direct {
-                trace!(
-                    project_id = project.id.as_str(),
-                    "Tracking direct project dependencies"
-                );
-            } else {
-                trace!(
-                    project_id = project.id.as_str(),
-                    "Tracking deep project dependencies"
-                );
+        while let Some(id) = queue.pop_front() {
+            if visited.contains(&id) {
+                continue;
             }
+
+            let project = self.workspace_graph.get_project(&id)?;
+
+            self.visit_project_dependencies(&project, deep, &mut visited, &mut queue);
+        }
+
+        Ok(())
+    }
+
+    fn visit_project_dependencies(
+        &mut self,
+        project: &Project,
+        deep: bool,
+        visited: &mut FxHashSet<Id>,
+        queue: &mut VecDeque<Id>,
+    ) {
+        if !visited.insert(project.id.clone()) {
+            return;
         }
 
         for dep_config in &project.dependencies {
@@ -296,51 +373,55 @@ impl AffectedTracker {
                 .or_default()
                 .insert(AffectedBy::DownstreamProject(project.id.clone()));
 
-            if depth == 0 && self.project_upstream == UpstreamScope::Direct {
+            if deep && !visited.contains(&dep_config.id) {
+                queue.push_back(dep_config.id.clone());
+            }
+        }
+    }
+
+    fn track_project_dependents(&mut self, projects: &[&Project]) -> miette::Result<()> {
+        if self.project_downstream == DownstreamScope::None {
+            trace!("Not tracking project dependents as downstream scope is none");
+
+            return Ok(());
+        }
+
+        let deep = self.project_downstream == DownstreamScope::Deep;
+        let mut visited = FxHashSet::default();
+        let mut queue = VecDeque::new();
+
+        for project in projects {
+            trace!(
+                project_id = project.id.as_str(),
+                "Tracking {} project dependents",
+                if deep { "deep" } else { "direct" }
+            );
+
+            self.visit_project_dependents(project, deep, &mut visited, &mut queue);
+        }
+
+        while let Some(id) = queue.pop_front() {
+            if visited.contains(&id) {
                 continue;
             }
 
-            let dep_project = self.workspace_graph.get_project(&dep_config.id)?;
+            let project = self.workspace_graph.get_project(&id)?;
 
-            self.track_project_dependencies(&dep_project, depth + 1, cycle)?;
+            self.visit_project_dependents(&project, deep, &mut visited, &mut queue);
         }
 
         Ok(())
     }
 
-    fn track_project_dependents(
+    fn visit_project_dependents(
         &mut self,
         project: &Project,
-        depth: u16,
-        cycle: &mut FxHashSet<Id>,
-    ) -> miette::Result<()> {
-        if cycle.contains(&project.id) {
-            return Ok(());
-        }
-
-        cycle.insert(project.id.clone());
-
-        if self.project_downstream == DownstreamScope::None {
-            trace!(
-                project_id = project.id.as_str(),
-                "Not tracking project dependents as downstream scope is none"
-            );
-
-            return Ok(());
-        }
-
-        if depth == 0 {
-            if self.project_downstream == DownstreamScope::Direct {
-                trace!(
-                    project_id = project.id.as_str(),
-                    "Tracking direct project dependents"
-                );
-            } else {
-                trace!(
-                    project_id = project.id.as_str(),
-                    "Tracking deep project dependents"
-                );
-            }
+        deep: bool,
+        visited: &mut FxHashSet<Id>,
+        queue: &mut VecDeque<Id>,
+    ) {
+        if !visited.insert(project.id.clone()) {
+            return;
         }
 
         for dep_id in self.workspace_graph.projects.dependents_of(project) {
@@ -349,84 +430,67 @@ impl AffectedTracker {
                 .or_default()
                 .insert(AffectedBy::UpstreamProject(project.id.clone()));
 
-            if depth == 0 && self.project_downstream == DownstreamScope::Direct {
-                continue;
+            if deep && !visited.contains(&dep_id) {
+                queue.push_back(dep_id);
             }
-
-            let dep_project = self.workspace_graph.get_project(&dep_id)?;
-
-            self.track_project_dependents(&dep_project, depth + 1, cycle)?;
         }
-
-        Ok(())
     }
 
-    pub fn track_tasks(&mut self) -> miette::Result<()> {
+    pub async fn track_tasks(&mut self) -> miette::Result<()> {
         // Include internal since they can trigger affected for any dependents!
         let tasks = self.workspace_graph.get_tasks_with_internal()?;
 
-        self.track_tasks_by_instance(&tasks)
+        self.track_tasks_by_instance(&tasks).await
     }
 
-    pub fn track_tasks_by_instance(&mut self, tasks: &[Arc<Task>]) -> miette::Result<()> {
-        debug!("Tracking tasks and marking any affected");
-
-        for task in tasks {
-            if let Some(affected) = self.is_task_affected(task)? {
-                self.mark_task_affected(task, affected)?;
-            }
-        }
-
-        Ok(())
-    }
-
-    pub async fn track_tasks_async(&mut self) -> miette::Result<()> {
-        // Include internal since they can trigger affected for any dependents!
-        let tasks = self.workspace_graph.get_tasks_with_internal()?;
-
-        self.track_tasks_by_instance_async(&tasks).await
-    }
-
-    pub async fn track_tasks_by_instance_async(
-        &mut self,
-        tasks: &[Arc<Task>],
-    ) -> miette::Result<()> {
+    pub async fn track_tasks_by_instance(&mut self, tasks: &[Arc<Task>]) -> miette::Result<()> {
         debug!("Tracking tasks and marking any affected");
 
         let ci = self.ci;
-        let downstream = self.task_downstream;
-        let upstream = self.task_upstream;
+        let changed_files = Arc::clone(&self.changed_files);
+        let workspace_graph = Arc::clone(&self.workspace_graph);
+        let cache = Arc::clone(&self.cache);
+        let mut affected_tasks = vec![];
 
-        // Include internal since they can trigger affected for any dependents!
+        // Check every task in parallel, as each check is independent, then
+        // mark them and walk their relationships all at once. Checks are cheap
+        // enough that spawning one per task would cost more than the check
+        // itself, so they're batched, with enough batches to fill the pool
+        let batch_size = tasks.len().div_ceil(get_concurrency() * 4).max(1);
+
         run_pooled_tasks(
-            VecDeque::from_iter(tasks),
-            |task| {
-                let task = Arc::clone(task);
-                let changed_files = Arc::clone(&self.changed_files);
-                let workspace_graph = Arc::clone(&self.workspace_graph);
+            VecDeque::from_iter(tasks.chunks(batch_size).map(|batch| batch.to_vec())),
+            |batch| {
+                let changed_files = Arc::clone(&changed_files);
+                let workspace_graph = Arc::clone(&workspace_graph);
+                let cache = Arc::clone(&cache);
 
-                Ok(TaskTracker {
-                    changed_files,
-                    ci,
-                    downstream,
-                    task,
-                    tracked: FxHashMap::default(),
-                    tracked_projects: FxHashMap::default(),
-                    upstream,
-                    workspace_graph,
-                }
-                .track())
+                Ok(async move {
+                    let mut results = Vec::with_capacity(batch.len());
+
+                    for task in batch {
+                        let affected = is_task_directly_affected(
+                            &task,
+                            &changed_files,
+                            &workspace_graph.root,
+                            ci,
+                            &cache,
+                        )?;
+
+                        results.push((task, affected));
+                    }
+
+                    Ok(results)
+                })
             },
-            |tracker| {
-                for (task_target, affected) in tracker.tracked {
-                    self.tasks.entry(task_target).or_default().extend(affected);
-                }
-
-                for (project_id, affected) in tracker.tracked_projects {
-                    self.projects
-                        .entry(project_id)
-                        .or_default()
-                        .extend(affected);
+            |results| {
+                for (task, affected) in results {
+                    match affected {
+                        Some(affected) => affected_tasks.push((task, affected)),
+                        None => {
+                            self.unaffected_tasks.insert(task.target.clone());
+                        }
+                    };
                 }
 
                 Ok(())
@@ -434,99 +498,42 @@ impl AffectedTracker {
         )
         .await?;
 
-        Ok(())
+        self.mark_tasks_affected(affected_tasks)
     }
 
-    pub fn track_tasks_by_target(&mut self, targets: &[Target]) -> miette::Result<()> {
-        debug!(
-            task_targets = ?targets.iter().map(|target| target.as_str()).collect::<Vec<_>>(),
-            "Tracking tasks by target and marking any affected",
-        );
-
-        for target in targets {
-            let task = self.workspace_graph.get_task(target)?;
-
-            if let Some(affected) = self.is_task_affected(&task)? {
-                self.mark_task_affected(&task, affected)?;
-            }
-        }
-
-        Ok(())
-    }
-
-    pub async fn track_tasks_by_target_async(&mut self, targets: &[Target]) -> miette::Result<()> {
+    pub async fn track_tasks_by_target(&mut self, targets: &[Target]) -> miette::Result<()> {
         let mut tasks = Vec::with_capacity(targets.len());
 
         for target in targets {
             tasks.push(self.workspace_graph.get_task(target)?);
         }
 
-        self.track_tasks_by_instance_async(&tasks).await
+        self.track_tasks_by_instance(&tasks).await
     }
 
-    pub fn is_task_affected(&self, task: &Task) -> miette::Result<Option<AffectedBy>> {
+    pub fn is_task_affected(&mut self, task: &Task) -> miette::Result<Option<AffectedBy>> {
         if self.is_task_marked_ignoring_relations(task) {
             return Ok(Some(AffectedBy::AlreadyMarked));
         }
 
-        // Special CI handling
-        match (self.ci, &task.options.run_in_ci) {
-            (true, TaskOptionRunInCI::Always) => {
-                return Ok(Some(AffectedBy::AlwaysAffected));
-            }
-            (true, TaskOptionRunInCI::Enabled(false))
-            | (true, TaskOptionRunInCI::Skip)
-            | (false, TaskOptionRunInCI::Only) => {
-                return Ok(None);
-            }
-            _ => {}
-        };
-
-        // Never affected
-        if task.state.empty_inputs {
+        // Was already checked, so don't check again
+        if self.unaffected_tasks.contains(&task.target) {
             return Ok(None);
         }
 
-        // By env vars
-        if !task.input_env.is_empty() {
-            let bag = GlobalEnvBag::instance();
+        let affected = is_task_directly_affected(
+            task,
+            &self.changed_files,
+            &self.workspace_graph.root,
+            self.ci,
+            &self.cache,
+        )?;
 
-            for var_name in &task.input_env {
-                if let Some(var) = bag.get(var_name)
-                    && !var.is_empty()
-                {
-                    return Ok(Some(AffectedBy::EnvironmentVariable(var_name.to_owned())));
-                }
-            }
+        if affected.is_none() {
+            self.unaffected_tasks.insert(task.target.clone());
         }
 
-        // By files
-        let globset = task.create_globset()?;
-
-        for file in self.changed_files.iter() {
-            let affected = if let Some(params) = task.input_files.get(file) {
-                match &params.content {
-                    Some(matcher) => {
-                        let abs_file = file.to_logical_path(&self.workspace_graph.root);
-
-                        if abs_file.exists() {
-                            matcher.is_match(&fs::read_file(abs_file)?)
-                        } else {
-                            false
-                        }
-                    }
-                    None => true,
-                }
-            } else {
-                globset.matches(file.as_str())
-            };
-
-            if affected {
-                return Ok(Some(AffectedBy::ChangedFile(file.to_owned())));
-            }
-        }
-
-        Ok(None)
+        Ok(affected)
     }
 
     pub fn is_task_marked(&self, task: &Task) -> bool {
@@ -550,10 +557,7 @@ impl AffectedTracker {
         if affected == AffectedBy::AlreadyMarked {
             // May have been already marked through an indirect dep,
             // but that doesn't mean its own deps have been checked!
-            self.track_task_dependencies(task, 0, &mut FxHashSet::default())?;
-            self.track_task_dependents(task, 0, &mut FxHashSet::default())?;
-
-            return Ok(());
+            return self.track_task_relations(&[task]);
         }
 
         trace!(
@@ -566,52 +570,108 @@ impl AffectedTracker {
             .or_default()
             .insert(affected);
 
-        self.track_task_dependencies(task, 0, &mut FxHashSet::default())?;
-        self.track_task_dependents(task, 0, &mut FxHashSet::default())?;
+        self.mark_task_project_affected(task);
+        self.track_task_relations(&[task])
+    }
 
-        if let Ok(project_id) = task.target.get_project_id() {
-            self.projects
-                .entry(Id::raw(project_id))
+    fn mark_tasks_affected(&mut self, tasks: Vec<(Arc<Task>, AffectedBy)>) -> miette::Result<()> {
+        let mut marked = Vec::with_capacity(tasks.len());
+
+        for (task, affected) in tasks {
+            trace!(
+                task_target = task.target.as_str(),
+                "Marking task as affected"
+            );
+
+            self.tasks
+                .entry(task.target.clone())
                 .or_default()
-                .insert(AffectedBy::Task(task.target.clone()));
+                .insert(affected);
+
+            self.mark_task_project_affected(&task);
+
+            marked.push(task);
+        }
+
+        let marked = marked.iter().map(|task| task.as_ref()).collect::<Vec<_>>();
+
+        self.track_task_relations(&marked)
+    }
+
+    /// The owning project is affected by its affected tasks.
+    fn mark_task_project_affected(&mut self, task: &Task) {
+        if let Ok(project_id) = task.target.get_project_id() {
+            let affected = AffectedBy::Task(task.target.clone());
+
+            // Only allocate an ID when the project hasn't been marked yet
+            match self.projects.get_mut(project_id) {
+                Some(by_list) => {
+                    by_list.insert(affected);
+                }
+                None => {
+                    self.projects
+                        .entry(Id::raw(project_id))
+                        .or_default()
+                        .insert(affected);
+                }
+            };
+        }
+    }
+
+    /// Walk the relationships of the provided tasks, which have all been
+    /// marked as affected, and mark their dependencies and dependents. Every
+    /// task is visited once, no matter how many of the provided tasks reach
+    /// it, so the work is bound by the size of the graph.
+    fn track_task_relations(&mut self, tasks: &[&Task]) -> miette::Result<()> {
+        self.track_task_dependencies(tasks)?;
+        self.track_task_dependents(tasks)?;
+
+        Ok(())
+    }
+
+    fn track_task_dependencies(&mut self, tasks: &[&Task]) -> miette::Result<()> {
+        if self.task_upstream == UpstreamScope::None {
+            trace!("Not tracking task dependencies as upstream scope is none");
+
+            return Ok(());
+        }
+
+        let deep = self.task_upstream == UpstreamScope::Deep;
+        let mut visited = FxHashSet::default();
+        let mut queue = VecDeque::new();
+
+        for task in tasks {
+            trace!(
+                task_target = task.target.as_str(),
+                "Tracking {} task dependencies",
+                if deep { "deep" } else { "direct" }
+            );
+
+            self.visit_task_dependencies(task, deep, &mut visited, &mut queue);
+        }
+
+        while let Some(target) = queue.pop_front() {
+            if visited.contains(&target) {
+                continue;
+            }
+
+            let task = self.workspace_graph.get_task(&target)?;
+
+            self.visit_task_dependencies(&task, deep, &mut visited, &mut queue);
         }
 
         Ok(())
     }
 
-    fn track_task_dependencies(
+    fn visit_task_dependencies(
         &mut self,
         task: &Task,
-        depth: u16,
-        cycle: &mut FxHashSet<Target>,
-    ) -> miette::Result<()> {
-        if cycle.contains(&task.target) {
-            return Ok(());
-        }
-
-        cycle.insert(task.target.clone());
-
-        if self.task_upstream == UpstreamScope::None {
-            trace!(
-                task_target = task.target.as_str(),
-                "Not tracking task dependencies as upstream scope is none"
-            );
-
-            return Ok(());
-        }
-
-        if depth == 0 {
-            if self.task_upstream == UpstreamScope::Direct {
-                trace!(
-                    task_target = task.target.as_str(),
-                    "Tracking direct task dependencies"
-                );
-            } else {
-                trace!(
-                    task_target = task.target.as_str(),
-                    "Tracking deep task dependencies"
-                );
-            }
+        deep: bool,
+        visited: &mut FxHashSet<Target>,
+        queue: &mut VecDeque<Target>,
+    ) {
+        if !visited.insert(task.target.clone()) {
+            return;
         }
 
         for dep_config in &task.deps {
@@ -620,51 +680,55 @@ impl AffectedTracker {
                 .or_default()
                 .insert(AffectedBy::DownstreamTask(task.target.clone()));
 
-            if depth == 0 && self.task_upstream == UpstreamScope::Direct {
+            if deep && !visited.contains(&dep_config.target) {
+                queue.push_back(dep_config.target.clone());
+            }
+        }
+    }
+
+    fn track_task_dependents(&mut self, tasks: &[&Task]) -> miette::Result<()> {
+        if self.task_downstream == DownstreamScope::None {
+            trace!("Not tracking task dependents as downstream scope is none");
+
+            return Ok(());
+        }
+
+        let deep = self.task_downstream == DownstreamScope::Deep;
+        let mut visited = FxHashSet::default();
+        let mut queue = VecDeque::new();
+
+        for task in tasks {
+            trace!(
+                task_target = task.target.as_str(),
+                "Tracking {} task dependents",
+                if deep { "deep" } else { "direct" }
+            );
+
+            self.visit_task_dependents(task, deep, &mut visited, &mut queue);
+        }
+
+        while let Some(target) = queue.pop_front() {
+            if visited.contains(&target) {
                 continue;
             }
 
-            let dep_task = self.workspace_graph.get_task(&dep_config.target)?;
+            let task = self.workspace_graph.get_task(&target)?;
 
-            self.track_task_dependencies(&dep_task, depth + 1, cycle)?;
+            self.visit_task_dependents(&task, deep, &mut visited, &mut queue);
         }
 
         Ok(())
     }
 
-    fn track_task_dependents(
+    fn visit_task_dependents(
         &mut self,
         task: &Task,
-        depth: u16,
-        cycle: &mut FxHashSet<Target>,
-    ) -> miette::Result<()> {
-        if cycle.contains(&task.target) {
-            return Ok(());
-        }
-
-        cycle.insert(task.target.clone());
-
-        if self.task_downstream == DownstreamScope::None {
-            trace!(
-                task_target = task.target.as_str(),
-                "Not tracking task dependents as downstream scope is none"
-            );
-
-            return Ok(());
-        }
-
-        if depth == 0 {
-            if self.task_downstream == DownstreamScope::Direct {
-                trace!(
-                    task_target = task.target.as_str(),
-                    "Tracking direct task dependents"
-                );
-            } else {
-                trace!(
-                    task_target = task.target.as_str(),
-                    "Tracking deep task dependents"
-                );
-            }
+        deep: bool,
+        visited: &mut FxHashSet<Target>,
+        queue: &mut VecDeque<Target>,
+    ) {
+        if !visited.insert(task.target.clone()) {
+            return;
         }
 
         for dep_target in self.workspace_graph.tasks.dependents_of(task) {
@@ -673,16 +737,10 @@ impl AffectedTracker {
                 .or_default()
                 .insert(AffectedBy::UpstreamTask(task.target.clone()));
 
-            if depth == 0 && self.task_downstream == DownstreamScope::Direct {
-                continue;
+            if deep && !visited.contains(&dep_target) {
+                queue.push_back(dep_target);
             }
-
-            let dep_task = self.workspace_graph.get_task(&dep_target)?;
-
-            self.track_task_dependents(&dep_task, depth + 1, cycle)?;
         }
-
-        Ok(())
     }
 }
 
@@ -693,9 +751,170 @@ impl fmt::Debug for AffectedTracker {
             .field("projects", &self.projects)
             .field("project_downstream", &self.project_downstream)
             .field("project_upstream", &self.project_upstream)
+            .field("unaffected_projects", &self.unaffected_projects)
             .field("tasks", &self.tasks)
             .field("task_downstream", &self.task_downstream)
             .field("task_upstream", &self.task_upstream)
+            .field("unaffected_tasks", &self.unaffected_tasks)
             .finish()
+    }
+}
+
+fn is_project_directly_affected(
+    project: &Project,
+    changed_files: &FxHashSet<WorkspaceRelativePathBuf>,
+) -> Option<AffectedBy> {
+    let file = if project.is_root_level() {
+        // If at the root, any visible file affects it
+        changed_files
+            .iter()
+            .find(|file| !file.as_str().starts_with('.'))
+    } else {
+        changed_files
+            .iter()
+            .find(|file| file.starts_with(&project.source))
+    };
+
+    file.map(|file| AffectedBy::ChangedFile(file.to_owned()))
+}
+
+fn is_task_directly_affected(
+    task: &Task,
+    changed_files: &FxHashSet<WorkspaceRelativePathBuf>,
+    workspace_root: &Path,
+    ci: bool,
+    cache: &CheckCache,
+) -> miette::Result<Option<AffectedBy>> {
+    // Special CI handling
+    match (ci, &task.options.run_in_ci) {
+        (true, TaskOptionRunInCI::Always) => {
+            return Ok(Some(AffectedBy::AlwaysAffected));
+        }
+        (true, TaskOptionRunInCI::Enabled(false))
+        | (true, TaskOptionRunInCI::Skip)
+        | (false, TaskOptionRunInCI::Only) => {
+            return Ok(None);
+        }
+        _ => {}
+    };
+
+    // Never affected
+    if task.state.empty_inputs {
+        return Ok(None);
+    }
+
+    // By env vars
+    if !task.input_env.is_empty() {
+        let bag = GlobalEnvBag::instance();
+
+        for var_name in &task.input_env {
+            // Only check for a non-empty value, instead of allocating a copy of it
+            if bag.get_as(var_name, |value| !value.is_empty()) == Some(true) {
+                return Ok(Some(AffectedBy::EnvironmentVariable(var_name.to_owned())));
+            }
+        }
+    }
+
+    // By files
+    if task.input_files.is_empty() && task.input_globs.is_empty() {
+        return Ok(None);
+    }
+
+    // Only match globs when there are input globs, as nothing can match
+    // without them, and resolving the glob set is not free
+    let glob_matches = if task.input_globs.is_empty() {
+        None
+    } else {
+        Some(cache.match_globs(&task.create_globset()?, changed_files))
+    };
+
+    for file in changed_files {
+        let affected = if let Some(params) = task.input_files.get(file) {
+            match &params.content {
+                Some(matcher) => match cache.read_file(workspace_root, file)? {
+                    Some(contents) => matcher.is_match(&contents),
+                    None => false,
+                },
+                None => true,
+            }
+        } else {
+            glob_matches
+                .as_ref()
+                .is_some_and(|matches| matches.contains(file))
+        };
+
+        if affected {
+            return Ok(Some(AffectedBy::ChangedFile(file.to_owned())));
+        }
+    }
+
+    Ok(None)
+}
+
+/// Caches shared between all task checks within a tracking pass.
+#[derive(Default)]
+struct CheckCache {
+    /// Contents of changed files that are matched by content. Many tasks
+    /// may match against the same file, so it's only read once.
+    file_contents: scc::HashMap<WorkspaceRelativePathBuf, Option<Arc<String>>>,
+
+    /// The changed files that each compiled glob set matches, keyed by the
+    /// set's address, as sets are shared between tasks with the same patterns.
+    /// Every task matches the same files, so each set only matches them once.
+    glob_matches: scc::HashMap<usize, Arc<FxHashSet<WorkspaceRelativePathBuf>>>,
+}
+
+impl CheckCache {
+    fn match_globs(
+        &self,
+        globset: &Arc<GlobSet<'static>>,
+        changed_files: &FxHashSet<WorkspaceRelativePathBuf>,
+    ) -> Arc<FxHashSet<WorkspaceRelativePathBuf>> {
+        let key = Arc::as_ptr(globset).addr();
+
+        if let Some(matches) = self
+            .glob_matches
+            .read_sync(&key, |_, matches| Arc::clone(matches))
+        {
+            return matches;
+        }
+
+        let matches = Arc::new(
+            changed_files
+                .iter()
+                .filter(|file| globset.matches(file.as_str()))
+                .cloned()
+                .collect::<FxHashSet<_>>(),
+        );
+
+        let _ = self.glob_matches.insert_sync(key, Arc::clone(&matches));
+
+        matches
+    }
+
+    fn read_file(
+        &self,
+        workspace_root: &Path,
+        file: &WorkspaceRelativePathBuf,
+    ) -> miette::Result<Option<Arc<String>>> {
+        if let Some(contents) = self
+            .file_contents
+            .read_sync(file, |_, contents| contents.clone())
+        {
+            return Ok(contents);
+        }
+
+        let contents = match fs::read_file(file.to_logical_path(workspace_root)) {
+            Ok(contents) => Some(Arc::new(contents)),
+            // A deleted file is still a changed file, but has nothing to match
+            Err(FsError::Read { error, .. }) if error.kind() == io::ErrorKind::NotFound => None,
+            Err(error) => return Err(error.into()),
+        };
+
+        let _ = self
+            .file_contents
+            .insert_sync(file.to_owned(), contents.clone());
+
+        Ok(contents)
     }
 }

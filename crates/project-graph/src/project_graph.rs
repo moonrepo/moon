@@ -434,6 +434,15 @@ impl ProjectGraph {
     }
 
     fn internal_get(&self, id_or_alias: &str) -> miette::Result<Arc<Project>> {
+        // Already expanded projects are the hot path for graph traversals,
+        // so read them without locking the bucket or allocating an ID
+        if let Some(project) = self
+            .projects
+            .read_sync(id_or_alias, |_, project| Arc::clone(project))
+        {
+            return Ok(project);
+        }
+
         let id = self.resolve_id(id_or_alias);
 
         let project = match self.projects.entry_sync(id) {

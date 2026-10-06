@@ -39,14 +39,8 @@ pub async fn affected(session: MoonSession, args: QueryAffectedArgs) -> SessionR
     );
     affected_tracker.set_ci_check(is_ci());
     affected_tracker.set_scopes(args.upstream, args.downstream);
-
-    if session.workspace_config.experiments.async_affected_tracking {
-        affected_tracker.track_projects_async().await?;
-        affected_tracker.track_tasks_async().await?;
-    } else {
-        affected_tracker.track_projects()?;
-        affected_tracker.track_tasks()?;
-    }
+    affected_tracker.track_projects().await?;
+    affected_tracker.track_tasks().await?;
 
     let affected = affected_tracker.build();
 

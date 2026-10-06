@@ -94,7 +94,7 @@ pub async fn projects(session: MoonSession, args: QueryProjectsArgs) -> SessionR
         let mut affected_tracker = AffectedTracker::new(workspace_graph.clone(), changed_files);
         affected_tracker.set_ci_check(is_ci());
         affected_tracker.set_project_scopes(args.upstream, args.downstream);
-        affected_tracker.track_projects_async().await?;
+        affected_tracker.track_projects().await?;
 
         options.affected = Some(affected_tracker.build());
     }

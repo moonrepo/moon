@@ -79,7 +79,7 @@ mod affected_projects {
         let changed_files = FxHashSet::default();
 
         let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-        tracker.track_projects().unwrap();
+        tracker.track_projects().await.unwrap();
         let affected = tracker.build();
 
         assert!(affected.projects.is_empty());
@@ -91,7 +91,7 @@ mod affected_projects {
         let changed_files = FxHashSet::from_iter(["a/file.txt".into()]);
 
         let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-        tracker.track_projects().unwrap();
+        tracker.track_projects().await.unwrap();
         let affected = tracker.build();
 
         assert_eq!(
@@ -117,7 +117,7 @@ mod affected_projects {
 
         let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::None);
-        tracker.track_projects().unwrap();
+        tracker.track_projects().await.unwrap();
         let affected = tracker.build();
 
         assert_eq!(
@@ -141,7 +141,7 @@ mod affected_projects {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::None);
-            tracker.track_projects().unwrap();
+            tracker.track_projects().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -160,7 +160,7 @@ mod affected_projects {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_project_scopes(UpstreamScope::Direct, DownstreamScope::None);
-            tracker.track_projects().unwrap();
+            tracker.track_projects().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -181,7 +181,7 @@ mod affected_projects {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_project_scopes(UpstreamScope::Direct, DownstreamScope::None);
-            tracker.track_projects().unwrap();
+            tracker.track_projects().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -200,7 +200,7 @@ mod affected_projects {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_project_scopes(UpstreamScope::Deep, DownstreamScope::None);
-            tracker.track_projects().unwrap();
+            tracker.track_projects().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -222,7 +222,7 @@ mod affected_projects {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_project_scopes(UpstreamScope::Deep, DownstreamScope::None);
-            tracker.track_projects().unwrap();
+            tracker.track_projects().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -241,7 +241,7 @@ mod affected_projects {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_project_scopes(UpstreamScope::Deep, DownstreamScope::None);
-            tracker.track_projects().unwrap();
+            tracker.track_projects().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -270,7 +270,7 @@ mod affected_projects {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::None);
-            tracker.track_projects().unwrap();
+            tracker.track_projects().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -289,7 +289,7 @@ mod affected_projects {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::Direct);
-            tracker.track_projects().unwrap();
+            tracker.track_projects().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -310,7 +310,7 @@ mod affected_projects {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::Direct);
-            tracker.track_projects().unwrap();
+            tracker.track_projects().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -329,7 +329,7 @@ mod affected_projects {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::Deep);
-            tracker.track_projects().unwrap();
+            tracker.track_projects().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -350,7 +350,7 @@ mod affected_projects {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::Deep);
-            tracker.track_projects().unwrap();
+            tracker.track_projects().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -369,7 +369,7 @@ mod affected_projects {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::Deep);
-            tracker.track_projects().unwrap();
+            tracker.track_projects().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -437,7 +437,7 @@ mod affected_tasks {
         let changed_files = FxHashSet::default();
 
         let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-        tracker.track_tasks().unwrap();
+        tracker.track_tasks().await.unwrap();
         let affected = tracker.build();
 
         assert!(affected.tasks.is_empty());
@@ -451,6 +451,7 @@ mod affected_tasks {
         let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker
             .track_tasks_by_target(&[Target::parse("base:no-inputs").unwrap()])
+            .await
             .unwrap();
         let affected = tracker.build();
 
@@ -465,6 +466,7 @@ mod affected_tasks {
         let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker
             .track_tasks_by_target(&[Target::parse("base:by-file").unwrap()])
+            .await
             .unwrap();
         let affected = tracker.build();
 
@@ -487,6 +489,7 @@ mod affected_tasks {
         let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker
             .track_tasks_by_target(&[Target::parse("base:by-file-match").unwrap()])
+            .await
             .unwrap();
         let affected = tracker.build();
 
@@ -509,6 +512,7 @@ mod affected_tasks {
         let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker
             .track_tasks_by_target(&[Target::parse("base:by-file-match").unwrap()])
+            .await
             .unwrap();
         let affected = tracker.build();
 
@@ -523,6 +527,7 @@ mod affected_tasks {
         let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker
             .track_tasks_by_target(&[Target::parse("base:by-glob").unwrap()])
+            .await
             .unwrap();
         let affected = tracker.build();
 
@@ -546,6 +551,7 @@ mod affected_tasks {
         let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker
             .track_tasks_by_target(&[Target::parse("base:by-env").unwrap()])
+            .await
             .unwrap();
         let affected = tracker.build();
 
@@ -568,6 +574,7 @@ mod affected_tasks {
         let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker
             .track_tasks_by_target(&[Target::parse("self:c").unwrap()])
+            .await
             .unwrap();
         let affected = tracker.build();
 
@@ -598,6 +605,7 @@ mod affected_tasks {
         let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker
             .track_tasks_by_target(&[Target::parse("parent:child").unwrap()])
+            .await
             .unwrap();
         let affected = tracker.build();
 
@@ -631,7 +639,7 @@ mod affected_tasks {
 
         let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker.set_task_scopes(UpstreamScope::Direct, DownstreamScope::Direct);
-        tracker.track_tasks().unwrap();
+        tracker.track_tasks().await.unwrap();
         let affected = tracker.build();
 
         assert_eq!(
@@ -660,7 +668,7 @@ mod affected_tasks {
 
         let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker.set_task_scopes(UpstreamScope::Direct, DownstreamScope::Direct);
-        tracker.track_tasks().unwrap();
+        tracker.track_tasks().await.unwrap();
         let affected = tracker.build();
 
         assert_eq!(
@@ -692,7 +700,7 @@ mod affected_tasks {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::None);
-            tracker.track_tasks().unwrap();
+            tracker.track_tasks().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -717,7 +725,7 @@ mod affected_tasks {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::Direct, DownstreamScope::None);
-            tracker.track_tasks().unwrap();
+            tracker.track_tasks().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -746,7 +754,7 @@ mod affected_tasks {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::Direct, DownstreamScope::None);
-            tracker.track_tasks().unwrap();
+            tracker.track_tasks().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -771,7 +779,7 @@ mod affected_tasks {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
-            tracker.track_tasks().unwrap();
+            tracker.track_tasks().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -804,7 +812,7 @@ mod affected_tasks {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
-            tracker.track_tasks().unwrap();
+            tracker.track_tasks().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -829,7 +837,7 @@ mod affected_tasks {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
-            tracker.track_tasks().unwrap();
+            tracker.track_tasks().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -867,7 +875,7 @@ mod affected_tasks {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::None);
-            tracker.track_tasks().unwrap();
+            tracker.track_tasks().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -892,7 +900,7 @@ mod affected_tasks {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Direct);
-            tracker.track_tasks().unwrap();
+            tracker.track_tasks().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -925,7 +933,7 @@ mod affected_tasks {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Direct);
-            tracker.track_tasks().unwrap();
+            tracker.track_tasks().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -950,7 +958,7 @@ mod affected_tasks {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
-            tracker.track_tasks().unwrap();
+            tracker.track_tasks().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -983,7 +991,7 @@ mod affected_tasks {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
-            tracker.track_tasks().unwrap();
+            tracker.track_tasks().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -1008,7 +1016,7 @@ mod affected_tasks {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
-            tracker.track_tasks().unwrap();
+            tracker.track_tasks().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -1045,7 +1053,7 @@ mod affected_tasks {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
-            tracker.track_tasks().unwrap();
+            tracker.track_tasks().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -1070,7 +1078,7 @@ mod affected_tasks {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
-            tracker.track_tasks().unwrap();
+            tracker.track_tasks().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -1099,7 +1107,7 @@ mod affected_tasks {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
-            tracker.track_tasks().unwrap();
+            tracker.track_tasks().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -1132,7 +1140,7 @@ mod affected_tasks {
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
-            tracker.track_tasks().unwrap();
+            tracker.track_tasks().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -1171,6 +1179,7 @@ mod affected_tasks {
             tracker.set_ci_check(true);
             tracker
                 .track_tasks_by_target(&[Target::parse("ci:enabled").unwrap()])
+                .await
                 .unwrap();
             let affected = tracker.build();
 
@@ -1192,6 +1201,7 @@ mod affected_tasks {
             tracker.set_ci_check(false);
             tracker
                 .track_tasks_by_target(&[Target::parse("ci:enabled").unwrap()])
+                .await
                 .unwrap();
             let affected = tracker.build();
 
@@ -1213,6 +1223,7 @@ mod affected_tasks {
             tracker.set_ci_check(true);
             tracker
                 .track_tasks_by_target(&[Target::parse("ci:disabled").unwrap()])
+                .await
                 .unwrap();
             let affected = tracker.build();
 
@@ -1228,6 +1239,7 @@ mod affected_tasks {
             tracker.set_ci_check(false);
             tracker
                 .track_tasks_by_target(&[Target::parse("ci:disabled").unwrap()])
+                .await
                 .unwrap();
             let affected = tracker.build();
 
@@ -1249,6 +1261,7 @@ mod affected_tasks {
             tracker.set_ci_check(true);
             tracker
                 .track_tasks_by_target(&[Target::parse("ci:always").unwrap()])
+                .await
                 .unwrap();
             let affected = tracker.build();
 
@@ -1273,6 +1286,7 @@ mod affected_tasks {
             tracker.set_ci_check(true);
             tracker
                 .track_tasks_by_target(&[Target::parse("ci:only").unwrap()])
+                .await
                 .unwrap();
             let affected = tracker.build();
 
@@ -1294,6 +1308,7 @@ mod affected_tasks {
             tracker.set_ci_check(false);
             tracker
                 .track_tasks_by_target(&[Target::parse("ci:only").unwrap()])
+                .await
                 .unwrap();
             let affected = tracker.build();
 
@@ -1309,6 +1324,7 @@ mod affected_tasks {
             tracker.set_ci_check(true);
             tracker
                 .track_tasks_by_target(&[Target::parse("ci:skip").unwrap()])
+                .await
                 .unwrap();
             let affected = tracker.build();
 
@@ -1324,6 +1340,7 @@ mod affected_tasks {
             tracker.set_ci_check(false);
             tracker
                 .track_tasks_by_target(&[Target::parse("ci:skip").unwrap()])
+                .await
                 .unwrap();
             let affected = tracker.build();
 

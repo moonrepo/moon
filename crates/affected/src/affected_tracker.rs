@@ -139,19 +139,7 @@ impl AffectedTracker {
         self
     }
 
-    pub fn track_projects(&mut self) -> miette::Result<&mut Self> {
-        debug!("Tracking projects and marking any affected");
-
-        for project in self.workspace_graph.get_projects()? {
-            if let Some(affected) = self.is_project_affected(&project) {
-                self.mark_project_affected(&project, affected)?;
-            }
-        }
-
-        Ok(self)
-    }
-
-    pub async fn track_projects_async(&mut self) -> miette::Result<&mut Self> {
+    pub async fn track_projects(&mut self) -> miette::Result<&mut Self> {
         debug!("Tracking projects and marking any affected");
 
         let downstream = self.project_downstream;
@@ -361,36 +349,14 @@ impl AffectedTracker {
         Ok(())
     }
 
-    pub fn track_tasks(&mut self) -> miette::Result<()> {
+    pub async fn track_tasks(&mut self) -> miette::Result<()> {
         // Include internal since they can trigger affected for any dependents!
         let tasks = self.workspace_graph.get_tasks_with_internal()?;
 
-        self.track_tasks_by_instance(&tasks)
+        self.track_tasks_by_instance(&tasks).await
     }
 
-    pub fn track_tasks_by_instance(&mut self, tasks: &[Arc<Task>]) -> miette::Result<()> {
-        debug!("Tracking tasks and marking any affected");
-
-        for task in tasks {
-            if let Some(affected) = self.is_task_affected(task)? {
-                self.mark_task_affected(task, affected)?;
-            }
-        }
-
-        Ok(())
-    }
-
-    pub async fn track_tasks_async(&mut self) -> miette::Result<()> {
-        // Include internal since they can trigger affected for any dependents!
-        let tasks = self.workspace_graph.get_tasks_with_internal()?;
-
-        self.track_tasks_by_instance_async(&tasks).await
-    }
-
-    pub async fn track_tasks_by_instance_async(
-        &mut self,
-        tasks: &[Arc<Task>],
-    ) -> miette::Result<()> {
+    pub async fn track_tasks_by_instance(&mut self, tasks: &[Arc<Task>]) -> miette::Result<()> {
         debug!("Tracking tasks and marking any affected");
 
         let ci = self.ci;
@@ -437,31 +403,14 @@ impl AffectedTracker {
         Ok(())
     }
 
-    pub fn track_tasks_by_target(&mut self, targets: &[Target]) -> miette::Result<()> {
-        debug!(
-            task_targets = ?targets.iter().map(|target| target.as_str()).collect::<Vec<_>>(),
-            "Tracking tasks by target and marking any affected",
-        );
-
-        for target in targets {
-            let task = self.workspace_graph.get_task(target)?;
-
-            if let Some(affected) = self.is_task_affected(&task)? {
-                self.mark_task_affected(&task, affected)?;
-            }
-        }
-
-        Ok(())
-    }
-
-    pub async fn track_tasks_by_target_async(&mut self, targets: &[Target]) -> miette::Result<()> {
+    pub async fn track_tasks_by_target(&mut self, targets: &[Target]) -> miette::Result<()> {
         let mut tasks = Vec::with_capacity(targets.len());
 
         for target in targets {
             tasks.push(self.workspace_graph.get_task(target)?);
         }
 
-        self.track_tasks_by_instance_async(&tasks).await
+        self.track_tasks_by_instance(&tasks).await
     }
 
     pub fn is_task_affected(&self, task: &Task) -> miette::Result<Option<AffectedBy>> {

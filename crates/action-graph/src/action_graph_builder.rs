@@ -370,7 +370,7 @@ impl<'query> ActionGraphBuilder<'query> {
             // order, as a project or task marked through another one's
             // relationship walk never runs its own checks and walks,
             // starving transitive dependents of marks.
-            affected.track_projects_async().await?;
+            affected.track_projects().await?;
         }
 
         Ok(())
@@ -671,9 +671,9 @@ impl<'query> ActionGraphBuilder<'query> {
             // task on the other side of it has been marked itself, and that task
             // is quite often not one that was requested
             if reqs.include_relations {
-                affected.track_tasks_async().await?;
+                affected.track_tasks().await?;
             } else {
-                affected.track_tasks_by_instance_async(&tasks).await?;
+                affected.track_tasks_by_instance(&tasks).await?;
             }
         }
 

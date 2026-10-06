@@ -688,20 +688,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "blake3"
-version = "1.8.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d9e454fc11f76977dc803893aff6304ed33d6a26efae8696573bea74baa27ae"
-dependencies = [
- "arrayvec",
- "cc",
- "cfg-if",
- "constant_time_eq",
- "cpufeatures 0.3.1",
- "memmap2 0.9.11",
-]
-
-[[package]]
 name = "block-buffer"
 version = "0.10.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1405,12 +1391,6 @@ dependencies = [
  "quote",
  "unicode-xid",
 ]
-
-[[package]]
-name = "constant_time_eq"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d52eff69cd5e647efe296129160853a42795992097e8af39800e1060caeea9b"
 
 [[package]]
 name = "content_inspector"
@@ -5751,9 +5731,9 @@ dependencies = [
 name = "moon_cache"
 version = "0.0.1"
 dependencies = [
- "blake3",
  "codspeed-criterion-compat",
  "miette 7.6.0",
+ "moon_async_utils",
  "moon_bench_utils",
  "moon_cache_item",
  "moon_cache_storage",
@@ -5764,7 +5744,7 @@ dependencies = [
  "moon_hash",
  "moon_target",
  "moon_time",
- "moon_vcs",
+ "scc",
  "serde",
  "starbase_sandbox",
  "starbase_utils",

@@ -142,19 +142,10 @@ async fn hash_input_paths(
 ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
     let paths = paths.into_iter().collect::<Vec<_>>();
 
-    if context.workspace_config.experiments.native_file_hashing {
-        context
-            .cache_engine
-            .hash_files(&context.workspace_root, &paths)
-            .await
-    } else {
-        context
-            .vcs
-            .as_ref()
-            .expect("VCS required!")
-            .get_file_hashes(&paths, true)
-            .await
-    }
+    context
+        .cache_engine
+        .hash_files(&context.workspace_root, &paths)
+        .await
 }
 
 /// Tasks may only be inherited when a file exists within a project

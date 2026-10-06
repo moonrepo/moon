@@ -1,6 +1,7 @@
 use miette::IntoDiagnostic;
 use std::collections::{BTreeMap, VecDeque};
-use std::sync::OnceLock;
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::{Arc, OnceLock};
 use tokio::task::JoinSet;
 
 pub fn get_concurrency() -> usize {
@@ -79,6 +80,80 @@ where
                 return Err(error);
             }
         };
+    }
+
+    Ok(())
+}
+
+pub async fn run_pooled_blocking_tasks<I, O, In, Out>(
+    inputs: Vec<I>,
+    on_input: In,
+    mut on_output: Out,
+) -> miette::Result<()>
+where
+    I: Send + Sync + 'static,
+    O: Send + 'static,
+    In: Fn(&I) -> miette::Result<O> + Send + Sync + 'static,
+    Out: FnMut(O) -> miette::Result<()>,
+{
+    if inputs.is_empty() {
+        return Ok(());
+    }
+
+    let inputs = Arc::new(inputs);
+    let on_input = Arc::new(on_input);
+    let next_index = Arc::new(AtomicUsize::new(0));
+    // Blocking tasks can't be aborted, so they stop pulling inputs instead
+    let cancelled = Arc::new(AtomicBool::new(false));
+    let mut set = JoinSet::new();
+
+    for _ in 0..get_concurrency().min(inputs.len()) {
+        let inputs = Arc::clone(&inputs);
+        let on_input = Arc::clone(&on_input);
+        let next_index = Arc::clone(&next_index);
+        let cancelled = Arc::clone(&cancelled);
+
+        set.spawn_blocking(move || {
+            let mut outputs = vec![];
+
+            while !cancelled.load(Ordering::Relaxed) {
+                let index = next_index.fetch_add(1, Ordering::Relaxed);
+
+                let Some(input) = inputs.get(index) else {
+                    break;
+                };
+
+                match on_input(input) {
+                    Ok(output) => outputs.push((index, output)),
+                    Err(error) => {
+                        cancelled.store(true, Ordering::Relaxed);
+
+                        return Err(error);
+                    }
+                }
+            }
+
+            Ok(outputs)
+        });
+    }
+
+    let mut completed = BTreeMap::new();
+
+    while let Some(result) = set.join_next().await {
+        match result.into_diagnostic() {
+            Ok(Ok(outputs)) => {
+                completed.extend(outputs);
+            }
+            Ok(Err(error)) | Err(error) => {
+                cancelled.store(true, Ordering::Relaxed);
+
+                return Err(error);
+            }
+        }
+    }
+
+    for (_, output) in completed {
+        on_output(output)?;
     }
 
     Ok(())

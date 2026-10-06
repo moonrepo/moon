@@ -191,6 +191,94 @@ mod cache_engine {
             assert!(result.contains_key(&rel("exists.txt")));
         }
 
+        fn backdate(path: &std::path::Path, secs: u64) {
+            let modified = std::time::SystemTime::now() - std::time::Duration::from_secs(secs);
+            std::fs::File::options()
+                .write(true)
+                .open(path)
+                .unwrap()
+                .set_modified(modified)
+                .unwrap();
+        }
+
+        #[tokio::test]
+        async fn memoizes_hashes_of_settled_files() {
+            let sandbox = create_empty_sandbox();
+            sandbox.create_file("a.txt", "hello");
+            backdate(&sandbox.path().join("a.txt"), 60);
+
+            let engine = create_engine(&sandbox);
+            let files = [rel("a.txt")];
+
+            let first = engine.hash_files(sandbox.path(), &files).await.unwrap();
+
+            assert_eq!(engine.file_hasher.memoized_count(), 1);
+
+            let second = engine.hash_files(sandbox.path(), &files).await.unwrap();
+
+            assert_eq!(first, second);
+        }
+
+        #[tokio::test]
+        async fn does_not_memoize_recently_modified_files() {
+            let sandbox = create_empty_sandbox();
+            sandbox.create_file("a.txt", "hello");
+
+            let engine = create_engine(&sandbox);
+            let files = [rel("a.txt")];
+
+            engine.hash_files(sandbox.path(), &files).await.unwrap();
+
+            assert_eq!(engine.file_hasher.memoized_count(), 0);
+
+            // Same length, so only the content distinguishes them
+            sandbox.create_file("a.txt", "world");
+
+            let changed = engine.hash_files(sandbox.path(), &files).await.unwrap();
+
+            assert_eq!(
+                changed[&rel("a.txt")],
+                "486ea46224d1bb4fb680f34f7c9ad96a8f24ec88be73ea8e5a6c65260e9cb8a7"
+            );
+        }
+
+        #[tokio::test]
+        async fn rehashes_memoized_files_when_modified() {
+            let sandbox = create_empty_sandbox();
+            sandbox.create_file("a.txt", "hello");
+            backdate(&sandbox.path().join("a.txt"), 60);
+
+            let engine = create_engine(&sandbox);
+            let files = [rel("a.txt")];
+
+            let before = engine.hash_files(sandbox.path(), &files).await.unwrap();
+
+            sandbox.create_file("a.txt", "world");
+
+            let after = engine.hash_files(sandbox.path(), &files).await.unwrap();
+
+            assert_ne!(before[&rel("a.txt")], after[&rel("a.txt")]);
+        }
+
+        #[tokio::test]
+        async fn hashes_large_files_across_buffers() {
+            let sandbox = create_empty_sandbox();
+            let content = "x".repeat(64 * 1024 * 3 + 123);
+            sandbox.create_file("big.txt", &content);
+
+            let engine = create_engine(&sandbox);
+
+            let result = engine
+                .hash_files(sandbox.path(), &[rel("big.txt")])
+                .await
+                .unwrap();
+
+            assert_eq!(
+                result[&rel("big.txt")],
+                starbase_utils::hash::sha256::from_bytes(content.as_bytes())
+            );
+        }
+
         #[tokio::test]
         async fn skips_directories() {
             let sandbox = create_empty_sandbox();

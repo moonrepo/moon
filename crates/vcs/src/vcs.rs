@@ -2,7 +2,6 @@ use crate::changed_files::ChangedFiles;
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
 use moon_common::path::{WorkspaceRelativePath, WorkspaceRelativePathBuf};
-use std::collections::BTreeMap;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use version_spec::{MatchesVersion, Requirement, Version};
@@ -26,14 +25,6 @@ pub trait Vcs: Debug {
 
     /// Get the revision hash/number of the default branch's HEAD.
     async fn get_default_branch_revision(&self) -> miette::Result<String>;
-
-    /// Get a map of hashes for the provided files. Files *must* be relative from
-    /// the workspace root.
-    async fn get_file_hashes(
-        &self,
-        files: &[WorkspaceRelativePathBuf],
-        allow_ignored: bool,
-    ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>>;
 
     /// Get a list of all files in the provided directory, recursing through all sub-directories.
     /// Directory *must* be relative from the workspace root.

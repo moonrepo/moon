@@ -494,12 +494,6 @@
           "description": "Always use the task's outputStyle option, even when running the task as a primary target. @since 2.6.0",
           "type": "boolean",
           "markdownDescription": "Always use the task's `outputStyle` option, even when running the task as a primary target. @since 2.6.0"
-        },
-        "nativeFileHashing": {
-          "title": "nativeFileHashing",
-          "description": "Use native file hashing instead of using the VCS. @since 2.3.0",
-          "default": true,
-          "type": "boolean"
         }
       },
       "additionalProperties": false

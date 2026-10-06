@@ -1,12 +1,12 @@
+use crate::file_hasher::FileHasher;
 use crate::hash_engine::HashEngine;
 use crate::state_engine::StateEngine;
 use crate::{merge_clean_results, resolve_path};
-use miette::IntoDiagnostic;
 use moon_cache_item::*;
 use moon_cache_storage::{CacheContext, Storage};
 use moon_common::path::{WorkspaceRelativePathBuf, encode_component};
 use moon_env_var::GlobalEnvBag;
-use moon_hash::{ContentHash, ContentHasher, Digest};
+use moon_hash::{ContentHasher, Digest};
 use moon_time::parse_duration;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
@@ -17,7 +17,6 @@ use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 use std::time::Duration;
-use tokio::task::JoinSet;
 use tracing::{debug, instrument};
 
 #[derive(Debug)]
@@ -25,6 +24,9 @@ pub struct CacheEngine {
     /// The `.moon/cache` directory relative to workspace root.
     /// Contains cached items pertaining to runs and processes.
     pub cache_dir: PathBuf,
+
+    /// Hashes file contents, and memoizes them for the process.
+    pub file_hasher: FileHasher,
 
     /// Manages reading and writing of content hashable items.
     pub hash: HashEngine,
@@ -69,6 +71,7 @@ impl CacheEngine {
         let hash = HashEngine::new(dir)?;
 
         Ok(CacheEngine {
+            file_hasher: FileHasher::default(),
             hash,
             state: StateEngine::new(dir)?,
             storage: Storage::new(context.clone()),
@@ -156,42 +159,7 @@ impl CacheEngine {
         root: &Path,
         files: &[WorkspaceRelativePathBuf],
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
-        debug!("Hashing {} files", files.len());
-
-        let mut map = BTreeMap::new();
-        let mut set = JoinSet::<miette::Result<(WorkspaceRelativePathBuf, Option<String>)>>::new();
-        // let mmap_threshold = self.config.cas.mmap_threshold;
-
-        for file in files {
-            let abs_file = file.to_logical_path(root);
-            let rel_file = file.clone();
-
-            if !abs_file.is_file() {
-                continue;
-            }
-
-            set.spawn_blocking(move || {
-                // File may have been deleted since we were given the path,
-                // so check existence before hashing
-                if !abs_file.exists() {
-                    return Ok((rel_file, None));
-                }
-
-                let hash = ContentHash::hash_file(&abs_file)?;
-
-                Ok((rel_file, Some(hash.to_string())))
-            });
-        }
-
-        while let Some(result) = set.join_next().await {
-            let (file, hash) = result.into_diagnostic()??;
-
-            if let Some(hash) = hash {
-                map.insert(file, hash);
-            }
-        }
-
-        Ok(map)
+        self.file_hasher.hash_files(root, files).await
     }
 
     pub fn write<K, T>(&self, path: K, data: &T) -> miette::Result<()>

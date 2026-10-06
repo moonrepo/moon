@@ -156,6 +156,18 @@ mod http_remote_storage {
         }
 
         #[tokio::test]
+        async fn errors_when_host_drops_connections() {
+            // TEST-NET-1 is not routable, so the connection never completes
+            let sandbox = create_empty_sandbox();
+            let storage = create_storage_with_retries(&sandbox, "http://192.0.2.1:8080".into(), 0);
+            let start = std::time::Instant::now();
+
+            assert!(storage.connect().await.is_err());
+            assert!(!storage.is_readable());
+            assert!(start.elapsed() < std::time::Duration::from_secs(10));
+        }
+
+        #[tokio::test]
         async fn retries_status_after_transient_error() {
             let host = serve_sequence(vec![(503, ""), (200, "")]).await;
             let sandbox = create_empty_sandbox();

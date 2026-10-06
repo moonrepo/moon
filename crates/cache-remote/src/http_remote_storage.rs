@@ -23,6 +23,11 @@ use tokio::task::JoinSet;
 use tracing::{debug, error, warn};
 use warpgate::{HttpOptions, build_http_client, build_http_middleware};
 
+/// A healthy cache accepts a connection well within this, even over the
+/// internet. A host that doesn't is treated as unreachable and disabled for
+/// the run, instead of every request waiting on it.
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(2);
+
 #[derive(Debug)]
 pub struct HttpRemoteStorage {
     context: CacheContext,
@@ -58,6 +63,7 @@ impl HttpRemoteStorage {
         };
 
         let mut client = build_http_client(&options)?
+            .connect_timeout(CONNECT_TIMEOUT)
             .user_agent("moon")
             .gzip(true)
             .zstd(true)

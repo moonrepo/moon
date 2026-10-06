@@ -299,6 +299,23 @@ mod storage {
         assert!(lookup.await.unwrap().unwrap().is_some());
     }
 
+    #[tokio::test(start_paused = true)]
+    async fn load_manifest_stops_waiting_once_a_connection_wait_times_out() {
+        // The gate never opens, so the remote never finishes connecting
+        let remote = MemoryBackend::new("remote").connecting_until(Arc::new(Notify::new()));
+
+        let mut storage = create_storage();
+        storage.add_remote_backend(remote);
+        storage.spawn_connect_backends();
+
+        storage.load_task_manifest(&digest('a', 0)).await.unwrap();
+
+        let start = tokio::time::Instant::now();
+        storage.load_task_manifest(&digest('b', 0)).await.unwrap();
+
+        assert_eq!(start.elapsed(), std::time::Duration::ZERO);
+    }
+
     #[tokio::test]
     async fn load_manifest_returns_none_when_absent() {
         let mut storage = create_storage();

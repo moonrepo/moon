@@ -189,6 +189,10 @@ impl Storage {
                 .await
                 .is_err()
             {
+                // Stop later reads and writes from waiting again. A backend that
+                // connects after this is still used once it becomes readable.
+                self.connection.send_replace(ConnectionState::Finished);
+
                 warn!(
                     "Storage backends did not connect within {}s, skipping unconnected backends",
                     CONNECTION_WAIT_TIMEOUT.as_secs()

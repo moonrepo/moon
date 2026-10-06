@@ -1,5 +1,6 @@
 use moon_affected::*;
 use moon_common::Id;
+use moon_config::WorkspaceProjects;
 use moon_env_var::GlobalEnvBag;
 use moon_task::Target;
 use moon_test_utils::{WorkspaceGraph, WorkspaceMocker};
@@ -130,6 +131,53 @@ mod affected_projects {
                 (Id::raw("root"), create_state_from_file("a/file.txt")),
             ])
         );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn tracks_nested_projects() {
+        let sandbox = create_sandbox("projects");
+        sandbox.create_file("a/sub/file.txt", "");
+
+        let workspace_graph = WorkspaceMocker::new(sandbox.path())
+            .with_default_projects()
+            .with_global_envs()
+            .with_inherited_tasks()
+            .update_workspace_config(|config| {
+                if let WorkspaceProjects::Both(projects) = &mut config.projects {
+                    projects.sources.insert(Id::raw("sub"), "a/sub".into());
+                }
+            })
+            .mock_workspace_graph()
+            .await;
+
+        let changed_files = FxHashSet::from_iter(["a/sub/file.txt".into()]);
+
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
+        tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::None);
+        tracker.track_projects().await.unwrap();
+        let affected = tracker.build();
+
+        // Both the nested project, and the project it's nested within
+        assert_eq!(
+            affected.projects,
+            FxHashMap::from_iter([
+                (Id::raw("a"), create_state_from_file("a/sub/file.txt")),
+                (Id::raw("sub"), create_state_from_file("a/sub/file.txt")),
+                (Id::raw("root"), create_state_from_file("a/sub/file.txt")),
+            ])
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn doesnt_track_root_for_hidden_files() {
+        let workspace_graph = build_graph("projects").await;
+        let changed_files = FxHashSet::from_iter([".github/workflows/ci.yml".into()]);
+
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
+        tracker.track_projects().await.unwrap();
+        let affected = tracker.build();
+
+        assert!(affected.projects.is_empty());
     }
 
     mod checked {

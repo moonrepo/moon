@@ -23,6 +23,8 @@
       tasks was re-walked for each of them, which was quadratic for deep graphs.
     - Tasks and projects that have already been expanded are now read from the graph without
       locking, as every relationship walk reads them.
+    - Projects are now indexed by their source directory, so that each changed file only looks up
+      its ancestor directories, instead of every project scanning every changed file.
 
 ## 2.6.0
 

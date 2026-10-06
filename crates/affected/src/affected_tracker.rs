@@ -153,34 +153,66 @@ impl AffectedTracker {
     pub async fn track_projects(&mut self) -> miette::Result<&mut Self> {
         debug!("Tracking projects and marking any affected");
 
-        let changed_files = Arc::clone(&self.changed_files);
+        let projects = self.workspace_graph.get_projects()?;
+
+        // Index projects by their source directory, so that each changed
+        // file only needs to look up its ancestor directories, instead of
+        // every project scanning every changed file
+        let mut root_indexes = vec![];
+        let mut source_indexes: FxHashMap<&str, Vec<usize>> = FxHashMap::default();
+
+        for (index, project) in projects.iter().enumerate() {
+            if project.is_root_level() {
+                root_indexes.push(index);
+            } else {
+                source_indexes
+                    .entry(project.source.as_str().trim_end_matches('/'))
+                    .or_default()
+                    .push(index);
+            }
+        }
+
+        // A project is affected by the first changed file found within it
+        let mut matched_files: Vec<Option<&WorkspaceRelativePathBuf>> = vec![None; projects.len()];
+
+        for file in self.changed_files.iter() {
+            // If at the root, any file affects it
+            if !file.as_str().starts_with('.') {
+                for index in &root_indexes {
+                    matched_files[*index].get_or_insert(file);
+                }
+            }
+
+            let mut dir = file.parent();
+
+            while let Some(current) = dir {
+                if current.as_str().is_empty() {
+                    break;
+                }
+
+                if let Some(indexes) = source_indexes.get(current.as_str()) {
+                    for index in indexes {
+                        matched_files[*index].get_or_insert(file);
+                    }
+                }
+
+                dir = current.parent();
+            }
+        }
+
         let mut affected_projects = vec![];
 
-        // Check every project in parallel, as each check is independent,
-        // then mark them and walk their relationships all at once
-        run_pooled_tasks(
-            VecDeque::from(self.workspace_graph.get_projects()?),
-            |project| {
-                let changed_files = Arc::clone(&changed_files);
-
-                Ok(async move {
-                    let affected = is_project_directly_affected(&project, &changed_files);
-
-                    Ok((project, affected))
-                })
-            },
-            |(project, affected)| {
-                match affected {
-                    Some(affected) => affected_projects.push((project, affected)),
-                    None => {
-                        self.unaffected_projects.insert(project.id.clone());
-                    }
-                };
-
-                Ok(())
-            },
-        )
-        .await?;
+        for (index, file) in matched_files.into_iter().enumerate() {
+            match file {
+                Some(file) => affected_projects.push((
+                    Arc::clone(&projects[index]),
+                    AffectedBy::ChangedFile(file.to_owned()),
+                )),
+                None => {
+                    self.unaffected_projects.insert(projects[index].id.clone());
+                }
+            };
+        }
 
         self.mark_projects_affected(affected_projects)?;
 

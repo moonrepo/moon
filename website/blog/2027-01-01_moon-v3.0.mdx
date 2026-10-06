@@ -2,7 +2,11 @@
 slug: moon-v3.0
 title: moon v3.0 - ???
 authors: [milesj]
+<<<<<<< HEAD
 tags: [async, experiments, affected, hashing, cache, cas, graph, tasks]
+=======
+tags: [async, experiments, affected, hashing]
+>>>>>>> 2b1ba96cb6 (internal: Remove the native file hashing experiment and speed up file hashing (#2747))
 # image: ./img/moon/v2.6.png
 ---
 
@@ -12,21 +16,29 @@ TODO
 
 ## Resolved experiments
 
+<<<<<<< HEAD
 Over the last few releases, we've rebuilt moon's hottest code paths and its local cache, reworked
 how task output is displayed, and shipped these changes behind
 [experiments](/docs/config/workspace#experiments), most of which were enabled by default in v2.5.
+=======
+Over the last few releases, we've rebuilt moon's hottest code paths, shipped them behind
+[experiments](/docs/config/workspace#experiments), and then enabled them by default in v2.5.
+>>>>>>> 2b1ba96cb6 (internal: Remove the native file hashing experiment and speed up file hashing (#2747))
 They've since proven themselves, so in v3, the following experiments have been resolved. Their
 implementation is now the _only_ implementation, the previous one has been removed, and the setting
 no longer exists.
 
 - `asyncAffectedTracking` (added in v2.2) - Affected projects and tasks are now always tracked
   asynchronously, and the synchronous tracker has been removed.
+<<<<<<< HEAD
 - `asyncGraphBuilding` (added in v2.2) - The project and task graphs are now always built
   asynchronously, and the synchronous builder has been removed.
 - `casOutputsCache` (added in v2.3) - Task outputs are now always stored in the local
   content-addressable cache, and the tarball-based cache has been removed.
 - `explicitTaskOutputStyle` (added in v2.6) - A task's `outputStyle` option is now always applied,
   including to primary targets, which previously ignored it and always displayed their output.
+=======
+>>>>>>> 2b1ba96cb6 (internal: Remove the native file hashing experiment and speed up file hashing (#2747))
 - `nativeFileHashing` (added in v2.3) - Files are now always hashed natively within moon's task
   pool, and hashing files through the VCS has been removed.
 
@@ -36,9 +48,12 @@ a resolved experiment, so be sure to remove it.
 ```diff title=".moon/workspace.yml"
  experiments:
 -  asyncAffectedTracking: true
+<<<<<<< HEAD
 -  asyncGraphBuilding: true
 -  casOutputsCache: true
 -  explicitTaskOutputStyle: true
+=======
+>>>>>>> 2b1ba96cb6 (internal: Remove the native file hashing experiment and speed up file hashing (#2747))
 -  nativeFileHashing: true
 ```
 
@@ -46,6 +61,7 @@ Their `MOON_EXPERIMENT_*` environment variables, like `MOON_EXPERIMENT_ASYNC_AFF
 longer have any effect. If you had disabled one of these experiments to work around an issue,
 please [report it](https://github.com/moonrepo/moon/issues), as it can no longer be disabled.
 
+<<<<<<< HEAD
 If you had disabled `asyncGraphBuilding` because of a dependency cycle error, the cycle itself is
 the problem, as the synchronous builder would silently drop some of the edges that formed it. Break
 the cycle, or move one of its edges to a different dependency scope, so that it crosses the
@@ -115,6 +131,8 @@ than `stream`, its output is now captured even when run directly, and is only di
 exits. [Interactive tasks](/docs/config/project#interactive) are still the exception, as they must
 remain attached to the terminal, and always stream their output.
 
+=======
+>>>>>>> 2b1ba96cb6 (internal: Remove the native file hashing experiment and speed up file hashing (#2747))
 ## Performance improvements
 
 With the experiments resolved, we no longer have to keep two implementations of the same code path
@@ -156,6 +174,7 @@ with coarse timestamps can't serve a stale hash.
 Files are also now hashed by a fixed pool of workers, instead of spawning a task per file, and each
 file is stat-ed once instead of twice.
 
+<<<<<<< HEAD
 ### Project and task graphs
 
 Building the project and task graphs is now **~3x faster**, and far more consistent. In our
@@ -184,6 +203,8 @@ cached, and task options are omitted when they're the default value. The cache i
 atomically, so if moon is interrupted while saving it, the next run rebuilds the graphs, instead of
 loading an outdated one.
 
+=======
+>>>>>>> 2b1ba96cb6 (internal: Remove the native file hashing experiment and speed up file hashing (#2747))
 ## Other changes
 
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v3.0.0) for a full list

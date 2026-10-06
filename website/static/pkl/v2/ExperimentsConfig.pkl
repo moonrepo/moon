@@ -3,10 +3,6 @@
 /// Configures experiments across the entire moon workspace.
 module ExperimentsConfig
 
-/// Track and determine affected projects and tasks asynchronously.
-/// @since 2.2.0
-asyncAffectedTracking: Boolean?
-
 /// Build the project and task graphs asynchronously.
 /// @since 2.2.0
 asyncGraphBuilding: Boolean?

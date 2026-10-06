@@ -213,14 +213,6 @@ export interface ExperimentsConfig {
 	 * @env MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE
 	 */
 	explicitTaskOutputStyle: boolean;
-	/**
-	 * Use native file hashing instead of using the VCS.
-	 * @since 2.3.0
-	 *
-	 * @default true
-	 * @env MOON_EXPERIMENT_NATIVE_FILE_HASHING
-	 */
-	nativeFileHashing?: boolean;
 }
 
 /** Configures the generator for scaffolding from templates. */
@@ -926,14 +918,6 @@ export interface PartialExperimentsConfig {
 	 * @env MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE
 	 */
 	explicitTaskOutputStyle?: boolean | null;
-	/**
-	 * Use native file hashing instead of using the VCS.
-	 * @since 2.3.0
-	 *
-	 * @default true
-	 * @env MOON_EXPERIMENT_NATIVE_FILE_HASHING
-	 */
-	nativeFileHashing?: boolean | null;
 }
 
 /** Configures the generator for scaffolding from templates. */

@@ -15,7 +15,3 @@ casOutputsCache: Boolean?
 /// the task as a primary target.
 /// @since 2.6.0
 explicitTaskOutputStyle: Boolean?
-
-/// Use native file hashing instead of using the VCS.
-/// @since 2.3.0
-nativeFileHashing: Boolean?

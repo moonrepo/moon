@@ -27,6 +27,10 @@
       its ancestor directories, instead of every project scanning every changed file.
     - Changed files that are matched by content (the `content` input setting) are now read once,
       instead of once for every task that matches against them.
+    - Compiled glob sets are now cached by their patterns, and shared between all tasks with the
+      same globs, which most tasks have through inheritance and defaults. Previously, every task
+      compiled its own copy, which was the single largest cost of tracking. Changed files are also
+      only matched against each distinct glob set once, instead of once per task.
 
 ## 2.6.0
 

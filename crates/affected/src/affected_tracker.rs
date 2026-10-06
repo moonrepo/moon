@@ -8,6 +8,7 @@ use moon_task::{Target, Task, TaskOptionRunInCI};
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::fs::{self, FsError};
+use starbase_utils::glob::GlobSet;
 use std::collections::VecDeque;
 use std::fmt;
 use std::io;
@@ -802,12 +803,12 @@ fn is_task_directly_affected(
         return Ok(None);
     }
 
-    // Only compile the glob set when there are input globs, as nothing
-    // can match without them, and compiling is expensive
-    let globset = if task.input_globs.is_empty() {
+    // Only match globs when there are input globs, as nothing can match
+    // without them, and resolving the glob set is not free
+    let glob_matches = if task.input_globs.is_empty() {
         None
     } else {
-        Some(task.create_globset()?)
+        Some(cache.match_globs(&task.create_globset()?, changed_files))
     };
 
     for file in changed_files {
@@ -820,9 +821,9 @@ fn is_task_directly_affected(
                 None => true,
             }
         } else {
-            globset
+            glob_matches
                 .as_ref()
-                .is_some_and(|globset| globset.matches(file.as_str()))
+                .is_some_and(|matches| matches.contains(file))
         };
 
         if affected {
@@ -839,9 +840,41 @@ struct CheckCache {
     /// Contents of changed files that are matched by content. Many tasks
     /// may match against the same file, so it's only read once.
     file_contents: scc::HashMap<WorkspaceRelativePathBuf, Option<Arc<String>>>,
+
+    /// The changed files that each compiled glob set matches, keyed by the
+    /// set's address, as sets are shared between tasks with the same patterns.
+    /// Every task matches the same files, so each set only matches them once.
+    glob_matches: scc::HashMap<usize, Arc<FxHashSet<WorkspaceRelativePathBuf>>>,
 }
 
 impl CheckCache {
+    fn match_globs(
+        &self,
+        globset: &Arc<GlobSet<'static>>,
+        changed_files: &FxHashSet<WorkspaceRelativePathBuf>,
+    ) -> Arc<FxHashSet<WorkspaceRelativePathBuf>> {
+        let key = Arc::as_ptr(globset).addr();
+
+        if let Some(matches) = self
+            .glob_matches
+            .read_sync(&key, |_, matches| Arc::clone(matches))
+        {
+            return matches;
+        }
+
+        let matches = Arc::new(
+            changed_files
+                .iter()
+                .filter(|file| globset.matches(file.as_str()))
+                .cloned()
+                .collect::<FxHashSet<_>>(),
+        );
+
+        let _ = self.glob_matches.insert_sync(key, Arc::clone(&matches));
+
+        matches
+    }
+
     fn read_file(
         &self,
         workspace_root: &Path,

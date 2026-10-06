@@ -6563,6 +6563,7 @@ dependencies = [
  "moon_feature_flags",
  "moon_target",
  "rustc-hash",
+ "scc",
  "serde",
  "starbase_sandbox",
  "starbase_utils",

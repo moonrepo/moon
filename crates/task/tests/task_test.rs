@@ -53,6 +53,74 @@ mod task {
         assert_eq!(files.len(), 0);
     }
 
+    mod create_globset {
+        use super::*;
+        use std::sync::Arc;
+
+        fn create_task(inputs: &[&str], outputs: &[&str]) -> Task {
+            Task {
+                input_globs: inputs
+                    .iter()
+                    .map(|glob| {
+                        (
+                            WorkspaceRelativePathBuf::from(*glob),
+                            TaskGlobInput::default(),
+                        )
+                    })
+                    .collect(),
+                output_globs: outputs
+                    .iter()
+                    .map(|glob| {
+                        (
+                            WorkspaceRelativePathBuf::from(*glob),
+                            TaskGlobOutput::default(),
+                        )
+                    })
+                    .collect(),
+                ..Default::default()
+            }
+        }
+
+        #[test]
+        fn shares_compiled_sets_with_the_same_patterns() {
+            let a = create_task(&["src/**/*", "*.json"], &["dist/**/*"])
+                .create_globset()
+                .unwrap();
+            let b = create_task(&["*.json", "src/**/*"], &["dist/**/*"])
+                .create_globset()
+                .unwrap();
+
+            assert!(Arc::ptr_eq(&a, &b));
+            assert!(a.matches("src/index.ts"));
+            assert!(a.matches("package.json"));
+            assert!(!a.matches("dist/index.js"));
+            assert!(!a.matches("other/file.ts"));
+        }
+
+        #[test]
+        fn doesnt_share_compiled_sets_with_different_patterns() {
+            let a = create_task(&["src/**/*"], &[]).create_globset().unwrap();
+            let b = create_task(&["src/**/*"], &["dist/**/*"])
+                .create_globset()
+                .unwrap();
+            let c = create_task(&["lib/**/*"], &[]).create_globset().unwrap();
+
+            assert!(!Arc::ptr_eq(&a, &b));
+            assert!(!Arc::ptr_eq(&a, &c));
+            assert!(!Arc::ptr_eq(&b, &c));
+        }
+
+        #[test]
+        fn treats_negated_inputs_as_negations() {
+            let globset = create_task(&["src/**/*", "!src/**/*.test.ts"], &[])
+                .create_globset()
+                .unwrap();
+
+            assert!(globset.matches("src/index.ts"));
+            assert!(!globset.matches("src/index.test.ts"));
+        }
+    }
+
     mod get_affected_files {
         use super::*;
         use rustc_hash::FxHashSet;

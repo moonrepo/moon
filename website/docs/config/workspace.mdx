@@ -421,20 +421,6 @@ Experiments are a work in progress and may be buggy. Please report any issues yo
 
 :::
 
-### `asyncAffectedTracking`<VersionLabel version="2.2.0" />
-
-<HeadingApiLink to="/api/types/interface/ExperimentsConfig#asyncAffectedTracking" />
-
-Utilizes a new asynchronous implementation of the affected tracker that can improve performance by
-100-150%. Defaults to `true` in v2.5+, otherwise `false`.
-
-```yaml title=".moon/workspace.yml" {2}
-experiments:
-  asyncAffectedTracking: true
-```
-
-Can also be enabled with the `MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING` environment variable.
-
 ### `asyncGraphBuilding`<VersionLabel version="2.2.0" />
 
 <HeadingApiLink to="/api/types/interface/ExperimentsConfig#asyncGraphBuilding" />

@@ -24,7 +24,6 @@ pipeline:
   logRunningCommand: true
 
 experiments:
-  asyncAffectedTracking: true
   asyncGraphBuilding: true
   casOutputsCache: true
   nativeFileHashing: true

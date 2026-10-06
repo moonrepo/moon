@@ -13,6 +13,7 @@ name = "hash_files"
 harness = false
 
 [dependencies]
+moon_async_utils = { path = "../async-utils" }
 moon_cache_item = { path = "../cache-item" }
 moon_cache_storage = { path = "../cache-storage" }
 moon_cas = { path = "../cas" }
@@ -22,8 +23,8 @@ moon_env_var = { path = "../env-var" }
 moon_hash = { path = "../hash" }
 moon_target = { path = "../target" }
 moon_time = { path = "../time" }
-blake3 = { workspace = true }
 miette = { workspace = true }
+scc = { workspace = true }
 serde = { workspace = true }
 starbase_utils = { workspace = true, features = ["fs-lock", "json"] }
 tokio = { workspace = true }
@@ -31,7 +32,6 @@ tracing = { workspace = true }
 
 [dev-dependencies]
 moon_bench_utils = { path = "../bench-utils" }
-moon_vcs = { path = "../vcs" }
 criterion = { workspace = true }
 starbase_sandbox = { workspace = true }
 

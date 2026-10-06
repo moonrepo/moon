@@ -470,23 +470,6 @@ experiments:
 
 Can also be enabled with the `MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE` environment variable.
 
-### `nativeFileHashing`<VersionLabel version="2.3.0" />
-
-<HeadingApiLink to="/api/types/interface/ExperimentsConfig#nativeFileHashing" />
-
-Replaces the VCS-based file hashing mechanism with a custom native implementation that runs within
-moon's task pool. In our benchmarks this improves performance by 10-50% depending on workspace size
-and file count. Defaults to `true` in v2.5+, otherwise `false`.
-
-```yaml title=".moon/workspace.yml" {2}
-experiments:
-  nativeFileHashing: true
-```
-
-Can also be enabled with the `MOON_EXPERIMENT_NATIVE_FILE_HASHING` environment variable.
-
-> The hasher can be tuned through the top-level [`cache`](#cache) setting.
-
 ## `generator`
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#generator" />

@@ -1,8 +1,10 @@
 mod cache_engine;
+mod file_hasher;
 mod hash_engine;
 mod state_engine;
 
 pub use cache_engine::*;
+pub use file_hasher::*;
 pub use hash_engine::*;
 pub use moon_cache_item::*;
 pub use moon_cache_storage::*;

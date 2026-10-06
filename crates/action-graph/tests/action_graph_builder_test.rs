@@ -1642,13 +1642,12 @@ mod action_graph_builder {
                     .collect()
             }
 
-            // The `affected-starve` fixture pins `asyncAffectedTracking: false`
-            // to cover the synchronous tracker, whose marks would otherwise
-            // depend on target insertion order: a task marked through another
-            // task's relationship walk before its own visit never ran its own
-            // checks and walks, starving transitive dependents of marks.
+            // The `affected-starve` fixture covers marks that must not depend
+            // on target insertion order. Previously, a task marked through
+            // another task's relationship walk before its own visit never ran
+            // its own checks and walks, starving transitive dependents of marks.
             #[tokio::test(flavor = "multi_thread")]
-            async fn sync_includes_deep_dependents_regardless_of_target_order() {
+            async fn includes_deep_dependents_regardless_of_target_order() {
                 let sandbox = create_sandbox("affected-starve");
                 let mut container = ActionGraphContainer::new(sandbox.path());
 
@@ -1699,7 +1698,7 @@ mod action_graph_builder {
             }
 
             #[tokio::test(flavor = "multi_thread")]
-            async fn sync_includes_deep_dependents_when_base_task_ordered_last() {
+            async fn includes_deep_dependents_when_base_task_ordered_last() {
                 let sandbox = create_sandbox("affected-starve");
                 let mut container = ActionGraphContainer::new(sandbox.path());
 
@@ -1752,7 +1751,7 @@ mod action_graph_builder {
             // changed file used to relation-mark the middle project's build
             // before its visit, dropping its test task entirely
             #[tokio::test(flavor = "multi_thread")]
-            async fn sync_stays_monotonic_when_change_set_grows() {
+            async fn stays_monotonic_when_change_set_grows() {
                 let sandbox = create_sandbox("affected-starve");
                 let mut container = ActionGraphContainer::new(sandbox.path());
 
@@ -1809,17 +1808,9 @@ mod action_graph_builder {
             // affected task isn't one that was requested, tracking just the
             // requested targets leaves the relation unmarked, and the target is
             // dropped even though its dependency changed
-            async fn run_only_downstream_target(
-                async_tracking: bool,
-                include_relations: bool,
-            ) -> Vec<String> {
+            async fn run_only_downstream_target(include_relations: bool) -> Vec<String> {
                 let sandbox = create_sandbox("affected-starve");
                 let mut container = ActionGraphContainer::new(sandbox.path());
-
-                container.mocker = container.mocker.update_workspace_config(|config| {
-                    config.experiments.async_affected_tracking = async_tracking;
-                });
-
                 let wg = container.create_workspace_graph().await;
                 let mut builder = container.create_builder(wg.clone()).await;
 
@@ -1853,9 +1844,9 @@ mod action_graph_builder {
             }
 
             #[tokio::test(flavor = "multi_thread")]
-            async fn sync_marks_target_through_upstream_relations() {
+            async fn marks_target_through_upstream_relations() {
                 assert_eq!(
-                    run_only_downstream_target(false, true).await,
+                    run_only_downstream_target(true).await,
                     // `top:test` depends on `top:build`, so deep dependents
                     // pulls it in, while the dependencies reached through
                     // `top:build` do not expand their own dependents
@@ -1864,26 +1855,8 @@ mod action_graph_builder {
             }
 
             #[tokio::test(flavor = "multi_thread")]
-            async fn async_marks_target_through_upstream_relations() {
-                assert_eq!(
-                    run_only_downstream_target(true, true).await,
-                    // `top:test` depends on `top:build`, so deep dependents
-                    // pulls it in, while the dependencies reached through
-                    // `top:build` do not expand their own dependents
-                    ["base:build", "mid:build", "top:build", "top:test"]
-                );
-            }
-
-            // But without relations, only the changed files themselves can mark
-            // a task, so an unaffected target must stay out of the graph
-            #[tokio::test(flavor = "multi_thread")]
-            async fn sync_doesnt_mark_target_without_relations() {
-                assert!(run_only_downstream_target(false, false).await.is_empty());
-            }
-
-            #[tokio::test(flavor = "multi_thread")]
-            async fn async_doesnt_mark_target_without_relations() {
-                assert!(run_only_downstream_target(true, false).await.is_empty());
+            async fn doesnt_mark_target_without_relations() {
+                assert!(run_only_downstream_target(false).await.is_empty());
             }
         }
 

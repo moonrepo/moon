@@ -59,3 +59,58 @@ tasks:
 
     sandbox
 }
+
+/// Create a workspace where every project depends on the previous one,
+/// forming a single chain (`p0 <- p1 <- ... <- pN`), with a `build`
+/// task that depends on the `build` task of its dependency project.
+/// Useful for measuring relationship traversal, as every project and
+/// task has a deep upstream and downstream.
+pub fn create_chained_workspace(max: u16) -> Sandbox {
+    let sandbox = create_empty_sandbox();
+    sandbox.enable_git();
+
+    for i in 0..=max {
+        let dir = sandbox.path().join(format!("p{i}"));
+
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(
+            dir.join("moon.yml"),
+            if i == 0 {
+                r#"
+tasks:
+  build:
+    command: 'echo build'
+"#
+                .to_owned()
+            } else {
+                format!(
+                    r#"
+dependsOn: ['p{}']
+
+tasks:
+  build:
+    command: 'echo build'
+    deps: ['^:build']
+"#,
+                    i - 1
+                )
+            },
+        )
+        .unwrap();
+    }
+
+    let moon_dir = sandbox.path().join(".moon");
+
+    fs::create_dir_all(&moon_dir).unwrap();
+    fs::write(moon_dir.join("workspace.yml"), "projects: ['*']").unwrap();
+
+    sandbox.run_git(|cmd| {
+        cmd.args(["add", "--all"]);
+    });
+
+    sandbox.run_git(|cmd| {
+        cmd.args(["commit", "-m", "Initial commit"]);
+    });
+
+    sandbox
+}

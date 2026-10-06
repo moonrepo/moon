@@ -1,6 +1,13 @@
 use miette::IntoDiagnostic;
 use std::collections::{BTreeMap, VecDeque};
+use std::sync::OnceLock;
 use tokio::task::JoinSet;
+
+pub fn get_concurrency() -> usize {
+    static CONCURRENCY: OnceLock<usize> = OnceLock::new();
+
+    *CONCURRENCY.get_or_init(num_cpus::get)
+}
 
 pub async fn run_pooled_tasks<I, O, In, Fut, Out>(
     mut queue: VecDeque<I>,
@@ -13,7 +20,7 @@ where
     Fut: Future<Output = miette::Result<O>> + Send + 'static,
     Out: FnMut(O) -> miette::Result<()>,
 {
-    let concurrency = num_cpus::get();
+    let concurrency = get_concurrency();
     let mut set = JoinSet::new();
 
     // While tasks run concurrently and complete in any order, outputs are

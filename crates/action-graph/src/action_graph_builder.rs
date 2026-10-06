@@ -370,16 +370,7 @@ impl<'query> ActionGraphBuilder<'query> {
             // order, as a project or task marked through another one's
             // relationship walk never runs its own checks and walks,
             // starving transitive dependents of marks.
-            if self
-                .app_context
-                .workspace_config
-                .experiments
-                .async_affected_tracking
-            {
-                affected.track_projects_async().await?;
-            } else {
-                affected.track_projects()?;
-            }
+            affected.track_projects_async().await?;
         }
 
         Ok(())
@@ -675,26 +666,14 @@ impl<'query> ActionGraphBuilder<'query> {
         if !reqs.skip_affected
             && let Some(affected) = &mut self.affected
         {
-            let is_async = self
-                .app_context
-                .workspace_config
-                .experiments
-                .async_affected_tracking;
-
             // When including relations, every task must be tracked, not just the
             // requested ones. A task is only marked through a relation when the
             // task on the other side of it has been marked itself, and that task
             // is quite often not one that was requested
             if reqs.include_relations {
-                if is_async {
-                    affected.track_tasks_async().await?;
-                } else {
-                    affected.track_tasks()?;
-                }
-            } else if is_async {
-                affected.track_tasks_by_instance_async(&tasks).await?;
+                affected.track_tasks_async().await?;
             } else {
-                affected.track_tasks_by_instance(&tasks)?;
+                affected.track_tasks_by_instance_async(&tasks).await?;
             }
         }
 

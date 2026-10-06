@@ -91,12 +91,7 @@ pub async fn tasks(session: MoonSession, args: QueryTasksArgs) -> SessionResult 
         let mut affected_tracker = AffectedTracker::new(workspace_graph.clone(), changed_files);
         affected_tracker.set_ci_check(is_ci());
         affected_tracker.set_task_scopes(args.upstream, args.downstream);
-
-        if session.workspace_config.experiments.async_affected_tracking {
-            affected_tracker.track_tasks_async().await?;
-        } else {
-            affected_tracker.track_tasks()?;
-        }
+        affected_tracker.track_tasks_async().await?;
 
         options.affected = Some(affected_tracker.build());
     }

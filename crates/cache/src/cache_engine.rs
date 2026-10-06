@@ -64,6 +64,22 @@ impl CacheEngine {
             )?;
         }
 
+        // Remove directories from the legacy tarball-based cache, as task
+        // outputs and hash manifests now live in the CAS. Failures are ignored,
+        // as another process may be removing them at the same time.
+        for legacy_dir in [dir.join("hashes"), dir.join("outputs")] {
+            if legacy_dir.exists() {
+                debug!(dir = ?legacy_dir, "Removing legacy cache directory");
+
+                if let Err(error) = fs::remove_dir_all(&legacy_dir) {
+                    debug!(
+                        dir = ?legacy_dir,
+                        "Failed to remove legacy cache directory: {error}"
+                    );
+                }
+            }
+        }
+
         Ok(CacheEngine {
             file_hasher: FileHasher::default(),
             state: StateEngine::new(dir)?,

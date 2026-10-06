@@ -913,8 +913,8 @@ impl<'task> TaskRunner<'task> {
             HydrateOutcome::Hit => {
                 debug!(task_target, "Ran cache hydration operation");
 
-                // If not using a cache manifest, we need to read the locally cached
-                // stdout/stderr log files since the command executor does not run!
+                // Reusing the previous run's outputs, so read the stdout/stderr logs
+                // persisted by that run, since the command executor does not run!
                 if let Some(output) = operation.get_exec_output_mut() {
                     output.command = Some(self.task.get_command_line());
                     output.exit_code = Some(self.cache.data.exit_code);

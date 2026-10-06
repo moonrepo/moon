@@ -395,7 +395,7 @@ mod storage {
         manifest.digest_source = Some(TaskManifestFile {
             bytes: Some(Bytes::from_static(b"action")),
             digest: Some(action.clone()),
-            path: ".moon/cache/hashes/action.json".into(),
+            path: ".moon/cache/blobs/ac/tion".into(),
             ..Default::default()
         });
 

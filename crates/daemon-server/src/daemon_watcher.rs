@@ -231,7 +231,7 @@ mod tests {
     #[test]
     fn test_is_ignored_moon_cache() {
         assert!(is_ignored(&PathBuf::from(
-            "/workspace/.moon/cache/hashes/abc"
+            "/workspace/.moon/cache/blobs/ab/c"
         )));
     }
 

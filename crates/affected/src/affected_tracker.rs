@@ -7,9 +7,10 @@ use moon_project::Project;
 use moon_task::{Target, Task, TaskOptionRunInCI};
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
 use rustc_hash::{FxHashMap, FxHashSet};
-use starbase_utils::fs;
+use starbase_utils::fs::{self, FsError};
 use std::collections::VecDeque;
 use std::fmt;
+use std::io;
 use std::path::Path;
 use std::sync::Arc;
 use tracing::{debug, trace};
@@ -19,6 +20,7 @@ pub struct AffectedTracker {
 
     workspace_graph: Arc<WorkspaceGraph>,
     changed_files: Arc<FxHashSet<WorkspaceRelativePathBuf>>,
+    cache: Arc<CheckCache>,
 
     projects: FxHashMap<Id, FxHashSet<AffectedBy>>,
     project_downstream: DownstreamScope,
@@ -49,6 +51,7 @@ impl AffectedTracker {
         Self {
             workspace_graph,
             changed_files: Arc::new(changed_files),
+            cache: Arc::new(CheckCache::default()),
             projects: FxHashMap::default(),
             project_downstream: DownstreamScope::None,
             project_upstream: UpstreamScope::Deep,
@@ -445,6 +448,7 @@ impl AffectedTracker {
         let ci = self.ci;
         let changed_files = Arc::clone(&self.changed_files);
         let workspace_graph = Arc::clone(&self.workspace_graph);
+        let cache = Arc::clone(&self.cache);
         let mut affected_tasks = vec![];
 
         // Check every task in parallel, as each check is independent (and
@@ -454,6 +458,7 @@ impl AffectedTracker {
             |task| {
                 let changed_files = Arc::clone(&changed_files);
                 let workspace_graph = Arc::clone(&workspace_graph);
+                let cache = Arc::clone(&cache);
 
                 Ok(async move {
                     let affected = is_task_directly_affected(
@@ -461,6 +466,7 @@ impl AffectedTracker {
                         &changed_files,
                         &workspace_graph.root,
                         ci,
+                        &cache,
                     )?;
 
                     Ok((task, affected))
@@ -507,6 +513,7 @@ impl AffectedTracker {
             &self.changed_files,
             &self.workspace_graph.root,
             self.ci,
+            &self.cache,
         )?;
 
         if affected.is_none() {
@@ -757,6 +764,7 @@ fn is_task_directly_affected(
     changed_files: &FxHashSet<WorkspaceRelativePathBuf>,
     workspace_root: &Path,
     ci: bool,
+    cache: &CheckCache,
 ) -> miette::Result<Option<AffectedBy>> {
     // Special CI handling
     match (ci, &task.options.run_in_ci) {
@@ -805,15 +813,10 @@ fn is_task_directly_affected(
     for file in changed_files {
         let affected = if let Some(params) = task.input_files.get(file) {
             match &params.content {
-                Some(matcher) => {
-                    let abs_file = file.to_logical_path(workspace_root);
-
-                    if abs_file.exists() {
-                        matcher.is_match(&fs::read_file(abs_file)?)
-                    } else {
-                        false
-                    }
-                }
+                Some(matcher) => match cache.read_file(workspace_root, file)? {
+                    Some(contents) => matcher.is_match(&contents),
+                    None => false,
+                },
                 None => true,
             }
         } else {
@@ -828,4 +831,40 @@ fn is_task_directly_affected(
     }
 
     Ok(None)
+}
+
+/// Caches shared between all task checks within a tracking pass.
+#[derive(Default)]
+struct CheckCache {
+    /// Contents of changed files that are matched by content. Many tasks
+    /// may match against the same file, so it's only read once.
+    file_contents: scc::HashMap<WorkspaceRelativePathBuf, Option<Arc<String>>>,
+}
+
+impl CheckCache {
+    fn read_file(
+        &self,
+        workspace_root: &Path,
+        file: &WorkspaceRelativePathBuf,
+    ) -> miette::Result<Option<Arc<String>>> {
+        if let Some(contents) = self
+            .file_contents
+            .read_sync(file, |_, contents| contents.clone())
+        {
+            return Ok(contents);
+        }
+
+        let contents = match fs::read_file(file.to_logical_path(workspace_root)) {
+            Ok(contents) => Some(Arc::new(contents)),
+            // A deleted file is still a changed file, but has nothing to match
+            Err(FsError::Read { error, .. }) if error.kind() == io::ErrorKind::NotFound => None,
+            Err(error) => return Err(error.into()),
+        };
+
+        let _ = self
+            .file_contents
+            .insert_sync(file.to_owned(), contents.clone());
+
+        Ok(contents)
+    }
 }

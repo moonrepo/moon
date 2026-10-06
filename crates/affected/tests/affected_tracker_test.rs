@@ -702,6 +702,22 @@ mod affected_tasks {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn not_affected_by_file_if_content_matched_file_is_missing() {
+        // The file was changed (deleted), but doesn't exist to match against
+        let workspace_graph = build_graph("tasks").await;
+        let changed_files = FxHashSet::from_iter(["base/file.txt".into()]);
+
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
+        tracker
+            .track_tasks_by_target(&[Target::parse("base:by-file-match").unwrap()])
+            .await
+            .unwrap();
+        let affected = tracker.build();
+
+        assert!(affected.tasks.is_empty());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn not_affected_by_file_if_not_an_input() {
         let workspace_graph = build_graph("tasks").await;
         let changed_files = FxHashSet::from_iter(["base/other.txt".into()]);

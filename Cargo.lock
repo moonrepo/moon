@@ -5582,6 +5582,7 @@ dependencies = [
  "moon_test_utils",
  "moon_workspace_graph",
  "rustc-hash",
+ "scc",
  "serde",
  "starbase_sandbox",
  "starbase_utils",

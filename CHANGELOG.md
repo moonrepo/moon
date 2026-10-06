@@ -25,6 +25,8 @@
       locking, as every relationship walk reads them.
     - Projects are now indexed by their source directory, so that each changed file only looks up
       its ancestor directories, instead of every project scanning every changed file.
+    - Changed files that are matched by content (the `content` input setting) are now read once,
+      instead of once for every task that matches against them.
 
 ## 2.6.0
 

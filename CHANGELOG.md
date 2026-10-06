@@ -18,6 +18,11 @@
       longer checked again when building the action graph. Previously, every unaffected task had
       its inputs matched against the changed files twice.
     - Tasks without glob inputs no longer compile a glob set when matching changed files.
+    - Relationships are now walked once from every directly affected task and project, instead of
+      once per affected task and project. Previously, a dependency chain shared by many affected
+      tasks was re-walked for each of them, which was quadratic for deep graphs.
+    - Tasks and projects that have already been expanded are now read from the graph without
+      locking, as every relationship walk reads them.
 
 ## 2.6.0
 

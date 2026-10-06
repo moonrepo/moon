@@ -296,6 +296,67 @@ mod affected_projects {
                 ])
             );
         }
+
+        // Multiple affected projects share dependencies, which are
+        // walked once, but marked from every project that reaches them
+        #[tokio::test(flavor = "multi_thread")]
+        async fn deep_from_multiple_projects() {
+            let workspace_graph = build_graph("projects").await;
+            let changed_files = FxHashSet::from_iter(["a/file.txt".into(), "b/file.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
+            tracker.set_project_scopes(UpstreamScope::Deep, DownstreamScope::None);
+            tracker.track_projects().await.unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(affected.projects.len(), 5);
+            assert_eq!(
+                affected.projects[&Id::raw("a")],
+                create_state_from_file("a/file.txt")
+            );
+            assert_eq!(
+                affected.projects[&Id::raw("b")],
+                AffectedProjectState {
+                    files: FxHashSet::from_iter(["b/file.txt".into()]),
+                    downstream: FxHashSet::from_iter([Id::raw("a")]),
+                    ..Default::default()
+                }
+            );
+            assert_eq!(
+                affected.projects[&Id::raw("c")],
+                create_state_from_dependents(&["a", "b"])
+            );
+            assert_eq!(
+                affected.projects[&Id::raw("d")],
+                create_state_from_dependent("c")
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn direct_from_multiple_projects() {
+            let workspace_graph = build_graph("projects").await;
+            let changed_files = FxHashSet::from_iter(["a/file.txt".into(), "b/file.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
+            tracker.set_project_scopes(UpstreamScope::Direct, DownstreamScope::None);
+            tracker.track_projects().await.unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(affected.projects.len(), 4);
+            assert_eq!(
+                affected.projects[&Id::raw("b")],
+                AffectedProjectState {
+                    files: FxHashSet::from_iter(["b/file.txt".into()]),
+                    downstream: FxHashSet::from_iter([Id::raw("a")]),
+                    ..Default::default()
+                }
+            );
+            assert_eq!(
+                affected.projects[&Id::raw("c")],
+                create_state_from_dependents(&["a", "b"])
+            );
+            assert!(!affected.projects.contains_key(&Id::raw("d")));
+        }
     }
 
     mod project_downstream {
@@ -421,6 +482,41 @@ mod affected_projects {
                     ),
                     (Id::raw("root"), create_state_from_file("cycle-c/file.txt")),
                 ])
+            );
+        }
+
+        // Multiple affected projects share dependents, which are
+        // walked once, but marked from every project that reaches them
+        #[tokio::test(flavor = "multi_thread")]
+        async fn deep_from_multiple_projects() {
+            let workspace_graph = build_graph("projects").await;
+            let changed_files = FxHashSet::from_iter(["c/file.txt".into(), "d/file.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
+            tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::Deep);
+            tracker.track_projects().await.unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(affected.projects.len(), 5);
+            assert_eq!(
+                affected.projects[&Id::raw("d")],
+                create_state_from_file("d/file.txt")
+            );
+            assert_eq!(
+                affected.projects[&Id::raw("c")],
+                AffectedProjectState {
+                    files: FxHashSet::from_iter(["c/file.txt".into()]),
+                    upstream: FxHashSet::from_iter([Id::raw("d")]),
+                    ..Default::default()
+                }
+            );
+            assert_eq!(
+                affected.projects[&Id::raw("b")],
+                create_state_from_dependency("c")
+            );
+            assert_eq!(
+                affected.projects[&Id::raw("a")],
+                create_state_from_dependencies(&["b", "c"])
             );
         }
     }
@@ -796,6 +892,29 @@ mod affected_tasks {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn caches_checks() {
+            let workspace_graph = Arc::new(build_graph("tasks").await);
+            let task = workspace_graph
+                .get_task(&Target::parse("base:by-env").unwrap())
+                .unwrap();
+            let bag = GlobalEnvBag::instance();
+
+            bag.remove("ENV");
+
+            let mut tracker =
+                AffectedTracker::new(Arc::clone(&workspace_graph), FxHashSet::default());
+
+            assert_eq!(tracker.is_task_affected(&task).unwrap(), None);
+
+            // Would now be affected if it was checked again
+            bag.set("ENV", "affected");
+
+            assert_eq!(tracker.is_task_affected(&task).unwrap(), None);
+
+            bag.remove("ENV");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn marked_when_tracked() {
             let workspace_graph = Arc::new(build_graph("tasks").await);
             let changed_files = FxHashSet::from_iter(["chain/c.txt".into()]);
@@ -1008,6 +1127,49 @@ mod affected_tasks {
                 ])
             );
         }
+
+        // Multiple affected tasks share dependencies, which are
+        // walked once, but marked from every task that reaches them
+        #[tokio::test(flavor = "multi_thread")]
+        async fn deep_from_multiple_tasks() {
+            let workspace_graph = build_graph("tasks").await;
+            let changed_files = FxHashSet::from_iter(["chain/a.txt".into(), "chain/c.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
+            tracker.set_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
+            tracker.track_tasks().await.unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(
+                affected.tasks[&Target::parse("chain:a").unwrap()],
+                create_state_from_file("chain/a.txt")
+            );
+            assert_eq!(
+                affected.tasks[&Target::parse("chain:b").unwrap()],
+                create_state_from_dependent("chain:a")
+            );
+            assert_eq!(
+                affected.tasks[&Target::parse("chain:c").unwrap()],
+                AffectedTaskState {
+                    files: FxHashSet::from_iter(["chain/c.txt".into()]),
+                    downstream: FxHashSet::from_iter([Target::parse("chain:b").unwrap()]),
+                    ..Default::default()
+                }
+            );
+            assert_eq!(
+                affected.tasks[&Target::parse("chain:d").unwrap()],
+                create_state_from_dependent("chain:c")
+            );
+            assert_eq!(
+                affected.tasks[&Target::parse("chain:e").unwrap()],
+                create_state_from_dependent("chain:d")
+            );
+            assert!(
+                !affected
+                    .tasks
+                    .contains_key(&Target::parse("chain:z").unwrap())
+            );
+        }
     }
 
     mod task_downstream {
@@ -1184,6 +1346,49 @@ mod affected_tasks {
                         create_state_from_dependency("cycle:b")
                     ),
                 ])
+            );
+        }
+
+        // Multiple affected tasks share dependents, which are
+        // walked once, but marked from every task that reaches them
+        #[tokio::test(flavor = "multi_thread")]
+        async fn deep_from_multiple_tasks() {
+            let workspace_graph = build_graph("tasks").await;
+            let changed_files = FxHashSet::from_iter(["chain/c.txt".into(), "chain/e.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
+            tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
+            tracker.track_tasks().await.unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(
+                affected.tasks[&Target::parse("chain:e").unwrap()],
+                create_state_from_file("chain/e.txt")
+            );
+            assert_eq!(
+                affected.tasks[&Target::parse("chain:d").unwrap()],
+                create_state_from_dependency("chain:e")
+            );
+            assert_eq!(
+                affected.tasks[&Target::parse("chain:c").unwrap()],
+                AffectedTaskState {
+                    files: FxHashSet::from_iter(["chain/c.txt".into()]),
+                    upstream: FxHashSet::from_iter([Target::parse("chain:d").unwrap()]),
+                    ..Default::default()
+                }
+            );
+            assert_eq!(
+                affected.tasks[&Target::parse("chain:b").unwrap()],
+                create_state_from_dependency("chain:c")
+            );
+            assert_eq!(
+                affected.tasks[&Target::parse("chain:a").unwrap()],
+                create_state_from_dependency("chain:b")
+            );
+            assert!(
+                !affected
+                    .tasks
+                    .contains_key(&Target::parse("chain:z").unwrap())
             );
         }
     }

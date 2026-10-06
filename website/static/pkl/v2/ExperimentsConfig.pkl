@@ -7,10 +7,6 @@ module ExperimentsConfig
 /// @since 2.2.0
 asyncGraphBuilding: Boolean?
 
-/// Store task outputs in a local CAS (content-addressable storage) cache.
-/// @since 2.3.0
-casOutputsCache: Boolean?
-
 /// Always use the task's `outputStyle` option, even when running
 /// the task as a primary target.
 /// @since 2.6.0

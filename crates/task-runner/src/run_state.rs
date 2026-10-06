@@ -40,7 +40,6 @@ impl TaskRunState {
         let remote_enabled = app_context.cache_engine.storage.is_remote_enabled();
 
         Self {
-            local_cas_enabled: app_context.workspace_config.experiments.cas_outputs_cache,
             local_cache_readable: app_context.cache_engine.is_readable()
                 && task.options.cache.is_local_enabled(),
             local_cache_writable: app_context.cache_engine.is_writable()

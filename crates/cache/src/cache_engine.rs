@@ -1,5 +1,4 @@
 use crate::file_hasher::FileHasher;
-use crate::hash_engine::HashEngine;
 use crate::state_engine::StateEngine;
 use crate::{merge_clean_results, resolve_path};
 use moon_cache_item::*;
@@ -27,9 +26,6 @@ pub struct CacheEngine {
 
     /// Hashes file contents, and memoizes them for the process.
     pub file_hasher: FileHasher,
-
-    /// Manages reading and writing of content hashable items.
-    pub hash: HashEngine,
 
     /// Manages states of projects, tasks, tools, and more.
     pub state: StateEngine,
@@ -68,11 +64,8 @@ impl CacheEngine {
             )?;
         }
 
-        let hash = HashEngine::new(dir)?;
-
         Ok(CacheEngine {
             file_hasher: FileHasher::default(),
-            hash,
             state: StateEngine::new(dir)?,
             storage: Storage::new(context.clone()),
             temp_dir: dir.join("temp"),
@@ -115,7 +108,7 @@ impl CacheEngine {
         };
 
         let locks_dir = self.cache_dir.join("locks");
-        let mut dirs = vec![&self.hash.hashes_dir, &self.hash.outputs_dir, &locks_dir];
+        let mut dirs = vec![&locks_dir];
 
         if all {
             dirs.push(&self.state.states_dir);

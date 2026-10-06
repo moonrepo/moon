@@ -353,30 +353,6 @@ impl<'task> TaskRunner<'task> {
             return Ok(None);
         }
 
-        // Check to see if a build with the provided hash has been cached locally.
-        // We only check for the archive, as the manifest is purely for local debugging!
-        let archive_file = self.app_context.cache_engine.hash.get_archive_path(hash);
-
-        if archive_file.exists() {
-            // A lifetime only constrains *when* the archive is still valid; with
-            // none configured an existing archive is always a hit.
-            let is_fresh = match cache_lifetime {
-                Some(duration) => !fs::is_stale(&archive_file, false, duration)?,
-                None => true,
-            };
-
-            if is_fresh {
-                debug!(
-                    task_target = self.task.target.as_str(),
-                    hash,
-                    archive_file = ?archive_file,
-                    "Cache hit in local cache, will reuse existing archive"
-                );
-
-                return Ok(Some(HydrateFrom::LocalArchive));
-            }
-        }
-
         // Then check the storage backends, but don't bubble up errors,
         // just treat them as cache misses
         if self.state.digest.is_valid() {
@@ -385,7 +361,7 @@ impl<'task> TaskRunner<'task> {
                 .cache_engine
                 .storage
                 .with_options(StorageOptions {
-                    include_local: self.state.local_cas_enabled && self.state.local_cache_readable,
+                    include_local: self.state.local_cache_readable,
                     include_remote: self.state.remote_cache_readable,
                     ..Default::default()
                 })
@@ -438,7 +414,7 @@ impl<'task> TaskRunner<'task> {
         );
 
         let cache_engine = &self.app_context.cache_engine;
-        let mut hasher = cache_engine.hash.create_hasher(node.label());
+        let mut hasher = ContentHasher::new(&node.label());
         let mut operation = Operation::hash_generation();
 
         // Hash common fields

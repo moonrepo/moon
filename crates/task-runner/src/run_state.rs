@@ -28,7 +28,6 @@ pub struct TaskRunState {
     pub target: Option<TargetState>,
 
     /// Read and write states for the local/remote caches.
-    pub local_cas_enabled: bool,
     pub local_cache_readable: bool,
     pub local_cache_writable: bool,
     pub remote_cache_readable: bool,

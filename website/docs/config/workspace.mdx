@@ -199,12 +199,6 @@ cache:
 
 Can also be enabled with the `MOON_CACHE_SHARED_WORKTREE_CACHE` environment variable.
 
-:::info
-
-This setting requires the [`casOutputsCache`](#casoutputscache) experiment to be enabled.
-
-:::
-
 ## `codeowners`<VersionLabel version="1.8.0" />
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#codeowners" />
@@ -434,26 +428,6 @@ experiments:
 ```
 
 Can also be enabled with the `MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING` environment variable.
-
-### `casOutputsCache`<VersionLabel version="2.3.0" />
-
-<HeadingApiLink to="/api/types/interface/ExperimentsConfig#casOutputsCache" />
-
-Stores task outputs in a local content-addressable storage (CAS) cache, instead of the legacy
-tarball-based local cache. This shares the same content-addressed format used by the remote cache,
-enabling deduplicated storage across tasks and faster hydration. Defaults to `false`.
-
-```yaml title=".moon/workspace.yml" {2}
-experiments:
-  casOutputsCache: true
-```
-
-Can also be enabled with the `MOON_EXPERIMENT_CAS_OUTPUTS_CACHE` environment variable.
-
-> The CAS layer can be tuned through the top-level [`cache`](#cache) setting.
-
-> As of v2.6, the local CAS layer is always enabled, as it stores the hash manifest of every ran
-> task. This experiment only controls whether task _outputs_ are stored in it.
 
 ### `explicitTaskOutputStyle`<VersionLabel version="2.6.0" />
 

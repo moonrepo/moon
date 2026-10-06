@@ -14,6 +14,7 @@ use std::fmt;
 use std::io;
 use std::path::Path;
 use std::sync::Arc;
+use std::thread;
 use tracing::{debug, trace};
 
 pub struct AffectedTracker {
@@ -452,34 +453,49 @@ impl AffectedTracker {
         let cache = Arc::clone(&self.cache);
         let mut affected_tasks = vec![];
 
-        // Check every task in parallel, as each check is independent (and
-        // expensive), then mark them and walk their relationships all at once
+        // Check every task in parallel, as each check is independent, then
+        // mark them and walk their relationships all at once. Checks are cheap
+        // enough that spawning one per task would cost more than the check
+        // itself, so they're batched, with enough batches to fill the pool
+        let batch_size = tasks
+            .len()
+            .div_ceil(thread::available_parallelism().map_or(1, |cpus| cpus.get() * 4))
+            .max(1);
+
         run_pooled_tasks(
-            VecDeque::from_iter(tasks.iter().cloned()),
-            |task| {
+            VecDeque::from_iter(tasks.chunks(batch_size).map(|batch| batch.to_vec())),
+            |batch| {
                 let changed_files = Arc::clone(&changed_files);
                 let workspace_graph = Arc::clone(&workspace_graph);
                 let cache = Arc::clone(&cache);
 
                 Ok(async move {
-                    let affected = is_task_directly_affected(
-                        &task,
-                        &changed_files,
-                        &workspace_graph.root,
-                        ci,
-                        &cache,
-                    )?;
+                    let mut results = Vec::with_capacity(batch.len());
 
-                    Ok((task, affected))
+                    for task in batch {
+                        let affected = is_task_directly_affected(
+                            &task,
+                            &changed_files,
+                            &workspace_graph.root,
+                            ci,
+                            &cache,
+                        )?;
+
+                        results.push((task, affected));
+                    }
+
+                    Ok(results)
                 })
             },
-            |(task, affected)| {
-                match affected {
-                    Some(affected) => affected_tasks.push((task, affected)),
-                    None => {
-                        self.unaffected_tasks.insert(task.target.clone());
-                    }
-                };
+            |results| {
+                for (task, affected) in results {
+                    match affected {
+                        Some(affected) => affected_tasks.push((task, affected)),
+                        None => {
+                            self.unaffected_tasks.insert(task.target.clone());
+                        }
+                    };
+                }
 
                 Ok(())
             },
@@ -589,10 +605,20 @@ impl AffectedTracker {
     /// The owning project is affected by its affected tasks.
     fn mark_task_project_affected(&mut self, task: &Task) {
         if let Ok(project_id) = task.target.get_project_id() {
-            self.projects
-                .entry(Id::raw(project_id))
-                .or_default()
-                .insert(AffectedBy::Task(task.target.clone()));
+            let affected = AffectedBy::Task(task.target.clone());
+
+            // Only allocate an ID when the project hasn't been marked yet
+            match self.projects.get_mut(project_id) {
+                Some(by_list) => {
+                    by_list.insert(affected);
+                }
+                None => {
+                    self.projects
+                        .entry(Id::raw(project_id))
+                        .or_default()
+                        .insert(affected);
+                }
+            };
         }
     }
 
@@ -790,9 +816,8 @@ fn is_task_directly_affected(
         let bag = GlobalEnvBag::instance();
 
         for var_name in &task.input_env {
-            if let Some(var) = bag.get(var_name)
-                && !var.is_empty()
-            {
+            // Only check for a non-empty value, instead of allocating a copy of it
+            if bag.get_as(var_name, |value| !value.is_empty()) == Some(true) {
                 return Ok(Some(AffectedBy::EnvironmentVariable(var_name.to_owned())));
             }
         }

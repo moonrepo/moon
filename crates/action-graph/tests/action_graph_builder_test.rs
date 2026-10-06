@@ -1642,13 +1642,12 @@ mod action_graph_builder {
                     .collect()
             }
 
-            // The `affected-starve` fixture pins `asyncAffectedTracking: false`
-            // to cover the synchronous tracker, whose marks would otherwise
-            // depend on target insertion order: a task marked through another
-            // task's relationship walk before its own visit never ran its own
-            // checks and walks, starving transitive dependents of marks.
+            // The `affected-starve` fixture covers marks that must not depend
+            // on target insertion order. Previously, a task marked through
+            // another task's relationship walk before its own visit never ran
+            // its own checks and walks, starving transitive dependents of marks.
             #[tokio::test(flavor = "multi_thread")]
-            async fn sync_includes_deep_dependents_regardless_of_target_order() {
+            async fn includes_deep_dependents_regardless_of_target_order() {
                 let sandbox = create_sandbox("affected-starve");
                 let mut container = ActionGraphContainer::new(sandbox.path());
 
@@ -1699,7 +1698,7 @@ mod action_graph_builder {
             }
 
             #[tokio::test(flavor = "multi_thread")]
-            async fn sync_includes_deep_dependents_when_base_task_ordered_last() {
+            async fn includes_deep_dependents_when_base_task_ordered_last() {
                 let sandbox = create_sandbox("affected-starve");
                 let mut container = ActionGraphContainer::new(sandbox.path());
 
@@ -1752,7 +1751,7 @@ mod action_graph_builder {
             // changed file used to relation-mark the middle project's build
             // before its visit, dropping its test task entirely
             #[tokio::test(flavor = "multi_thread")]
-            async fn sync_stays_monotonic_when_change_set_grows() {
+            async fn stays_monotonic_when_change_set_grows() {
                 let sandbox = create_sandbox("affected-starve");
                 let mut container = ActionGraphContainer::new(sandbox.path());
 

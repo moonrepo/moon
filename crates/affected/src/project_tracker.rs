@@ -8,6 +8,8 @@ use std::sync::Arc;
 use tracing::trace;
 
 pub struct ProjectTracker {
+    /// Is the project itself directly affected
+    pub affected: bool,
     pub changed_files: Arc<FxHashSet<WorkspaceRelativePathBuf>>,
     pub downstream: DownstreamScope,
     pub project: Arc<Project>,
@@ -21,6 +23,7 @@ impl ProjectTracker {
         let project = Arc::clone(&self.project);
 
         if let Some(affected) = self.is_project_affected(&project) {
+            self.affected = true;
             self.mark_project_affected(&project, affected)?;
         }
 

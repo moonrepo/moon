@@ -179,10 +179,21 @@ impl Task {
         changed_files: &FxHashSet<WorkspaceRelativePathBuf>,
     ) -> miette::Result<Vec<PathBuf>> {
         let mut files = vec![];
-        let globset = self.create_globset()?;
+
+        // Only compile the glob set when there are input globs, as nothing
+        // can match without them, and compiling is expensive
+        let globset = if self.input_globs.is_empty() {
+            None
+        } else {
+            Some(self.create_globset()?)
+        };
 
         for file in changed_files {
-            if self.input_files.contains_key(file) || globset.matches(file.as_str()) {
+            if self.input_files.contains_key(file)
+                || globset
+                    .as_ref()
+                    .is_some_and(|globset| globset.matches(file.as_str()))
+            {
                 files.push(file.to_logical_path(workspace_root));
             }
         }

@@ -10,6 +10,8 @@ use std::sync::Arc;
 use tracing::trace;
 
 pub struct TaskTracker {
+    /// Is the task itself directly affected
+    pub affected: bool,
     pub changed_files: Arc<FxHashSet<WorkspaceRelativePathBuf>>,
     pub ci: bool,
     pub downstream: DownstreamScope,
@@ -25,6 +27,7 @@ impl TaskTracker {
         let task = Arc::clone(&self.task);
 
         if let Some(affected) = self.is_task_affected(&task)? {
+            self.affected = true;
             self.mark_task_affected(&task, affected)?;
         }
 
@@ -64,7 +67,17 @@ impl TaskTracker {
         }
 
         // By files
-        let globset = task.create_globset()?;
+        if task.input_files.is_empty() && task.input_globs.is_empty() {
+            return Ok(None);
+        }
+
+        // Only compile the glob set when there are input globs, as nothing
+        // can match without them, and compiling is expensive
+        let globset = if task.input_globs.is_empty() {
+            None
+        } else {
+            Some(task.create_globset()?)
+        };
 
         for file in self.changed_files.iter() {
             let affected = if let Some(params) = task.input_files.get(file) {
@@ -81,7 +94,9 @@ impl TaskTracker {
                     None => true,
                 }
             } else {
-                globset.matches(file.as_str())
+                globset
+                    .as_ref()
+                    .is_some_and(|globset| globset.matches(file.as_str()))
             };
 
             if affected {

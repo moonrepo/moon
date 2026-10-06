@@ -5,6 +5,7 @@ use moon_task::Target;
 use moon_test_utils::{WorkspaceGraph, WorkspaceMocker};
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{Sandbox, create_sandbox};
+use std::sync::Arc;
 
 async fn build_graph_with_sandbox(fixture: &str) -> (WorkspaceGraph, Sandbox) {
     let sandbox = create_sandbox(fixture);
@@ -129,6 +130,43 @@ mod affected_projects {
                 (Id::raw("root"), create_state_from_file("a/file.txt")),
             ])
         );
+    }
+
+    mod checked {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn marked_when_tracked() {
+            let workspace_graph = Arc::new(build_graph("projects").await);
+            let changed_files = FxHashSet::from_iter(["a/file.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(Arc::clone(&workspace_graph), changed_files);
+            tracker.set_project_scopes(UpstreamScope::Deep, DownstreamScope::None);
+            tracker.track_projects().await.unwrap();
+
+            // Directly affected
+            let a = workspace_graph.get_project("a").unwrap();
+
+            assert_eq!(
+                tracker.is_project_affected(&a),
+                Some(AffectedBy::AlreadyMarked)
+            );
+            assert!(tracker.is_project_marked(&a));
+            assert!(tracker.is_project_marked_ignoring_relations(&a));
+
+            // Marked through a relationship only, so not directly affected
+            let b = workspace_graph.get_project("b").unwrap();
+
+            assert_eq!(tracker.is_project_affected(&b), None);
+            assert!(tracker.is_project_marked(&b));
+            assert!(!tracker.is_project_marked_ignoring_relations(&b));
+
+            // Not affected at all
+            let e = workspace_graph.get_project("e").unwrap();
+
+            assert_eq!(tracker.is_project_affected(&e), None);
+            assert!(!tracker.is_project_marked(&e));
+        }
     }
 
     mod project_upstream {
@@ -520,6 +558,21 @@ mod affected_tasks {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn not_affected_by_file_if_not_an_input() {
+        let workspace_graph = build_graph("tasks").await;
+        let changed_files = FxHashSet::from_iter(["base/other.txt".into()]);
+
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
+        tracker
+            .track_tasks_by_target(&[Target::parse("base:by-file").unwrap()])
+            .await
+            .unwrap();
+        let affected = tracker.build();
+
+        assert!(affected.tasks.is_empty());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn affected_by_glob() {
         let workspace_graph = build_graph("tasks").await;
         let changed_files = FxHashSet::from_iter(["base/file.txt".into()]);
@@ -688,6 +741,98 @@ mod affected_tasks {
                 ),
             ])
         );
+    }
+
+    mod checked {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_check_tracked_tasks_again() {
+            let workspace_graph = Arc::new(build_graph("tasks").await);
+            let target = Target::parse("base:by-env").unwrap();
+            let task = workspace_graph.get_task(&target).unwrap();
+            let bag = GlobalEnvBag::instance();
+
+            bag.remove("ENV");
+
+            let mut tracker =
+                AffectedTracker::new(Arc::clone(&workspace_graph), FxHashSet::default());
+            tracker.track_tasks_by_target(&[target]).await.unwrap();
+
+            // Would now be affected if it was checked again
+            bag.set("ENV", "affected");
+
+            assert_eq!(tracker.is_task_affected(&task).unwrap(), None);
+            assert!(!tracker.is_task_marked(&task));
+
+            bag.remove("ENV");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn checks_untracked_tasks() {
+            let workspace_graph = Arc::new(build_graph("tasks").await);
+            let task = workspace_graph
+                .get_task(&Target::parse("base:by-env").unwrap())
+                .unwrap();
+            let bag = GlobalEnvBag::instance();
+
+            bag.remove("ENV");
+
+            let mut tracker =
+                AffectedTracker::new(Arc::clone(&workspace_graph), FxHashSet::default());
+            tracker
+                .track_tasks_by_target(&[Target::parse("base:by-file").unwrap()])
+                .await
+                .unwrap();
+
+            bag.set("ENV", "affected");
+
+            assert_eq!(
+                tracker.is_task_affected(&task).unwrap(),
+                Some(AffectedBy::EnvironmentVariable("ENV".into()))
+            );
+
+            bag.remove("ENV");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn marked_when_tracked() {
+            let workspace_graph = Arc::new(build_graph("tasks").await);
+            let changed_files = FxHashSet::from_iter(["chain/c.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(Arc::clone(&workspace_graph), changed_files);
+            tracker.set_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
+            tracker.track_tasks().await.unwrap();
+
+            // Directly affected
+            let c = workspace_graph
+                .get_task(&Target::parse("chain:c").unwrap())
+                .unwrap();
+
+            assert_eq!(
+                tracker.is_task_affected(&c).unwrap(),
+                Some(AffectedBy::AlreadyMarked)
+            );
+            assert!(tracker.is_task_marked(&c));
+            assert!(tracker.is_task_marked_ignoring_relations(&c));
+
+            // Marked through a relationship only, so not directly affected
+            let d = workspace_graph
+                .get_task(&Target::parse("chain:d").unwrap())
+                .unwrap();
+
+            assert_eq!(tracker.is_task_affected(&d).unwrap(), None);
+            assert!(tracker.is_task_marked(&d));
+            assert!(!tracker.is_task_marked_ignoring_relations(&d));
+
+            // Not affected at all
+            let z = workspace_graph
+                .get_task(&Target::parse("chain:z").unwrap())
+                .unwrap();
+
+            assert_eq!(tracker.is_task_affected(&z).unwrap(), None);
+            assert!(!tracker.is_task_marked(&z));
+        }
     }
 
     mod task_upstream {

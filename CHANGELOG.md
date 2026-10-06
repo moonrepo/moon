@@ -10,6 +10,15 @@
     `.moon/workspace.*`, as unknown settings fail validation, and the
     `MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING` environment variable no longer has any effect.
 
+#### 🚀 Updates
+
+- **Affected**
+  - Improved the performance of affected tracking.
+    - Tasks and projects that were checked while tracking, and found to not be affected, are no
+      longer checked again when building the action graph. Previously, every unaffected task had
+      its inputs matched against the changed files twice.
+    - Tasks without glob inputs no longer compile a glob set when matching changed files.
+
 ## 2.6.0
 
 #### 🚀 Updates

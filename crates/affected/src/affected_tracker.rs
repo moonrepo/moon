@@ -25,9 +25,19 @@ pub struct AffectedTracker {
     project_downstream: DownstreamScope,
     project_upstream: UpstreamScope,
 
+    /// Projects that have been checked and are not directly affected by
+    /// the changed files. They may still be marked through a relationship,
+    /// but don't need to be checked again.
+    unaffected_projects: FxHashSet<Id>,
+
     tasks: FxHashMap<Target, FxHashSet<AffectedBy>>,
     task_downstream: DownstreamScope,
     task_upstream: UpstreamScope,
+
+    /// Tasks that have been checked and are not directly affected by the
+    /// changed files, environment variables, or CI. They may still be marked
+    /// through a relationship, but don't need to be checked again.
+    unaffected_tasks: FxHashSet<Target>,
 }
 
 impl AffectedTracker {
@@ -43,9 +53,11 @@ impl AffectedTracker {
             projects: FxHashMap::default(),
             project_downstream: DownstreamScope::None,
             project_upstream: UpstreamScope::Deep,
+            unaffected_projects: FxHashSet::default(),
             tasks: FxHashMap::default(),
             task_downstream: DownstreamScope::None,
             task_upstream: UpstreamScope::Deep,
+            unaffected_tasks: FxHashSet::default(),
             ci: false,
         }
     }
@@ -152,6 +164,7 @@ impl AffectedTracker {
                 let workspace_graph = Arc::clone(&self.workspace_graph);
 
                 Ok(ProjectTracker {
+                    affected: false,
                     changed_files,
                     downstream,
                     project,
@@ -162,6 +175,10 @@ impl AffectedTracker {
                 .track())
             },
             |tracker| {
+                if !tracker.affected {
+                    self.unaffected_projects.insert(tracker.project.id.clone());
+                }
+
                 for (project_id, affected) in tracker.tracked {
                     self.projects
                         .entry(project_id)
@@ -180,6 +197,11 @@ impl AffectedTracker {
     pub fn is_project_affected(&self, project: &Project) -> Option<AffectedBy> {
         if self.is_project_marked_ignoring_relations(project) {
             return Some(AffectedBy::AlreadyMarked);
+        }
+
+        // Was already checked while tracking, so don't check again
+        if self.unaffected_projects.contains(&project.id) {
+            return None;
         }
 
         if project.is_root_level() {
@@ -372,6 +394,7 @@ impl AffectedTracker {
                 let workspace_graph = Arc::clone(&self.workspace_graph);
 
                 Ok(TaskTracker {
+                    affected: false,
                     changed_files,
                     ci,
                     downstream,
@@ -384,6 +407,10 @@ impl AffectedTracker {
                 .track())
             },
             |tracker| {
+                if !tracker.affected {
+                    self.unaffected_tasks.insert(tracker.task.target.clone());
+                }
+
                 for (task_target, affected) in tracker.tracked {
                     self.tasks.entry(task_target).or_default().extend(affected);
                 }
@@ -418,6 +445,11 @@ impl AffectedTracker {
             return Ok(Some(AffectedBy::AlreadyMarked));
         }
 
+        // Was already checked while tracking, so don't check again
+        if self.unaffected_tasks.contains(&task.target) {
+            return Ok(None);
+        }
+
         // Special CI handling
         match (self.ci, &task.options.run_in_ci) {
             (true, TaskOptionRunInCI::Always) => {
@@ -450,7 +482,17 @@ impl AffectedTracker {
         }
 
         // By files
-        let globset = task.create_globset()?;
+        if task.input_files.is_empty() && task.input_globs.is_empty() {
+            return Ok(None);
+        }
+
+        // Only compile the glob set when there are input globs, as nothing
+        // can match without them, and compiling is expensive
+        let globset = if task.input_globs.is_empty() {
+            None
+        } else {
+            Some(task.create_globset()?)
+        };
 
         for file in self.changed_files.iter() {
             let affected = if let Some(params) = task.input_files.get(file) {
@@ -467,7 +509,9 @@ impl AffectedTracker {
                     None => true,
                 }
             } else {
-                globset.matches(file.as_str())
+                globset
+                    .as_ref()
+                    .is_some_and(|globset| globset.matches(file.as_str()))
             };
 
             if affected {
@@ -642,9 +686,11 @@ impl fmt::Debug for AffectedTracker {
             .field("projects", &self.projects)
             .field("project_downstream", &self.project_downstream)
             .field("project_upstream", &self.project_upstream)
+            .field("unaffected_projects", &self.unaffected_projects)
             .field("tasks", &self.tasks)
             .field("task_downstream", &self.task_downstream)
             .field("task_upstream", &self.task_upstream)
+            .field("unaffected_tasks", &self.unaffected_tasks)
             .finish()
     }
 }

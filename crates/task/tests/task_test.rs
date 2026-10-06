@@ -53,6 +53,80 @@ mod task {
         assert_eq!(files.len(), 0);
     }
 
+    mod get_affected_files {
+        use super::*;
+        use rustc_hash::FxHashSet;
+
+        fn create_changed_files(files: &[&str]) -> FxHashSet<WorkspaceRelativePathBuf> {
+            files
+                .iter()
+                .map(|file| WorkspaceRelativePathBuf::from(*file))
+                .collect()
+        }
+
+        #[test]
+        fn matches_input_files() {
+            let sandbox = create_sandbox("files");
+            let root = sandbox.path();
+
+            let task = Task {
+                input_files: FxHashMap::from_iter([(
+                    WorkspaceRelativePathBuf::from("c.jsx"),
+                    TaskFileInput::default(),
+                )]),
+                ..Default::default()
+            };
+
+            let files = task
+                .get_affected_files(root, &create_changed_files(&["a.js", "c.jsx"]))
+                .unwrap();
+
+            assert_eq!(files, vec![root.join("c.jsx")]);
+        }
+
+        #[test]
+        fn matches_input_globs() {
+            let sandbox = create_sandbox("files");
+            let root = sandbox.path();
+
+            let task = Task {
+                input_globs: FxHashMap::from_iter([(
+                    WorkspaceRelativePathBuf::from("*.js"),
+                    TaskGlobInput::default(),
+                )]),
+                ..Default::default()
+            };
+
+            let mut files = task
+                .get_affected_files(root, &create_changed_files(&["a.js", "b.js", "c.jsx"]))
+                .unwrap();
+            files.sort();
+
+            assert_eq!(files, vec![root.join("a.js"), root.join("b.js")]);
+        }
+
+        #[test]
+        fn matches_nothing_without_inputs() {
+            let sandbox = create_sandbox("files");
+            let root = sandbox.path();
+
+            // Output globs only negate, they never match
+            let task = Task {
+                output_globs: FxHashMap::from_iter([(
+                    WorkspaceRelativePathBuf::from("*.js"),
+                    TaskGlobOutput::default(),
+                )]),
+                ..Default::default()
+            };
+
+            let files = task
+                .get_affected_files(root, &create_changed_files(&["a.js", "c.jsx"]))
+                .unwrap();
+
+            assert!(files.is_empty());
+        }
+    }
+
     mod has_outputs {
         use super::*;
 

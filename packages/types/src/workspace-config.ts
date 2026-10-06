@@ -191,14 +191,6 @@ export interface DockerConfig {
 /** Configures experiments across the entire moon workspace. */
 export interface ExperimentsConfig {
 	/**
-	 * Track and determine affected projects and tasks asynchronously.
-	 * @since 2.2.0
-	 *
-	 * @default true
-	 * @env MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING
-	 */
-	asyncAffectedTracking?: boolean;
-	/**
 	 * Build the project and task graphs asynchronously.
 	 * @since 2.2.0
 	 *
@@ -911,14 +903,6 @@ export interface PartialDockerConfig {
 
 /** Configures experiments across the entire moon workspace. */
 export interface PartialExperimentsConfig {
-	/**
-	 * Track and determine affected projects and tasks asynchronously.
-	 * @since 2.2.0
-	 *
-	 * @default true
-	 * @env MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING
-	 */
-	asyncAffectedTracking?: boolean | null;
 	/**
 	 * Build the project and task graphs asynchronously.
 	 * @since 2.2.0

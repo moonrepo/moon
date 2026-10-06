@@ -1189,6 +1189,49 @@ mod affected_tasks {
                     .contains_key(&Target::parse("chain:z").unwrap())
             );
         }
+
+        // Multiple affected tasks share dependencies, which are
+        // walked once, but marked from every task that reaches them
+        #[tokio::test(flavor = "multi_thread")]
+        async fn deep_from_multiple_tasks() {
+            let workspace_graph = build_graph("tasks").await;
+            let changed_files = FxHashSet::from_iter(["chain/a.txt".into(), "chain/c.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
+            tracker.set_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
+            tracker.track_tasks().await.unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(
+                affected.tasks[&Target::parse("chain:a").unwrap()],
+                create_state_from_file("chain/a.txt")
+            );
+            assert_eq!(
+                affected.tasks[&Target::parse("chain:b").unwrap()],
+                create_state_from_dependent("chain:a")
+            );
+            assert_eq!(
+                affected.tasks[&Target::parse("chain:c").unwrap()],
+                AffectedTaskState {
+                    files: FxHashSet::from_iter(["chain/c.txt".into()]),
+                    downstream: FxHashSet::from_iter([Target::parse("chain:b").unwrap()]),
+                    ..Default::default()
+                }
+            );
+            assert_eq!(
+                affected.tasks[&Target::parse("chain:d").unwrap()],
+                create_state_from_dependent("chain:c")
+            );
+            assert_eq!(
+                affected.tasks[&Target::parse("chain:e").unwrap()],
+                create_state_from_dependent("chain:d")
+            );
+            assert!(
+                !affected
+                    .tasks
+                    .contains_key(&Target::parse("chain:z").unwrap())
+            );
+        }
     }
 
     mod task_downstream {
@@ -1332,6 +1375,49 @@ mod affected_tasks {
                         create_state_from_file("chain/z.txt")
                     ),
                 ])
+            );
+        }
+
+        // Multiple affected tasks share dependents, which are
+        // walked once, but marked from every task that reaches them
+        #[tokio::test(flavor = "multi_thread")]
+        async fn deep_from_multiple_tasks() {
+            let workspace_graph = build_graph("tasks").await;
+            let changed_files = FxHashSet::from_iter(["chain/c.txt".into(), "chain/e.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
+            tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
+            tracker.track_tasks().await.unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(
+                affected.tasks[&Target::parse("chain:e").unwrap()],
+                create_state_from_file("chain/e.txt")
+            );
+            assert_eq!(
+                affected.tasks[&Target::parse("chain:d").unwrap()],
+                create_state_from_dependency("chain:e")
+            );
+            assert_eq!(
+                affected.tasks[&Target::parse("chain:c").unwrap()],
+                AffectedTaskState {
+                    files: FxHashSet::from_iter(["chain/c.txt".into()]),
+                    upstream: FxHashSet::from_iter([Target::parse("chain:d").unwrap()]),
+                    ..Default::default()
+                }
+            );
+            assert_eq!(
+                affected.tasks[&Target::parse("chain:b").unwrap()],
+                create_state_from_dependency("chain:c")
+            );
+            assert_eq!(
+                affected.tasks[&Target::parse("chain:a").unwrap()],
+                create_state_from_dependency("chain:b")
+            );
+            assert!(
+                !affected
+                    .tasks
+                    .contains_key(&Target::parse("chain:z").unwrap())
             );
         }
 

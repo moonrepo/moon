@@ -2,7 +2,6 @@ use crate::changed_files::ChangedFiles;
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
 use moon_common::path::{WorkspaceRelativePath, WorkspaceRelativePathBuf};
-use std::collections::BTreeMap;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use version_spec::{MatchesVersion, Requirement, Version};

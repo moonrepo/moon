@@ -13,7 +13,6 @@ use moon_common::path::{
     locate_config_dir,
 };
 use moon_process::{Arg, Command, find_command_on_path, output_to_trimmed_string};
-use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::OnceCell;

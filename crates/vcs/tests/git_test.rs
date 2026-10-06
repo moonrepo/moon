@@ -3,7 +3,6 @@ use moon_vcs::{ChangedFiles, ChangedStatus, Vcs, git::*};
 use rustc_hash::FxHashMap;
 use soft_canonicalize::soft_canonicalize;
 use starbase_sandbox::{Sandbox, create_empty_sandbox, create_sandbox};
-use std::collections::BTreeMap;
 use std::fs;
 use std::sync::Arc;
 

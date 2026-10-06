@@ -35,6 +35,16 @@
       same globs, which most tasks have through inheritance and defaults. Previously, every task
       compiled its own copy, which was the single largest cost of tracking. Changed files are also
       only matched against each distinct glob set once, instead of once per task.
+- **Hasher**
+  - Improved the performance of file hashing.
+    - File hashes are now memoized for the lifetime of the process, and reused while the file's size
+      and modification time are unchanged, so tasks that share inputs only read each file once.
+      Files modified within the last 2 seconds are never memoized, to protect against file systems
+      with coarse timestamps.
+    - Files are now hashed by a bounded set of workers that pull from a shared queue, instead of
+      spawning a blocking task per file.
+    - Each file is now stat-ed once before hashing, instead of twice, and read with a single read
+      when it fits within the hashing buffer.
 
 ## 2.6.0
 

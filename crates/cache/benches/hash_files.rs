@@ -2,8 +2,6 @@ use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 use moon_bench_utils::handle_unwrap;
 use moon_cache::{CacheContext, CacheEngine};
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_vcs::Vcs;
-use moon_vcs::git::Git;
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
 use tokio::runtime::Runtime;
 
@@ -19,8 +17,18 @@ fn create_sandbox_with_files() -> Sandbox {
     let sandbox = create_empty_sandbox();
     sandbox.enable_git();
 
+    // Backdate the files so that their hashes can be memoized
+    let modified = std::time::SystemTime::now() - std::time::Duration::from_secs(60);
+
     for i in 0..=1000 {
-        std::fs::write(sandbox.path().join(format!("file{i}.txt")), i.to_string()).unwrap();
+        let path = sandbox.path().join(format!("file{i}.txt"));
+        std::fs::write(&path, i.to_string()).unwrap();
+        std::fs::File::options()
+            .write(true)
+            .open(path)
+            .unwrap()
+            .set_modified(modified)
+            .unwrap();
     }
 
     sandbox
@@ -50,6 +58,18 @@ fn cas(c: &mut Criterion) {
         b.to_async(Runtime::new().unwrap()).iter(async || {
             handle_unwrap(
                 create_engine(&sandbox)
+                    .hash_files(sandbox.path(), &get_relative_file_paths(1000))
+                    .await,
+            );
+        })
+    });
+
+    let engine = create_engine(&sandbox);
+
+    group.bench_function(id(1000, "hash_files_memoized"), |b| {
+        b.to_async(Runtime::new().unwrap()).iter(async || {
+            handle_unwrap(
+                engine
                     .hash_files(sandbox.path(), &get_relative_file_paths(1000))
                     .await,
             );

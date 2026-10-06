@@ -740,3 +740,80 @@ mod mql_build {
         }
     }
 }
+
+mod matches_list {
+    use super::*;
+
+    fn condition(op: ComparisonOperator, values: &[&str]) -> Condition<'static> {
+        Condition::Field {
+            field: Field::TaskTag(value_list(values)),
+            op,
+        }
+    }
+
+    fn matches(op: ComparisonOperator, query: &[&str], tags: &[&str]) -> bool {
+        let cond = condition(op, query);
+
+        let Condition::Field {
+            field: Field::TaskTag(values),
+            ..
+        } = &cond
+        else {
+            unreachable!();
+        };
+
+        cond.matches_list(values, tags).unwrap()
+    }
+
+    #[test]
+    fn equal_matches_when_any_tag_matches() {
+        assert!(matches(
+            ComparisonOperator::Equal,
+            &["gpu"],
+            &["gpu", "docker"]
+        ));
+        assert!(!matches(ComparisonOperator::Equal, &["gpu"], &["docker"]));
+        assert!(!matches(ComparisonOperator::Equal, &["gpu"], &[]));
+    }
+
+    #[test]
+    fn not_equal_excludes_when_any_tag_matches() {
+        assert!(!matches(
+            ComparisonOperator::NotEqual,
+            &["gpu"],
+            &["gpu", "docker"]
+        ));
+        assert!(matches(ComparisonOperator::NotEqual, &["gpu"], &["docker"]));
+        assert!(matches(ComparisonOperator::NotEqual, &["gpu"], &[]));
+    }
+
+    #[test]
+    fn like_matches_when_any_tag_matches() {
+        assert!(matches(
+            ComparisonOperator::Like,
+            &["runner-*"],
+            &["runner-gpu", "docker"]
+        ));
+        assert!(!matches(
+            ComparisonOperator::Like,
+            &["runner-*"],
+            &["docker"]
+        ));
+        assert!(!matches(ComparisonOperator::Like, &["runner-*"], &[]));
+    }
+
+    #[test]
+    fn not_like_excludes_when_any_tag_matches() {
+        assert!(!matches(
+            ComparisonOperator::NotLike,
+            &["runner-*"],
+            &["runner-gpu", "docker"]
+        ));
+        assert!(matches(
+            ComparisonOperator::NotLike,
+            &["runner-*"],
+            &["docker"]
+        ));
+        assert!(matches(ComparisonOperator::NotLike, &["runner-*"], &[]));
+    }
+}

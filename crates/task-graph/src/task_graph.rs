@@ -156,6 +156,16 @@ impl TaskGraph {
     }
 
     fn internal_get(&self, target: &Target) -> miette::Result<Arc<Task>> {
+        // Already expanded tasks are the hot path for graph traversals,
+        // so read them without locking the bucket or cloning the target
+        if let Some(task) = self
+            .tasks
+            .read_sync(target, |_, once| once.get().cloned())
+            .flatten()
+        {
+            return Ok(task);
+        }
+
         let once = match self.tasks.entry_sync(target.to_owned()) {
             Entry::Occupied(e) => Arc::clone(e.get()),
             Entry::Vacant(e) => {

@@ -24,6 +24,7 @@ moon_workspace_graph = { path = "../workspace-graph" }
 clap = { workspace = true }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
+scc = { workspace = true }
 serde = { workspace = true }
 starbase_utils = { workspace = true }
 tokio = { workspace = true }

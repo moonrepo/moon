@@ -9,6 +9,10 @@
     always used, and the synchronous tracker has been removed. The setting must be removed from
     `.moon/workspace.*`, as unknown settings fail validation, and the
     `MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING` environment variable no longer has any effect.
+  - Removed the `nativeFileHashing` experiment, as files are now always hashed natively within
+    moon's task pool, and hashing files through the VCS has been removed. The setting must be
+    removed from `.moon/workspace.*`, as unknown settings fail validation, and the
+    `MOON_EXPERIMENT_NATIVE_FILE_HASHING` environment variable no longer has any effect.
 
 #### 🚀 Updates
 

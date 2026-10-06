@@ -2,7 +2,7 @@
 slug: moon-v3.0
 title: moon v3.0 - ???
 authors: [milesj]
-tags: [async, experiments, affected]
+tags: [async, experiments, affected, hashing]
 # image: ./img/moon/v2.6.png
 ---
 
@@ -12,14 +12,16 @@ TODO
 
 ## Resolved experiments
 
-Over the last few releases, we've rebuilt moon's hottest code paths as asynchronous implementations,
-shipped them behind [experiments](/docs/config/workspace#experiments), and then enabled them by
-default in v2.5. They've since proven themselves, so in v3, the following experiments have been
-resolved. Their implementation is now the _only_ implementation, the previous one has been removed,
-and the setting no longer exists.
+Over the last few releases, we've rebuilt moon's hottest code paths, shipped them behind
+[experiments](/docs/config/workspace#experiments), and then enabled them by default in v2.5.
+They've since proven themselves, so in v3, the following experiments have been resolved. Their
+implementation is now the _only_ implementation, the previous one has been removed, and the setting
+no longer exists.
 
 - `asyncAffectedTracking` (added in v2.2) - Affected projects and tasks are now always tracked
   asynchronously, and the synchronous tracker has been removed.
+- `nativeFileHashing` (added in v2.3) - Files are now always hashed natively within moon's task
+  pool, and hashing files through the VCS has been removed.
 
 Since configuration is strictly validated, moon will fail to load a workspace that still configures
 a resolved experiment, so be sure to remove it.
@@ -27,6 +29,7 @@ a resolved experiment, so be sure to remove it.
 ```diff title=".moon/workspace.yml"
  experiments:
 -  asyncAffectedTracking: true
+-  nativeFileHashing: true
 ```
 
 Their `MOON_EXPERIMENT_*` environment variables, like `MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING`, no

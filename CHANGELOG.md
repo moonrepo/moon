@@ -1,5 +1,37 @@
 # Changelog
 
+## Unreleased
+
+#### 💥 Breaking
+
+- **Experiments**
+  - Removed the `asyncAffectedTracking` experiment, as the asynchronous affected tracker is now
+    always used, and the synchronous tracker has been removed. The setting must be removed from
+    `.moon/workspace.*`, as unknown settings fail validation, and the
+    `MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING` environment variable no longer has any effect.
+
+#### 🚀 Updates
+
+- **Affected**
+  - Improved the performance of affected tracking.
+    - Tasks and projects that were checked while tracking, and found to not be affected, are no
+      longer checked again when building the action graph. Previously, every unaffected task had its
+      inputs matched against the changed files twice.
+    - Tasks without glob inputs no longer compile a glob set when matching changed files.
+    - Relationships are now walked once from every directly affected task and project, instead of
+      once per affected task and project. Previously, a dependency chain shared by many affected
+      tasks was re-walked for each of them, which was quadratic for deep graphs.
+    - Tasks and projects that have already been expanded are now read from the graph without
+      locking, as every relationship walk reads them.
+    - Projects are now indexed by their source directory, so that each changed file only looks up
+      its ancestor directories, instead of every project scanning every changed file.
+    - Changed files that are matched by content (the `content` input setting) are now read once,
+      instead of once for every task that matches against them.
+    - Compiled glob sets are now cached by their patterns, and shared between all tasks with the
+      same globs, which most tasks have through inheritance and defaults. Previously, every task
+      compiled its own copy, which was the single largest cost of tracking. Changed files are also
+      only matched against each distinct glob set once, instead of once per task.
+
 ## 2.6.1
 
 #### 🐞 Fixes

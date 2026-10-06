@@ -59,32 +59,5 @@ fn cas(c: &mut Criterion) {
     group.finish();
 }
 
-fn vcs_git(c: &mut Criterion) {
-    let mut group = c.benchmark_group("VcsGit");
-    let sandbox = create_sandbox_with_files();
-
-    group.bench_function(id(100, "get_file_hashes"), |b| {
-        b.to_async(Runtime::new().unwrap()).iter(async || {
-            let git = Git::load(sandbox.path(), "master", &["origin".to_string()]).unwrap();
-
-            git.get_file_hashes(&get_relative_file_paths(100), true)
-                .await
-                .unwrap();
-        })
-    });
-
-    group.bench_function(id(1000, "get_file_hashes"), |b| {
-        b.to_async(Runtime::new().unwrap()).iter(async || {
-            let git = Git::load(sandbox.path(), "master", &["origin".to_string()]).unwrap();
-
-            git.get_file_hashes(&get_relative_file_paths(1000), true)
-                .await
-                .unwrap();
-        })
-    });
-
-    group.finish();
-}
-
-criterion_group!(benches, cas, vcs_git);
+criterion_group!(benches, cas);
 criterion_main!(benches);

@@ -1,5 +1,5 @@
 use crate::affected::*;
-use moon_async_utils::run_pooled_tasks;
+use moon_async_utils::{get_concurrency, run_pooled_tasks};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{Id, color};
 use moon_env_var::GlobalEnvBag;
@@ -14,7 +14,6 @@ use std::fmt;
 use std::io;
 use std::path::Path;
 use std::sync::Arc;
-use std::thread;
 use tracing::{debug, trace};
 
 pub struct AffectedTracker {
@@ -457,10 +456,7 @@ impl AffectedTracker {
         // mark them and walk their relationships all at once. Checks are cheap
         // enough that spawning one per task would cost more than the check
         // itself, so they're batched, with enough batches to fill the pool
-        let batch_size = tasks
-            .len()
-            .div_ceil(thread::available_parallelism().map_or(1, |cpus| cpus.get() * 4))
-            .max(1);
+        let batch_size = tasks.len().div_ceil(get_concurrency() * 4).max(1);
 
         run_pooled_tasks(
             VecDeque::from_iter(tasks.chunks(batch_size).map(|batch| batch.to_vec())),
@@ -764,14 +760,12 @@ impl fmt::Debug for AffectedTracker {
     }
 }
 
-/// Check whether the project itself is affected by the changed files,
-/// ignoring any relationships.
 fn is_project_directly_affected(
     project: &Project,
     changed_files: &FxHashSet<WorkspaceRelativePathBuf>,
 ) -> Option<AffectedBy> {
     let file = if project.is_root_level() {
-        // If at the root, any file affects it
+        // If at the root, any visible file affects it
         changed_files
             .iter()
             .find(|file| !file.as_str().starts_with('.'))
@@ -784,8 +778,6 @@ fn is_project_directly_affected(
     file.map(|file| AffectedBy::ChangedFile(file.to_owned()))
 }
 
-/// Check whether the task itself is affected by CI, environment variables,
-/// or the changed files, ignoring any relationships.
 fn is_task_directly_affected(
     task: &Task,
     changed_files: &FxHashSet<WorkspaceRelativePathBuf>,

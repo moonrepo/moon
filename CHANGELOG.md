@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an MQL issue where a negated condition (`taskTag!=tag`) was not working correctly with a
+  list of values.
+- Fixed an unresponsive connection for the HTTP remote storage.
+
 ## 2.6.0
 
 #### 🚀 Updates

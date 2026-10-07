@@ -28,6 +28,7 @@ export interface Project {
 	fileGroups?: Record<string, FileGroup>;
 	id: Id;
 	inherited?: InheritedTasks | null;
+	inheritedFrom?: string[];
 	language?: LanguageType;
 	layer?: LayerType;
 	root: string;

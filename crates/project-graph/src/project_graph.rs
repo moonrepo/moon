@@ -2,7 +2,7 @@ use crate::project_graph_error::ProjectGraphError;
 use daggy::Dag;
 use moon_common::Id;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
-use moon_config::DependencyScope;
+use moon_config::{DependencyScope, InheritedTasks};
 use moon_graph_utils::*;
 use moon_project::Project;
 use moon_project_expander::{ProjectExpander, ProjectExpanderContext};
@@ -153,6 +153,23 @@ impl ProjectGraph {
     /// Return all unexpanded projects from the graph.
     pub fn get_all_unexpanded(&self) -> Vec<&Project> {
         self.nodes.values().map(|node| &node.project).collect()
+    }
+
+    /// Return the task configuration that the project inherited from ".moon/tasks",
+    /// derived from the configs it was inherited from, as it's not stored in the graph.
+    pub fn get_inherited_tasks(&self, project: &Project) -> miette::Result<InheritedTasks> {
+        self.context
+            .inherited_tasks
+            .get_inherited_config_from_sources(&project.inherited_from)
+    }
+
+    /// Return a copy of the project that includes its inherited task configuration,
+    /// which is required when outputting the project to consumers.
+    pub fn get_with_inherited_tasks(&self, project: &Project) -> miette::Result<Project> {
+        let mut project = project.to_owned();
+        project.inherited = Some(self.get_inherited_tasks(&project)?);
+
+        Ok(project)
     }
 
     /// Return the default project if it has been configured and exists.
@@ -555,7 +572,25 @@ impl GraphConversions<Project, DependencyScope, Id> for ProjectGraph {}
 
 impl GraphToDot<Project, DependencyScope, Id> for ProjectGraph {}
 
-impl GraphToJson<Project, DependencyScope, Id> for ProjectGraph {}
+impl GraphToJson<Project, DependencyScope, Id> for ProjectGraph {
+    fn to_json(&self, pretty: bool) -> miette::Result<String> {
+        // Include the inherited task configuration for consumers
+        let mut projects = FxHashMap::default();
+
+        for node in self.nodes.values() {
+            projects.insert(node.index, self.get_with_inherited_tasks(&node.project)?);
+        }
+
+        GraphCache {
+            graph: self.get_graph(),
+            data: projects
+                .iter()
+                .map(|(index, project)| (*index, project))
+                .collect(),
+        }
+        .to_json(pretty)
+    }
+}
 
 #[cfg(test)]
 mod tests {

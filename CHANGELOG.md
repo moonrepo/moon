@@ -75,11 +75,16 @@
     - Files that `inheritedBy.files` depends on are no longer checked for existence one at a time
       when hashing the graph's cache, as missing files are already omitted from the hash.
     - A workspace without any projects no longer locates and loads projects twice.
+    - Projects now only store the paths of the `.moon/tasks` configs that they inherited from,
+      instead of a copy of each config, which was copied again every time a project was expanded.
+      The configs are derived from these paths when a project is output, like in `moon project`,
+      and the paths are available in a new `inheritedFrom` field.
   - The graph's cache now stores a single hash manifest, instead of also storing an unused one when
     plugins discovered new input files.
-  - The graph's cache file is now about a third smaller, as data that's only used while building the
-    graph is no longer cached, and task options are omitted when they're the default value. It's
-    also read and written directly, without stripping comments or creating an intermediate string.
+  - The graph's cache file is now less than half the size, as data that's only used while building
+    the graph is no longer cached, task options are omitted when they're the default value, and
+    projects only store the paths of the configs they inherited from. It's also read and written
+    directly, without stripping comments or creating an intermediate string.
 
 #### 🐞 Fixes
 

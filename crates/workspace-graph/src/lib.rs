@@ -51,9 +51,11 @@ impl WorkspaceGraph {
         self.projects.get_from_path(starting_file)
     }
 
+    /// Return a project that includes its tasks, and inherited task
+    /// configuration, which is required when outputting the project.
     pub fn get_project_with_tasks(&self, id_or_alias: impl AsRef<str>) -> miette::Result<Project> {
         let base_project = self.get_project(id_or_alias)?;
-        let mut project = base_project.as_ref().to_owned();
+        let mut project = self.projects.get_with_inherited_tasks(&base_project)?;
 
         for base_task in self.get_tasks_from_project(&project.id)? {
             project

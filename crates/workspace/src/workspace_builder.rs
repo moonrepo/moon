@@ -265,6 +265,7 @@ impl WorkspaceBuilder {
         let mut graph_context = GraphExpanderContext {
             config_dir: context.config_loader.dir.clone(),
             extensions_config: context.extensions_config.clone(),
+            inherited_tasks: context.inherited_tasks.clone(),
             toolchains_config: context.toolchains_config.clone(),
             working_dir: context.working_dir.to_owned(),
             workspace_config: context.workspace_config.clone(),

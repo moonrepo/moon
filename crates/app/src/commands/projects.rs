@@ -13,11 +13,17 @@ pub struct ProjectsArgs {
 
 #[instrument(skip(session))]
 pub async fn projects(session: MoonSession, args: ProjectsArgs) -> SessionResult {
-    let mut projects = session.get_workspace_graph().await?.get_projects()?;
+    let workspace_graph = session.get_workspace_graph().await?;
+    let mut projects = workspace_graph.get_projects()?;
 
     projects.sort_by(|a, d| a.id.cmp(&d.id));
 
     if args.json {
+        let projects = projects
+            .iter()
+            .map(|project| workspace_graph.projects.get_with_inherited_tasks(project))
+            .collect::<miette::Result<Vec<_>>>()?;
+
         session
             .console
             .out

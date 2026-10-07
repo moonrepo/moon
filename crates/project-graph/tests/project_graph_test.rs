@@ -1172,6 +1172,117 @@ tasks:
                 .await
         }
 
+        const NODE_SOURCES: [&str; 3] = [
+            ".moon/tasks/all.yml",
+            ".moon/tasks/javascript.yml",
+            ".moon/tasks/node.yml",
+        ];
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn only_stores_inherited_sources_in_graph() {
+            let graph = build_inheritance_graph("inheritance/scoped").await;
+            let project = graph.get_project("node").unwrap();
+
+            assert!(project.inherited.is_none());
+            assert_eq!(project.inherited_from, NODE_SOURCES);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn derives_inherited_tasks_from_sources() {
+            let graph = build_inheritance_graph("inheritance/scoped").await;
+            let project = graph.get_project("node").unwrap();
+            let inherited = graph.projects.get_inherited_tasks(&project).unwrap();
+
+            assert_eq!(inherited.configs.keys().collect::<Vec<_>>(), NODE_SOURCES);
+            assert_eq!(
+                inherited.layers.get("global-node").unwrap(),
+                &[".moon/tasks/node.yml"]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn includes_inherited_tasks_for_output() {
+            let graph = build_inheritance_graph("inheritance/scoped").await;
+
+            let project = graph.get_project_with_tasks("node").unwrap();
+
+            assert_eq!(
+                project
+                    .inherited
+                    .as_ref()
+                    .unwrap()
+                    .configs
+                    .keys()
+                    .collect::<Vec<_>>(),
+                NODE_SOURCES
+            );
+
+            let json: json::JsonValue =
+                json::parse(graph.projects.to_json(false).unwrap()).unwrap();
+            let node = json["data"]
+                .as_object()
+                .unwrap()
+                .values()
+                .find(|project| project["id"] == "node")
+                .unwrap();
+
+            assert_eq!(
+                node["inherited"]["configs"]
+                    .as_object()
+                    .unwrap()
+                    .keys()
+                    .collect::<Vec<_>>(),
+                NODE_SOURCES
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn derives_inherited_tasks_when_loaded_from_cache() {
+            async fn generate(root: &Path) -> WorkspaceGraph {
+                create_workspace_mocker(root)
+                    .load_inherited_tasks_from(".moon")
+                    .mock_workspace_graph_with_options(WorkspaceMockOptions {
+                        cache: true,
+                        ..Default::default()
+                    })
+                    .await
+            }
+
+            let sandbox = create_moon_sandbox("inheritance/scoped");
+            sandbox.enable_git();
+
+            generate(sandbox.path()).await;
+
+            // Only the sources are cached
+            let cache_path = sandbox
+                .path()
+                .join(".moon/cache/states/workspaceGraph.json");
+            let mut cache: json::JsonValue = json::read_file(&cache_path).unwrap();
+
+            for node in cache["projects"]["graph"]["nodes"].as_array_mut().unwrap() {
+                assert!(node.get("inherited").is_none());
+
+                // Change the cached sources, to verify that they're used
+                if node["id"] == "node" {
+                    assert_eq!(node["inheritedFrom"], json::json!(NODE_SOURCES));
+
+                    node["inheritedFrom"] = json::json!([NODE_SOURCES[0]]);
+                }
+            }
+
+            json::write_file(&cache_path, &cache, false).unwrap();
+
+            let graph = generate(sandbox.path()).await;
+            let project = graph.get_project("node").unwrap();
+            let inherited = graph.projects.get_inherited_tasks(&project).unwrap();
+
+            assert_eq!(project.inherited_from, [NODE_SOURCES[0]]);
+            assert_eq!(
+                inherited.configs.keys().collect::<Vec<_>>(),
+                [NODE_SOURCES[0]]
+            );
+        }
+
         #[tokio::test(flavor = "multi_thread")]
         async fn inherits_scoped_tasks() {
             let graph = build_inheritance_graph("inheritance/scoped").await;

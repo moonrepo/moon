@@ -49,9 +49,17 @@ cacheable!(
         /// Unique ID for the project. Is the LHS of the `projects` setting.
         pub id: Id,
 
-        /// Task configuration that was inherited from ".moon/tasks".
+        /// Task configuration that was inherited from ".moon/tasks". This is large,
+        /// and mostly the same for every project, so it's not stored in the project
+        /// graph. It's derived from `inherited_from` when required, like for output,
+        /// with `ProjectGraph.get_inherited_tasks`.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub inherited: Option<InheritedTasks>,
+
+        /// Workspace relative paths of the ".moon/tasks" configs that were
+        /// inherited, in order. Are the keys of `inherited.configs`.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub inherited_from: Vec<String>,
 
         /// Primary programming language of the project.
         #[serde(skip_serializing_if = "is_default")]

@@ -28,129 +28,24 @@ fn assert_not_hydrated(outcome: HydrateOutcome) {
 mod output_hydrater {
     use super::*;
 
-    mod local_legacy {
-        use super::*;
+    #[tokio::test(flavor = "multi_thread")]
+    async fn does_nothing_if_from_prev_outputs() {
+        let container = TaskRunnerContainer::new("archive", "file-outputs").await;
+        let hydrater = container.create_hydrator();
+        let state = container.create_state();
 
-        #[tokio::test(flavor = "multi_thread")]
-        async fn does_nothing_if_from_prev_outputs() {
-            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
-            let hydrater = container.create_hydrator();
-            let state = container.create_state();
-
-            assert_hydrated(
-                hydrater
-                    .hydrate(HydrateFrom::PreviousOutput, "hash123", &state)
-                    .await
-                    .unwrap(),
-            );
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn doesnt_unpack_if_cache_disabled() {
-            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
-            container
-                .sandbox
-                .create_file(".moon/cache/outputs/hash123.tar.gz", "");
-
-            container
-                .app_context
-                .cache_engine
-                .force_mode(CacheMode::Off);
-
-            let hydrater = container.create_hydrator();
-            let state = container.create_state();
-
-            assert_not_hydrated(
-                hydrater
-                    .hydrate(HydrateFrom::LocalArchive, "hash123", &state)
-                    .await
-                    .unwrap(),
-            );
-
-            GlobalEnvBag::instance().remove("MOON_CACHE");
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn doesnt_unpack_if_cache_write_only() {
-            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
-            container
-                .sandbox
-                .create_file(".moon/cache/outputs/hash123.tar.gz", "");
-
-            container
-                .app_context
-                .cache_engine
-                .force_mode(CacheMode::Write);
-
-            let hydrater = container.create_hydrator();
-            let state = container.create_state();
-
-            assert_not_hydrated(
-                hydrater
-                    .hydrate(HydrateFrom::LocalArchive, "hash123", &state)
-                    .await
-                    .unwrap(),
-            );
-
-            GlobalEnvBag::instance().remove("MOON_CACHE");
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn unpacks_archive_into_project() {
-            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
-            container.pack_archive();
-
-            assert!(!container.sandbox.path().join("project/file.txt").exists());
-
-            let hydrater = container.create_hydrator();
-            let state = container.create_state();
-
-            assert_hydrated(
-                hydrater
-                    .hydrate(HydrateFrom::LocalArchive, "hash123", &state)
-                    .await
-                    .unwrap(),
-            );
-
-            assert!(container.sandbox.path().join("project/file.txt").exists());
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn unpacks_logs_from_archive() {
-            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
-            container.pack_archive();
-
-            assert!(
-                !container
-                    .sandbox
-                    .path()
-                    .join(".moon/cache/states/project/file-outputs/stdout.log")
-                    .exists()
-            );
-
-            let hydrater = container.create_hydrator();
-            let state = container.create_state();
-
+        assert_hydrated(
             hydrater
-                .hydrate(HydrateFrom::LocalArchive, "hash123", &state)
+                .hydrate(HydrateFrom::PreviousOutput, "hash123", &state)
                 .await
-                .unwrap();
-
-            assert!(
-                container
-                    .sandbox
-                    .path()
-                    .join(".moon/cache/states/project/file-outputs/stdout.log")
-                    .exists()
-            );
-        }
+                .unwrap(),
+        );
     }
 
     mod local_cas {
         use super::*;
 
         fn setup_cas_state(state: &mut TaskRunState) {
-            state.local_cas_enabled = true;
             state.digest = Digest::from_bytes(b"hash123").unwrap();
         }
 
@@ -334,23 +229,29 @@ mod output_hydrater {
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn falls_back_to_archive_if_cas_disabled() {
+        async fn doesnt_hydrate_if_cache_write_only() {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
-            container.pack_archive();
+            container
+                .sandbox
+                .create_file("project/file.txt", "contents");
 
-            assert!(!container.sandbox.path().join("project/file.txt").exists());
-
-            // CAS is not enabled in state, so a local source should fall back to
-            // unpacking the legacy archive.
             let mut state = container.create_state();
-            state.digest = Digest::from_bytes(b"hash123").unwrap();
+            setup_cas_state(&mut state);
+
+            // Load the source while the cache is still readable.
+            let source = archive_and_load(&container, &state).await;
+
+            fs::remove_file(container.sandbox.path().join("project/file.txt")).unwrap();
 
             container
-                .seed_manifest(&state.digest, TaskManifest::default())
-                .await;
-            let source = load_source(&container, &state).await;
+                .app_context
+                .cache_engine
+                .force_mode(CacheMode::Write);
 
-            assert_hydrated(
+            let mut state = container.create_state();
+            setup_cas_state(&mut state);
+
+            assert_not_hydrated(
                 container
                     .create_hydrator()
                     .hydrate(HydrateFrom::Storage(Box::new(source)), "hash123", &state)
@@ -358,7 +259,9 @@ mod output_hydrater {
                     .unwrap(),
             );
 
-            assert!(container.sandbox.path().join("project/file.txt").exists());
+            assert!(!container.sandbox.path().join("project/file.txt").exists());
+
+            GlobalEnvBag::instance().remove("MOON_CACHE");
         }
 
         #[tokio::test(flavor = "multi_thread")]

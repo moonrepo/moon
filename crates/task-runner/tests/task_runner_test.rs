@@ -436,12 +436,12 @@ mod task_runner {
                     assert_eq!(result.operations[1].status, ActionStatus::Cached);
                 }
 
-                pub(super) async fn run_reuses_existing_outputs(task_id: &str, cas_enabled: bool) {
-                    let container = TaskRunnerContainer::new_os("runner", task_id).await;
+                #[tokio::test(flavor = "multi_thread")]
+                async fn running_again_reuses_existing_outputs() {
+                    let container = TaskRunnerContainer::new_os("runner", "create-file-glob").await;
                     container.sandbox.enable_git();
 
                     let mut runner = container.create_runner();
-                    runner.state.local_cas_enabled = cas_enabled;
 
                     let node = container.create_action_node();
                     let context = ActionContext::default();
@@ -475,12 +475,12 @@ mod task_runner {
                     assert_eq!(get_file_id(&file), file_id);
                 }
 
-                pub(super) async fn run_restores_missing_outputs(task_id: &str, cas_enabled: bool) {
-                    let container = TaskRunnerContainer::new_os("runner", task_id).await;
+                #[tokio::test(flavor = "multi_thread")]
+                async fn running_again_restores_missing_outputs() {
+                    let container = TaskRunnerContainer::new_os("runner", "create-file-glob").await;
                     container.sandbox.enable_git();
 
                     let mut runner = container.create_runner();
-                    runner.state.local_cas_enabled = cas_enabled;
 
                     let node = container.create_action_node();
                     let context = ActionContext::default();
@@ -1160,73 +1160,6 @@ mod task_runner {
             }
         }
 
-        mod local_cach_legacy {
-            use super::*;
-
-            #[tokio::test(flavor = "multi_thread")]
-            async fn returns_if_archive_exists() {
-                let container = TaskRunnerContainer::new("runner", "base").await;
-                let mut runner = container.create_runner();
-
-                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
-
-                container
-                    .sandbox
-                    .create_file(".moon/cache/outputs/hash123.tar.gz", "");
-
-                assert!(matches!(
-                    runner.is_cached("hash123").await.unwrap(),
-                    Some(HydrateFrom::LocalArchive)
-                ));
-            }
-
-            #[tokio::test(flavor = "multi_thread")]
-            async fn skips_if_archive_doesnt_exist() {
-                let container = TaskRunnerContainer::new("runner", "base").await;
-                let mut runner = container.create_runner();
-
-                assert!(runner.is_cached("hash123").await.unwrap().is_none());
-            }
-
-            #[tokio::test(flavor = "multi_thread")]
-            async fn skips_if_cache_isnt_readable() {
-                let container = TaskRunnerContainer::new("runner", "base").await;
-                let mut runner = container.create_runner();
-
-                container
-                    .sandbox
-                    .create_file(".moon/cache/outputs/hash123.tar.gz", "");
-
-                container
-                    .app_context
-                    .cache_engine
-                    .force_mode(CacheMode::Off);
-
-                assert!(runner.is_cached("hash123").await.unwrap().is_none());
-
-                GlobalEnvBag::instance().remove("MOON_CACHE");
-            }
-
-            #[tokio::test(flavor = "multi_thread")]
-            async fn skips_if_cache_is_writeonly() {
-                let container = TaskRunnerContainer::new("runner", "base").await;
-                let mut runner = container.create_runner();
-
-                container
-                    .sandbox
-                    .create_file(".moon/cache/outputs/hash123.tar.gz", "");
-
-                container
-                    .app_context
-                    .cache_engine
-                    .force_mode(CacheMode::Write);
-
-                assert!(runner.is_cached("hash123").await.unwrap().is_none());
-
-                GlobalEnvBag::instance().remove("MOON_CACHE");
-            }
-        }
-
         mod local_cache {
             use super::*;
 
@@ -1235,7 +1168,6 @@ mod task_runner {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;
                 let mut runner = container.create_runner();
 
-                runner.state.local_cas_enabled = true;
                 runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
 
                 container
@@ -1249,11 +1181,62 @@ mod task_runner {
             }
 
             #[tokio::test(flavor = "multi_thread")]
+            async fn skips_if_manifest_doesnt_exist() {
+                let container = TaskRunnerContainer::new("runner", "outputs").await;
+                let mut runner = container.create_runner();
+
+                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
+
+                assert!(runner.is_cached("hash123").await.unwrap().is_none());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_if_cache_disabled() {
+                let container = TaskRunnerContainer::new("runner", "outputs").await;
+                let mut runner = container.create_runner();
+
+                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
+
+                container
+                    .seed_manifest(&runner.state.digest, TaskManifest::default())
+                    .await;
+
+                container
+                    .app_context
+                    .cache_engine
+                    .force_mode(CacheMode::Off);
+
+                assert!(runner.is_cached("hash123").await.unwrap().is_none());
+
+                GlobalEnvBag::instance().remove("MOON_CACHE");
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_if_cache_is_writeonly() {
+                let container = TaskRunnerContainer::new("runner", "outputs").await;
+                let mut runner = container.create_runner();
+
+                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
+
+                container
+                    .seed_manifest(&runner.state.digest, TaskManifest::default())
+                    .await;
+
+                container
+                    .app_context
+                    .cache_engine
+                    .force_mode(CacheMode::Write);
+
+                assert!(runner.is_cached("hash123").await.unwrap().is_none());
+
+                GlobalEnvBag::instance().remove("MOON_CACHE");
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
             async fn skips_if_cache_isnt_readable() {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;
                 let mut runner = container.create_runner();
 
-                runner.state.local_cas_enabled = true;
                 runner.state.local_cache_readable = false;
                 runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
 
@@ -2261,6 +2244,8 @@ mod task_runner {
             container.sandbox.create_file("project/file.txt", "");
 
             let mut runner = container.create_runner();
+            runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
+
             let result = runner.archive("hash123").await.unwrap();
 
             assert!(result);
@@ -2277,8 +2262,9 @@ mod task_runner {
             container.sandbox.enable_git();
 
             let mut runner = container.create_runner();
+            runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
 
-            // Task has no outputs; legacy archive path still packs the
+            // Task has no outputs; the manifest still captures the
             // stdout/stderr logs and returns true.
             assert!(runner.archive("hash123").await.unwrap());
         }
@@ -2365,15 +2351,33 @@ mod task_runner {
             }
         }
 
-        mod local_cache_legacy {
+        mod local_cache {
             use super::*;
+            use moon_cache::TaskManifestFile;
             use std::fs;
 
-            fn setup_local_state(container: &TaskRunnerContainer, runner: &mut TaskRunner) {
+            async fn setup_local_state(
+                container: &TaskRunnerContainer,
+                runner: &mut TaskRunner<'_>,
+            ) {
                 container.sandbox.enable_git();
-                container.pack_archive();
 
                 runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
+
+                let manifest = TaskManifest {
+                    files: vec![TaskManifestFile {
+                        path: "project/file.txt".into(),
+                        digest: Some(container.seed_blob(b"content").await),
+                        ..Default::default()
+                    }],
+                    stderr_digest: Some(container.seed_blob(b"stderr").await),
+                    stdout_digest: Some(container.seed_blob(b"stdout").await),
+                    ..Default::default()
+                };
+
+                container
+                    .seed_manifest(&runner.state.digest, manifest)
+                    .await;
             }
 
             #[tokio::test(flavor = "multi_thread")]
@@ -2381,7 +2385,7 @@ mod task_runner {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;
                 let mut runner = container.create_runner();
 
-                setup_local_state(&container, &mut runner);
+                setup_local_state(&container, &mut runner).await;
 
                 let result = runner.hydrate("hash123").await.unwrap();
 
@@ -2398,7 +2402,7 @@ mod task_runner {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;
                 let mut runner = container.create_runner();
 
-                setup_local_state(&container, &mut runner);
+                setup_local_state(&container, &mut runner).await;
 
                 runner.hydrate("hash123").await.unwrap();
 
@@ -2409,15 +2413,18 @@ mod task_runner {
             }
 
             #[tokio::test(flavor = "multi_thread")]
-            async fn sets_the_hash_to_cache() {
+            async fn unpacks_outputs_into_project() {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;
                 let mut runner = container.create_runner();
 
-                setup_local_state(&container, &mut runner);
+                setup_local_state(&container, &mut runner).await;
 
                 runner.hydrate("hash123").await.unwrap();
 
-                assert_eq!(runner.cache.data.hash, "hash123");
+                let output_file = container.sandbox.path().join("project/file.txt");
+
+                assert!(output_file.exists());
+                assert_eq!(fs::read_to_string(output_file).unwrap(), "content");
             }
 
             // An archive is only created by a run that passed, so the exit code of
@@ -2450,53 +2457,12 @@ mod task_runner {
                 ));
             }
 
-            // Like the partial outputs of a run that failed, or those of a run at
-            // another hash, as they would be reused as previous outputs
             #[tokio::test(flavor = "multi_thread")]
-            async fn removes_existing_outputs_that_arent_in_the_archive() {
-                let container = TaskRunnerContainer::new("runner", "glob-outputs").await;
-                let mut runner = container.create_runner();
-
-                setup_local_state(&container, &mut runner);
-                container.sandbox.create_file("project/file.txt", "fail");
-                container.sandbox.create_file("project/partial.txt", "fail");
-
-                runner.hydrate("hash123").await.unwrap();
-
-                assert_eq!(
-                    fs::read_to_string(container.sandbox.path().join("project/file.txt")).unwrap(),
-                    "content"
-                );
-                assert!(
-                    !container
-                        .sandbox
-                        .path()
-                        .join("project/partial.txt")
-                        .exists()
-                );
-            }
-
-            #[tokio::test(flavor = "multi_thread")]
-            async fn unpacks_archive_into_project() {
+            async fn loads_stdlogs_in_manifest_into_operation() {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;
                 let mut runner = container.create_runner();
 
-                setup_local_state(&container, &mut runner);
-
-                runner.hydrate("hash123").await.unwrap();
-
-                let output_file = container.sandbox.path().join("project/file.txt");
-
-                assert!(output_file.exists());
-                assert_eq!(fs::read_to_string(output_file).unwrap(), "content");
-            }
-
-            #[tokio::test(flavor = "multi_thread")]
-            async fn loads_stdlogs_in_archive_into_operation() {
-                let container = TaskRunnerContainer::new("runner", "outputs").await;
-                let mut runner = container.create_runner();
-
-                setup_local_state(&container, &mut runner);
+                setup_local_state(&container, &mut runner).await;
 
                 let result = runner.hydrate("hash123").await.unwrap();
 

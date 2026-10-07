@@ -2,5 +2,3 @@ projects:
   app: 'app'
 cache:
   unstable_sharedWorktreeCache: true
-experiments:
-  casOutputsCache: true

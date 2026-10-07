@@ -5,14 +5,17 @@ use moon_cache::CacheMode;
 use moon_env_var::GlobalEnvBag;
 use moon_hash::Digest;
 use moon_task_runner::output_archiver::ArchiveOutcome;
-use starbase_archive::Archiver;
 use std::fs;
 use utils::*;
 
 mod output_archiver {
     use super::*;
 
-    mod local_legacy {
+    fn setup_state(state: &mut moon_task_runner::TaskRunState) {
+        state.digest = Digest::from_bytes(b"hash123").unwrap();
+    }
+
+    mod archive {
         use super::*;
 
         #[tokio::test(flavor = "multi_thread")]
@@ -29,7 +32,8 @@ mod output_archiver {
         async fn doesnt_error_if_outputs_not_created_but_marked_as_optional() {
             let container = TaskRunnerContainer::new("archive", "file-outputs-optional").await;
             let archiver = container.create_archiver();
-            let state = container.create_state();
+            let mut state = container.create_state();
+            setup_state(&mut state);
 
             let _ = archiver.archive("hash123", &state).await.unwrap();
         }
@@ -38,411 +42,10 @@ mod output_archiver {
         async fn doesnt_error_if_outputs_not_created_but_marked_as_optional_using_globs() {
             let container = TaskRunnerContainer::new("archive", "glob-outputs-optional").await;
             let archiver = container.create_archiver();
-            let state = container.create_state();
+            let mut state = container.create_state();
+            setup_state(&mut state);
 
             let _ = archiver.archive("hash123", &state).await.unwrap();
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn creates_an_archive() {
-            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
-            container.sandbox.create_file("project/file.txt", "");
-
-            let archiver = container.create_archiver();
-            let state = container.create_state();
-
-            assert!(matches!(
-                archiver.archive("hash123", &state).await.unwrap(),
-                ArchiveOutcome::Queued
-            ));
-            assert!(
-                container
-                    .sandbox
-                    .path()
-                    .join(".moon/cache/outputs/hash123.tar.gz")
-                    .exists()
-            );
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn repacks_an_archive_if_it_exists() {
-            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
-            container.sandbox.create_file("project/file.txt", "");
-            container
-                .sandbox
-                .create_file(".moon/cache/outputs/hash123.tar.gz", "");
-
-            let archiver = container.create_archiver();
-            let state = container.create_state();
-
-            assert!(matches!(
-                archiver.archive("hash123", &state).await.unwrap(),
-                ArchiveOutcome::Queued
-            ));
-
-            let file = container
-                .app_context
-                .cache_engine
-                .hash
-                .get_archive_path("hash123");
-
-            assert!(fs::metadata(file).unwrap().len() > 0);
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn doesnt_create_an_archive_if_cache_disabled() {
-            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
-            container.sandbox.create_file("project/file.txt", "");
-
-            container
-                .app_context
-                .cache_engine
-                .force_mode(CacheMode::Off);
-
-            let archiver = container.create_archiver();
-            let state = container.create_state();
-
-            assert!(matches!(
-                archiver.archive("hash123", &state).await.unwrap(),
-                ArchiveOutcome::Skipped
-            ));
-
-            GlobalEnvBag::instance().remove("MOON_CACHE");
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn doesnt_create_an_archive_if_cache_read_only() {
-            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
-            container.sandbox.create_file("project/file.txt", "");
-
-            container
-                .app_context
-                .cache_engine
-                .force_mode(CacheMode::Read);
-
-            let archiver = container.create_archiver();
-            let state = container.create_state();
-
-            assert!(matches!(
-                archiver.archive("hash123", &state).await.unwrap(),
-                ArchiveOutcome::Skipped
-            ));
-
-            GlobalEnvBag::instance().remove("MOON_CACHE");
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn includes_input_files_in_archive() {
-            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
-            container.sandbox.create_file("project/file.txt", "");
-
-            let archiver = container.create_archiver();
-            let state = container.create_state();
-
-            archiver.archive("hash123", &state).await.unwrap();
-
-            let file = container
-                .app_context
-                .cache_engine
-                .hash
-                .get_archive_path("hash123");
-            let dir = container.sandbox.path().join("out");
-
-            Archiver::new(&dir, &file).unpack_from_ext().unwrap();
-
-            assert!(dir.join("project/file.txt").exists());
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn includes_input_globs_in_archive() {
-            let container = TaskRunnerContainer::new("archive", "glob-outputs").await;
-            container.sandbox.create_file("project/one.txt", "");
-            container.sandbox.create_file("project/two.txt", "");
-            container.sandbox.create_file("project/three.txt", "");
-
-            let archiver = container.create_archiver();
-            let state = container.create_state();
-
-            archiver.archive("hash123", &state).await.unwrap();
-
-            let file = container
-                .app_context
-                .cache_engine
-                .hash
-                .get_archive_path("hash123");
-            let dir = container.sandbox.path().join("out");
-
-            Archiver::new(&dir, &file).unpack_from_ext().unwrap();
-
-            assert!(dir.join("project/one.txt").exists());
-            assert!(dir.join("project/two.txt").exists());
-            assert!(dir.join("project/three.txt").exists());
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn includes_std_logs_in_archive() {
-            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
-            container
-                .sandbox
-                .create_file(".moon/cache/states/project/file-outputs/stdout.log", "out");
-            container
-                .sandbox
-                .create_file(".moon/cache/states/project/file-outputs/stderr.log", "err");
-            container.sandbox.create_file("project/file.txt", "");
-
-            let archiver = container.create_archiver();
-            let state = container.create_state();
-
-            archiver.archive("hash123", &state).await.unwrap();
-
-            let file = container
-                .app_context
-                .cache_engine
-                .hash
-                .get_archive_path("hash123");
-            let dir = container.sandbox.path().join("out");
-
-            Archiver::new(&dir, &file).unpack_from_ext().unwrap();
-
-            let err = dir.join(".moon/cache/states/project/file-outputs/stderr.log");
-            let out = dir.join(".moon/cache/states/project/file-outputs/stdout.log");
-
-            assert!(err.exists());
-            assert!(out.exists());
-            assert_eq!(fs::read_to_string(err).unwrap(), "err");
-            assert_eq!(fs::read_to_string(out).unwrap(), "out");
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn can_ignore_output_files_with_negation() {
-            let container = TaskRunnerContainer::new("archive", "file-outputs-negated").await;
-            container.sandbox.create_file("project/a.txt", "");
-            container.sandbox.create_file("project/b.txt", "");
-            container.sandbox.create_file("project/c.txt", "");
-
-            let archiver = container.create_archiver();
-            let state = container.create_state();
-
-            archiver.archive("hash123", &state).await.unwrap();
-
-            let file = container
-                .app_context
-                .cache_engine
-                .hash
-                .get_archive_path("hash123");
-            let dir = container.sandbox.path().join("out");
-
-            Archiver::new(&dir, &file).unpack_from_ext().unwrap();
-
-            assert!(dir.join("project/a.txt").exists());
-            assert!(!dir.join("project/b.txt").exists());
-            assert!(dir.join("project/c.txt").exists());
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn can_ignore_output_globs_with_negation() {
-            let container = TaskRunnerContainer::new("archive", "glob-outputs-negated").await;
-            container.sandbox.create_file("project/a.txt", "");
-            container.sandbox.create_file("project/b.txt", "");
-            container.sandbox.create_file("project/c.txt", "");
-
-            let archiver = container.create_archiver();
-            let state = container.create_state();
-
-            archiver.archive("hash123", &state).await.unwrap();
-
-            let file = container
-                .app_context
-                .cache_engine
-                .hash
-                .get_archive_path("hash123");
-            let dir = container.sandbox.path().join("out");
-
-            Archiver::new(&dir, &file).unpack_from_ext().unwrap();
-
-            assert!(dir.join("project/a.txt").exists());
-            assert!(!dir.join("project/b.txt").exists());
-            assert!(dir.join("project/c.txt").exists());
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn caches_one_file() {
-            let container = TaskRunnerContainer::new("archive", "output-one-file").await;
-            container.sandbox.create_file("project/file.txt", "");
-
-            let archiver = container.create_archiver();
-            let state = container.create_state();
-
-            archiver.archive("hash123", &state).await.unwrap();
-
-            let file = container
-                .app_context
-                .cache_engine
-                .hash
-                .get_archive_path("hash123");
-            let dir = container.sandbox.path().join("out");
-
-            Archiver::new(&dir, &file).unpack_from_ext().unwrap();
-
-            assert!(dir.join("project/file.txt").exists());
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn caches_many_files() {
-            let container = TaskRunnerContainer::new("archive", "output-many-files").await;
-            container.sandbox.create_file("project/a.txt", "");
-            container.sandbox.create_file("project/b.txt", "");
-            container.sandbox.create_file("project/c.txt", "");
-
-            let archiver = container.create_archiver();
-            let state = container.create_state();
-
-            archiver.archive("hash123", &state).await.unwrap();
-
-            let file = container
-                .app_context
-                .cache_engine
-                .hash
-                .get_archive_path("hash123");
-            let dir = container.sandbox.path().join("out");
-
-            Archiver::new(&dir, &file).unpack_from_ext().unwrap();
-
-            assert!(dir.join("project/a.txt").exists());
-            assert!(dir.join("project/b.txt").exists());
-            assert!(dir.join("project/c.txt").exists());
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn caches_one_directory() {
-            let container = TaskRunnerContainer::new("archive", "output-one-dir").await;
-            container.sandbox.create_file("project/dir/file.txt", "");
-
-            let archiver = container.create_archiver();
-            let state = container.create_state();
-
-            archiver.archive("hash123", &state).await.unwrap();
-
-            let file = container
-                .app_context
-                .cache_engine
-                .hash
-                .get_archive_path("hash123");
-            let dir = container.sandbox.path().join("out");
-
-            Archiver::new(&dir, &file).unpack_from_ext().unwrap();
-
-            assert!(dir.join("project/dir/file.txt").exists());
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn caches_many_directories() {
-            let container = TaskRunnerContainer::new("archive", "output-many-dirs").await;
-            container.sandbox.create_file("project/a/file.txt", "");
-            container.sandbox.create_file("project/b/file.txt", "");
-            container.sandbox.create_file("project/c/file.txt", "");
-
-            let archiver = container.create_archiver();
-            let state = container.create_state();
-
-            archiver.archive("hash123", &state).await.unwrap();
-
-            let file = container
-                .app_context
-                .cache_engine
-                .hash
-                .get_archive_path("hash123");
-            let dir = container.sandbox.path().join("out");
-
-            Archiver::new(&dir, &file).unpack_from_ext().unwrap();
-
-            assert!(dir.join("project/a/file.txt").exists());
-            assert!(dir.join("project/b/file.txt").exists());
-            assert!(dir.join("project/c/file.txt").exists());
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn caches_file_and_directory() {
-            let container = TaskRunnerContainer::new("archive", "output-file-and-dir").await;
-            container.sandbox.create_file("project/file.txt", "");
-            container.sandbox.create_file("project/dir/file.txt", "");
-
-            let archiver = container.create_archiver();
-            let state = container.create_state();
-
-            archiver.archive("hash123", &state).await.unwrap();
-
-            let file = container
-                .app_context
-                .cache_engine
-                .hash
-                .get_archive_path("hash123");
-            let dir = container.sandbox.path().join("out");
-
-            Archiver::new(&dir, &file).unpack_from_ext().unwrap();
-
-            assert!(dir.join("project/file.txt").exists());
-            assert!(dir.join("project/dir/file.txt").exists());
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn caches_files_from_workspace() {
-            let container = TaskRunnerContainer::new("archive", "output-workspace").await;
-            container.sandbox.create_file("root.txt", "");
-            container.sandbox.create_file("shared/a.txt", "");
-            container.sandbox.create_file("shared/z.txt", "");
-
-            let archiver = container.create_archiver();
-            let state = container.create_state();
-
-            archiver.archive("hash123", &state).await.unwrap();
-
-            let file = container
-                .app_context
-                .cache_engine
-                .hash
-                .get_archive_path("hash123");
-            let dir = container.sandbox.path().join("out");
-
-            Archiver::new(&dir, &file).unpack_from_ext().unwrap();
-
-            assert!(dir.join("root.txt").exists());
-            assert!(dir.join("shared/a.txt").exists());
-            assert!(dir.join("shared/z.txt").exists());
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn caches_files_from_workspace_and_project() {
-            let container =
-                TaskRunnerContainer::new("archive", "output-workspace-and-project").await;
-            container.sandbox.create_file("root.txt", "");
-            container.sandbox.create_file("project/file.txt", "");
-
-            let archiver = container.create_archiver();
-            let state = container.create_state();
-
-            archiver.archive("hash123", &state).await.unwrap();
-
-            let file = container
-                .app_context
-                .cache_engine
-                .hash
-                .get_archive_path("hash123");
-            let dir = container.sandbox.path().join("out");
-
-            Archiver::new(&dir, &file).unpack_from_ext().unwrap();
-
-            assert!(dir.join("root.txt").exists());
-            assert!(dir.join("project/file.txt").exists());
-        }
-    }
-
-    mod local_cas {
-        use super::*;
-
-        fn setup_cas_state(state: &mut moon_task_runner::TaskRunState) {
-            state.local_cas_enabled = true;
-            state.digest = Digest::from_bytes(b"hash123").unwrap();
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -452,9 +55,12 @@ mod output_archiver {
 
             let archiver = container.create_archiver();
             let mut state = container.create_state();
-            setup_cas_state(&mut state);
+            setup_state(&mut state);
 
-            archiver.archive("hash123", &state).await.unwrap();
+            assert!(matches!(
+                archiver.archive("hash123", &state).await.unwrap(),
+                ArchiveOutcome::Queued
+            ));
             container.flush_storage().await;
 
             assert!(container.manifest_exists(&state.digest).await);
@@ -469,7 +75,7 @@ mod output_archiver {
 
             let archiver = container.create_archiver();
             let mut state = container.create_state();
-            setup_cas_state(&mut state);
+            setup_state(&mut state);
 
             archiver.archive("hash123", &state).await.unwrap();
             container.flush_storage().await;
@@ -493,7 +99,6 @@ mod output_archiver {
 
             let archiver = container.create_archiver();
             let mut state = container.create_state();
-            state.local_cas_enabled = true;
             state.digest = digest.clone();
 
             archiver.archive("hash123", &state).await.unwrap();
@@ -514,7 +119,7 @@ mod output_archiver {
 
             let archiver = container.create_archiver();
             let mut state = container.create_state();
-            setup_cas_state(&mut state);
+            setup_state(&mut state);
 
             archiver.archive("hash123", &state).await.unwrap();
             container.flush_storage().await;
@@ -530,27 +135,7 @@ mod output_archiver {
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn doesnt_create_a_local_archive() {
-            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
-            container.sandbox.create_file("project/file.txt", "");
-
-            let archiver = container.create_archiver();
-            let mut state = container.create_state();
-            setup_cas_state(&mut state);
-
-            archiver.archive("hash123", &state).await.unwrap();
-
-            assert!(
-                !container
-                    .sandbox
-                    .path()
-                    .join(".moon/cache/outputs/hash123.tar.gz")
-                    .exists()
-            );
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn doesnt_write_to_cas_if_cache_disabled() {
+        async fn doesnt_store_if_cache_disabled() {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
             container.sandbox.create_file("project/file.txt", "");
 
@@ -561,7 +146,7 @@ mod output_archiver {
 
             let archiver = container.create_archiver();
             let mut state = container.create_state();
-            setup_cas_state(&mut state);
+            setup_state(&mut state);
 
             assert!(matches!(
                 archiver.archive("hash123", &state).await.unwrap(),
@@ -574,7 +159,7 @@ mod output_archiver {
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn doesnt_write_to_cas_if_cache_read_only() {
+        async fn doesnt_store_if_cache_read_only() {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
             container.sandbox.create_file("project/file.txt", "");
 
@@ -585,7 +170,7 @@ mod output_archiver {
 
             let archiver = container.create_archiver();
             let mut state = container.create_state();
-            setup_cas_state(&mut state);
+            setup_state(&mut state);
 
             assert!(matches!(
                 archiver.archive("hash123", &state).await.unwrap(),
@@ -610,7 +195,7 @@ mod output_archiver {
 
             let archiver = container.create_archiver();
             let mut state = container.create_state();
-            setup_cas_state(&mut state);
+            setup_state(&mut state);
 
             assert!(matches!(
                 archiver.archive("hash123", &state).await.unwrap(),
@@ -635,7 +220,7 @@ mod output_archiver {
 
             let archiver = container.create_archiver();
             let mut state = container.create_state();
-            setup_cas_state(&mut state);
+            setup_state(&mut state);
 
             assert!(matches!(
                 archiver.archive("hash123", &state).await.unwrap(),
@@ -646,6 +231,150 @@ mod output_archiver {
             let empty = Blob::from_bytes(vec![]).unwrap();
 
             assert!(container.blob_exists(&empty.digest).await);
+        }
+    }
+
+    mod manifest_files {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn includes_output_files() {
+            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
+            container.sandbox.create_file("project/file.txt", "");
+
+            assert_eq!(
+                container.archive_and_list_paths().await,
+                ["project/file.txt"]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn includes_output_globs() {
+            let container = TaskRunnerContainer::new("archive", "glob-outputs").await;
+            container.sandbox.create_file("project/one.txt", "");
+            container.sandbox.create_file("project/two.txt", "");
+            container.sandbox.create_file("project/three.txt", "");
+
+            assert_eq!(
+                container.archive_and_list_paths().await,
+                ["project/one.txt", "project/three.txt", "project/two.txt"]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn can_ignore_output_files_with_negation() {
+            let container = TaskRunnerContainer::new("archive", "file-outputs-negated").await;
+            container.sandbox.create_file("project/a.txt", "");
+            container.sandbox.create_file("project/b.txt", "");
+            container.sandbox.create_file("project/c.txt", "");
+
+            assert_eq!(
+                container.archive_and_list_paths().await,
+                ["project/a.txt", "project/c.txt"]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn can_ignore_output_globs_with_negation() {
+            let container = TaskRunnerContainer::new("archive", "glob-outputs-negated").await;
+            container.sandbox.create_file("project/a.txt", "");
+            container.sandbox.create_file("project/b.txt", "");
+            container.sandbox.create_file("project/c.txt", "");
+
+            assert_eq!(
+                container.archive_and_list_paths().await,
+                ["project/a.txt", "project/c.txt"]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn caches_one_file() {
+            let container = TaskRunnerContainer::new("archive", "output-one-file").await;
+            container.sandbox.create_file("project/file.txt", "");
+
+            assert_eq!(
+                container.archive_and_list_paths().await,
+                ["project/file.txt"]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn caches_many_files() {
+            let container = TaskRunnerContainer::new("archive", "output-many-files").await;
+            container.sandbox.create_file("project/a.txt", "");
+            container.sandbox.create_file("project/b.txt", "");
+            container.sandbox.create_file("project/c.txt", "");
+
+            assert_eq!(
+                container.archive_and_list_paths().await,
+                ["project/a.txt", "project/b.txt", "project/c.txt"]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn caches_one_directory() {
+            let container = TaskRunnerContainer::new("archive", "output-one-dir").await;
+            container.sandbox.create_file("project/dir/file.txt", "");
+
+            assert_eq!(
+                container.archive_and_list_paths().await,
+                ["project/dir/file.txt"]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn caches_many_directories() {
+            let container = TaskRunnerContainer::new("archive", "output-many-dirs").await;
+            container.sandbox.create_file("project/a/file.txt", "");
+            container.sandbox.create_file("project/b/file.txt", "");
+            container.sandbox.create_file("project/c/file.txt", "");
+
+            assert_eq!(
+                container.archive_and_list_paths().await,
+                [
+                    "project/a/file.txt",
+                    "project/b/file.txt",
+                    "project/c/file.txt"
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn caches_file_and_directory() {
+            let container = TaskRunnerContainer::new("archive", "output-file-and-dir").await;
+            container.sandbox.create_file("project/file.txt", "");
+            container.sandbox.create_file("project/dir/file.txt", "");
+
+            assert_eq!(
+                container.archive_and_list_paths().await,
+                ["project/dir/file.txt", "project/file.txt"]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn caches_files_from_workspace() {
+            let container = TaskRunnerContainer::new("archive", "output-workspace").await;
+            container.sandbox.create_file("root.txt", "");
+            container.sandbox.create_file("shared/a.txt", "");
+            container.sandbox.create_file("shared/z.txt", "");
+
+            assert_eq!(
+                container.archive_and_list_paths().await,
+                ["root.txt", "shared/a.txt", "shared/z.txt"]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn caches_files_from_workspace_and_project() {
+            let container =
+                TaskRunnerContainer::new("archive", "output-workspace-and-project").await;
+            container.sandbox.create_file("root.txt", "");
+            container.sandbox.create_file("project/file.txt", "");
+
+            assert_eq!(
+                container.archive_and_list_paths().await,
+                ["project/file.txt", "root.txt"]
+            );
         }
     }
 

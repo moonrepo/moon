@@ -283,7 +283,7 @@ mod archive {
         manifest.digest_source = Some(TaskManifestFile {
             bytes: Some(b"fingerprint".as_slice().into()),
             digest: Some(action_digest()),
-            path: ".moon/cache/hashes/abc.json".into(),
+            path: ".moon/cache/blobs/ab/c".into(),
             ..Default::default()
         });
 
@@ -304,7 +304,7 @@ mod archive {
         manifest.digest_source = Some(TaskManifestFile {
             bytes: Some(b"other-fingerprint".as_slice().into()),
             digest: Some(action.clone()),
-            path: ".moon/cache/hashes/def.json".into(),
+            path: ".moon/cache/blobs/de/f".into(),
             ..Default::default()
         });
 

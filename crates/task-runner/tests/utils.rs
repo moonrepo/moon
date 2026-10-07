@@ -17,10 +17,7 @@ use moon_task_runner::output_archiver::OutputArchiver;
 use moon_task_runner::output_hydrater::OutputHydrater;
 use moon_task_runner::task_executor::TaskExecutor;
 use moon_test_utils::{WorkspaceGraph, WorkspaceMocker};
-use starbase_archive::Archiver;
 use starbase_sandbox::{Sandbox, create_sandbox};
-use std::fs;
-use std::path::PathBuf;
 use std::sync::Arc;
 
 pub fn create_node(task: &Task) -> ActionNode {
@@ -120,6 +117,35 @@ impl TaskRunnerContainer {
             .is_some()
     }
 
+    /// Archive the task's outputs into storage, and return the workspace
+    /// relative paths of all files captured in the resulting manifest.
+    pub async fn archive_and_list_paths(&self) -> Vec<String> {
+        let mut state = self.create_state();
+        state.digest = Digest::from_bytes(b"hash123").unwrap();
+
+        self.create_archiver()
+            .archive("hash123", &state)
+            .await
+            .unwrap();
+        self.flush_storage().await;
+
+        let mut paths = self
+            .app_context
+            .cache_engine
+            .storage
+            .load_task_manifest(&state.digest)
+            .await
+            .unwrap()
+            .expect("manifest was stored")
+            .manifest
+            .files
+            .into_iter()
+            .map(|file| file.path.to_string())
+            .collect::<Vec<_>>();
+        paths.sort();
+        paths
+    }
+
     /// Whether a blob for the given digest exists in the local storage backend.
     pub async fn blob_exists(&self, digest: &Digest) -> bool {
         let backend = self.app_context.cache_engine.storage.get_backends()[0].clone();
@@ -198,40 +224,6 @@ impl TaskRunnerContainer {
 
     pub fn create_action_node(&self) -> ActionNode {
         create_node(&self.task)
-    }
-
-    pub fn pack_archive(&self) -> PathBuf {
-        let sandbox = &self.sandbox;
-        let file = sandbox.path().join(".moon/cache/outputs/hash123.tar.gz");
-
-        let out = format!(
-            ".moon/cache/states/{}/{}/stdout.log",
-            self.project_id, self.task_id,
-        );
-
-        let err = format!(
-            ".moon/cache/states/{}/{}/stderr.log",
-            self.project_id, self.task_id,
-        );
-
-        let txt = format!("{}/file.txt", self.project_id);
-
-        sandbox.create_file(&out, "stdout");
-        sandbox.create_file(&err, "stderr");
-        sandbox.create_file(&txt, "content");
-
-        let mut archiver = Archiver::new(sandbox.path(), &file);
-        archiver.add_source_file(&out, None);
-        archiver.add_source_file(&err, None);
-        archiver.add_source_file(&txt, None);
-        archiver.pack_from_ext().unwrap();
-
-        // Remove sources so we can test unpacking
-        fs::remove_file(sandbox.path().join(out)).unwrap();
-        fs::remove_file(sandbox.path().join(err)).unwrap();
-        fs::remove_file(sandbox.path().join(txt)).unwrap();
-
-        file
     }
 
     pub async fn create_check_command(&self, check: &moon_task::TaskCheck) -> Command {

@@ -1,6 +1,6 @@
 mod utils;
 
-use moon_cache::{CacheContext, CacheEngine};
+use moon_cache::{CacheContext, CacheEngine, TaskManifest};
 use moon_common::is_ci;
 use moon_config::{HasherWalkStrategy, PartialHasherConfig};
 use moon_task_runner::TaskRunCacheState;
@@ -30,6 +30,23 @@ fn extract_hash_from_run(fixture: &Path, target_id: &str) -> String {
     .unwrap();
 
     cache.hash
+}
+
+fn get_task_manifest_path(fixture: &Path, hash: &str) -> std::path::PathBuf {
+    fixture
+        .join(".moon/cache/manifests")
+        .join(&hash[0..2])
+        .join(&hash[2..])
+}
+
+fn get_task_manifest_files(fixture: &Path, hash: &str) -> Vec<String> {
+    let manifest: TaskManifest = json::read_file(get_task_manifest_path(fixture, hash)).unwrap();
+
+    manifest
+        .files
+        .into_iter()
+        .map(|file| file.path.to_string())
+        .collect()
 }
 
 mod exec {
@@ -1097,13 +1114,7 @@ mod exec {
 
             let state: TaskRunCacheState = json::read_file(cache_path).unwrap();
 
-            assert!(
-                sandbox
-                    .path()
-                    .join(".moon/cache/outputs")
-                    .join(format!("{}.tar.gz", state.hash))
-                    .exists()
-            );
+            assert!(get_task_manifest_path(sandbox.path(), &state.hash).exists());
             // The hash manifest is a blob in the local CAS, which shards
             // objects by the first 2 chars of their hash.
             assert!(
@@ -1129,12 +1140,7 @@ mod exec {
 
                 let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
 
-                assert!(
-                    sandbox
-                        .path()
-                        .join(format!(".moon/cache/outputs/{hash}.tar.gz"))
-                        .exists()
-                );
+                assert!(get_task_manifest_path(sandbox.path(), &hash).exists());
             }
 
             #[test]
@@ -2027,8 +2033,6 @@ projects:
   consumer: consumer
 pipeline:
   installDependencies: false
-experiments:
-  casOutputsCache: true
 "#,
             );
             sandbox.create_file(
@@ -2538,12 +2542,6 @@ tasks:
     mod outputs {
         use super::*;
 
-        fn untar(tarball: &Path, root: &Path) {
-            starbase_archive::Archiver::new(root, tarball)
-                .unpack_from_ext()
-                .unwrap();
-        }
-
         #[test]
         fn errors_if_output_missing() {
             let sandbox = create_cases_sandbox();
@@ -2624,14 +2622,8 @@ tasks:
                     .exists()
             );
 
-            // outputs
-            assert!(
-                sandbox
-                    .path()
-                    .join(".moon/cache/outputs")
-                    .join(format!("{hash}.tar.gz"))
-                    .exists()
-            );
+            // task manifest (outputs)
+            assert!(get_task_manifest_path(sandbox.path(), &hash).exists());
         }
 
         #[test]
@@ -2653,13 +2645,7 @@ tasks:
                     .exists()
             );
 
-            assert!(
-                sandbox
-                    .path()
-                    .join(".moon/cache/outputs")
-                    .join(format!("{hash}.tar.gz"))
-                    .exists()
-            );
+            assert!(get_task_manifest_path(sandbox.path(), &hash).exists());
         }
 
         #[test]
@@ -2681,13 +2667,7 @@ tasks:
                     .exists()
             );
 
-            assert!(
-                sandbox
-                    .path()
-                    .join(".moon/cache/outputs")
-                    .join(format!("{hash}.tar.gz"))
-                    .exists()
-            );
+            assert!(get_task_manifest_path(sandbox.path(), &hash).exists());
         }
 
         #[test]
@@ -2709,13 +2689,7 @@ tasks:
                     .exists()
             );
 
-            assert!(
-                sandbox
-                    .path()
-                    .join(".moon/cache/outputs")
-                    .join(format!("{hash}.tar.gz"))
-                    .exists()
-            );
+            assert!(get_task_manifest_path(sandbox.path(), &hash).exists());
         }
 
         #[test]
@@ -2737,13 +2711,7 @@ tasks:
                     .exists()
             );
 
-            assert!(
-                sandbox
-                    .path()
-                    .join(".moon/cache/outputs")
-                    .join(format!("{hash}.tar.gz"))
-                    .exists()
-            );
+            assert!(get_task_manifest_path(sandbox.path(), &hash).exists());
         }
 
         #[test]
@@ -2755,18 +2723,12 @@ tasks:
             });
 
             let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFileTypes");
-            let tarball = sandbox
-                .path()
-                .join(".moon/cache/outputs")
-                .join(format!("{hash}.tar.gz"));
-            let dir = sandbox.path().join(".moon/cache/outputs").join(hash);
+            let files = get_task_manifest_files(sandbox.path(), &hash);
 
-            untar(&tarball, &dir);
-
-            assert!(dir.join("outputs/multiple-types/one.js").exists());
-            assert!(dir.join("outputs/multiple-types/two.js").exists());
-            assert!(!dir.join("outputs/multiple-types/styles.css").exists());
-            assert!(!dir.join("outputs/multiple-types/image.png").exists());
+            assert!(files.contains(&"outputs/multiple-types/one.js".to_owned()));
+            assert!(files.contains(&"outputs/multiple-types/two.js".to_owned()));
+            assert!(!files.contains(&"outputs/multiple-types/styles.css".to_owned()));
+            assert!(!files.contains(&"outputs/multiple-types/image.png".to_owned()));
         }
 
         #[test]
@@ -2778,16 +2740,10 @@ tasks:
             });
 
             let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
-            let tarball = sandbox
-                .path()
-                .join(".moon/cache/outputs")
-                .join(format!("{hash}.tar.gz"));
-            let dir = sandbox.path().join(".moon/cache/outputs").join(hash);
+            let files = get_task_manifest_files(sandbox.path(), &hash);
 
-            untar(&tarball, &dir);
-
-            assert!(dir.join("outputs/both/a/one.js").exists());
-            assert!(dir.join("outputs/both/b/two.js").exists());
+            assert!(files.contains(&"outputs/both/a/one.js".to_owned()));
+            assert!(files.contains(&"outputs/both/b/two.js".to_owned()));
         }
 
         #[test]
@@ -2801,16 +2757,10 @@ tasks:
 
             let hash =
                 extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolderWorkspace");
-            let tarball = sandbox
-                .path()
-                .join(".moon/cache/outputs")
-                .join(format!("{hash}.tar.gz"));
-            let dir = sandbox.path().join(".moon/cache/outputs").join(hash);
+            let files = get_task_manifest_files(sandbox.path(), &hash);
 
-            untar(&tarball, &dir);
-
-            assert!(dir.join("both/a/one.js").exists());
-            assert!(dir.join("both/b/two.js").exists());
+            assert!(files.contains(&"both/a/one.js".to_owned()));
+            assert!(files.contains(&"both/b/two.js".to_owned()));
         }
 
         #[test]
@@ -2822,16 +2772,10 @@ tasks:
             });
 
             let hash = extract_hash_from_run(sandbox.path(), "outputs:negatedOutputGlob");
-            let tarball = sandbox
-                .path()
-                .join(".moon/cache/outputs")
-                .join(format!("{hash}.tar.gz"));
-            let dir = sandbox.path().join(".moon/cache/outputs").join(hash);
+            let files = get_task_manifest_files(sandbox.path(), &hash);
 
-            untar(&tarball, &dir);
-
-            assert!(dir.join("outputs/both/a/one.js").exists());
-            assert!(!dir.join("outputs/both/b/two.js").exists());
+            assert!(files.contains(&"outputs/both/a/one.js".to_owned()));
+            assert!(!files.contains(&"outputs/both/b/two.js".to_owned()));
         }
 
         #[test]

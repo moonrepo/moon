@@ -32,6 +32,12 @@ If [lockfiles](../lockfile) are in use, proto will also audit their health, and
 report warnings for records that are missing a resolved version, duplicate records for the same
 specification, and stale records that no longer match a configured version. <VersionLabel version="0.60.0" />
 
+Configuration files that have not been [trusted](../config#trust) are reported as warnings, listing
+the security-sensitive settings that are being ignored. Additionally, if a CI environment is
+detected while running in an interactive terminal, a warning is reported, as _every_ configuration
+is trusted in CI, including those in cloned repositories. This usually means the `CI` environment
+variable has leaked into your shell profile. <VersionLabel version="0.63.0" />
+
 ### Options
 
 - `--shell` - The shell to diagnose (will detect automatically).

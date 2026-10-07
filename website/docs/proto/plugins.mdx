@@ -31,6 +31,11 @@ settings to be defined side-by-side. <VersionLabel version="0.60.0" />
 plugin = "<protocol>://<location>"
 ```
 
+Plugins are downloaded and executed on your machine, so plugins configured in a local
+`.prototools` file are only loaded once that file has been [trusted](./config#trust). If a plugin is
+configured in an untrusted file, proto will fail to load the tool, instead of falling back to a
+different plugin with the same identifier. <VersionLabel version="0.63.0" />
+
 ## Community plugins<VersionLabel version="0.62.0" />
 
 proto also maintains an official registry of [community plugins](./tools#community), which are TOML
@@ -45,6 +50,10 @@ When proto can't find a plugin for a tool, it consults the registry as a last re
 `[plugins.tools]` entries, any `plugin` fields, and the [built-in tools](./tools#built-in) have all
 been exhausted. A locator that you configure always wins, so pointing an ID at your own fork
 continues to work exactly as before.
+
+Since a community plugin is third-party code, a version pin for a community tool in a local
+`.prototools` file is a [security-sensitive setting](./config#security-sensitive-settings), and is
+only applied once that file has been [trusted](./config#trust). <VersionLabel version="0.63.0" />
 
 The registry data is cached locally, and a lookup failure (an outage, being offline) is logged as a
 warning instead of failing the command. If you'd rather proto never reach for it, disable the

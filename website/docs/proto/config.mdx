@@ -22,6 +22,33 @@ throughout the command line and proto's own settings.
 > Local is a bit of a misnomer as a `.prototools` file can theoretically exist in any directory, but
 > when reading/writing to a file, `local` refers to the current working directory.
 
+### Closest<VersionLabel version="0.63.0" />
+
+When _writing_ to a `.prototools` file, the `closest` location is also supported, and is the default
+for [`proto pin`](./commands/pin), [`proto unpin`](./commands/unpin),
+[`proto alias`](./commands/alias), [`proto unalias`](./commands/unalias),
+[`proto plugin add`](./commands/plugin/add), [`proto plugin remove`](./commands/plugin/remove), and
+[`proto install --pin`](./commands/install#pinning-the-version).
+
+This location targets the closest directory with a `.prototools` file, starting from the current
+directory and traversing upwards. If none is found, the current directory is used (like `local`).
+This means running `proto pin` from deep within a project updates the project's configuration,
+instead of creating a new `.prototools` file in whatever directory you happen to be in.
+
+```text
+~/Projects/app/src/components (cwd, no .prototools)
+~/Projects/app/src
+~/Projects/app/.prototools <- closest
+```
+
+- Directories that only contain an [environment configuration](#environment-mode)
+  (`.prototools.<env>`) are skipped, as pins are always written to the base `.prototools` file.
+- The `user` (`~/.prototools`) and `global` (`~/.proto/.prototools`) configurations are never
+  targeted. Use `--to user` or `--to global` explicitly for those.
+
+> Before v0.63, these commands defaulted to `local`. Pass `--to local` (or `--from local`) for the
+> previous behavior.
+
 ### Where to configure?
 
 With so many locations to store proto configuration, the question of where to store certain
@@ -140,6 +167,137 @@ version entry. This approach uses shims and dynamic version detection like other
 proto = "0.38.0"
 ```
 
+> Pinning proto's version is a [security-sensitive setting](#security-sensitive-settings), so it's
+> only applied once the configuration file has been trusted. <VersionLabel version="0.63.0" inline />
+
+## Trust<VersionLabel version="0.63.0" />
+
+A `.prototools` file can do a lot more than pin versions. It can export environment variables into
+your shell, define shell aliases, download and execute third-party plugins, and change where tools
+are downloaded from. That's exactly what you want from a file you wrote, and exactly what you
+_don't_ want from a file that came with a repository you cloned a few seconds ago — especially
+with [shell activation](./workflows#shell-activation), where all of it would be applied the moment
+you `cd` into the directory.
+
+To guard against this, local configuration files must be _trusted_ before their security-sensitive
+settings are applied. Everything else in the file, like version pins for built-in tools, continues
+to work as before.
+
+### Security-sensitive settings
+
+The following settings are only applied once a configuration file has been trusted:
+
+- [`[env]`](#env), including dotenv files loaded with [`file`](#file).
+- [`[shell]`](#shell).
+- [`[plugins]`](#plugins), including [`[plugins.tools]`](#pluginstools) and
+  [`[plugins.backends]`](#pluginsbackends).
+- [`[backends.*]`](#backends).
+- [`[tools.*]`](#tools), except for [`[tools.*.aliases]`](#toolsaliases).
+- The [`proto` version pin](#lock-proto-version).
+- Version pins for tools that are _not_ built-in, as loading them downloads and executes a
+  third-party plugin. This includes tools from the
+  [community registry](./plugins#community-plugins), and tools using the
+  [`asdf` backend](./tool-spec#asdf).
+- All [`[settings]`](#settings), except for `detect-strategy`, `pin-latest`, `telemetry`, and
+  `unstable-lockfile`.
+
+While the following are _always_ applied, regardless of trust:
+
+- Version pins for [built-in tools](./tools#built-in), and tools using the `npm` and `cargo`
+  backends.
+- Version aliases in [`[tools.*.aliases]`](#toolsaliases).
+- The [`detect-strategy`](#detect-strategy), [`pin-latest`](#pin-latest),
+  [`telemetry`](#telemetry), and [`unstable-lockfile`](#unstable-lockfile) settings.
+
+```toml title=".prototools"
+# Always applied
+node = "24"
+"npm:typescript" = "5"
+
+[tools.node.aliases]
+work = "22"
+
+# Requires trust
+shfmt = "3.14.0"
+
+[env]
+NODE_OPTIONS = "--require ./setup.js"
+
+[shell.aliases]
+ls = "./scripts/ls.sh"
+```
+
+### Trusted configurations
+
+A configuration file is trusted when any of the following is true:
+
+- It's owned by you: the `user` (`~/.prototools`) and `global` (`~/.proto/.prototools`)
+  configurations are always trusted.
+- The file itself, or a directory it's within, was trusted with [`proto trust`](./commands/trust).
+  Trusting a directory also trusts all of its sub-directories.
+- It's within a directory listed in the `PROTO_TRUSTED_PATHS` environment variable. Multiple
+  directories are separated like `PATH` (`:` on Unix, `;` on Windows), which is handy for trusting
+  everything in a workspace directory that only contains your own code.
+- proto is running in CI, where the checked out repository _is_ the code being built, and there's
+  no one around to trust it. CI is detected from the `CI` environment variable, or a CI provider's
+  specific variables, so avoid setting `CI` in your shell profile!
+
+```shell
+# Trust the current directory, and everything within it
+$ proto trust
+
+# Trust a single configuration file
+$ proto trust ./tools/.prototools
+
+# And remove it again
+$ proto untrust ./tools/.prototools
+```
+
+Trust is recorded against the _path_, not the file's contents, so it's not affected by changes to
+the configuration. Pulling changes into a trusted repository applies them as well, so review
+configuration changes like you would any other code change.
+
+Some other things worth knowing:
+
+- When proto adds security-sensitive settings to a configuration that had none (for example, with
+  [`proto plugin add`](./commands/plugin/add)), the file is trusted automatically, as you asked for
+  them. A configuration that was already untrusted stays untrusted.
+- Symlinked directories are resolved before checking trust, but symlinked configuration files are
+  not. A `.prototools` that is a symlink to a trusted file is _not_ trusted itself.
+- The `CI` and `PROTO_TRUSTED_PATHS` variables are ignored when they were exported by a previous
+  activation (through `[env]`), so a trusted configuration can't trust other configurations.
+- Trust records are stored in `~/.proto/trust`. Records for paths that no longer exist can be
+  removed with [`proto clean trust`](./commands/clean), so that a different repository cloned to the
+  same path later on is not trusted.
+
+### Untrusted configurations
+
+When a configuration file has not been trusted, its security-sensitive settings are ignored, and
+the rest of the file is applied. To make sure this never happens silently, proto lets you know:
+
+- [`proto activate`](./commands/activate) logs a warning for each untrusted configuration, once per
+  shell session.
+- Most other commands log a warning as well, except for tool commands
+  ([`proto run`](./commands/run), [`proto exec`](./commands/exec), [`proto bin`](./commands/bin),
+  [`proto shell`](./commands/shell), and shims), as they're frequently executed by scripts and
+  editors.
+- [`proto status`](./commands/status) lists the untrusted configurations, and
+  [`proto diagnose`](./commands/diagnose) reports each one as a warning.
+- [`proto debug config`](./commands/debug/config) renders the configuration without its
+  security-sensitive settings, and labels it as untrusted.
+
+If a tool's plugin is configured in an untrusted configuration, proto refuses to load that tool,
+instead of falling back to a different plugin (like a built-in or community plugin) with the same
+identifier. Commands that load all configured tools, like [`proto install`](./commands/install)
+(without arguments), [`proto activate`](./commands/activate), and
+[`proto status`](./commands/status), will skip that tool instead.
+
+```
+Unable to proceed, the plugin for my-tool is configured in /path/to/.prototools, which has not been trusted, so it was not loaded.
+
+Review the config, then trust it with proto trust /path/to/.prototools
+```
+
 ## Available settings
 
 ### `[env]`<VersionLabel version="0.29.0" />
@@ -167,6 +325,9 @@ variables in the current process and merged `[env]` can be referenced. Recursive
 supported!
 
 > This functionality enables per-directory environment variables!
+
+Environment variables are a [security-sensitive setting](#security-sensitive-settings), so they're
+only applied once the configuration file has been [trusted](#trust). <VersionLabel version="0.63.0" inline />
 
 #### `file`<VersionLabel version="0.43.0" />
 
@@ -290,6 +451,8 @@ detect-strategy = "prefer-prototools"
 When defined and a tool is installed with the "latest" alias, will automatically pin the resolved
 version to the configured location. Defaults to disabled or `PROTO_PIN_LATEST`.
 
+- `closest` - Pins to the [closest](#closest) `.prototools`, traversing upwards from the current
+  directory. <VersionLabel version="0.63.0" />
 - `global` - Pins globally to `~/.proto/.prototools`.
 - `local` - Pins locally to `./.prototools` in current directory.
 - `user` - Pins to the user's `~/.prototools` in their home directory.

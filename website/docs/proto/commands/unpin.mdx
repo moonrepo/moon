@@ -13,8 +13,9 @@ $ proto unpin go
 $ proto unpin node --tool-native
 ```
 
-By default this will update the local [`./.prototools`](../config) file. Pass `--from` to customize
-the location.
+By default this will update the [closest](../config#closest) `.prototools` file, starting from the
+current directory and traversing upwards. Pass `--from` to customize the location.
+<VersionLabel version="0.63.0" />
 
 When a [lockfile](../lockfile) is in use, matching records will also be removed. <VersionLabel version="0.60.0" />
 
@@ -27,8 +28,8 @@ in sync, even when another configuration file takes precedence for that tool. <V
 
 ### Options
 
-- `--from` - [Location of `.prototools`](../config#locations) to update. Supports `global`, `local`,
-  and `user`.
+- `--from` - [Location of `.prototools`](../config#locations) to update. Supports `closest`
+  (default) <VersionLabel version="0.63.0" inline />, `global`, `local`, and `user`.
   <VersionLabel version="0.41.0" />
 - `--tool-native` - Use a tool specific location, like the `devEngines` field in the `package.json`
   for JavaScript tools.

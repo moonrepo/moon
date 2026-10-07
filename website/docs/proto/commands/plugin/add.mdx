@@ -16,6 +16,15 @@ $ proto plugin add node "https://github.com/moonrepo/node-plugin/releases/latest
 
 > Learn more about [plugin locator strings](../../plugins#enabling-plugins).
 
+By default this will update the [closest](../../config#closest) `.prototools` file, starting from
+the current directory and traversing upwards. <VersionLabel version="0.63.0" />
+
+Plugins are a [security-sensitive setting](../../config#security-sensitive-settings). If the
+configuration file had no security-sensitive settings before the plugin was added, it will be
+[trusted](../../config#trust) automatically, as you asked for the plugin. Otherwise, a configuration
+that is not yet trusted will remain untrusted, and must be trusted with
+[`proto trust`](../trust) before the plugin is loaded. <VersionLabel version="0.63.0" />
+
 > Tools in the official [community plugins](../../plugins#community-plugins) registry are resolved
 > by ID, and do not need to be added. <VersionLabel version="0.62.0" inline />
 
@@ -26,7 +35,7 @@ $ proto plugin add node "https://github.com/moonrepo/node-plugin/releases/latest
 
 ### Options
 
-- `--to` - [Location of `.prototools`](../../config#locations) to update.
+- `--to` - [Location of `.prototools`](../../config#locations) to update. Defaults to `closest`.
   <VersionLabel version="0.41.0" />
 - `--type` - Type of plugin to add, either `tool` (default) or `backend`.
   <VersionLabel version="0.52.0" />

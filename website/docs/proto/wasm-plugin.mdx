@@ -376,7 +376,7 @@ pub fn locate_executables(
 }
 ```
 
-### Loading and resolving versions
+### Loading versions
 
 Now that the tool can be downloaded and installed, we must configure how to resolve available
 versions to actually be installed. To provide a list of versions and language specific aliases, the
@@ -401,6 +401,37 @@ pub fn load_versions(Json(_): Json<LoadVersionsInput>) -> FnResult<Json<LoadVers
     Ok(Json(output))
 }
 ```
+
+#### From Git tags
+
+Many tools publish their versions as Git tags, so we provide a `load_git_tags` function that runs
+`git ls-remote --tags` on the host for the provided repository URL, and returns a list of tag names.
+
+```rust
+#[plugin_fn]
+pub fn load_versions(Json(_): Json<LoadVersionsInput>) -> FnResult<Json<LoadVersionsOutput>> {
+    let tags = load_git_tags("https://github.com/org/repo")?
+        .iter()
+        .filter_map(|tag| tag.strip_prefix('v').map(|tag| tag.to_owned()))
+        .collect::<Vec<_>>();
+
+    Ok(Json(LoadVersionsOutput::from(tags)?))
+}
+```
+
+If the tags fail to load, an error is returned that includes the exit code and stderr of
+`git ls-remote`, so that the underlying cause — an unreachable remote, an authentication failure, an
+unaccepted Xcode license on macOS — is surfaced to the user. If your plugin should continue without
+the tags, handle the error explicitly. <VersionLabel version="0.63.0" />
+
+```rust
+let tags = load_git_tags("https://github.com/org/repo").unwrap_or_default();
+```
+
+> Before v0.63, an empty list was returned on failure, which resulted in a misleading "Failed to
+> resolve version" error.
+
+### Resolving versions
 
 Furthermore, we support an optional function named `resolve_version`, that can be defined to
 intercept the version resolution process. This function receives an input with an initial candidate,
@@ -647,6 +678,35 @@ We suggest using this pattern for static functions that return a deterministic o
 provided input, and not for dynamic functions that make HTTP requests or execute host commands.
 
 :::
+
+#### Configuring the host platform<VersionLabel version="0.63.0" />
+
+By default, plugins are tested against the current machine's operating system and architecture. To
+test the output for a different platform, create the plugin with `create_plugin_with_config`, and
+pass a `HostPlatform` to the `host` method. A platform is composed of an architecture, operating
+system, and libc, and can be parsed from `<arch>-<os>[-<libc>]`, or from a Rust target triple.
+
+```rust
+#[tokio::test(flavor = "multi_thread")]
+async fn downloads_musl_build() {
+    let sandbox = create_empty_proto_sandbox();
+    let plugin = sandbox
+        .create_plugin_with_config("id", |config| {
+            config.host(HostPlatform::parse("x64-linux-musl").unwrap());
+            // Or a Rust target triple
+            config.host(HostPlatform::parse("x86_64-unknown-linux-musl").unwrap());
+        })
+        .await;
+
+    // ...
+}
+```
+
+When a libc is not provided, it defaults to `gnu` on Linux, and is no longer detected from the
+current machine.
+
+> Before v0.63, the `host` method required an operating system and architecture, for example,
+> `config.host(HostOS::Linux, HostArch::X64)`.
 
 #### Generating cases from macros
 

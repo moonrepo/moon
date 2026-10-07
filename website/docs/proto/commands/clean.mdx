@@ -20,10 +20,23 @@ $ proto clean plugins
 > Cleaning stale tools does _not_ remove records from [lockfiles](../lockfile), as
 > the version may still be required by a configuration, or in use on other machines.
 
+### Trust records<VersionLabel version="0.63.0" />
+
+The `trust` target removes [trust](../config#trust) records for configuration files and directories
+that no longer exist. This is important, as a record for a deleted path would otherwise trust a
+_different_ repository that is cloned to the same path in the future.
+
+```shell
+$ proto clean trust
+```
+
+Unlike other targets, this is not based on age, so `--days` has no effect. These records are also
+removed when cleaning everything (the default).
+
 ### Arguments
 
-- `[target]` - Type of target. Accepts `cache`, `plugins`, `temp`, or `tools`.
-  <VersionLabel version="0.44.0" />
+- `[target]` - Type of target. Accepts `cache`, `plugins`, `temp`, `tools`, or `trust`
+  <VersionLabel version="0.63.0" inline />. Defaults to everything. <VersionLabel version="0.44.0" />
 
 ### Options
 

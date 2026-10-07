@@ -126,6 +126,28 @@ if env.arch == HostArch::Arm64 {
 }
 ```
 
+On Linux, the libc implementation can be accessed with the `libc` field, which is either
+`HostLibc::Gnu` or `HostLibc::Musl`, and `HostLibc::Unknown` on other operating systems. Values that
+aren't supported by your plugin's version of the PDK (for example, a libc added in the future) are
+deserialized as `HostLibc::Unknown` instead of failing, so be sure to handle that case.
+
+```rust
+if env.libc == HostLibc::Musl {
+    // Alpine, etc
+}
+```
+
+If you need to represent a platform as a single value, for example, to map Rust target triples to
+download URLs, the `HostPlatform` type (proto v0.63+) combines an architecture, operating system,
+and libc. It can be parsed from `<arch>-<os>[-<libc>]` (`arm64-linux-musl`), or a Rust target
+triple (`aarch64-unknown-linux-musl`), and is formatted as the former.
+
+```rust
+let platform = HostPlatform::parse("aarch64-unknown-linux-musl")?;
+
+assert_eq!(platform.to_string(), "arm64-linux-musl");
+```
+
 Furthermore, the user's home directory (`~`) can be accessed with the `home_dir` field, which is a
 [virtual path](#virtual-paths).
 

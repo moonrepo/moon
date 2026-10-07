@@ -142,6 +142,7 @@ re-populated when the current platform installs. <VersionLabel version="0.62.2" 
 > Records created before v0.63 have no `libc`, and continue to match every libc. When there are
 > multiple matches, a record for the current libc is preferred. Records without a `libc` are
 > backfilled with the current libc on the next install that updates the record.
+>
 > <VersionLabel version="0.63.0" inline />
 
 This is what guarantees determinism: a requirement like `node = "22"` will keep resolving to the

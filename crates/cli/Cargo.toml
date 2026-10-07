@@ -67,7 +67,6 @@ httpmock = { workspace = true }
 proto_core = { workspace = true }
 rustc-hash = { workspace = true }
 serial_test = { workspace = true }
-starbase_archive = { workspace = true }
 starbase_sandbox = { workspace = true }
 
 [lints]

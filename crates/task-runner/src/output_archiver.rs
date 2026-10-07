@@ -3,13 +3,11 @@ use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
 use moon_cache::{StorageOptions, TaskManifest};
-use moon_common::color;
 use moon_common::path::to_relative_virtual_string;
 use moon_daemon_client::DaemonClient;
 use moon_hash::ContentHash;
 use moon_manifest::TaskManifestPacker;
 use moon_task::Task;
-use starbase_archive::Archiver;
 use std::sync::Arc;
 use tokio::task::spawn_blocking;
 use tracing::{debug, instrument, warn};
@@ -75,7 +73,7 @@ impl OutputArchiver<'_> {
             return Ok(ArchiveOutcome::Skipped);
         }
 
-        let use_local = state.local_cas_enabled && state.local_cache_writable;
+        let use_local = state.local_cache_writable;
         let use_remote = state.remote_cache_writable;
 
         // Store the manifest in the local/remote caches
@@ -104,11 +102,6 @@ impl OutputArchiver<'_> {
                     .archive_task_manifest(&state.digest, manifest)
                     .await?;
             }
-        }
-
-        // Create the archive file (legacy / temporary)
-        if !state.local_cas_enabled && state.local_cache_writable {
-            self.pack_local_archive(hash, state).await?;
         }
 
         Ok(ArchiveOutcome::Queued)
@@ -241,74 +234,5 @@ impl OutputArchiver<'_> {
         }
 
         Ok(packer.pack())
-    }
-
-    #[instrument(skip(self, state))]
-    async fn pack_local_archive(&self, hash: &str, state: &TaskRunState) -> miette::Result<()> {
-        let archive_file = self.app_context.cache_engine.hash.get_archive_path(hash);
-
-        if state.local_cache_writable && archive_file.exists() {
-            debug!(
-                task_target = self.task.target.as_str(),
-                hash, "Skipping archive, task outputs already persisted"
-            );
-        } else if !state.local_cache_writable {
-            debug!(
-                task_target = self.task.target.as_str(),
-                hash, "Cache is not writable, skipping output archiving"
-            );
-
-            return Ok(());
-        }
-
-        debug!(
-            task_target = self.task.target.as_str(),
-            hash,
-            archive_file = ?archive_file, "Archiving task outputs from project"
-        );
-
-        // Clone values to run in a blocking thread
-        let app_context = Arc::clone(self.app_context);
-        let task = Arc::clone(self.task);
-        let hash = hash.to_string();
-
-        spawn_blocking(move || {
-            // Create the archiver instance based on task outputs
-            let mut archive = Archiver::new(&app_context.workspace_root, &archive_file);
-
-            for output_file in task.output_files.keys() {
-                archive.add_source_file(output_file.as_str(), None);
-            }
-
-            for output_glob in task.output_globs.keys() {
-                archive.add_source_glob(output_glob.as_str());
-            }
-
-            // Also include stdout/stderr logs in the tarball
-            let state_dir = app_context.cache_engine.state.get_target_dir(&task.target);
-
-            archive.add_source_file(state_dir.join("stdout.log"), None);
-
-            archive.add_source_file(state_dir.join("stderr.log"), None);
-
-            // Pack the archive
-            if let Err(error) = archive.pack_from_ext() {
-                warn!(
-                    task_target = task.target.as_str(),
-                    hash,
-                    archive_file = ?archive_file,
-                    "Failed to package task outputs into archive: {}",
-                    color::muted_light(error.to_string()),
-                );
-
-                return false;
-            }
-
-            true
-        })
-        .await
-        .into_diagnostic()?;
-
-        Ok(())
     }
 }

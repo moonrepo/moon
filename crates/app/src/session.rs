@@ -233,9 +233,7 @@ impl MoonSession {
             let mut engine = CacheEngine::new(context.clone())?;
 
             // Always register the local backend: it's the home for hash
-            // manifests, which every run depends on regardless of whether task
-            // outputs are cached here. Using it for task outputs stays gated on
-            // the experiment (see `TaskRunState::local_cas_enabled`).
+            // manifests and task outputs, which every run depends on.
             engine.storage.add_local_backend(LocalStorage::new(
                 context.clone(),
                 context

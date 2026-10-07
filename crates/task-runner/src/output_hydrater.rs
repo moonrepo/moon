@@ -1,21 +1,17 @@
 use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
-use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
 use moon_cache::{StorageOptions, TaskManifest, TaskManifestSource, TaskManifestUnpacker};
-use moon_common::{color, path::WorkspaceRelativePath};
+use moon_common::path::WorkspaceRelativePath;
 use moon_daemon_client::DaemonClient;
 use moon_task::Task;
-use starbase_archive::Archiver;
 use starbase_utils::{fs, glob::GlobSet};
 use std::fmt::{self, Debug};
 use std::sync::Arc;
-use tokio::task::spawn_blocking;
-use tracing::{debug, instrument, warn};
+use tracing::{debug, instrument};
 
 pub enum HydrateFrom {
     PreviousOutput,
-    LocalArchive,
     Storage(Box<TaskManifestSource>),
 }
 
@@ -23,7 +19,6 @@ impl Debug for HydrateFrom {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             HydrateFrom::PreviousOutput => write!(f, "PreviousOutput"),
-            HydrateFrom::LocalArchive => write!(f, "LocalArchive"),
             HydrateFrom::Storage(source) => write!(f, "Storage({})", source.backend.get_id()),
         }
     }
@@ -69,13 +64,7 @@ impl OutputHydrater<'_> {
         match from {
             HydrateFrom::PreviousOutput => Ok(HydrateOutcome::Hit),
 
-            HydrateFrom::LocalArchive => self.unpack_local_archive(hash, state).await,
-
             HydrateFrom::Storage(source) => {
-                if !source.remote && !state.local_cas_enabled {
-                    return self.unpack_local_archive(hash, state).await;
-                }
-
                 let task_target = self.task.target.as_str();
 
                 if state.local_cache_readable && state.remote_cache_readable {
@@ -99,7 +88,7 @@ impl OutputHydrater<'_> {
                     return Ok(HydrateOutcome::Skipped);
                 }
 
-                let use_local = state.local_cas_enabled && state.local_cache_readable;
+                let use_local = state.local_cache_readable;
                 let use_remote = state.remote_cache_readable;
                 let is_remote_backend = source.remote;
 
@@ -144,6 +133,7 @@ impl OutputHydrater<'_> {
                         // A failed read is a cache miss and must not remove outputs
                         // that the task may rely on recreating.
                         self.delete_existing_outputs()?;
+
                         TaskManifestUnpacker::new(
                             manifest,
                             self.app_context.workspace_root.clone(),
@@ -160,75 +150,6 @@ impl OutputHydrater<'_> {
                 })
             }
         }
-    }
-
-    #[instrument(skip(self, state))]
-    async fn unpack_local_archive(
-        &self,
-        hash: &str,
-        state: &TaskRunState,
-    ) -> miette::Result<HydrateOutcome> {
-        let archive_file = self.app_context.cache_engine.hash.get_archive_path(hash);
-        let task_target = self.task.target.as_str();
-
-        if state.local_cache_readable && archive_file.exists() {
-            debug!(
-                task_target,
-                hash,
-                archive_file = ?archive_file,
-                "Hydrating task outputs from local cache archive (legacy)"
-            );
-        } else if !state.local_cache_readable || !archive_file.exists() {
-            debug!(
-                task_target,
-                hash, "Cache is not readable, skipping output hydration"
-            );
-
-            return Ok(HydrateOutcome::Skipped);
-        }
-
-        // Clone values to run in a blocking thread
-        let app_context = Arc::clone(self.app_context);
-        let task = Arc::clone(self.task);
-        let hash = hash.to_string();
-
-        // Create the archiver instance based on task outputs
-        let hydrated = spawn_blocking(move || {
-            let mut archive = Archiver::new(&app_context.workspace_root, &archive_file);
-
-            for output_file in task.output_files.keys() {
-                archive.add_source_file(output_file.as_str(), None);
-            }
-
-            for output_glob in task.output_globs.keys() {
-                archive.add_source_glob(output_glob.as_str());
-            }
-
-            // Unpack the archive
-            if let Err(error) = archive.unpack_from_ext() {
-                warn!(
-                    task_target = task.target.as_str(),
-                    hash,
-                    archive_file = ?archive_file,
-                    "Failed to hydrate task outputs from archive: {}",
-                    color::muted_light(error.to_string()),
-                );
-
-                return false;
-            }
-
-            true
-        })
-        .await
-        .into_diagnostic()?;
-
-        if !hydrated {
-            self.delete_existing_outputs()?;
-
-            return Ok(HydrateOutcome::Missed);
-        }
-
-        Ok(HydrateOutcome::Hit)
     }
 
     fn delete_existing_outputs(&self) -> miette::Result<()> {

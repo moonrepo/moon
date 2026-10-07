@@ -9,6 +9,11 @@
     always used, and the synchronous tracker has been removed. The setting must be removed from
     `.moon/workspace.*`, as unknown settings fail validation, and the
     `MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING` environment variable no longer has any effect.
+  - Removed the `casOutputsCache` experiment, as task outputs are now always stored in the local
+    content-addressable store, and the `.tar.gz` archive cache has been removed. The setting must be
+    removed from `.moon/workspace.*`, as unknown settings fail validation, and the
+    `MOON_EXPERIMENT_CAS_OUTPUTS_CACHE` environment variable no longer has any effect. The legacy
+    `.moon/cache/hashes` and `.moon/cache/outputs` directories are automatically removed.
   - Removed the `nativeFileHashing` experiment, as files are now always hashed natively within
     moon's task pool, and hashing files through the VCS has been removed. The setting must be
     removed from `.moon/workspace.*`, as unknown settings fail validation, and the
@@ -35,6 +40,9 @@
       same globs, which most tasks have through inheritance and defaults. Previously, every task
       compiled its own copy, which was the single largest cost of tracking. Changed files are also
       only matched against each distinct glob set once, instead of once per task.
+- **Cache**
+  - The `cache.unstable_sharedWorktreeCache` setting no longer requires the `casOutputsCache`
+    experiment, as task outputs are now always stored in the local content-addressable store.
 - **Hasher**
   - Improved the performance of file hashing.
     - File hashes are now memoized for the lifetime of the process, and reused while the file's size

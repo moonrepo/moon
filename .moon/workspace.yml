@@ -25,7 +25,6 @@ pipeline:
 
 experiments:
   asyncGraphBuilding: true
-  casOutputsCache: true
 
 vcs:
   defaultBranch: 'master'

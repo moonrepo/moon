@@ -376,8 +376,8 @@ mod collect_blob_sources {
             files: vec![file(None, Some(digest('a', 5)))],
             digest_source: Some(TaskManifestFile {
                 digest: Some(digest('f', 11)),
-                path: ".moon/cache/hashes/abc.json".into(),
-                source_path: Some(PathBuf::from("/workspace/.moon/cache/hashes/abc.json")),
+                path: ".moon/cache/blobs/ab/c".into(),
+                source_path: Some(PathBuf::from("/workspace/.moon/cache/blobs/ab/c")),
                 ..Default::default()
             }),
             ..Default::default()
@@ -452,7 +452,7 @@ mod hydration {
         let manifest = TaskManifest {
             digest_source: Some(TaskManifestFile {
                 digest: Some(digest('f', 11)),
-                path: ".moon/cache/hashes/abc.json".into(),
+                path: ".moon/cache/blobs/ab/c".into(),
                 ..Default::default()
             }),
             ..Default::default()
@@ -589,8 +589,8 @@ mod serialization {
         let manifest = TaskManifest {
             digest_source: Some(TaskManifestFile {
                 digest: Some(digest('f', 11)),
-                path: ".moon/cache/hashes/abc.json".into(),
-                source_path: Some(PathBuf::from("/workspace/.moon/cache/hashes/abc.json")),
+                path: ".moon/cache/blobs/ab/c".into(),
+                source_path: Some(PathBuf::from("/workspace/.moon/cache/blobs/ab/c")),
                 ..Default::default()
             }),
             ..Default::default()

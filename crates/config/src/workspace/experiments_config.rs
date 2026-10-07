@@ -10,11 +10,6 @@ config_struct!(
         #[setting(default = true, env = "MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING", parse_env = env::parse_bool)]
         pub async_graph_building: bool,
 
-        /// Store task outputs in a local CAS (content-addressable storage) cache.
-        /// @since 2.3.0
-        #[setting(env = "MOON_EXPERIMENT_CAS_OUTPUTS_CACHE", parse_env = env::parse_bool)]
-        pub cas_outputs_cache: bool,
-
         /// Always use the task's `outputStyle` option, even when running
         /// the task as a primary target.
         /// @since 2.6.0

@@ -20,6 +20,25 @@ mod cache_engine {
     }
 
     #[test]
+    fn removes_legacy_cache_dirs() {
+        let sandbox = create_empty_sandbox();
+        sandbox.create_file(".moon/cache/hashes/abc.json", "{}");
+        sandbox.create_file(".moon/cache/outputs/abc.tar.gz", "");
+        sandbox.create_file(".moon/cache/states/project/task/lastRun.json", "{}");
+
+        create_engine(&sandbox);
+
+        assert!(!sandbox.path().join(".moon/cache/hashes").exists());
+        assert!(!sandbox.path().join(".moon/cache/outputs").exists());
+        assert!(
+            sandbox
+                .path()
+                .join(".moon/cache/states/project/task/lastRun.json")
+                .exists()
+        );
+    }
+
+    #[test]
     fn returns_default_if_cache_missing() {
         let sandbox = create_empty_sandbox();
         let engine = create_engine(&sandbox);

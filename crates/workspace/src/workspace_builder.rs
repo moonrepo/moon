@@ -1,6 +1,8 @@
 use crate::projects_builder::*;
 use crate::tasks_builder::*;
+use crate::vcs_info::*;
 use crate::workspace_cache::*;
+use miette::IntoDiagnostic;
 use moon_cache::CacheEngine;
 use moon_common::{Id, path::WorkspaceRelativePathBuf};
 use moon_config::{ExtensionsConfig, InheritedTasksManager, ToolchainsConfig, WorkspaceConfig};
@@ -17,6 +19,7 @@ use starbase_utils::json;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 use std::sync::Arc;
+use tokio::task::JoinHandle;
 use tracing::{debug, instrument};
 
 pub const LOCK_FILE_NAME: &str = "workspaceGraph.lock";
@@ -43,6 +46,11 @@ pub struct WorkspaceBuilder {
     #[serde(skip)]
     context: Option<Arc<WorkspaceBuilderContext>>,
 
+    /// VCS information, which is loaded in the background while
+    /// the graphs are built, and awaited when finalizing them.
+    #[serde(skip)]
+    vcs_handle: Option<JoinHandle<miette::Result<VcsInfo>>>,
+
     /// Builder for everything projects related.
     projects: WorkspaceProjectsBuilder,
 
@@ -59,6 +67,10 @@ impl WorkspaceBuilder {
         Ok(WorkspaceBuilder {
             projects: WorkspaceProjectsBuilder::new(Arc::clone(&context)),
             tasks: WorkspaceTasksBuilder::new(),
+            vcs_handle: context
+                .vcs
+                .clone()
+                .map(|vcs| tokio::spawn(load_vcs_info(vcs))),
             context: Some(context),
         })
     }
@@ -133,6 +145,7 @@ impl WorkspaceBuilder {
 
                 cache.projects.context = graph.projects.context.take();
                 cache.context = graph.context;
+                cache.vcs_handle = graph.vcs_handle;
 
                 return Ok(cache);
             }
@@ -218,7 +231,7 @@ impl WorkspaceBuilder {
 
     /// Build the project graph and return a new structure.
     #[instrument(name = "build_workspace_graph", skip_all)]
-    pub async fn build(self) -> miette::Result<WorkspaceGraph> {
+    pub async fn build(mut self) -> miette::Result<WorkspaceGraph> {
         let context = self.context();
 
         // Enforce constraints before finalizing, so that they also
@@ -235,19 +248,12 @@ impl WorkspaceBuilder {
             ..Default::default()
         };
 
-        // These are only in conditionals for tests that don't have git
-        // initialized, which is most of them!
-        if let Some(vcs) = &context.vcs {
-            if vcs.is_enabled() {
-                graph_context.vcs_branch = Arc::new(vcs.get_local_branch().await?);
-                graph_context.vcs_revision = Arc::new(vcs.get_local_branch_revision().await?);
+        if let Some(vcs_handle) = self.vcs_handle.take() {
+            let vcs_info = vcs_handle.await.into_diagnostic()??;
 
-                if let Ok(repo) = vcs.get_repository_slug().await {
-                    graph_context.vcs_repository = Arc::new(repo);
-                }
-            } else {
-                graph_context.vcs_branch = Arc::new(vcs.get_default_branch().await?);
-            }
+            graph_context.vcs_branch = Arc::new(vcs_info.branch);
+            graph_context.vcs_repository = Arc::new(vcs_info.repository);
+            graph_context.vcs_revision = Arc::new(vcs_info.revision);
         }
 
         // Build the graphs

@@ -7,6 +7,7 @@ use moon_task_graph::{TaskGraph, TaskGraphError, TaskNode};
 use petgraph::graph::NodeIndex;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
+use std::mem;
 use std::sync::Arc;
 use tracing::instrument;
 
@@ -121,18 +122,24 @@ impl WorkspaceTasksBuilder {
         project_graph: Arc<ProjectGraph>,
     ) -> TaskGraph {
         let mut task_graph = TaskGraph::new(context, project_graph);
+        let mut graph = self.graph;
         let mut loaded_tasks = FxHashMap::default();
 
-        // TODO switch to filter_map_owned
-        task_graph.graph = self.graph.filter_map(
-            |ni, node| match node {
-                NodeState::Loading => None,
-                NodeState::Loaded(task) => {
-                    loaded_tasks.insert(ni, task.to_owned());
+        // Move the loaded tasks out of the graph instead of cloning them. The
+        // DAG can only be filtered by reference, so they're swapped for
+        // placeholders, and the filter only keeps the nodes that were loaded
+        for index in 0..graph.node_count() {
+            let index = NodeIndex::new(index);
 
-                    Some(ni)
-                }
-            },
+            if let Some(node) = graph.node_weight_mut(index)
+                && let NodeState::Loaded(task) = mem::replace(node, NodeState::Loading)
+            {
+                loaded_tasks.insert(index, task);
+            }
+        }
+
+        task_graph.graph = graph.filter_map(
+            |ni, _| loaded_tasks.contains_key(&ni).then_some(ni),
             |_, edge| Some(*edge),
         );
 

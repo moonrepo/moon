@@ -3,6 +3,7 @@ mod projects_locator;
 mod repo_type;
 mod tasks_builder;
 mod tasks_querent;
+mod vcs_info;
 mod workspace_builder;
 mod workspace_builder_error;
 mod workspace_cache;

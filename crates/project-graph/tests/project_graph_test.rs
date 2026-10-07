@@ -781,6 +781,81 @@ tasks:
         }
     }
 
+    mod vcs_context {
+        use super::*;
+
+        fn create_git_sandbox() -> MoonSandbox {
+            let sandbox = create_moon_sandbox("dependencies");
+            sandbox.enable_git();
+            sandbox.run_git(|cmd| {
+                cmd.args([
+                    "remote",
+                    "add",
+                    "origin",
+                    "git@github.com:moonrepo/example.git",
+                ]);
+            });
+            sandbox
+        }
+
+        async fn build_cached_graph(sandbox: &MoonSandbox) -> WorkspaceGraph {
+            create_workspace_mocker(sandbox.path())
+                .mock_workspace_graph_with_options(WorkspaceMockOptions {
+                    cache: true,
+                    ..Default::default()
+                })
+                .await
+        }
+
+        fn assert_vcs_context(graph: &WorkspaceGraph) {
+            for context in [&graph.projects.context, &graph.tasks.context] {
+                assert_eq!(context.vcs_branch.as_str(), "master");
+                assert_eq!(context.vcs_repository.as_str(), "moonrepo/example");
+                assert_eq!(context.vcs_revision.len(), 40);
+            }
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn loads_vcs_info() {
+            let sandbox = create_git_sandbox();
+            let graph = create_workspace_mocker(sandbox.path())
+                .mock_workspace_graph()
+                .await;
+
+            assert_vcs_context(&graph);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn loads_vcs_info_when_loaded_from_cache() {
+            let sandbox = create_git_sandbox();
+            let cache_path = sandbox
+                .path()
+                .join(".moon/cache/states/workspaceGraph.json");
+
+            assert_vcs_context(&build_cached_graph(&sandbox).await);
+
+            // The cache isn't written again on a hit
+            let modified = std::fs::metadata(&cache_path).unwrap().modified().unwrap();
+
+            assert_vcs_context(&build_cached_graph(&sandbox).await);
+            assert_eq!(
+                std::fs::metadata(&cache_path).unwrap().modified().unwrap(),
+                modified
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn defaults_without_git() {
+            let sandbox = create_moon_sandbox("dependencies");
+            let graph = create_workspace_mocker(sandbox.path())
+                .mock_workspace_graph()
+                .await;
+
+            assert!(graph.projects.context.vcs_branch.is_empty());
+            assert!(graph.projects.context.vcs_revision.is_empty());
+        }
+    }
+
     mod cycles {
         use super::*;
 

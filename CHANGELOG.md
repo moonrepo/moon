@@ -60,6 +60,12 @@
       spawning a blocking task per file.
     - Each file is now stat-ed once before hashing, instead of twice, and read with a single read
       when it fits within the hashing buffer.
+- **Workspace graph**
+  - Improved the performance of building the workspace graph.
+    - Git information (branch, revision, and repository) is now loaded concurrently in the
+      background while the graph is built, instead of one command after another once it was built.
+    - Projects and tasks are no longer cloned when finalizing the graph.
+    - Project configs are no longer formatted into tracing spans while building.
 
 ## 2.6.1
 

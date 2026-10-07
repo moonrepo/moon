@@ -298,7 +298,7 @@ impl WorkspaceProjectsBuilder {
     }
 
     /// Preload projects and their configs for use within caching.
-    #[instrument(skip(self))]
+    #[instrument(skip_all)]
     pub async fn preload(&mut self) -> miette::Result<()> {
         self.build_data = self.load().await?;
 
@@ -306,7 +306,7 @@ impl WorkspaceProjectsBuilder {
     }
 
     /// Load and build all projects into the graph, as configured in the workspace.
-    #[instrument(skip(self))]
+    #[instrument(skip_all)]
     pub async fn build(&mut self, ids: Option<Vec<Id>>) -> miette::Result<()> {
         let mut data = if self.build_data.is_empty() {
             self.load().await?
@@ -325,7 +325,7 @@ impl WorkspaceProjectsBuilder {
 
     // Extract all tasks from their respective project, as the data will live
     // in the task graph and not the project graph!
-    #[instrument(skip(self))]
+    #[instrument(skip_all)]
     pub fn extract_tasks(&mut self) -> miette::Result<Vec<Task>> {
         let mut tasks = vec![];
 
@@ -372,17 +372,18 @@ impl WorkspaceProjectsBuilder {
         project_graph.aliases.extend(self.aliases_to_ids);
         let mut loaded_projects = FxHashMap::default();
 
-        // TODO switch to filter_map_owned
-        let graph = self.graph.filter_map(
+        // Move the loaded projects out of the graph instead of cloning them,
+        // and drop the placeholders that were never loaded
+        let graph = self.graph.filter_map_owned(
             |ni, node| match node {
                 NodeState::Loading => None,
                 NodeState::Loaded(project) => {
-                    loaded_projects.insert(ni, project.to_owned());
+                    loaded_projects.insert(ni, project);
 
                     Some(ni)
                 }
             },
-            |_, edge| Some(*edge),
+            |_, edge| Some(edge),
         );
 
         for index in graph.node_indices() {
@@ -401,7 +402,7 @@ impl WorkspaceProjectsBuilder {
         Ok(project_graph)
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip_all)]
     async fn build_graph(
         &mut self,
         ids: Option<Vec<Id>>,
@@ -602,7 +603,7 @@ impl WorkspaceProjectsBuilder {
 
     /// Load the graph with project sources from the workspace configuration.
     /// If globs are provided, walk the file system and gather sources.
-    #[instrument(skip(self))]
+    #[instrument(skip_all)]
     async fn load(&mut self) -> miette::Result<ProjectBuildDataMap> {
         let context = self.context();
         let mut glob_format = WorkspaceProjectGlobFormat::default();
@@ -682,7 +683,7 @@ impl WorkspaceProjectsBuilder {
         Ok(build_data)
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip_all)]
     async fn load_build_data(
         &mut self,
         sources: Vec<(Id, WorkspaceRelativePathBuf)>,
@@ -756,7 +757,7 @@ impl WorkspaceProjectsBuilder {
         Ok(projects_data)
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip_all)]
     async fn extend_build_data(
         &mut self,
         projects_data: &mut ProjectBuildDataMap,

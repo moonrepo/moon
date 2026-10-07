@@ -1,14 +1,30 @@
 ---
 slug: proto-v0.63
-title: proto v0.63 - Trusted configs, closest pinning, and libc-aware lockfiles
+title: proto v0.63 - Trusted configs, Kotlin support, and schema plugins v2
 authors: [milesj]
-tags: [trust, security, config, activate, pin, lockfile, libc, immutable, wasm, plugins]
+tags:
+  [
+    trust,
+    security,
+    config,
+    activate,
+    kotlin,
+    java,
+    schema,
+    pin,
+    lockfile,
+    libc,
+    immutable,
+    wasm,
+    plugins,
+  ]
 # image: ./img/proto/v0.63.png
 ---
 
 This release is all about trust. Configuration files now have to earn it before they can touch your
-shell, [`proto pin`](/docs/proto/commands/pin) finally writes to the file you'd expect, and lockfiles
-learn the difference between Alpine and Debian.
+shell. Elsewhere, Kotlin joins the toolchain, non-WASM plugins get a brand new format,
+[`proto pin`](/docs/proto/commands/pin) finally writes to the file you'd expect, and lockfiles learn
+the difference between Alpine and Debian.
 
 <!--truncate-->
 
@@ -70,10 +86,10 @@ running Node.js still gets you the right version, no ceremony required.
 
 ### Trusting and untrusting
 
-[`proto trust`](/docs/proto/commands/trust) accepts a directory (defaulting to the current one), which
-trusts every configuration within it and its sub-directories, or a path to a single configuration
-file. Either way, proto prints the security-sensitive settings that it's about to apply, so you can
-review exactly what you're agreeing to.
+[`proto trust`](/docs/proto/commands/trust) accepts a directory (defaulting to the current one),
+which trusts every configuration within it and its sub-directories, or a path to a single
+configuration file. Either way, proto prints the security-sensitive settings that it's about to
+apply, so you can review exactly what you're agreeing to.
 
 ```shell
 # This project, and everything within it
@@ -104,10 +120,11 @@ automatically:
   [`~/.proto/.prototools`](/docs/proto/config#locations) files are owned by you, and are always
   trusted.
 - **CI.** The checked out repository _is_ the code being built, and there's no one around to type
-  [`proto trust`](/docs/proto/commands/trust), so every configuration is trusted in CI. It's detected
-  from the [`CI`](/docs/proto/config#trusted-configurations) environment variable (or a provider's
-  specific variables), so if you've exported it in your shell profile for some reason, now's a great
-  time to stop. [`proto diagnose`](/docs/proto/commands/diagnose) will nag you about it if you don't.
+  [`proto trust`](/docs/proto/commands/trust), so every configuration is trusted in CI. It's
+  detected from the [`CI`](/docs/proto/config#trusted-configurations) environment variable (or a
+  provider's specific variables), so if you've exported it in your shell profile for some reason,
+  now's a great time to stop. [`proto diagnose`](/docs/proto/commands/diagnose) will nag you about
+  it if you don't.
 - **Trusted paths.** Directories listed in the
   [`PROTO_TRUSTED_PATHS`](/docs/proto/config#trusted-configurations) environment variable (separated
   the same way as your system path) are trusted wholesale. Handy if all of your own work lives in
@@ -141,6 +158,33 @@ tool than the one the configuration asked for would be its own kind of surprise.
 
 > Head over to the [trust documentation](/docs/proto/config#trust) for all of the details.
 
+## Kotlin support
+
+Hot on the heels of Zig in [v0.62](./proto-v0.62), [Kotlin](https://kotlinlang.org/) joins proto's
+built-in toolchain, making it our second JVM language after Java landed in [v0.59](./proto-v0.59).
+
+```shell
+$ proto install java
+$ proto install kotlin
+```
+
+The plugin installs JetBrains' portable command-line compiler, and provides the
+[`kotlin`](https://kotlinlang.org/docs/command-line.html) and
+[`kotlinc`](https://kotlinlang.org/docs/command-line.html) executables. Kotlin runs on the JVM, so a
+Java runtime is required as well. The Kotlin launchers look for
+[`JAVA_HOME`](https://github.com/moonrepo/plugins/tree/master/tools/kotlin#executables-and-environment)
+first, which proto's Java plugin sets when activated, so pinning both tools is all it takes.
+
+Versions are detected from
+[`.kotlin-version`](https://github.com/moonrepo/plugins/tree/master/tools/kotlin#versions) files,
+and from the Kotlin entry in [`.sdkmanrc`](https://sdkman.io/usage) files, so projects already using
+SDKMAN! are picked up without any proto-specific configuration. Releases all the way back to before
+1.0 are supported, as are release candidates and EAP builds when requested explicitly.
+
+> Kotlin support is still unstable, so please
+> [report any issues](https://github.com/moonrepo/plugins/issues) you run into! Kotlin/Native is a
+> separate distribution, and is not installed by this plugin.
+
 ## Pinning to the closest configuration
 
 Here's a small one that has bugged us for a while. Run
@@ -165,10 +209,10 @@ This is now the default for [`proto pin`](/docs/proto/commands/pin),
 [`proto plugin remove`](/docs/proto/commands/plugin/remove), and
 [`proto install --pin`](/docs/proto/commands/install#pinning-the-version) (and the MCP
 [`install_tool`](/docs/proto/commands/mcp#tools) tool). Directories that only have an environment
-configuration ([`.prototools.<env>`](/docs/proto/config#environment-mode)) are skipped, and your user
-and global configurations are never targeted — pass [`--to user`](/docs/proto/config#locations) or
-[`--to global`](/docs/proto/config#locations) for those. It can also be used with the
-[`pin-latest`](/docs/proto/config#pin-latest) setting.
+configuration ([`.prototools.<env>`](/docs/proto/config#environment-mode)) are skipped, and your
+user and global configurations are never targeted — pass
+[`--to user`](/docs/proto/config#locations) or [`--to global`](/docs/proto/config#locations) for
+those. It can also be used with the [`pin-latest`](/docs/proto/config#pin-latest) setting.
 
 ```toml title=".prototools"
 [settings]
@@ -207,8 +251,8 @@ systems and architectures.
 
 ### Stricter immutable lockfiles
 
-Speaking of inheritance, this one is important. In v0.62.2, we started inheriting a version locked by
-_another_ platform when the current platform had no record. That's the right call for a regular
+Speaking of inheritance, this one is important. In v0.62.2, we started inheriting a version locked
+by _another_ platform when the current platform had no record. That's the right call for a regular
 install, as a resolved version applies to every machine.
 
 It was the wrong call for [`--immutable-lockfile`](/docs/proto/lockfile#immutable-lockfiles). The
@@ -225,6 +269,87 @@ To fix it, run [`proto install`](/docs/proto/commands/install) (without the flag
 platform you install on, and commit the updated lockfile. Installs without
 [`--immutable-lockfile`](/docs/proto/commands/install#immutable-lockfiles) continue to inherit as
 before.
+
+## Schema plugins v2
+
+Not every tool needs a WASM plugin. For the common case — download an archive, extract a binary —
+proto supports [non-WASM plugins](/docs/proto/non-wasm-plugin): a JSON, TOML, or YAML file that
+describes the tool. They power the entire
+[community registry](/docs/proto/plugins#community-plugins), in fact.
+
+But the format grew its own vocabulary over the years, like
+[`download-file`](/docs/proto/non-wasm-plugin#platform-variations),
+[`manifest-url`](/docs/proto/non-wasm-plugin#json-manifest), and
+[`version-files`](/docs/proto/non-wasm-plugin#detecting-versions), which drifted away from the WASM
+plugin API. Worse, it had no way to express the most common real-world wrinkle: a tool that changed
+something between releases. Renamed an asset in 2.0? Moved hosts in 3.0? Your options were dropping
+old versions, or rewriting the plugin in WASM.
+
+Format v2 fixes both. Opt in with [`format = "2"`](/docs/proto/non-wasm-plugin#format-v2), and each
+section maps directly to the output of a WASM plugin function, with snake_case keys everywhere:
+[`metadata`](/docs/proto/non-wasm-plugin#sections) is the output of
+[`register_tool`](/docs/proto/wasm-plugin#registering-the-tool),
+[`install`](/docs/proto/non-wasm-plugin#sections) is the output of
+[`download_prebuilt`](/docs/proto/wasm-plugin#downloading-pre-builts),
+[`locate`](/docs/proto/non-wasm-plugin#locating-executables) is the output of
+[`locate_executables`](/docs/proto/wasm-plugin#locating-executables), and so on. If you've read the
+API documentation, you already know the settings.
+
+And for tools that change over time, there's
+[`[[overrides]]`](/docs/proto/non-wasm-plugin#overrides).
+
+```toml title="protostar.toml"
+format = "2"
+
+[metadata]
+name = "Protostar"
+type = "command-line"
+
+[resolve]
+git_url = "https://github.com/moonrepo/protostar"
+
+[install]
+download_url = "https://github.com/moonrepo/protostar/releases/download/v{version}/{download_name}"
+
+[platform.linux]
+download_name = "protostar-{arch}-unknown-linux-{libc}.tar.gz"
+
+[platform.macos]
+download_name = "protostar-{arch}-apple-darwin.tar.xz"
+
+# 2.0 renamed the Linux asset, and dropped arm64
+[[overrides]]
+range = ">=2"
+
+[overrides.platform.linux]
+download_name = "protostar-v2-{arch}.tar.gz"
+archs = ["x64"]
+
+# Nightlies live somewhere else entirely
+[[overrides]]
+range = "canary"
+
+[overrides.install]
+download_url = "https://example.com/protostar/nightly/{download_name}"
+```
+
+Each override targets a [version range](/docs/proto/tool-spec#requirements-and-ranges) (or canary
+releases), and can replace download, executable, platform, and even version resolution settings, so
+releases from before a project changed its tag format can be parsed with their own pattern. Every matching override is applied in order, with later ones winning, and pre-releases
+match the range of their release, so a release candidate for 2.0 picks up the 2.x settings too.
+
+A few more niceties came along for the ride. Unknown fields are now an error, so a typo no longer
+silently does nothing. URLs can reference the platform's resolved names with the
+[`{download_name}`](/docs/proto/non-wasm-plugin#tokens) and
+[`{checksum_name}`](/docs/proto/non-wasm-plugin#tokens) tokens, which error if the current platform
+has no name configured, instead of quietly producing a broken URL. And
+[`source.latest`](/docs/proto/non-wasm-plugin#sections) can pin the latest version, instead of
+always using the highest stable one.
+
+Format v1 isn't going anywhere, and existing plugins continue to work as-is.
+
+> View the [format v2 documentation](/docs/proto/non-wasm-plugin#format-v2) for the full list of
+> settings.
 
 ## WASM API changes
 
@@ -249,8 +374,9 @@ let tags = load_git_tags("https://github.com/org/repo").unwrap_or_default();
 The new [`HostPlatform`](/docs/guides/wasm-plugins#host-environment) type represents an
 architecture, operating system, and libc as a single value. It parses from proto's own
 [`<arch>-<os>[-<libc>]`](/docs/guides/wasm-plugins#host-environment) format, and from
-[Rust target triples](https://doc.rust-lang.org/rustc/platform-support.html), which makes mapping
-release artifacts much less tedious.
+[Rust target triples](https://doc.rust-lang.org/rustc/platform-support.html), and converts back to a
+target triple with [`to_rust_platform`](/docs/guides/wasm-plugins#host-environment). Since so many
+tools name their release artifacts after target triples, this makes mapping them much less tedious.
 
 ```rust
 let platform = HostPlatform::parse("aarch64-unknown-linux-musl")?;
@@ -259,6 +385,7 @@ platform.arch; // HostArch::Arm64
 platform.os; // HostOS::Linux
 platform.libc; // HostLibc::Musl
 platform.to_string(); // "arm64-linux-musl"
+platform.to_rust_platform(); // "aarch64-unknown-linux-musl"
 ```
 
 We also updated [`HostLibc`](/docs/guides/wasm-plugins#host-environment) to treat unsupported values
@@ -310,6 +437,9 @@ let plugin = sandbox
 View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.63.0) for a full list
 of changes.
 
+- Executable paths in non-WASM plugins now support tokens, like
+  [`{version}`](/docs/proto/non-wasm-plugin#platform-variations), for secondary executables too, not
+  just the primary executable.
 - Plugin downloads (from OCI registries, GitHub, and URLs) are now always attempted, even when the
   hosts used to detect an internet connection are blocked or slow. The connection check is only used
   to explain a failed download, which now includes the underlying error. VPN users, rejoice.

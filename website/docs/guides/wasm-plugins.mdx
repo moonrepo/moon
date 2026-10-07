@@ -148,6 +148,15 @@ let platform = HostPlatform::parse("aarch64-unknown-linux-musl")?;
 assert_eq!(platform.to_string(), "arm64-linux-musl");
 ```
 
+To go the other way, `to_rust_platform` converts a platform into a Rust target triple. On Linux, the
+libc defaults to GNU when unknown, and on Windows, MSVC is used unless the libc is GNU.
+
+```rust
+let platform = HostPlatform::new(HostOS::Windows, HostArch::X64);
+
+assert_eq!(platform.to_rust_platform(), "x86_64-pc-windows-msvc");
+```
+
 Furthermore, the user's home directory (`~`) can be accessed with the `home_dir` field, which is a
 [virtual path](#virtual-paths).
 

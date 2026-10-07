@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.ae67d130.js" defer="defer"></script>
-<script src="/assets/js/main.c807ce47.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.afc0c684.js" defer="defer"></script>
+<script src="/assets/js/main.92cc8011.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -36,6 +36,10 @@ protocol and source location.</p>
 <a class="" href="/docs/proto/config#backends"><code>[backends.*]</code></a> sections using the <code>plugin</code> field, allowing the plugin and its
 settings to be defined side-by-side. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v0.60.0</span></p>
 <div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token plain">tools</span><span class="token punctuation" style="color:#cad4e2">.</span><span class="token plain">&lt;id&gt;</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">plugin</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&quot;&lt;protocol&gt;://&lt;location&gt;&quot;</span><br></div></code></pre></div></div>
+<p>Plugins are downloaded and executed on your machine, so plugins configured in a local
+<code>.prototools</code> file are only loaded once that file has been <a class="" href="/docs/proto/config#trust">trusted</a>. If a plugin is
+configured in an untrusted file, proto will fail to load the tool, instead of falling back to a
+different plugin with the same identifier. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v0.63.0</span></p>
 <h2 class="anchor anchorTargetStickyNavbar_tleR" id="community-plugins">Community plugins<span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v0.62.0</span><a href="#community-plugins" class="hash-link" aria-label="Direct link to community-plugins" title="Direct link to community-plugins" translate="no">​</a></h2>
 <p>proto also maintains an official registry of <a class="" href="/docs/proto/tools#community">community plugins</a>, which are TOML
 based plugins for tools that aren&#x27;t built-in. Any tool in this registry can be used <em>by ID alone</em>,
@@ -45,6 +49,9 @@ without configuring a locator first.</p>
 <code>[plugins.tools]</code> entries, any <code>plugin</code> fields, and the <a class="" href="/docs/proto/tools#built-in">built-in tools</a> have all
 been exhausted. A locator that you configure always wins, so pointing an ID at your own fork
 continues to work exactly as before.</p>
+<p>Since a community plugin is third-party code, a version pin for a community tool in a local
+<code>.prototools</code> file is a <a class="" href="/docs/proto/config#security-sensitive-settings">security-sensitive setting</a>, and is
+only applied once that file has been <a class="" href="/docs/proto/config#trust">trusted</a>. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v0.63.0</span></p>
 <p>The registry data is cached locally, and a lookup failure (an outage, being offline) is logged as a
 warning instead of failing the command. If you&#x27;d rather proto never reach for it, disable the
 <a class="" href="/docs/proto/config#community-tools"><code>community-tools</code></a> setting.</p>

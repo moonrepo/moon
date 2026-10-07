@@ -2,11 +2,319 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2026-10-05T00:00:00.000Z</updated>
+    <updated>2026-10-06T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[proto v0.63 - Trusted configs, Kotlin support, and schema plugins v2]]></title>
+        <id>https://moonrepo.dev/blog/proto-v0.63</id>
+        <link href="https://moonrepo.dev/blog/proto-v0.63"/>
+        <updated>2026-10-06T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[This release is all about trust. Configuration files now have to earn it before they can touch your]]></summary>
+        <content type="html"><![CDATA[<p>This release is all about trust. Configuration files now have to earn it before they can touch your
+shell. Elsewhere, Kotlin joins the toolchain, non-WASM plugins get a brand new format,
+<a class="" href="https://moonrepo.dev/docs/proto/commands/pin"><code>proto pin</code></a> finally writes to the file you'd expect, and lockfiles learn
+the difference between Alpine and Debian.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="trusted-configurations">Trusted configurations<a href="https://moonrepo.dev/blog/proto-v0.63#trusted-configurations" class="hash-link" aria-label="Direct link to Trusted configurations" title="Direct link to Trusted configurations" translate="no">​</a></h2>
+<p>A <a class="" href="https://moonrepo.dev/docs/proto/config"><code>.prototools</code></a> file looks harmless. A few versions, maybe an alias or two.
+But it's capable of a lot more than that, and
+<a class="" href="https://moonrepo.dev/docs/proto/workflows#shell-activation">shell activation</a> applies all of it the moment you change
+directories. Consider a repository you cloned 5 seconds ago, that ships with this:</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key property" style="color:#b7a9f9">node</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"24"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">env</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">BASH_ENV</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"./scripts/totally-normal.sh"</span><br></div></code></pre></div></div>
+<p>With activation enabled,
+<a href="https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html#index-BASH_005fENV" target="_blank" rel="noopener noreferrer" class=""><code>BASH_ENV</code></a>
+is exported into your shell as soon as you enter the directory, and the very next Bash process you
+spawn runs the script. The same goes for
+<a href="https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html#index-PROMPT_005fCOMMAND" target="_blank" rel="noopener noreferrer" class=""><code>PROMPT_COMMAND</code></a>,
+<a class="" href="https://moonrepo.dev/docs/proto/config#aliases"><code>[shell.aliases]</code></a> that quietly shadow your everyday commands,
+third-party plugins that are downloaded and executed, and settings like
+<a class="" href="https://moonrepo.dev/docs/proto/config#url-rewrites"><code>url-rewrites</code></a> that redirect where tools are downloaded from. You
+didn't run anything. You just looked at someone's code.</p>
+<p>So starting with this release, local configuration files must be <strong>trusted</strong> before their
+security-sensitive settings are applied.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto trust</span><br></div></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="what-requires-trust">What requires trust?<a href="https://moonrepo.dev/blog/proto-v0.63#what-requires-trust" class="hash-link" aria-label="Direct link to What requires trust?" title="Direct link to What requires trust?" translate="no">​</a></h3>
+<p>The settings that can execute code, or change what code gets executed, are considered
+<a class="" href="https://moonrepo.dev/docs/proto/config#security-sensitive-settings">security-sensitive</a>:</p>
+<ul>
+<li class=""><a class="" href="https://moonrepo.dev/docs/proto/config#env"><code>[env]</code></a> (including <a class="" href="https://moonrepo.dev/docs/proto/config#file"><code>.env</code> files</a>),
+<a class="" href="https://moonrepo.dev/docs/proto/config#shell"><code>[shell]</code></a>, <a class="" href="https://moonrepo.dev/docs/proto/config#plugins"><code>[plugins]</code></a>, and
+<a class="" href="https://moonrepo.dev/docs/proto/config#backends"><code>[backends.*]</code></a>.</li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/proto/config#tools"><code>[tools.*]</code></a>, except for
+<a class="" href="https://moonrepo.dev/docs/proto/config#toolsaliases">version aliases</a>.</li>
+<li class="">The <a class="" href="https://moonrepo.dev/docs/proto/config#lock-proto-version"><code>proto</code> version pin</a>, and pins for tools that aren't
+built-in (like <a class="" href="https://moonrepo.dev/docs/proto/plugins#community-plugins">community plugins</a> and the
+<a class="" href="https://moonrepo.dev/docs/proto/tool-spec#asdf"><code>asdf</code></a> backend), as loading them downloads and executes a
+third-party plugin.</li>
+<li class="">Every <a class="" href="https://moonrepo.dev/docs/proto/config#settings"><code>[settings]</code></a> entry, except for
+<a class="" href="https://moonrepo.dev/docs/proto/config#detect-strategy"><code>detect-strategy</code></a>,
+<a class="" href="https://moonrepo.dev/docs/proto/config#pin-latest"><code>pin-latest</code></a>, <a class="" href="https://moonrepo.dev/docs/proto/config#telemetry"><code>telemetry</code></a>, and
+<a class="" href="https://moonrepo.dev/docs/proto/config#unstable-lockfile"><code>unstable-lockfile</code></a>.</li>
+</ul>
+<p>Everything else is <em>always</em> applied. Version pins for
+<a class="" href="https://moonrepo.dev/docs/proto/tools#official-built-in">built-in tools</a> (and the
+<a class="" href="https://moonrepo.dev/docs/proto/tool-spec#npm"><code>npm</code></a> and <a class="" href="https://moonrepo.dev/docs/proto/tool-spec#cargo"><code>cargo</code></a> backends), version
+aliases, and the harmless settings continue to work exactly as before. Cloning a repository and
+running Node.js still gets you the right version, no ceremony required.</p>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="trusting-and-untrusting">Trusting and untrusting<a href="https://moonrepo.dev/blog/proto-v0.63#trusting-and-untrusting" class="hash-link" aria-label="Direct link to Trusting and untrusting" title="Direct link to Trusting and untrusting" translate="no">​</a></h3>
+<p><a class="" href="https://moonrepo.dev/docs/proto/commands/trust"><code>proto trust</code></a> accepts a directory (defaulting to the current one),
+which trusts every configuration within it and its sub-directories, or a path to a single
+configuration file. Either way, proto prints the security-sensitive settings that it's about to
+apply, so you can review exactly what you're agreeing to.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># This project, and everything within it</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto trust</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Just this one file</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto trust ./tools/.prototools</span><br></div></code></pre></div></div>
+<p>Trust is recorded against the <em>path</em>, not the file's contents, so editing your own configuration
+never requires re-trusting it. The flip side is that changes you pull into a trusted repository are
+trusted too, so give <a class="" href="https://moonrepo.dev/docs/proto/config"><code>.prototools</code></a> diffs the same review you'd give any other
+code.</p>
+<p>Changed your mind? <a class="" href="https://moonrepo.dev/docs/proto/commands/untrust"><code>proto untrust</code></a> removes it, and will tell you if
+the configuration is <em>still</em> trusted through another source, like a trusted parent directory. And
+since records are path based, <a class="" href="https://moonrepo.dev/docs/proto/commands/clean#trust-records"><code>proto clean trust</code></a>
+removes records for paths that no longer exist, so a different repository cloned to the same
+location later on doesn't inherit trust it never earned. This also runs as part of a regular
+<a class="" href="https://moonrepo.dev/docs/proto/commands/clean"><code>proto clean</code></a>.</p>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="who-doesnt-need-to-do-anything">Who doesn't need to do anything?<a href="https://moonrepo.dev/blog/proto-v0.63#who-doesnt-need-to-do-anything" class="hash-link" aria-label="Direct link to Who doesn't need to do anything?" title="Direct link to Who doesn't need to do anything?" translate="no">​</a></h3>
+<p>We wanted this to stay out of your way wherever possible, so a few configurations are trusted
+automatically:</p>
+<ul>
+<li class="">
+<p><strong>Your own.</strong> The <a class="" href="https://moonrepo.dev/docs/proto/config#locations"><code>~/.prototools</code></a> and
+<a class="" href="https://moonrepo.dev/docs/proto/config#locations"><code>~/.proto/.prototools</code></a> files are owned by you, and are always
+trusted.</p>
+</li>
+<li class="">
+<p><strong>CI.</strong> The checked out repository <em>is</em> the code being built, and there's no one around to type
+<a class="" href="https://moonrepo.dev/docs/proto/commands/trust"><code>proto trust</code></a>, so every configuration is trusted in CI. It's
+detected from the <a class="" href="https://moonrepo.dev/docs/proto/config#trusted-configurations"><code>CI</code></a> environment variable (or a
+provider's specific variables), so if you've exported it in your shell profile for some reason,
+now's a great time to stop. <a class="" href="https://moonrepo.dev/docs/proto/commands/diagnose"><code>proto diagnose</code></a> will nag you about
+it if you don't.</p>
+</li>
+<li class="">
+<p><strong>Trusted paths.</strong> Directories listed in the
+<a class="" href="https://moonrepo.dev/docs/proto/config#trusted-configurations"><code>PROTO_TRUSTED_PATHS</code></a> environment variable (separated
+the same way as your system path) are trusted wholesale. Handy if all of your own work lives in
+one place.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token builtin class-name" style="color:#ff94ff;font-weight:bold">export</span><span class="token plain"> </span><span class="token assign-left variable" style="color:#fef9c3">PROTO_TRUSTED_PATHS</span><span class="token operator" style="color:#b7a9f9">=</span><span class="token string" style="color:#c9e166">"</span><span class="token string environment constant" style="color:#ff94ff;font-weight:bold">$HOME</span><span class="token string" style="color:#c9e166">/work"</span><br></div></code></pre></div></div>
+</li>
+<li class="">
+<p><strong>Settings proto wrote for you.</strong> When proto adds security-sensitive settings to a configuration
+that had none, for example with <a class="" href="https://moonrepo.dev/docs/proto/commands/plugin/add"><code>proto plugin add</code></a>, the file is
+trusted automatically. You asked for the plugin, after all.</p>
+</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="never-silent">Never silent<a href="https://moonrepo.dev/blog/proto-v0.63#never-silent" class="hash-link" aria-label="Direct link to Never silent" title="Direct link to Never silent" translate="no">​</a></h3>
+<p>An ignored setting is only safe if you know it was ignored, so proto tells you about untrusted
+configurations everywhere it reasonably can.</p>
+<p><a class="" href="https://moonrepo.dev/docs/proto/commands/activate"><code>proto activate</code></a> warns about each untrusted configuration once per
+shell session (not on every prompt, we promise). Most other commands log a warning too, except for
+<a class="" href="https://moonrepo.dev/docs/proto/commands/run"><code>run</code></a>, <a class="" href="https://moonrepo.dev/docs/proto/commands/exec"><code>exec</code></a>,
+<a class="" href="https://moonrepo.dev/docs/proto/commands/bin"><code>bin</code></a>, <a class="" href="https://moonrepo.dev/docs/proto/commands/shell"><code>shell</code></a>, and
+<a class="" href="https://moonrepo.dev/docs/proto/workflows#shims">shims</a>, since those are executed constantly by scripts and editors.
+<a class="" href="https://moonrepo.dev/docs/proto/commands/status"><code>proto status</code></a> lists untrusted configurations above its table,
+<a class="" href="https://moonrepo.dev/docs/proto/commands/diagnose"><code>proto diagnose</code></a> reports them as warnings, and
+<a class="" href="https://moonrepo.dev/docs/proto/commands/debug/config"><code>proto debug config</code></a> labels them.</p>
+<p>And if a tool's plugin is configured in an untrusted file, proto refuses to load that tool, instead
+of quietly substituting a built-in or community plugin with the same name. Getting a <em>different</em>
+tool than the one the configuration asked for would be its own kind of surprise.</p>
+<blockquote>
+<p>Head over to the <a class="" href="https://moonrepo.dev/docs/proto/config#trust">trust documentation</a> for all of the details.</p>
+</blockquote>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="kotlin-support">Kotlin support<a href="https://moonrepo.dev/blog/proto-v0.63#kotlin-support" class="hash-link" aria-label="Direct link to Kotlin support" title="Direct link to Kotlin support" translate="no">​</a></h2>
+<p>Hot on the heels of Zig in <a class="" href="https://moonrepo.dev/blog/proto-v0.62">v0.62</a>, <a href="https://kotlinlang.org/" target="_blank" rel="noopener noreferrer" class="">Kotlin</a> joins proto's
+built-in toolchain, making it our second JVM language after Java landed in <a class="" href="https://moonrepo.dev/blog/proto-v0.59">v0.59</a>.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">java</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> kotlin</span><br></div></code></pre></div></div>
+<p>The plugin installs JetBrains' portable command-line compiler, and provides the
+<a href="https://kotlinlang.org/docs/command-line.html" target="_blank" rel="noopener noreferrer" class=""><code>kotlin</code></a> and
+<a href="https://kotlinlang.org/docs/command-line.html" target="_blank" rel="noopener noreferrer" class=""><code>kotlinc</code></a> executables. Kotlin runs on the JVM, so a
+Java runtime is required as well. The Kotlin launchers look for
+<a href="https://github.com/moonrepo/plugins/tree/master/tools/kotlin#executables-and-environment" target="_blank" rel="noopener noreferrer" class=""><code>JAVA_HOME</code></a>
+first, which proto's Java plugin sets when activated, so pinning both tools is all it takes.</p>
+<p>Versions are detected from
+<a href="https://github.com/moonrepo/plugins/tree/master/tools/kotlin#versions" target="_blank" rel="noopener noreferrer" class=""><code>.kotlin-version</code></a> files,
+and from the Kotlin entry in <a href="https://sdkman.io/usage" target="_blank" rel="noopener noreferrer" class=""><code>.sdkmanrc</code></a> files, so projects already using
+SDKMAN! are picked up without any proto-specific configuration. Releases all the way back to before
+1.0 are supported, as are release candidates and EAP builds when requested explicitly.</p>
+<blockquote>
+<p>Kotlin support is still unstable, so please
+<a href="https://github.com/moonrepo/plugins/issues" target="_blank" rel="noopener noreferrer" class="">report any issues</a> you run into! Kotlin/Native is a
+separate distribution, and is not installed by this plugin.</p>
+</blockquote>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="pinning-to-the-closest-configuration">Pinning to the closest configuration<a href="https://moonrepo.dev/blog/proto-v0.63#pinning-to-the-closest-configuration" class="hash-link" aria-label="Direct link to Pinning to the closest configuration" title="Direct link to Pinning to the closest configuration" translate="no">​</a></h2>
+<p>Here's a small one that has bugged us for a while. Run
+<a class="" href="https://moonrepo.dev/docs/proto/commands/pin"><code>proto pin node 24</code></a> from a directory deep within your project, say a
+components folder 4 levels down, and proto would dutifully create a brand new
+<a class="" href="https://moonrepo.dev/docs/proto/config"><code>.prototools</code></a> file... right there in the components folder. Technically
+correct, practically never what you wanted.</p>
+<p>We've added a new <a class="" href="https://moonrepo.dev/docs/proto/config#closest"><code>closest</code></a> location, which traverses upwards from the
+current directory, and targets the first directory that has a configuration file. If none is found,
+the current directory is used, just like before.</p>
+<div class="language-text codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-text codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token plain">~/Projects/app/.prototools         &lt;- pinned here</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">~/Projects/app/packages/web/src    (cwd)</span><br></div></code></pre></div></div>
+<p>This is now the default for <a class="" href="https://moonrepo.dev/docs/proto/commands/pin"><code>proto pin</code></a>,
+<a class="" href="https://moonrepo.dev/docs/proto/commands/unpin"><code>proto unpin</code></a>, <a class="" href="https://moonrepo.dev/docs/proto/commands/alias"><code>proto alias</code></a>,
+<a class="" href="https://moonrepo.dev/docs/proto/commands/unalias"><code>proto unalias</code></a>,
+<a class="" href="https://moonrepo.dev/docs/proto/commands/plugin/add"><code>proto plugin add</code></a>,
+<a class="" href="https://moonrepo.dev/docs/proto/commands/plugin/remove"><code>proto plugin remove</code></a>, and
+<a class="" href="https://moonrepo.dev/docs/proto/commands/install#pinning-the-version"><code>proto install --pin</code></a> (and the MCP
+<a class="" href="https://moonrepo.dev/docs/proto/commands/mcp#tools"><code>install_tool</code></a> tool). Directories that only have an environment
+configuration (<a class="" href="https://moonrepo.dev/docs/proto/config#environment-mode"><code>.prototools.&lt;env&gt;</code></a>) are skipped, and your
+user and global configurations are never targeted — pass
+<a class="" href="https://moonrepo.dev/docs/proto/config#locations"><code>--to user</code></a> or <a class="" href="https://moonrepo.dev/docs/proto/config#locations"><code>--to global</code></a> for
+those. It can also be used with the <a class="" href="https://moonrepo.dev/docs/proto/config#pin-latest"><code>pin-latest</code></a> setting.</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">settings</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">pin-latest</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"closest"</span><br></div></code></pre></div></div>
+<p>If you prefer the old behavior, pass <a class="" href="https://moonrepo.dev/docs/proto/config#locations"><code>--to local</code></a> (or
+<a class="" href="https://moonrepo.dev/docs/proto/config#locations"><code>--from local</code></a>).</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="libc-aware-lockfiles">libc-aware lockfiles<a href="https://moonrepo.dev/blog/proto-v0.63#libc-aware-lockfiles" class="hash-link" aria-label="Direct link to libc-aware lockfiles" title="Direct link to libc-aware lockfiles" translate="no">​</a></h2>
+<p><a class="" href="https://moonrepo.dev/docs/proto/lockfile">Lockfile</a> records have always been keyed by operating system and
+architecture. That's enough for macOS and Windows, but on Linux, plenty of tools publish separate
+artifacts for glibc and musl, each with its own checksum. So a Debian laptop and an Alpine CI
+container would happily share a single <a class="" href="https://moonrepo.dev/docs/proto/lockfile#records">record</a> for Linux on x64, and
+then fail each other's checksum verification.</p>
+<p>Records created on Linux now include a <a class="" href="https://moonrepo.dev/docs/proto/lockfile#records"><code>libc</code></a> field, recording
+whether the machine uses GNU or musl.</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.protolock</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">tools.node</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">os</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"linux"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">arch</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"x64"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">libc</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"musl"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">spec</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"24"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">version</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"24.9.0"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">checksum</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"sha256:..."</span><br></div></code></pre></div></div>
+<p>No migration is required. Existing records without a
+<a class="" href="https://moonrepo.dev/docs/proto/lockfile#version-resolution"><code>libc</code></a> continue to match every libc, and are backfilled
+with the current libc the next time an install updates the record. When another libc has locked a
+version, but yours hasn't, the version is inherited the same way it already is for other operating
+systems and architectures.</p>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="stricter-immutable-lockfiles">Stricter immutable lockfiles<a href="https://moonrepo.dev/blog/proto-v0.63#stricter-immutable-lockfiles" class="hash-link" aria-label="Direct link to Stricter immutable lockfiles" title="Direct link to Stricter immutable lockfiles" translate="no">​</a></h3>
+<p>Speaking of inheritance, this one is important. In v0.62.2, we started inheriting a version locked
+by <em>another</em> platform when the current platform had no record. That's the right call for a regular
+install, as a resolved version applies to every machine.</p>
+<p>It was the wrong call for <a class="" href="https://moonrepo.dev/docs/proto/lockfile#immutable-lockfiles"><code>--immutable-lockfile</code></a>. The
+other platform's checksum isn't valid for your download, so the tool was being installed without
+ever being verified against the lockfile — the exact guarantee that flag exists to provide. It now
+fails instead.</p>
+<div class="language-text codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-text codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token plain">Lockfile is immutable, but is missing a record for node 24 on x64-linux-musl. Only other platforms</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">have locked this version, so the download cannot be verified.</span><br></div></code></pre></div></div>
+<p>To fix it, run <a class="" href="https://moonrepo.dev/docs/proto/commands/install"><code>proto install</code></a> (without the flag) once on each
+platform you install on, and commit the updated lockfile. Installs without
+<a class="" href="https://moonrepo.dev/docs/proto/commands/install#immutable-lockfiles"><code>--immutable-lockfile</code></a> continue to inherit as
+before.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="schema-plugins-v2">Schema plugins v2<a href="https://moonrepo.dev/blog/proto-v0.63#schema-plugins-v2" class="hash-link" aria-label="Direct link to Schema plugins v2" title="Direct link to Schema plugins v2" translate="no">​</a></h2>
+<p>Not every tool needs a WASM plugin. For the common case — download an archive, extract a binary —
+proto supports <a class="" href="https://moonrepo.dev/docs/proto/non-wasm-plugin">non-WASM plugins</a>: a JSON, TOML, or YAML file that
+describes the tool. They power the entire
+<a class="" href="https://moonrepo.dev/docs/proto/plugins#community-plugins">community registry</a>, in fact.</p>
+<p>But the format grew its own vocabulary over the years, like
+<a class="" href="https://moonrepo.dev/docs/proto/non-wasm-plugin#platform-variations"><code>download-file</code></a>,
+<a class="" href="https://moonrepo.dev/docs/proto/non-wasm-plugin#json-manifest"><code>manifest-url</code></a>, and
+<a class="" href="https://moonrepo.dev/docs/proto/non-wasm-plugin#detecting-versions"><code>version-files</code></a>, which drifted away from the WASM
+plugin API. Worse, it had no way to express the most common real-world wrinkle: a tool that changed
+something between releases. Renamed an asset in 2.0? Moved hosts in 3.0? Your options were dropping
+old versions, or rewriting the plugin in WASM.</p>
+<p>Format v2 fixes both. Opt in with <a class="" href="https://moonrepo.dev/docs/proto/non-wasm-plugin#format-v2"><code>format = "2"</code></a>, and each
+section maps directly to the output of a WASM plugin function, with snake_case keys everywhere:
+<a class="" href="https://moonrepo.dev/docs/proto/non-wasm-plugin#sections"><code>metadata</code></a> is the output of
+<a class="" href="https://moonrepo.dev/docs/proto/wasm-plugin#registering-the-tool"><code>register_tool</code></a>,
+<a class="" href="https://moonrepo.dev/docs/proto/non-wasm-plugin#sections"><code>install</code></a> is the output of
+<a class="" href="https://moonrepo.dev/docs/proto/wasm-plugin#downloading-pre-builts"><code>download_prebuilt</code></a>,
+<a class="" href="https://moonrepo.dev/docs/proto/non-wasm-plugin#locating-executables"><code>locate</code></a> is the output of
+<a class="" href="https://moonrepo.dev/docs/proto/wasm-plugin#locating-executables"><code>locate_executables</code></a>, and so on. If you've read the
+API documentation, you already know the settings.</p>
+<p>And for tools that change over time, there's
+<a class="" href="https://moonrepo.dev/docs/proto/non-wasm-plugin#overrides"><code>[[overrides]]</code></a>.</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">protostar.toml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key property" style="color:#b7a9f9">format</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"2"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">metadata</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">name</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"Protostar"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">type</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"command-line"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">resolve</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">git_url</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"https://github.com/moonrepo/protostar"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">install</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">download_url</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"https://github.com/moonrepo/protostar/releases/download/v{version}/{download_name}"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">platform.linux</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">download_name</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"protostar-{arch}-unknown-linux-{libc}.tar.gz"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">platform.macos</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">download_name</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"protostar-{arch}-apple-darwin.tar.xz"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># 2.0 renamed the Linux asset, and dropped arm64</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">overrides</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">range</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"&gt;=2"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">overrides.platform.linux</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">download_name</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"protostar-v2-{arch}.tar.gz"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">archs</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">"x64"</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Nightlies live somewhere else entirely</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">overrides</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">range</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"canary"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">overrides.install</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">download_url</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"https://example.com/protostar/nightly/{download_name}"</span><br></div></code></pre></div></div>
+<p>Each override targets a <a class="" href="https://moonrepo.dev/docs/proto/tool-spec#requirements-and-ranges">version range</a> (or canary
+releases), and can replace download, executable, platform, and even version resolution settings, so
+releases from before a project changed its tag format can be parsed with their own pattern. Every matching override is applied in order, with later ones winning, and pre-releases
+match the range of their release, so a release candidate for 2.0 picks up the 2.x settings too.</p>
+<p>A few more niceties came along for the ride. Unknown fields are now an error, so a typo no longer
+silently does nothing. URLs can reference the platform's resolved names with the
+<a class="" href="https://moonrepo.dev/docs/proto/non-wasm-plugin#tokens"><code>{download_name}</code></a> and
+<a class="" href="https://moonrepo.dev/docs/proto/non-wasm-plugin#tokens"><code>{checksum_name}</code></a> tokens, which error if the current platform
+has no name configured, instead of quietly producing a broken URL. And
+<a class="" href="https://moonrepo.dev/docs/proto/non-wasm-plugin#sections"><code>source.latest</code></a> can pin the latest version, instead of
+always using the highest stable one.</p>
+<p>Format v1 isn't going anywhere, and existing plugins continue to work as-is.</p>
+<blockquote>
+<p>View the <a class="" href="https://moonrepo.dev/docs/proto/non-wasm-plugin#format-v2">format v2 documentation</a> for the full list of
+settings.</p>
+</blockquote>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="wasm-api-changes">WASM API changes<a href="https://moonrepo.dev/blog/proto-v0.63#wasm-api-changes" class="hash-link" aria-label="Direct link to WASM API changes" title="Direct link to WASM API changes" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="load_git_tags-returns-errors"><code>load_git_tags</code> returns errors<a href="https://moonrepo.dev/blog/proto-v0.63#load_git_tags-returns-errors" class="hash-link" aria-label="Direct link to load_git_tags-returns-errors" title="Direct link to load_git_tags-returns-errors" translate="no">​</a></h3>
+<p>The <a class="" href="https://moonrepo.dev/docs/proto/wasm-plugin#from-git-tags"><code>load_git_tags</code></a> function used to swallow failures and
+return an empty list. Which sounds harmless, until you realize every plugin then reported a
+confusing "Failed to resolve version" error, while the real cause — an unreachable remote, a missing
+credential, an unaccepted Xcode license on macOS (yes, really) — was nowhere to be seen. It also
+meant previously cached versions were never used as a fallback.</p>
+<p>It now returns an error that includes the exit code and stderr of
+<a href="https://git-scm.com/docs/git-ls-remote" target="_blank" rel="noopener noreferrer" class=""><code>git ls-remote</code></a>. If your plugin should continue without
+the tags, handle the error explicitly.</p>
+<div class="language-rust codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-rust codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token keyword" style="color:#b7a9f9">let</span><span class="token plain"> tags </span><span class="token operator" style="color:#b7a9f9">=</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">load_git_tags</span><span class="token punctuation" style="color:#cad4e2">(</span><span class="token string" style="color:#c9e166">"https://github.com/org/repo"</span><span class="token punctuation" style="color:#cad4e2">)</span><span class="token punctuation" style="color:#cad4e2">.</span><span class="token function" style="color:#ff94ff;font-weight:bold">unwrap_or_default</span><span class="token punctuation" style="color:#cad4e2">(</span><span class="token punctuation" style="color:#cad4e2">)</span><span class="token punctuation" style="color:#cad4e2">;</span><br></div></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="hostplatform"><code>HostPlatform</code><a href="https://moonrepo.dev/blog/proto-v0.63#hostplatform" class="hash-link" aria-label="Direct link to hostplatform" title="Direct link to hostplatform" translate="no">​</a></h3>
+<p>The new <a class="" href="https://moonrepo.dev/docs/guides/wasm-plugins#host-environment"><code>HostPlatform</code></a> type represents an
+architecture, operating system, and libc as a single value. It parses from proto's own
+<a class="" href="https://moonrepo.dev/docs/guides/wasm-plugins#host-environment"><code>&lt;arch&gt;-&lt;os&gt;[-&lt;libc&gt;]</code></a> format, and from
+<a href="https://doc.rust-lang.org/rustc/platform-support.html" target="_blank" rel="noopener noreferrer" class="">Rust target triples</a>, and converts back to a
+target triple with <a class="" href="https://moonrepo.dev/docs/guides/wasm-plugins#host-environment"><code>to_rust_platform</code></a>. Since so many
+tools name their release artifacts after target triples, this makes mapping them much less tedious.</p>
+<div class="language-rust codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-rust codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token keyword" style="color:#b7a9f9">let</span><span class="token plain"> platform </span><span class="token operator" style="color:#b7a9f9">=</span><span class="token plain"> </span><span class="token class-name" style="color:#ff94ff;font-weight:bold">HostPlatform</span><span class="token punctuation" style="color:#cad4e2">::</span><span class="token function" style="color:#ff94ff;font-weight:bold">parse</span><span class="token punctuation" style="color:#cad4e2">(</span><span class="token string" style="color:#c9e166">"aarch64-unknown-linux-musl"</span><span class="token punctuation" style="color:#cad4e2">)</span><span class="token operator" style="color:#b7a9f9">?</span><span class="token punctuation" style="color:#cad4e2">;</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">platform</span><span class="token punctuation" style="color:#cad4e2">.</span><span class="token plain">arch</span><span class="token punctuation" style="color:#cad4e2">;</span><span class="token plain"> </span><span class="token comment" style="color:#97a1af;font-style:italic">// HostArch::Arm64</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">platform</span><span class="token punctuation" style="color:#cad4e2">.</span><span class="token plain">os</span><span class="token punctuation" style="color:#cad4e2">;</span><span class="token plain"> </span><span class="token comment" style="color:#97a1af;font-style:italic">// HostOS::Linux</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">platform</span><span class="token punctuation" style="color:#cad4e2">.</span><span class="token plain">libc</span><span class="token punctuation" style="color:#cad4e2">;</span><span class="token plain"> </span><span class="token comment" style="color:#97a1af;font-style:italic">// HostLibc::Musl</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">platform</span><span class="token punctuation" style="color:#cad4e2">.</span><span class="token function" style="color:#ff94ff;font-weight:bold">to_string</span><span class="token punctuation" style="color:#cad4e2">(</span><span class="token punctuation" style="color:#cad4e2">)</span><span class="token punctuation" style="color:#cad4e2">;</span><span class="token plain"> </span><span class="token comment" style="color:#97a1af;font-style:italic">// "arm64-linux-musl"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">platform</span><span class="token punctuation" style="color:#cad4e2">.</span><span class="token function" style="color:#ff94ff;font-weight:bold">to_rust_platform</span><span class="token punctuation" style="color:#cad4e2">(</span><span class="token punctuation" style="color:#cad4e2">)</span><span class="token punctuation" style="color:#cad4e2">;</span><span class="token plain"> </span><span class="token comment" style="color:#97a1af;font-style:italic">// "aarch64-unknown-linux-musl"</span><br></div></code></pre></div></div>
+<p>We also updated <a class="" href="https://moonrepo.dev/docs/guides/wasm-plugins#host-environment"><code>HostLibc</code></a> to treat unsupported values
+as unknown, instead of failing to deserialize, so plugins built against this version keep working
+when a future proto release adds a libc.</p>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="testing-other-platforms">Testing other platforms<a href="https://moonrepo.dev/blog/proto-v0.63#testing-other-platforms" class="hash-link" aria-label="Direct link to Testing other platforms" title="Direct link to Testing other platforms" translate="no">​</a></h3>
+<p>The <a class="" href="https://moonrepo.dev/docs/proto/wasm-plugin#configuring-the-host-platform"><code>ConfigBuilder::host</code></a> test utility now
+requires a <a class="" href="https://moonrepo.dev/docs/guides/wasm-plugins#host-environment"><code>HostPlatform</code></a>, instead of an operating
+system and architecture, so the libc can be configured too. The libc is no longer detected from the
+current machine, and defaults to GNU on Linux, so tests behave the same on every machine.</p>
+<div class="language-rust codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-rust codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token keyword" style="color:#b7a9f9">let</span><span class="token plain"> plugin </span><span class="token operator" style="color:#b7a9f9">=</span><span class="token plain"> sandbox</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token punctuation" style="color:#cad4e2">.</span><span class="token function" style="color:#ff94ff;font-weight:bold">create_plugin_with_config</span><span class="token punctuation" style="color:#cad4e2">(</span><span class="token string" style="color:#c9e166">"id"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token closure-params closure-punctuation punctuation" style="color:#cad4e2">|</span><span class="token closure-params">config</span><span class="token closure-params closure-punctuation punctuation" style="color:#cad4e2">|</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">{</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">        config</span><span class="token punctuation" style="color:#cad4e2">.</span><span class="token function" style="color:#ff94ff;font-weight:bold">host</span><span class="token punctuation" style="color:#cad4e2">(</span><span class="token class-name" style="color:#ff94ff;font-weight:bold">HostPlatform</span><span class="token punctuation" style="color:#cad4e2">::</span><span class="token function" style="color:#ff94ff;font-weight:bold">parse</span><span class="token punctuation" style="color:#cad4e2">(</span><span class="token string" style="color:#c9e166">"x64-linux-musl"</span><span class="token punctuation" style="color:#cad4e2">)</span><span class="token punctuation" style="color:#cad4e2">.</span><span class="token function" style="color:#ff94ff;font-weight:bold">unwrap</span><span class="token punctuation" style="color:#cad4e2">(</span><span class="token punctuation" style="color:#cad4e2">)</span><span class="token punctuation" style="color:#cad4e2">)</span><span class="token punctuation" style="color:#cad4e2">;</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token punctuation" style="color:#cad4e2">}</span><span class="token punctuation" style="color:#cad4e2">)</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token punctuation" style="color:#cad4e2">.</span><span class="token keyword" style="color:#b7a9f9">await</span><span class="token punctuation" style="color:#cad4e2">;</span><br></div></code></pre></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="breaking-changes">Breaking changes<a href="https://moonrepo.dev/blog/proto-v0.63#breaking-changes" class="hash-link" aria-label="Direct link to Breaking changes" title="Direct link to Breaking changes" translate="no">​</a></h2>
+<ul>
+<li class="">The security-sensitive settings of local <a class="" href="https://moonrepo.dev/docs/proto/config"><code>.prototools</code></a> files are ignored
+until the file is <a class="" href="https://moonrepo.dev/docs/proto/config#trust">trusted</a>. Run
+<a class="" href="https://moonrepo.dev/docs/proto/commands/trust"><code>proto trust</code></a> in your projects, or set
+<a class="" href="https://moonrepo.dev/docs/proto/config#trusted-configurations"><code>PROTO_TRUSTED_PATHS</code></a>. CI environments are
+unaffected.</li>
+<li class="">Version pins for tools that aren't built-in, including community plugins and the
+<a class="" href="https://moonrepo.dev/docs/proto/tool-spec#asdf"><code>asdf</code></a> backend, also require trust.</li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/proto/commands/pin"><code>proto pin</code></a>, <a class="" href="https://moonrepo.dev/docs/proto/commands/unpin"><code>unpin</code></a>,
+<a class="" href="https://moonrepo.dev/docs/proto/commands/alias"><code>alias</code></a>, <a class="" href="https://moonrepo.dev/docs/proto/commands/unalias"><code>unalias</code></a>,
+<a class="" href="https://moonrepo.dev/docs/proto/commands/plugin/add"><code>plugin add</code></a>,
+<a class="" href="https://moonrepo.dev/docs/proto/commands/plugin/remove"><code>plugin remove</code></a>, and
+<a class="" href="https://moonrepo.dev/docs/proto/commands/install#pinning-the-version"><code>install --pin</code></a> now write to the
+<a class="" href="https://moonrepo.dev/docs/proto/config#closest">closest</a> configuration file, instead of the one in the current
+directory. Pass <a class="" href="https://moonrepo.dev/docs/proto/config#locations"><code>--to local</code></a> (or
+<a class="" href="https://moonrepo.dev/docs/proto/config#locations"><code>--from local</code></a>) for the previous behavior.</li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/proto/lockfile#immutable-lockfiles"><code>proto install --immutable-lockfile</code></a> now errors when
+only other platforms (including other libcs) have locked a version.</li>
+<li class=""><strong>WASM API:</strong> <a class="" href="https://moonrepo.dev/docs/proto/wasm-plugin#from-git-tags"><code>load_git_tags</code></a> returns an error when the
+tags fail to load, instead of an empty list.</li>
+<li class=""><strong>WASM API:</strong> <a class="" href="https://moonrepo.dev/docs/proto/wasm-plugin#configuring-the-host-platform"><code>ConfigBuilder::host</code></a>
+requires a <a class="" href="https://moonrepo.dev/docs/guides/wasm-plugins#host-environment"><code>HostPlatform</code></a>, instead of an operating
+system and architecture.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.63#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.63.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full list
+of changes.</p>
+<ul>
+<li class="">Executable paths in non-WASM plugins now support tokens, like
+<a class="" href="https://moonrepo.dev/docs/proto/non-wasm-plugin#platform-variations"><code>{version}</code></a>, for secondary executables too, not
+just the primary executable.</li>
+<li class="">Plugin downloads (from OCI registries, GitHub, and URLs) are now always attempted, even when the
+hosts used to detect an internet connection are blocked or slow. The connection check is only used
+to explain a failed download, which now includes the underlying error. VPN users, rejoice.</li>
+<li class="">Updated Rust to v1.99.0.</li>
+</ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="trust" term="trust"/>
+        <category label="security" term="security"/>
+        <category label="config" term="config"/>
+        <category label="activate" term="activate"/>
+        <category label="kotlin" term="kotlin"/>
+        <category label="java" term="java"/>
+        <category label="schema" term="schema"/>
+        <category label="pin" term="pin"/>
+        <category label="lockfile" term="lockfile"/>
+        <category label="libc" term="libc"/>
+        <category label="immutable" term="immutable"/>
+        <category label="wasm" term="wasm"/>
+        <category label="plugins" term="plugins"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[moon v2.6 - Cleanup and wait task dependencies, OpenTelemetry metrics, Pkl type checking, and more]]></title>
         <id>https://moonrepo.dev/blog/moon-v2.6</id>
@@ -2537,51 +2845,5 @@ which can be read from child processes.</li>
         <category label="npm" term="npm"/>
         <category label="pnpm" term="pnpm"/>
         <category label="yarn" term="yarn"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[proto v0.52 - Custom backend plugins]]></title>
-        <id>https://moonrepo.dev/blog/proto-v0.52</id>
-        <link href="https://moonrepo.dev/blog/proto-v0.52"/>
-        <updated>2025-08-21T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[In this release, we're excited to announce custom backend plugins!]]></summary>
-        <content type="html"><![CDATA[<p>In this release, we're excited to announce custom backend plugins!</p>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="custom-backend-plugins">Custom backend plugins<a href="https://moonrepo.dev/blog/proto-v0.52#custom-backend-plugins" class="hash-link" aria-label="Direct link to Custom backend plugins" title="Direct link to Custom backend plugins" translate="no">​</a></h2>
-<p>In <a class="" href="https://moonrepo.dev/blog/proto-v0.47">proto v0.47</a> we announced support for backend plugins, starting with
-<a href="https://asdf-vm.com/" target="_blank" rel="noopener noreferrer" class="">asdf</a>. However, the initial plan was for backend plugins to be an internal
-only feature, maintained by the proto team directly. After some thought, we realized that this was a
-bit limiting, and would ultimately slow down the growth of proto's ecosystem. So, in this release,
-we're opening up backend plugins to the community!</p>
-<p>Backend plugins are a superset of tool plugins that inherit all of their functionality, with
-additional backend specific functionality layered on top. This means that backend plugins can define
-and manage multiple tools, and also handle installation, version resolution, and more.</p>
-<p>To support backend plugins, we've made some changes to the configuration format. Backend plugins can
-be configured with the new <a class="" href="https://moonrepo.dev/docs/proto/config#pluginsbackends"><code>[plugins.backends]</code> section</a>, and
-tool plugins have moved to the <a class="" href="https://moonrepo.dev/docs/proto/config#pluginstools"><code>[plugins.tools]</code> section</a>. For
-backwards compatibility, the old <code>[plugins]</code> section will still work for now.</p>
-<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">plugins.backends</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">my-backend</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"https://raw.githubusercontent.com/my/backend/master/proto-plugin.wasm"</span><br></div></code></pre></div></div>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="breaking-new-backend-identifier-format">Breaking: New backend identifier format<a href="https://moonrepo.dev/blog/proto-v0.52#breaking-new-backend-identifier-format" class="hash-link" aria-label="Direct link to Breaking: New backend identifier format" title="Direct link to Breaking: New backend identifier format" translate="no">​</a></h2>
-<p>To support the backend plugins going forward, we've had to make a breaking change to the way
-backends are identified in configuration. Previously, the backend was specified by prefixing the
-version like <code>asdf:1.2.3</code>, or with the <code>[tools.*.backend]</code> setting. This was very restrictive.</p>
-<p>Going forward, the backend can <em>only</em> be prefixed as part of the tool identifier.</p>
-<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Before</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">zig</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"asdf:0.13.0"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># After</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">"asdf:zig"</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"0.13.0"</span><br></div></code></pre></div></div>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.52#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.52.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full list
-of changes.</p>
-<ul>
-<li class="">Updated lockfiles to track <code>os</code> and <code>arch</code> information when applicable.</li>
-</ul>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="looking-for-contributors">Looking for contributors<a href="https://moonrepo.dev/blog/proto-v0.52#looking-for-contributors" class="hash-link" aria-label="Direct link to Looking for contributors" title="Direct link to Looking for contributors" translate="no">​</a></h2>
-<p>We have a lot of cool stuff planned for proto, like more official backends and tools, improved
-workflows, an official registry, and more! So if you're interested in Rust or WASM, we would love
-and appreciate your help. Feel free to ping us on Discord!</p>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="custom" term="custom"/>
-        <category label="backend" term="backend"/>
-        <category label="plugin" term="plugin"/>
-        <category label="lockfile" term="lockfile"/>
     </entry>
 </feed>

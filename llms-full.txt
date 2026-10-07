@@ -17783,6 +17783,37 @@ if env.arch == HostArch::Arm64 {
 }
 ```
 
+On Linux, the libc implementation can be accessed with the `libc` field, which is either
+`HostLibc::Gnu` or `HostLibc::Musl`, and `HostLibc::Unknown` on other operating systems. Values that
+aren't supported by your plugin's version of the PDK (for example, a libc added in the future) are
+deserialized as `HostLibc::Unknown` instead of failing, so be sure to handle that case.
+
+```rust
+if env.libc == HostLibc::Musl {
+    // Alpine, etc
+}
+```
+
+If you need to represent a platform as a single value, for example, to map Rust target triples to
+download URLs, the `HostPlatform` type (proto v0.63+) combines an architecture, operating system,
+and libc. It can be parsed from `<arch>-<os>[-<libc>]` (`arm64-linux-musl`), or a Rust target
+triple (`aarch64-unknown-linux-musl`), and is formatted as the former.
+
+```rust
+let platform = HostPlatform::parse("aarch64-unknown-linux-musl")?;
+
+assert_eq!(platform.to_string(), "arm64-linux-musl");
+```
+
+To go the other way, `to_rust_platform` converts a platform into a Rust target triple. On Linux, the
+libc defaults to GNU when unknown, and on Windows, MSVC is used unless the libc is GNU.
+
+```rust
+let platform = HostPlatform::new(HostOS::Windows, HostArch::X64);
+
+assert_eq!(platform.to_rust_platform(), "x86_64-pc-windows-msvc");
+```
+
 Furthermore, the user's home directory (`~`) can be accessed with the `home_dir` field, which is a
 [virtual path](#virtual-paths).
 
@@ -20216,6 +20247,10 @@ $ eval "$(proto activate zsh)"
   - Do note that this will worsen performance depending on the number of tools.
 - Activation only removes `PATH` entries that a previous activation injected. Entries inherited from
   your shell profile are left exactly as they were. <VersionLabel version="0.62.0" />
+- The [security-sensitive settings](../config#security-sensitive-settings) of configuration files
+  that have not been [trusted](../config#trust), like `[env]` and `[shell.aliases]`, are _not_
+  applied. A warning is logged for each untrusted configuration, but only once per shell session,
+  as the hook runs on every prompt. <VersionLabel version="0.63.0" />
 
 ### JSON output<VersionLabel version="0.62.0" />
 
@@ -20363,8 +20398,10 @@ accepted.
 $ proto alias node work 16.16
 ```
 
-By default this will update the local [`./.prototools`](../config) file. Pass `--to` to customize
-the location.
+By default this will update the [closest](../config#closest) `.prototools` file, starting from the
+current directory and traversing upwards. Pass `--to` to customize the location.
+
+<VersionLabel version="0.63.0" />
 
 ### Arguments
 
@@ -20374,8 +20411,8 @@ the location.
 
 ## Options
 
-- `--to` - [Location of `.prototools`](../config#locations) to update. Supports `global`, `local`,
-  and `user`.
+- `--to` - [Location of `.prototools`](../config#locations) to update. Supports `closest`
+  (default) <VersionLabel version="0.63.0" inline />, `global`, `local`, and `user`.
   <VersionLabel version="0.41.0" />
 
 ---
@@ -20437,9 +20474,23 @@ $ proto clean plugins
 > Cleaning stale tools does _not_ remove records from [lockfiles](../lockfile), as
 > the version may still be required by a configuration, or in use on other machines.
 
+### Trust records<VersionLabel version="0.63.0" />
+
+The `trust` target removes [trust](../config#trust) records for configuration files and directories
+that no longer exist. This is important, as a record for a deleted path would otherwise trust a
+_different_ repository that is cloned to the same path in the future.
+
+```shell
+$ proto clean trust
+```
+
+Unlike other targets, this is not based on age, so `--days` has no effect. These records are also
+removed when cleaning everything (the default).
+
 ### Arguments
 
-- `[target]` - Type of target. Accepts `cache`, `plugins`, `temp`, or `tools`.
+- `[target]` - Type of target. Accepts `cache`, `plugins`, `temp`, `tools`, or `trust`
+  <VersionLabel version="0.63.0" inline />. Defaults to everything.
   <VersionLabel version="0.44.0" />
 
 ### Options
@@ -20584,6 +20635,11 @@ end.
 If [lockfiles](../../lockfile) are in use, `.protolock` files will be rendered
 alongside their sibling configuration files. <VersionLabel version="0.60.0" />
 
+Configuration files that have not been [trusted](../../config#trust) are rendered _without_ their
+security-sensitive settings, as those are not applied, and are labeled with "(untrusted)".
+
+<VersionLabel version="0.63.0" />
+
 ```
 $ proto debug config
 
@@ -20698,6 +20754,12 @@ If [lockfiles](../lockfile) are in use, proto will also audit their health, and
 report warnings for records that are missing a resolved version, duplicate records for the same
 specification, and stale records that no longer match a configured version. <VersionLabel version="0.60.0" />
 
+Configuration files that have not been [trusted](../config#trust) are reported as warnings, listing
+the security-sensitive settings that are being ignored. Additionally, if a CI environment is
+detected while running in an interactive terminal, a warning is reported, as _every_ configuration
+is trusted in CI, including those in cloned repositories. This usually means the `CI` environment
+variable has leaked into your shell profile. <VersionLabel version="0.63.0" />
+
 ### Options
 
 - `--shell` - The shell to diagnose (will detect automatically).
@@ -20809,8 +20871,10 @@ binary available. If you would like to also pin the resolved version to a `.prot
 the `--pin` option.
 
 ```shell
-# ./.prototools
+# Closest .prototools (traversing upwards)
 $ proto install bun --pin
+
+# ./.prototools
 $ proto install bun --pin local
 
 # ~/.proto/.prototools
@@ -20819,6 +20883,11 @@ $ proto install bun --pin global
 # ~/.prototools
 $ proto install bun --pin user
 ```
+
+When no location is provided, the version is pinned to the [closest](../config#closest)
+`.prototools` file, starting from the current directory and traversing upwards.
+
+<VersionLabel version="0.63.0" />
 
 #### Immutable lockfiles<VersionLabel version="0.61.0" />
 
@@ -20831,6 +20900,11 @@ CI.
 ```shell
 $ proto install --immutable-lockfile
 ```
+
+The install also fails when the only records for a version were created by _other_ platforms
+(operating systems, architectures, or [libcs](../lockfile#records)), as their checksums can't be
+used to verify the download on this machine. Run `proto install` without the flag on each platform
+to record its checksum. <VersionLabel version="0.63.0" />
 
 > This option cannot be combined with `--update-lockfile` or `--pin`.
 
@@ -20869,7 +20943,8 @@ $ proto install go -- --no-gobin
   - `--build` - Build from source if available. <VersionLabel version="0.45.0" />
   - `--no-build` - Download a pre-built if available. <VersionLabel version="0.45.0" />
   - `--pin` - Pin the resolved version and create a symlink in `~/.proto/bin`. Accepts a boolean
-    (pins locally by default), or the string "global", or the string "local".
+    (pins to the closest `.prototools` by default), or a [location](../config#locations):
+    `closest` <VersionLabel version="0.63.0" inline />, `global`, `local`, or `user`.
 
 ---
 
@@ -20973,7 +21048,9 @@ $ proto mcp --info
 
 The server exposes the following tools to MCP clients:
 
-- `install_tool` - Install a tool with a specified version.
+- `install_tool` - Install a tool with a specified version. When pinning is requested, the version
+  is pinned to the [closest](../config#closest) `.prototools` file.
+  <VersionLabel version="0.63.0" inline />
 - `uninstall_tool` - Uninstall a tool with a specified version.
 - `list_tool_versions` - List available and installed versions for a tool.
 - `get_config` - Get the current proto configuration.
@@ -21050,8 +21127,12 @@ $ proto pin node lts --resolve
 $ proto pin npm latest --resolve --tool-native
 ```
 
-By default this will update the local [`./.prototools`](../config) file. Pass `--to` to customize
-the location, or use the `--tool-native` option to use a location unique to the tool.
+By default this will update the [closest](../config#closest) `.prototools` file, starting from the
+current directory and traversing upwards, or the current directory if none is found. Pass `--to` to
+customize the location, or use the `--tool-native` option to use a location unique to the tool.
+
+> Before v0.63, this defaulted to the local `./.prototools` file in the current directory. Pass
+> `--to local` for the previous behavior.
 
 When a [lockfile](../lockfile) is in use, matching records will be migrated to the
 newly pinned specification. <VersionLabel version="0.60.0" />
@@ -21069,7 +21150,8 @@ file being modified is always kept in sync, even when another configuration file
 
 - `--resolve` - Resolve the version to a fully-qualified semantic version before pinning.
 - `--to` <VersionLabel version="0.41.0" /> - [Location of `.prototools`](../config#locations) to
-  update. Supports `global`, `local`, and `user`.
+  update. Supports `closest` (default) <VersionLabel version="0.63.0" inline />, `global`, `local`,
+  and `user`.
 - `--tool-native` <VersionLabel version="0.55.0" /> - Pins the version in a tool specific location.
   Examples:
   - JavaScript tooling (Node, Bun, Deno, npm, pnpm, Yarn, etc) - Pins version in the `devEngines`
@@ -21090,6 +21172,15 @@ $ proto plugin add node "https://github.com/moonrepo/node-plugin/releases/latest
 
 > Learn more about [plugin locator strings](../../plugins#enabling-plugins).
 
+By default this will update the [closest](../../config#closest) `.prototools` file, starting from
+the current directory and traversing upwards. <VersionLabel version="0.63.0" />
+
+Plugins are a [security-sensitive setting](../../config#security-sensitive-settings). If the
+configuration file had no security-sensitive settings before the plugin was added, it will be
+[trusted](../../config#trust) automatically, as you asked for the plugin. Otherwise, a configuration
+that is not yet trusted will remain untrusted, and must be trusted with
+[`proto trust`](../trust) before the plugin is loaded. <VersionLabel version="0.63.0" />
+
 > Tools in the official [community plugins](../../plugins#community-plugins) registry are resolved
 > by ID, and do not need to be added. <VersionLabel version="0.62.0" inline />
 
@@ -21100,7 +21191,7 @@ $ proto plugin add node "https://github.com/moonrepo/node-plugin/releases/latest
 
 ### Options
 
-- `--to` - [Location of `.prototools`](../../config#locations) to update.
+- `--to` - [Location of `.prototools`](../../config#locations) to update. Defaults to `closest`.
   <VersionLabel version="0.41.0" />
 - `--type` - Type of plugin to add, either `tool` (default) or `backend`.
   <VersionLabel version="0.52.0" />
@@ -21254,13 +21345,16 @@ $ proto plugin remove node
 
 > Built-in plugins _cannot_ be removed!
 
+By default this will update the [closest](../../config#closest) `.prototools` file, starting from
+the current directory and traversing upwards. <VersionLabel version="0.63.0" />
+
 ### Arguments
 
 - `<id>` - ID of the tool.
 
 ### Options
 
-- `--from` - [Location of `.prototools`](../../config#locations) to update.
+- `--from` - [Location of `.prototools`](../../config#locations) to update. Defaults to `closest`.
   <VersionLabel version="0.41.0" />
 - `--type` - Type of plugin to remove, either `tool` (default) or `backend`.
   <VersionLabel version="0.52.0" />
@@ -21500,9 +21594,89 @@ $ proto status
 When a [lockfile](../lockfile) is in use, a "Locked" column will also be displayed,
 showing the version locked for each configured specification. <VersionLabel version="0.60.0" />
 
+If any configuration files have not been [trusted](../config#trust), they'll be listed above the
+table along with their ignored security-sensitive settings, as these may be the reason a tool or
+setting is missing. Tools whose plugin is configured in an untrusted file are not displayed.
+
+<VersionLabel version="0.63.0" />
+
+```
+$ proto status
+
+Untrusted configs ─────────────────────────────────────────────────────────
+
+  The security-sensitive settings of these configs were ignored, so some tools or settings may be
+  missing. Review them, then trust each with proto trust [path]
+
+  - /Users/name/Projects/example/.prototools (env, plugins.tools)
+```
+
 ### Options
 
 - `--json` - Print the list in JSON format.
+
+---
+
+## trust
+
+<VersionLabel version="0.63.0" header />
+
+The `proto trust [path]` command will trust a `.prototools` configuration file, or all configuration
+files within a directory, so that their
+[security-sensitive settings](../config#security-sensitive-settings) — like environment variables,
+shell aliases, and plugins — are applied. Local configuration files are untrusted by default, as
+they may have come from a cloned repository.
+
+```shell
+# Trust the current directory
+$ proto trust
+
+# Trust a directory
+$ proto trust ./path/to/project
+
+# Trust a single file
+$ proto trust ./path/to/.prototools
+```
+
+When a directory is trusted, every configuration file within it, _and_ its sub-directories, is
+trusted, including [environment configurations](../config#environment-mode) and files that don't
+exist yet. When a file is trusted, _only_ that file is trusted. A path is considered a file when its
+name is a configuration file name, like `.prototools` or `.prototools.production`.
+
+Once trusted, the security-sensitive settings of the configuration file (or each configuration file
+directly within the directory) are printed for review, along with which settings will now be
+applied.
+
+```
+$ proto trust .prototools
+
+/Users/name/Projects/example/.prototools ──────────────────────────────────
+
+  [env]
+  NODE_OPTIONS = "--require ./setup.js"
+
+  [plugins.tools]
+  my-tool = "https://example.com/my-tool.toml"
+
+Trusted config /Users/name/Projects/example/.prototools. Its security-sensitive settings (env, plugins.tools) will now be applied.
+```
+
+> Trust is recorded against the path, not the file's contents, so changes to a trusted
+> configuration are applied without needing to trust it again.
+> [Learn more about trust](../config#trust).
+
+### Arguments
+
+- `[path]` - Configuration file, or directory of configuration files, to trust. Either absolute, or
+  relative to the current directory. Defaults to the current directory.
+
+### Caveats
+
+- The `user` (`~/.prototools`) and `global` (`~/.proto/.prototools`) configurations are always
+  trusted, so trusting them is a no-op.
+- Trusting your home directory (or a parent of it) is allowed, but a warning is displayed, as it
+  trusts every configuration within it, including repositories that are cloned in the future.
+- Symlinked directories are resolved, so messages display the real path that was trusted.
 
 ---
 
@@ -21515,8 +21689,10 @@ provided tool.
 $ proto unalias node work
 ```
 
-By default this will update the local [`./.prototools`](../config) file. Pass `--from` to customize
-the location.
+By default this will update the [closest](../config#closest) `.prototools` file, starting from the
+current directory and traversing upwards. Pass `--from` to customize the location.
+
+<VersionLabel version="0.63.0" />
 
 ### Arguments
 
@@ -21525,8 +21701,8 @@ the location.
 
 ## Options
 
-- `--from` - [Location of `.prototools`](../config#locations) to update. Supports `global`, `local`,
-  and `user`.
+- `--from` - [Location of `.prototools`](../config#locations) to update. Supports `closest`
+  (default) <VersionLabel version="0.63.0" inline />, `global`, `local`, and `user`.
   <VersionLabel version="0.41.0" />
 
 ---
@@ -21568,8 +21744,10 @@ $ proto unpin go
 $ proto unpin node --tool-native
 ```
 
-By default this will update the local [`./.prototools`](../config) file. Pass `--from` to customize
-the location.
+By default this will update the [closest](../config#closest) `.prototools` file, starting from the
+current directory and traversing upwards. Pass `--from` to customize the location.
+
+<VersionLabel version="0.63.0" />
 
 When a [lockfile](../lockfile) is in use, matching records will also be removed. <VersionLabel version="0.60.0" />
 
@@ -21582,12 +21760,52 @@ in sync, even when another configuration file takes precedence for that tool. <V
 
 ### Options
 
-- `--from` - [Location of `.prototools`](../config#locations) to update. Supports `global`, `local`,
-  and `user`.
+- `--from` - [Location of `.prototools`](../config#locations) to update. Supports `closest`
+  (default) <VersionLabel version="0.63.0" inline />, `global`, `local`, and `user`.
   <VersionLabel version="0.41.0" />
 - `--tool-native` - Use a tool specific location, like the `devEngines` field in the `package.json`
   for JavaScript tools.
   <VersionLabel version="0.55.0" />
+
+---
+
+## untrust
+
+<VersionLabel version="0.63.0" header />
+
+The `proto untrust [path]` command will remove trust from a `.prototools` configuration file, or a
+directory, that was previously trusted with [`proto trust`](./trust). Once removed, the
+[security-sensitive settings](../config#security-sensitive-settings) of the affected configuration
+files will be ignored.
+
+```shell
+# Untrust the current directory
+$ proto untrust
+
+# Untrust a single file
+$ proto untrust ./path/to/.prototools
+```
+
+Trust can come from multiple sources, so after untrusting, proto will let you know if the
+configuration files are _still_ trusted through another source: a parent directory that was also
+trusted, a directory listed in the `PROTO_TRUSTED_PATHS` environment variable, or because a CI
+environment was detected. [Learn more about trust](../config#trusted-configurations).
+
+```
+$ proto untrust .prototools
+
+Untrusted config /Users/name/Projects/example/.prototools. Its security-sensitive settings will no longer be applied.
+
+The config is still trusted, as /Users/name/Projects is trusted. Untrust it with proto untrust /Users/name/Projects
+```
+
+> Paths that no longer exist can also be untrusted, but it's easier to remove those with
+> [`proto clean trust`](./clean).
+
+### Arguments
+
+- `[path]` - Configuration file, or directory of configuration files, to untrust. Either absolute,
+  or relative to the current directory. Defaults to the current directory.
 
 ---
 
@@ -21722,6 +21940,33 @@ throughout the command line and proto's own settings.
 > Local is a bit of a misnomer as a `.prototools` file can theoretically exist in any directory, but
 > when reading/writing to a file, `local` refers to the current working directory.
 
+### Closest<VersionLabel version="0.63.0" />
+
+When _writing_ to a `.prototools` file, the `closest` location is also supported, and is the default
+for [`proto pin`](./commands/pin), [`proto unpin`](./commands/unpin),
+[`proto alias`](./commands/alias), [`proto unalias`](./commands/unalias),
+[`proto plugin add`](./commands/plugin/add), [`proto plugin remove`](./commands/plugin/remove), and
+[`proto install --pin`](./commands/install#pinning-the-version).
+
+This location targets the closest directory with a `.prototools` file, starting from the current
+directory and traversing upwards. If none is found, the current directory is used (like `local`).
+This means running `proto pin` from deep within a project updates the project's configuration,
+instead of creating a new `.prototools` file in whatever directory you happen to be in.
+
+```text
+~/Projects/app/src/components (cwd, no .prototools)
+~/Projects/app/src
+~/Projects/app/.prototools <- closest
+```
+
+- Directories that only contain an [environment configuration](#environment-mode)
+  (`.prototools.<env>`) are skipped, as pins are always written to the base `.prototools` file.
+- The `user` (`~/.prototools`) and `global` (`~/.proto/.prototools`) configurations are never
+  targeted. Use `--to user` or `--to global` explicitly for those.
+
+> Before v0.63, these commands defaulted to `local`. Pass `--to local` (or `--from local`) for the
+> previous behavior.
+
 ### Where to configure?
 
 With so many locations to store proto configuration, the question of where to store certain
@@ -21840,6 +22085,137 @@ version entry. This approach uses shims and dynamic version detection like other
 proto = "0.38.0"
 ```
 
+> Pinning proto's version is a [security-sensitive setting](#security-sensitive-settings), so it's
+> only applied once the configuration file has been trusted. <VersionLabel version="0.63.0" inline />
+
+## Trust<VersionLabel version="0.63.0" />
+
+A `.prototools` file can do a lot more than pin versions. It can export environment variables into
+your shell, define shell aliases, download and execute third-party plugins, and change where tools
+are downloaded from. That's exactly what you want from a file you wrote, and exactly what you
+_don't_ want from a file that came with a repository you cloned a few seconds ago — especially
+with [shell activation](./workflows#shell-activation), where all of it would be applied the moment
+you `cd` into the directory.
+
+To guard against this, local configuration files must be _trusted_ before their security-sensitive
+settings are applied. Everything else in the file, like version pins for built-in tools, continues
+to work as before.
+
+### Security-sensitive settings
+
+The following settings are only applied once a configuration file has been trusted:
+
+- [`[env]`](#env), including dotenv files loaded with [`file`](#file).
+- [`[shell]`](#shell).
+- [`[plugins]`](#plugins), including [`[plugins.tools]`](#pluginstools) and
+  [`[plugins.backends]`](#pluginsbackends).
+- [`[backends.*]`](#backends).
+- [`[tools.*]`](#tools), except for [`[tools.*.aliases]`](#toolsaliases).
+- The [`proto` version pin](#lock-proto-version).
+- Version pins for tools that are _not_ built-in, as loading them downloads and executes a
+  third-party plugin. This includes tools from the
+  [community registry](./plugins#community-plugins), and tools using the
+  [`asdf` backend](./tool-spec#asdf).
+- All [`[settings]`](#settings), except for `detect-strategy`, `pin-latest`, `telemetry`, and
+  `unstable-lockfile`.
+
+While the following are _always_ applied, regardless of trust:
+
+- Version pins for [built-in tools](./tools#official-built-in), and tools using the `npm` and `cargo`
+  backends.
+- Version aliases in [`[tools.*.aliases]`](#toolsaliases).
+- The [`detect-strategy`](#detect-strategy), [`pin-latest`](#pin-latest),
+  [`telemetry`](#telemetry), and [`unstable-lockfile`](#unstable-lockfile) settings.
+
+```toml title=".prototools"
+# Always applied
+node = "24"
+"npm:typescript" = "5"
+
+[tools.node.aliases]
+work = "22"
+
+# Requires trust
+shfmt = "3.14.0"
+
+[env]
+NODE_OPTIONS = "--require ./setup.js"
+
+[shell.aliases]
+ls = "./scripts/ls.sh"
+```
+
+### Trusted configurations
+
+A configuration file is trusted when any of the following is true:
+
+- It's owned by you: the `user` (`~/.prototools`) and `global` (`~/.proto/.prototools`)
+  configurations are always trusted.
+- The file itself, or a directory it's within, was trusted with [`proto trust`](./commands/trust).
+  Trusting a directory also trusts all of its sub-directories.
+- It's within a directory listed in the `PROTO_TRUSTED_PATHS` environment variable. Multiple
+  directories are separated like `PATH` (`:` on Unix, `;` on Windows), which is handy for trusting
+  everything in a workspace directory that only contains your own code.
+- proto is running in CI, where the checked out repository _is_ the code being built, and there's
+  no one around to trust it. CI is detected from the `CI` environment variable, or a CI provider's
+  specific variables, so avoid setting `CI` in your shell profile!
+
+```shell
+# Trust the current directory, and everything within it
+$ proto trust
+
+# Trust a single configuration file
+$ proto trust ./tools/.prototools
+
+# And remove it again
+$ proto untrust ./tools/.prototools
+```
+
+Trust is recorded against the _path_, not the file's contents, so it's not affected by changes to
+the configuration. Pulling changes into a trusted repository applies them as well, so review
+configuration changes like you would any other code change.
+
+Some other things worth knowing:
+
+- When proto adds security-sensitive settings to a configuration that had none (for example, with
+  [`proto plugin add`](./commands/plugin/add)), the file is trusted automatically, as you asked for
+  them. A configuration that was already untrusted stays untrusted.
+- Symlinked directories are resolved before checking trust, but symlinked configuration files are
+  not. A `.prototools` that is a symlink to a trusted file is _not_ trusted itself.
+- The `CI` and `PROTO_TRUSTED_PATHS` variables are ignored when they were exported by a previous
+  activation (through `[env]`), so a trusted configuration can't trust other configurations.
+- Trust records are stored in `~/.proto/trust`. Records for paths that no longer exist can be
+  removed with [`proto clean trust`](./commands/clean), so that a different repository cloned to the
+  same path later on is not trusted.
+
+### Untrusted configurations
+
+When a configuration file has not been trusted, its security-sensitive settings are ignored, and
+the rest of the file is applied. To make sure this never happens silently, proto lets you know:
+
+- [`proto activate`](./commands/activate) logs a warning for each untrusted configuration, once per
+  shell session.
+- Most other commands log a warning as well, except for tool commands
+  ([`proto run`](./commands/run), [`proto exec`](./commands/exec), [`proto bin`](./commands/bin),
+  [`proto shell`](./commands/shell), and shims), as they're frequently executed by scripts and
+  editors.
+- [`proto status`](./commands/status) lists the untrusted configurations, and
+  [`proto diagnose`](./commands/diagnose) reports each one as a warning.
+- [`proto debug config`](./commands/debug/config) renders the configuration without its
+  security-sensitive settings, and labels it as untrusted.
+
+If a tool's plugin is configured in an untrusted configuration, proto refuses to load that tool,
+instead of falling back to a different plugin (like a built-in or community plugin) with the same
+identifier. Commands that load all configured tools, like [`proto install`](./commands/install)
+(without arguments), [`proto activate`](./commands/activate), and
+[`proto status`](./commands/status), will skip that tool instead.
+
+```
+Unable to proceed, the plugin for my-tool is configured in /path/to/.prototools, which has not been trusted, so it was not loaded.
+
+Review the config, then trust it with proto trust /path/to/.prototools
+```
+
 ## Available settings
 
 ### `[env]`<VersionLabel version="0.29.0" />
@@ -21867,6 +22243,9 @@ variables in the current process and merged `[env]` can be referenced. Recursive
 supported!
 
 > This functionality enables per-directory environment variables!
+
+Environment variables are a [security-sensitive setting](#security-sensitive-settings), so they're
+only applied once the configuration file has been [trusted](#trust). <VersionLabel version="0.63.0" inline />
 
 #### `file`<VersionLabel version="0.43.0" />
 
@@ -21990,6 +22369,8 @@ detect-strategy = "prefer-prototools"
 When defined and a tool is installed with the "latest" alias, will automatically pin the resolved
 version to the configured location. Defaults to disabled or `PROTO_PIN_LATEST`.
 
+- `closest` - Pins to the [closest](#closest) `.prototools`, traversing upwards from the current
+  directory. <VersionLabel version="0.63.0" />
 - `global` - Pins globally to `~/.proto/.prototools`.
 - `local` - Pins locally to `./.prototools` in current directory.
 - `user` - Pins to the user's `~/.prototools` in their home directory.
@@ -22599,6 +22980,22 @@ issues, or the request is timing out, you can bypass these checks with the follo
   PROTO_BYPASS_VERSION_CHECK=1 node --version
   ```
 
+### Why are my environment variables, aliases, or plugins being ignored?<VersionLabel version="0.63.0" />
+
+Settings that can execute code on your machine, like [`[env]`](./config#env),
+[`[shell.aliases]`](./config#aliases), and plugins, are
+[security-sensitive](./config#security-sensitive-settings), and are only applied from a local
+`.prototools` file once it has been [trusted](./config#trust). Run
+[`proto status`](./commands/status) or [`proto diagnose`](./commands/diagnose) to see which
+configuration files are untrusted, review them, and then trust them.
+
+```shell
+$ proto trust
+```
+
+Configuration files in CI are always trusted, as are your `~/.prototools` and
+`~/.proto/.prototools` files.
+
 ---
 
 ## What is proto?
@@ -22880,8 +23277,8 @@ file, instead of the 2 configurations sharing the directory's `.protolock`.
 ### Records
 
 For each tool, the lockfile stores a list of records, with each record representing an installation
-for a specific version requirement, operating system, and architecture. Records are grouped by the
-tool identifier using TOML's array of tables syntax.
+for a specific version requirement, operating system, architecture, and libc (on Linux). Records are
+grouped by the tool identifier using TOML's array of tables syntax.
 
 ```toml title=".protolock"
 # Generated by proto. Do not modify!
@@ -22889,6 +23286,7 @@ tool identifier using TOML's array of tables syntax.
 [[tools.node]]
 os = "linux"
 arch = "x64"
+libc = "gnu"
 spec = "22"
 version = "22.17.0"
 checksum = "sha256:325c377fbb4e547444a5da404e474fda52eb0adb3bbafcd25eee38e5766a1cfa"
@@ -22910,6 +23308,10 @@ Each record supports the following fields:
   source and native installations may not have a checksum.
 - `os` / `arch` - The operating system and architecture the record applies to. Since pre-built
   artifacts differ per platform, a record exists for each combination.
+- `libc` - The libc implementation the record applies to, either `gnu` or `musl`. Only recorded on
+  Linux, where tools commonly distribute a separate artifact for each libc, so that machines with
+  different libcs (for example, Alpine and Debian containers) don't share a record, and fail each
+  other's checksum verification. <VersionLabel version="0.63.0" />
 - `backend` - The [backend](./tool-spec#backends) the tool was installed with, if applicable.
 - `metadata` - Additional key-value information about the installation, provided by the tool's
   plugin. <VersionLabel version="0.61.0" />
@@ -22923,8 +23325,19 @@ Records are created and updated when a tool is explicitly installed with
 When a version requirement is being resolved — during an install, or when detecting versions for
 [`proto run`](./commands/run) and shims — proto will first look for a matching record in the
 applicable lockfile. A record matches when it has the same requirement (`spec`), backend, operating
-system, and architecture. If a match is found, the exact `version` from the record is used,
+system, architecture, and libc. If a match is found, the exact `version` from the record is used,
 instead of re-resolving the requirement against the tool's available versions.
+
+If there's no record for the current platform, but another platform has locked the same
+requirement, the version is inherited from that record, as a resolved version applies to every
+machine. Only the version is inherited; the checksum and other platform specific data are
+re-populated when the current platform installs. <VersionLabel version="0.62.2" />
+
+> Records created before v0.63 have no `libc`, and continue to match every libc. When there are
+> multiple matches, a record for the current libc is preferred. Records without a `libc` are
+> backfilled with the current libc on the next install that updates the record.
+>
+> <VersionLabel version="0.63.0" inline />
 
 This is what guarantees determinism: a requirement like `node = "22"` will keep resolving to the
 locked `22.17.0`, even after newer `22.x` versions have been released. To break out of this and
@@ -22939,9 +23352,9 @@ $ proto install node --update-lockfile
 
 When installing a version that has a lockfile record, proto will verify the installation against
 that record: the checksum of the artifact must match the locked `checksum`, and the operating
-system and architecture must line up. If they don't, the install fails with an error — ensuring
-that the artifact installed on another machine (or in CI) is the same one that was originally
-locked.
+system, architecture, and libc <VersionLabel version="0.63.0" inline /> must line up. If they don't,
+the install fails with an error — ensuring that the artifact installed on another machine (or in CI)
+is the same one that was originally locked.
 
 When a record is migrated to a new version (through the commands below), its checksum is removed,
 and will be re-populated on the next install.
@@ -22988,9 +23401,14 @@ $ proto install --immutable-lockfile
 - The lockfile is never created, updated, or [pruned](#orphaned-records).
 - If a tool being installed has no matching record, the install fails with an error, instead of
   resolving a fresh version.
+- If the only records for a version were created by _other_ platforms (operating systems,
+  architectures, or libcs), the install fails with an error, instead of
+  [inheriting the version](#version-resolution). The other platform's checksum isn't valid here, so
+  the download couldn't be verified against the lockfile. <VersionLabel version="0.63.0" inline />
 
 This turns "the lockfile is out of date" into a build failure instead of a silent update. To
-populate the missing records, run the install again without the flag, then commit the changes.
+populate the missing records, run the install again without the flag (on each platform that is
+missing a record), then commit the changes.
 
 > This flag cannot be combined with `--update-lockfile` or `--pin`, as both would modify the
 > lockfile.
@@ -23038,6 +23456,11 @@ simple and common use cases, like CLIs.
 JSON and YAML support was added in proto v0.42.
 
 :::
+
+Plugins support 2 formats. Format v1 is the default, and is documented in the sections that
+immediately follow. Format v2 <VersionLabel version="0.63.0" inline /> mirrors the
+[WASM plugin](./wasm-plugin) API, and supports version specific overrides. Jump to the
+[format v2 documentation](#format-v2) for more information.
 
 ## Create a plugin
 
@@ -23204,7 +23627,8 @@ value is an object of the following options:
 
 - `exe-path` - The file to execute, relative from the tool directory. On Windows, the `.exe`
   extension will automatically be appended. If you need more control over platform variance, use
-  `[platform.*.exe-path]` instead.
+  `[platform.*.exe-path]` instead. Supports [tokens](#platform-variations), like `{version}`, for
+  both the primary and secondary executables. <VersionLabel version="0.63.0" inline />
 - `no-bin` - Do not symlink a binary in `~/.proto/bin`.
 - `no-shim`- Do not generate a shim in `~/.proto/shims`.
 - `parent-exe-name` - Name of a parent executable required to execute the executable path. For
@@ -23363,6 +23787,273 @@ the `[detect]` setting. At this time, we only support 1 setting:
   }}
 />
 
+## Format v2<VersionLabel version="0.63.0" />
+
+Format v2 is a reworked format, in which settings mirror the
+[WASM plugin](./wasm-plugin#implementing-tool-functions) API types, instead of having their own
+vocabulary. If you've written a WASM plugin, or read the
+[API documentation](https://docs.rs/proto_pdk_api/latest/proto_pdk_api/), you already know most of
+its settings. It's enabled by setting `format` to `"2"` at the top of the file.
+
+Some notable differences from format v1:
+
+- Keys are snake_case in every file type (JSON, TOML, and YAML), like the API types.
+- Unknown fields at the top-level, and within the `plugin`, `resolve`, `platform`, and `overrides`
+  sections, are an error, so typos don't silently do nothing.
+- Settings can be overridden for specific versions with [`[[overrides]]`](#overrides).
+
+<NonWasmTabs
+  format={2}
+  title="protostar"
+  data={{
+    format: '2',
+    plugin: {
+      description: 'A fake CLI tool for demonstration purposes.',
+      repository_url: 'https://github.com/moonrepo/protostar',
+    },
+    metadata: {
+      name: 'Protostar',
+      type: 'command-line',
+    },
+    detect: {
+      files: ['.protostar-version'],
+    },
+    resolve: {
+      git_url: 'https://github.com/moonrepo/protostar',
+    },
+    install: {
+      download_url:
+        'https://github.com/moonrepo/protostar/releases/download/v{version}/{download_name}',
+      checksum_url:
+        'https://github.com/moonrepo/protostar/releases/download/v{version}/{checksum_name}',
+    },
+    locate: {
+      exes: {
+        protostar: {
+          exe_path: 'bin/protostar',
+          primary: true,
+        },
+      },
+    },
+    platform: {
+      linux: {
+        download_name: 'protostar-{arch}-unknown-linux-{libc}.tar.gz',
+        checksum_name: 'protostar-{arch}-unknown-linux-{libc}.sha256',
+      },
+      macos: {
+        download_name: 'protostar-{arch}-apple-darwin.tar.xz',
+        checksum_name: 'protostar-{arch}-apple-darwin.sha256',
+      },
+      windows: {
+        download_name: 'protostar-{arch}-pc-windows-msvc.zip',
+        checksum_name: 'protostar-{arch}-pc-windows-msvc.sha256',
+      },
+    },
+  }}
+/>
+
+### Sections
+
+Each section maps directly to the output of a WASM plugin function. Refer to the linked API types
+for every available setting.
+
+- `plugin` - Information about the plugin itself: `description`, `homepage_url`, and
+  `repository_url`. Optional.
+- `metadata` (required) - Maps to the output of
+  [`register_tool`](./wasm-plugin#registering-the-tool)
+  ([`RegisterToolOutput`](https://docs.rs/proto_pdk_api/latest/proto_pdk_api/struct.RegisterToolOutput.html)).
+  Requires a `name`, and a `type` of `language`, `dependency-manager`, `command-line` (or `cli`),
+  or `version-manager`. Also supports settings like `default_version`, `minimum_proto_version`, and
+  `requires`.
+- `detect` - Maps to the output of [`detect_version_files`](./wasm-plugin#detecting-versions)
+  ([`DetectVersionOutput`](https://docs.rs/proto_pdk_api/latest/proto_pdk_api/struct.DetectVersionOutput.html)).
+  Supports `files` and `ignore`.
+- `source` - Maps to the output of [`load_versions`](./wasm-plugin#loading-versions)
+  ([`LoadVersionsOutput`](https://docs.rs/proto_pdk_api/latest/proto_pdk_api/struct.LoadVersionsOutput.html)).
+  Supports a static list of `versions`, a mapping of `aliases`, and the `latest` version.
+- `resolve` - How to load versions remotely. [Learn more](#loading-versions).
+- `install` - Maps to the output of [`download_prebuilt`](./wasm-plugin#downloading-pre-builts)
+  ([`DownloadPrebuiltOutput`](https://docs.rs/proto_pdk_api/latest/proto_pdk_api/struct.DownloadPrebuiltOutput.html)).
+  Requires a `download_url`, and supports settings like `download_name`, `checksum_url`,
+  `checksum_name`, `checksum_public_key`, `archive_prefix`, and `http_headers`.
+- `locate` - Maps to the output of [`locate_executables`](./wasm-plugin#locating-executables)
+  ([`LocateExecutablesOutput`](https://docs.rs/proto_pdk_api/latest/proto_pdk_api/struct.LocateExecutablesOutput.html)).
+  Supports `exes`, `exes_dirs`, `globals_lookup_dirs`, and `globals_prefix`.
+  [Learn more](#locating-executables).
+- `platform` - Settings that vary per operating system. [Learn more](#platforms).
+- `overrides` - Settings that vary per version. [Learn more](#overrides).
+
+### Platforms
+
+Like format v1, the `platform` section requires a mapping of operating systems to platform settings.
+BSD based operating systems fall back to the `linux` settings when they have none of their own. The
+following settings are available:
+
+- `download_name` - Name of the file to download.
+- `checksum_name` - Name of the checksum file to verify the download with.
+- `archive_prefix` - The name of the direct folder within the archive that contains the tool, which
+  is removed when unpacking.
+- `exe_path` - The path to the primary executable, relative from the tool directory.
+- `exes_dirs` - A list of relative directories that contain pre-installed executables.
+- `archs` - A list of architectures supported for this platform. If not provided, supports all
+  architectures.
+- `arch` - A mapping of architectures to custom values for the `{arch}` token.
+- `libc` - A mapping of libcs to custom values for the `{libc}` token.
+
+Platform settings take precedence over the same settings in `install` and `locate`, so shared
+values can be defined once in `install`, with only the differences defined per platform.
+
+<NonWasmTabs
+  format={2}
+  title="protostar"
+  data={{
+    install: {
+      archive_prefix: 'protostar-{version}',
+    },
+    platform: {
+      linux: {
+        download_name: 'protostar-linux-{arch}-{libc}.tar.gz',
+        archs: ['x64', 'arm64'],
+        arch: {
+          x64: 'amd64',
+        },
+      },
+      windows: {
+        download_name: 'protostar-windows-{arch}.zip',
+        archive_prefix: 'protostar-{version}-windows',
+      },
+    },
+  }}
+/>
+
+> Unlike format v1, there are no global `install.arch` or `install.libc` mappings. Define them per
+> platform instead.
+
+#### Tokens
+
+Names, archive prefixes, URLs, and executable paths support the same [tokens](#platform-variations)
+as format v1, like `{version}`, `{arch}`, `{os}`, and `{libc}`.
+
+Furthermore, the `download_url` setting supports a `{download_name}` token, and the `checksum_url`
+setting supports both `{download_name}` and `{checksum_name}` tokens, which are replaced with the
+resolved names. The format v1 `{download_file}` and `{checksum_file}` tokens are also supported. If
+a URL uses one of these tokens, but the name has not been configured for the current platform, an
+error is returned, instead of silently creating a broken URL.
+
+### Loading versions
+
+Versions can be loaded remotely using the `resolve` section, from either Git tags, or an index URL
+that returns a JSON array of versions. These settings work the same as their
+[format v1 counterparts](#resolving-versions), with the following names:
+
+- `git_url` - The remote Git repository to load tags from.
+- `git_tag_pattern` - A regex pattern to parse each tag with. Defaults to `version_pattern`.
+- `index_url` - A URL that returns a JSON array of strings or objects.
+- `index_version_key` - When the index returns objects, the key to extract the version from.
+  Defaults to `version`.
+- `version_pattern` - A regex pattern to parse each version with, using
+  [named capture groups](#version-patterns).
+
+<NonWasmTabs
+  format={2}
+  title="protostar"
+  data={{
+    resolve: {
+      git_url: 'https://github.com/moonrepo/protostar',
+    },
+    source: {
+      aliases: {
+        stable: '1.2.4',
+      },
+    },
+  }}
+/>
+
+Static versions and aliases are configured in the `source` section instead. When `source.latest` is
+set, it's used as the latest version, instead of the highest stable version.
+
+### Locating executables
+
+Executables are configured in the `locate.exes` section, where each key is the executable file name,
+and the value is an
+[`ExecutableConfig`](https://docs.rs/proto_pdk_api/latest/proto_pdk_api/struct.ExecutableConfig.html),
+which supports settings like `exe_path`, `primary`, `no_bin`, `no_shim`, `parent_exe_name`, and
+`shim_env_vars`. On Windows, the `.exe` extension is automatically appended to paths without an
+extension.
+
+<NonWasmTabs
+  format={2}
+  title="protostar"
+  data={{
+    locate: {
+      exes: {
+        protostar: {
+          exe_path: 'bin/protostar',
+          primary: true,
+        },
+        'protostar-debug': {
+          exe_path: 'bin/protostar-debug-{version}',
+          no_shim: true,
+        },
+      },
+    },
+  }}
+/>
+
+If no executable is marked as `primary`, a primary executable named after the plugin is created
+automatically, using the platform's `exe_path` when configured.
+
+### Overrides
+
+Tools change over time. Assets get renamed, hosts move, and platforms get dropped. The `overrides`
+section is a list of settings that only apply to specific versions, so that a single plugin can
+support the entire history of a tool. Each entry requires a `range`, which is a
+[version range](./tool-spec#requirements-and-ranges), or `canary` to match canary releases, and can
+override the `install`, `locate`, `platform`, and `resolve` sections.
+
+<NonWasmTabs
+  format={2}
+  title="protostar"
+  data={{
+    platform: {
+      linux: {
+        download_name: 'protostar-{arch}.tar.gz',
+      },
+    },
+    overrides: [
+      {
+        range: '>=2',
+        platform: {
+          linux: {
+            download_name: 'protostar-v2-{arch}.tar.gz',
+            archs: ['x64'],
+          },
+        },
+      },
+      {
+        range: 'canary',
+        install: {
+          download_url: 'https://example.com/protostar/nightly/{download_name}',
+        },
+      },
+      {
+        range: '<1',
+        resolve: {
+          git_tag_pattern:
+            '^@protostar/cli@((?<major>[0-9]+)\\.(?<minor>[0-9]+)\\.(?<patch>[0-9]+))$',
+        },
+      },
+    ],
+  }}
+/>
+
+- Every entry that matches the version is applied, in the order they're declared, so later entries
+  take precedence over earlier entries.
+- Within the same entry, platform settings take precedence over `install` and `locate` settings.
+- Pre-releases match the range of their release, so `>=2` matches `2.0.0-rc.1`.
+- `resolve` overrides are matched against the version being resolved, instead of an installed
+  version. A requirement or range (like `^0.5`) matches if it overlaps the entry's range.
+
 ---
 
 ## Plugins
@@ -23394,6 +24085,11 @@ settings to be defined side-by-side. <VersionLabel version="0.60.0" />
 plugin = "<protocol>://<location>"
 ```
 
+Plugins are downloaded and executed on your machine, so plugins configured in a local
+`.prototools` file are only loaded once that file has been [trusted](./config#trust). If a plugin is
+configured in an untrusted file, proto will fail to load the tool, instead of falling back to a
+different plugin with the same identifier. <VersionLabel version="0.63.0" />
+
 ## Community plugins<VersionLabel version="0.62.0" />
 
 proto also maintains an official registry of [community plugins](./tools#community), which are TOML
@@ -23408,6 +24104,10 @@ When proto can't find a plugin for a tool, it consults the registry as a last re
 `[plugins.tools]` entries, any `plugin` fields, and the [built-in tools](./tools#built-in) have all
 been exhausted. A locator that you configure always wins, so pointing an ID at your own fork
 continues to work exactly as before.
+
+Since a community plugin is third-party code, a version pin for a community tool in a local
+`.prototools` file is a [security-sensitive setting](./config#security-sensitive-settings), and is
+only applied once that file has been [trusted](./config#trust). <VersionLabel version="0.63.0" />
 
 The registry data is cached locally, and a lookup failure (an outage, being offline) is logged as a
 warning instead of failing the command. If you'd rather proto never reach for it, disable the
@@ -23617,6 +24317,11 @@ The following settings are supported:
   from the shortname plugin index.
 - `exes` (string[]) - List of executable file names (relative from `bin`) to be linked as a
   shim/bin. If not defined, we'll automatically scan the `bin` directory.
+
+> Since asdf plugins clone and execute third-party scripts, `asdf:` version pins in a local
+> `.prototools` file are only applied once that file has been [trusted](./config#trust).
+>
+> <VersionLabel version="0.63.0" inline />
 
 ### `cargo`<VersionLabel version="0.57.0" />
 
@@ -24196,7 +24901,7 @@ pub fn locate_executables(
 }
 ```
 
-### Loading and resolving versions
+### Loading versions
 
 Now that the tool can be downloaded and installed, we must configure how to resolve available
 versions to actually be installed. To provide a list of versions and language specific aliases, the
@@ -24221,6 +24926,37 @@ pub fn load_versions(Json(_): Json<LoadVersionsInput>) -> FnResult<Json<LoadVers
     Ok(Json(output))
 }
 ```
+
+#### From Git tags
+
+Many tools publish their versions as Git tags, so we provide a `load_git_tags` function that runs
+`git ls-remote --tags` on the host for the provided repository URL, and returns a list of tag names.
+
+```rust
+#[plugin_fn]
+pub fn load_versions(Json(_): Json<LoadVersionsInput>) -> FnResult<Json<LoadVersionsOutput>> {
+    let tags = load_git_tags("https://github.com/org/repo")?
+        .iter()
+        .filter_map(|tag| tag.strip_prefix('v').map(|tag| tag.to_owned()))
+        .collect::<Vec<_>>();
+
+    Ok(Json(LoadVersionsOutput::from(tags)?))
+}
+```
+
+If the tags fail to load, an error is returned that includes the exit code and stderr of
+`git ls-remote`, so that the underlying cause — an unreachable remote, an authentication failure, an
+unaccepted Xcode license on macOS — is surfaced to the user. If your plugin should continue without
+the tags, handle the error explicitly. <VersionLabel version="0.63.0" />
+
+```rust
+let tags = load_git_tags("https://github.com/org/repo").unwrap_or_default();
+```
+
+> Before v0.63, an empty list was returned on failure, which resulted in a misleading "Failed to
+> resolve version" error.
+
+### Resolving versions
 
 Furthermore, we support an optional function named `resolve_version`, that can be defined to
 intercept the version resolution process. This function receives an input with an initial candidate,
@@ -24468,6 +25204,35 @@ provided input, and not for dynamic functions that make HTTP requests or execute
 
 :::
 
+#### Configuring the host platform<VersionLabel version="0.63.0" />
+
+By default, plugins are tested against the current machine's operating system and architecture. To
+test the output for a different platform, create the plugin with `create_plugin_with_config`, and
+pass a `HostPlatform` to the `host` method. A platform is composed of an architecture, operating
+system, and libc, and can be parsed from `<arch>-<os>[-<libc>]`, or from a Rust target triple.
+
+```rust
+#[tokio::test(flavor = "multi_thread")]
+async fn downloads_musl_build() {
+    let sandbox = create_empty_proto_sandbox();
+    let plugin = sandbox
+        .create_plugin_with_config("id", |config| {
+            config.host(HostPlatform::parse("x64-linux-musl").unwrap());
+            // Or a Rust target triple
+            config.host(HostPlatform::parse("x86_64-unknown-linux-musl").unwrap());
+        })
+        .await;
+
+    // ...
+}
+```
+
+When a libc is not provided, it defaults to `gnu` on Linux, and is no longer detected from the
+current machine.
+
+> Before v0.63, the `host` method required an operating system and architecture, for example,
+> `config.host(HostOS::Linux, HostArch::X64)`.
+
 #### Generating cases from macros
 
 To reduce the burden of writing custom tests for common flows, like downloading a pre-built,
@@ -24649,6 +25414,16 @@ $ cd /some/path && node --version
 $ cd /another/path && node --version
 18.0.0
 ```
+
+:::info
+
+Since activation applies environment variables and shell aliases as soon as you enter a directory,
+the [security-sensitive settings](./config#security-sensitive-settings) of a `.prototools` file are
+only applied once it has been [trusted](./config#trust) with [`proto trust`](./commands/trust).
+Untrusted configurations still have their built-in tool versions activated, and you'll be warned
+about them once per shell session. <VersionLabel version="0.63.0" inline />
+
+:::
 
 ### Setup
 
@@ -39716,3 +40491,431 @@ Because of this, v2.6 will be the last release of the year, as we want to spend 
 - Node-based graph caching
 - New website and documentation (first-class LLM support)
 - And much more!
+
+---
+
+## proto v0.63 - Trusted configs, Kotlin support, and schema plugins v2
+
+This release is all about trust. Configuration files now have to earn it before they can touch your
+shell. Elsewhere, Kotlin joins the toolchain, non-WASM plugins get a brand new format,
+[`proto pin`](/docs/proto/commands/pin) finally writes to the file you'd expect, and lockfiles learn
+the difference between Alpine and Debian.
+
+<!--truncate-->
+
+## Trusted configurations
+
+A [`.prototools`](/docs/proto/config) file looks harmless. A few versions, maybe an alias or two.
+But it's capable of a lot more than that, and
+[shell activation](/docs/proto/workflows#shell-activation) applies all of it the moment you change
+directories. Consider a repository you cloned 5 seconds ago, that ships with this:
+
+```toml title=".prototools"
+node = "24"
+
+[env]
+BASH_ENV = "./scripts/totally-normal.sh"
+```
+
+With activation enabled,
+[`BASH_ENV`](https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html#index-BASH_005fENV)
+is exported into your shell as soon as you enter the directory, and the very next Bash process you
+spawn runs the script. The same goes for
+[`PROMPT_COMMAND`](https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html#index-PROMPT_005fCOMMAND),
+[`[shell.aliases]`](/docs/proto/config#aliases) that quietly shadow your everyday commands,
+third-party plugins that are downloaded and executed, and settings like
+[`url-rewrites`](/docs/proto/config#url-rewrites) that redirect where tools are downloaded from. You
+didn't run anything. You just looked at someone's code.
+
+So starting with this release, local configuration files must be **trusted** before their
+security-sensitive settings are applied.
+
+```shell
+$ proto trust
+```
+
+### What requires trust?
+
+The settings that can execute code, or change what code gets executed, are considered
+[security-sensitive](/docs/proto/config#security-sensitive-settings):
+
+- [`[env]`](/docs/proto/config#env) (including [`.env` files](/docs/proto/config#file)),
+  [`[shell]`](/docs/proto/config#shell), [`[plugins]`](/docs/proto/config#plugins), and
+  [`[backends.*]`](/docs/proto/config#backends).
+- [`[tools.*]`](/docs/proto/config#tools), except for
+  [version aliases](/docs/proto/config#toolsaliases).
+- The [`proto` version pin](/docs/proto/config#lock-proto-version), and pins for tools that aren't
+  built-in (like [community plugins](/docs/proto/plugins#community-plugins) and the
+  [`asdf`](/docs/proto/tool-spec#asdf) backend), as loading them downloads and executes a
+  third-party plugin.
+- Every [`[settings]`](/docs/proto/config#settings) entry, except for
+  [`detect-strategy`](/docs/proto/config#detect-strategy),
+  [`pin-latest`](/docs/proto/config#pin-latest), [`telemetry`](/docs/proto/config#telemetry), and
+  [`unstable-lockfile`](/docs/proto/config#unstable-lockfile).
+
+Everything else is _always_ applied. Version pins for
+[built-in tools](/docs/proto/tools#official-built-in) (and the
+[`npm`](/docs/proto/tool-spec#npm) and [`cargo`](/docs/proto/tool-spec#cargo) backends), version
+aliases, and the harmless settings continue to work exactly as before. Cloning a repository and
+running Node.js still gets you the right version, no ceremony required.
+
+### Trusting and untrusting
+
+[`proto trust`](/docs/proto/commands/trust) accepts a directory (defaulting to the current one),
+which trusts every configuration within it and its sub-directories, or a path to a single
+configuration file. Either way, proto prints the security-sensitive settings that it's about to
+apply, so you can review exactly what you're agreeing to.
+
+```shell
+# This project, and everything within it
+$ proto trust
+
+# Just this one file
+$ proto trust ./tools/.prototools
+```
+
+Trust is recorded against the _path_, not the file's contents, so editing your own configuration
+never requires re-trusting it. The flip side is that changes you pull into a trusted repository are
+trusted too, so give [`.prototools`](/docs/proto/config) diffs the same review you'd give any other
+code.
+
+Changed your mind? [`proto untrust`](/docs/proto/commands/untrust) removes it, and will tell you if
+the configuration is _still_ trusted through another source, like a trusted parent directory. And
+since records are path based, [`proto clean trust`](/docs/proto/commands/clean#trust-records)
+removes records for paths that no longer exist, so a different repository cloned to the same
+location later on doesn't inherit trust it never earned. This also runs as part of a regular
+[`proto clean`](/docs/proto/commands/clean).
+
+### Who doesn't need to do anything?
+
+We wanted this to stay out of your way wherever possible, so a few configurations are trusted
+automatically:
+
+- **Your own.** The [`~/.prototools`](/docs/proto/config#locations) and
+  [`~/.proto/.prototools`](/docs/proto/config#locations) files are owned by you, and are always
+  trusted.
+- **CI.** The checked out repository _is_ the code being built, and there's no one around to type
+  [`proto trust`](/docs/proto/commands/trust), so every configuration is trusted in CI. It's
+  detected from the [`CI`](/docs/proto/config#trusted-configurations) environment variable (or a
+  provider's specific variables), so if you've exported it in your shell profile for some reason,
+  now's a great time to stop. [`proto diagnose`](/docs/proto/commands/diagnose) will nag you about
+  it if you don't.
+- **Trusted paths.** Directories listed in the
+  [`PROTO_TRUSTED_PATHS`](/docs/proto/config#trusted-configurations) environment variable (separated
+  the same way as your system path) are trusted wholesale. Handy if all of your own work lives in
+  one place.
+
+  ```shell
+  export PROTO_TRUSTED_PATHS="$HOME/work"
+  ```
+
+- **Settings proto wrote for you.** When proto adds security-sensitive settings to a configuration
+  that had none, for example with [`proto plugin add`](/docs/proto/commands/plugin/add), the file is
+  trusted automatically. You asked for the plugin, after all.
+
+### Never silent
+
+An ignored setting is only safe if you know it was ignored, so proto tells you about untrusted
+configurations everywhere it reasonably can.
+
+[`proto activate`](/docs/proto/commands/activate) warns about each untrusted configuration once per
+shell session (not on every prompt, we promise). Most other commands log a warning too, except for
+[`run`](/docs/proto/commands/run), [`exec`](/docs/proto/commands/exec),
+[`bin`](/docs/proto/commands/bin), [`shell`](/docs/proto/commands/shell), and
+[shims](/docs/proto/workflows#shims), since those are executed constantly by scripts and editors.
+[`proto status`](/docs/proto/commands/status) lists untrusted configurations above its table,
+[`proto diagnose`](/docs/proto/commands/diagnose) reports them as warnings, and
+[`proto debug config`](/docs/proto/commands/debug/config) labels them.
+
+And if a tool's plugin is configured in an untrusted file, proto refuses to load that tool, instead
+of quietly substituting a built-in or community plugin with the same name. Getting a _different_
+tool than the one the configuration asked for would be its own kind of surprise.
+
+> Head over to the [trust documentation](/docs/proto/config#trust) for all of the details.
+
+## Kotlin support
+
+Hot on the heels of Zig in [v0.62](./proto-v0.62), [Kotlin](https://kotlinlang.org/) joins proto's
+built-in toolchain, making it our second JVM language after Java landed in [v0.59](./proto-v0.59).
+
+```shell
+$ proto install java
+$ proto install kotlin
+```
+
+The plugin installs JetBrains' portable command-line compiler, and provides the
+[`kotlin`](https://kotlinlang.org/docs/command-line.html) and
+[`kotlinc`](https://kotlinlang.org/docs/command-line.html) executables. Kotlin runs on the JVM, so a
+Java runtime is required as well. The Kotlin launchers look for
+[`JAVA_HOME`](https://github.com/moonrepo/plugins/tree/master/tools/kotlin#executables-and-environment)
+first, which proto's Java plugin sets when activated, so pinning both tools is all it takes.
+
+Versions are detected from
+[`.kotlin-version`](https://github.com/moonrepo/plugins/tree/master/tools/kotlin#versions) files,
+and from the Kotlin entry in [`.sdkmanrc`](https://sdkman.io/usage) files, so projects already using
+SDKMAN! are picked up without any proto-specific configuration. Releases all the way back to before
+1.0 are supported, as are release candidates and EAP builds when requested explicitly.
+
+> Kotlin support is still unstable, so please
+> [report any issues](https://github.com/moonrepo/plugins/issues) you run into! Kotlin/Native is a
+> separate distribution, and is not installed by this plugin.
+
+## Pinning to the closest configuration
+
+Here's a small one that has bugged us for a while. Run
+[`proto pin node 24`](/docs/proto/commands/pin) from a directory deep within your project, say a
+components folder 4 levels down, and proto would dutifully create a brand new
+[`.prototools`](/docs/proto/config) file... right there in the components folder. Technically
+correct, practically never what you wanted.
+
+We've added a new [`closest`](/docs/proto/config#closest) location, which traverses upwards from the
+current directory, and targets the first directory that has a configuration file. If none is found,
+the current directory is used, just like before.
+
+```text
+~/Projects/app/.prototools         <- pinned here
+~/Projects/app/packages/web/src    (cwd)
+```
+
+This is now the default for [`proto pin`](/docs/proto/commands/pin),
+[`proto unpin`](/docs/proto/commands/unpin), [`proto alias`](/docs/proto/commands/alias),
+[`proto unalias`](/docs/proto/commands/unalias),
+[`proto plugin add`](/docs/proto/commands/plugin/add),
+[`proto plugin remove`](/docs/proto/commands/plugin/remove), and
+[`proto install --pin`](/docs/proto/commands/install#pinning-the-version) (and the MCP
+[`install_tool`](/docs/proto/commands/mcp#tools) tool). Directories that only have an environment
+configuration ([`.prototools.<env>`](/docs/proto/config#environment-mode)) are skipped, and your
+user and global configurations are never targeted — pass
+[`--to user`](/docs/proto/config#locations) or [`--to global`](/docs/proto/config#locations) for
+those. It can also be used with the [`pin-latest`](/docs/proto/config#pin-latest) setting.
+
+```toml title=".prototools"
+[settings]
+pin-latest = "closest"
+```
+
+If you prefer the old behavior, pass [`--to local`](/docs/proto/config#locations) (or
+[`--from local`](/docs/proto/config#locations)).
+
+## libc-aware lockfiles
+
+[Lockfile](/docs/proto/lockfile) records have always been keyed by operating system and
+architecture. That's enough for macOS and Windows, but on Linux, plenty of tools publish separate
+artifacts for glibc and musl, each with its own checksum. So a Debian laptop and an Alpine CI
+container would happily share a single [record](/docs/proto/lockfile#records) for Linux on x64, and
+then fail each other's checksum verification.
+
+Records created on Linux now include a [`libc`](/docs/proto/lockfile#records) field, recording
+whether the machine uses GNU or musl.
+
+```toml title=".protolock"
+[[tools.node]]
+os = "linux"
+arch = "x64"
+libc = "musl"
+spec = "24"
+version = "24.9.0"
+checksum = "sha256:..."
+```
+
+No migration is required. Existing records without a
+[`libc`](/docs/proto/lockfile#version-resolution) continue to match every libc, and are backfilled
+with the current libc the next time an install updates the record. When another libc has locked a
+version, but yours hasn't, the version is inherited the same way it already is for other operating
+systems and architectures.
+
+### Stricter immutable lockfiles
+
+Speaking of inheritance, this one is important. In v0.62.2, we started inheriting a version locked
+by _another_ platform when the current platform had no record. That's the right call for a regular
+install, as a resolved version applies to every machine.
+
+It was the wrong call for [`--immutable-lockfile`](/docs/proto/lockfile#immutable-lockfiles). The
+other platform's checksum isn't valid for your download, so the tool was being installed without
+ever being verified against the lockfile — the exact guarantee that flag exists to provide. It now
+fails instead.
+
+```
+Lockfile is immutable, but is missing a record for node 24 on x64-linux-musl. Only other platforms
+have locked this version, so the download cannot be verified.
+```
+
+To fix it, run [`proto install`](/docs/proto/commands/install) (without the flag) once on each
+platform you install on, and commit the updated lockfile. Installs without
+[`--immutable-lockfile`](/docs/proto/commands/install#immutable-lockfiles) continue to inherit as
+before.
+
+## Schema plugins v2
+
+Not every tool needs a WASM plugin. For the common case — download an archive, extract a binary —
+proto supports [non-WASM plugins](/docs/proto/non-wasm-plugin): a JSON, TOML, or YAML file that
+describes the tool. They power the entire
+[community registry](/docs/proto/plugins#community-plugins), in fact.
+
+But the format grew its own vocabulary over the years, like
+[`download-file`](/docs/proto/non-wasm-plugin#platform-variations),
+[`manifest-url`](/docs/proto/non-wasm-plugin#json-manifest), and
+[`version-files`](/docs/proto/non-wasm-plugin#detecting-versions), which drifted away from the WASM
+plugin API. Worse, it had no way to express the most common real-world wrinkle: a tool that changed
+something between releases. Renamed an asset in 2.0? Moved hosts in 3.0? Your options were dropping
+old versions, or rewriting the plugin in WASM.
+
+Format v2 fixes both. Opt in with [`format = "2"`](/docs/proto/non-wasm-plugin#format-v2), and each
+section maps directly to the output of a WASM plugin function, with snake_case keys everywhere:
+[`metadata`](/docs/proto/non-wasm-plugin#sections) is the output of
+[`register_tool`](/docs/proto/wasm-plugin#registering-the-tool),
+[`install`](/docs/proto/non-wasm-plugin#sections) is the output of
+[`download_prebuilt`](/docs/proto/wasm-plugin#downloading-pre-builts),
+[`locate`](/docs/proto/non-wasm-plugin#locating-executables) is the output of
+[`locate_executables`](/docs/proto/wasm-plugin#locating-executables), and so on. If you've read the
+API documentation, you already know the settings.
+
+And for tools that change over time, there's
+[`[[overrides]]`](/docs/proto/non-wasm-plugin#overrides).
+
+```toml title="protostar.toml"
+format = "2"
+
+[metadata]
+name = "Protostar"
+type = "command-line"
+
+[resolve]
+git_url = "https://github.com/moonrepo/protostar"
+
+[install]
+download_url = "https://github.com/moonrepo/protostar/releases/download/v{version}/{download_name}"
+
+[platform.linux]
+download_name = "protostar-{arch}-unknown-linux-{libc}.tar.gz"
+
+[platform.macos]
+download_name = "protostar-{arch}-apple-darwin.tar.xz"
+
+# 2.0 renamed the Linux asset, and dropped arm64
+[[overrides]]
+range = ">=2"
+
+[overrides.platform.linux]
+download_name = "protostar-v2-{arch}.tar.gz"
+archs = ["x64"]
+
+# Nightlies live somewhere else entirely
+[[overrides]]
+range = "canary"
+
+[overrides.install]
+download_url = "https://example.com/protostar/nightly/{download_name}"
+```
+
+Each override targets a [version range](/docs/proto/tool-spec#requirements-and-ranges) (or canary
+releases), and can replace download, executable, platform, and even version resolution settings, so
+releases from before a project changed its tag format can be parsed with their own pattern. Every matching override is applied in order, with later ones winning, and pre-releases
+match the range of their release, so a release candidate for 2.0 picks up the 2.x settings too.
+
+A few more niceties came along for the ride. Unknown fields are now an error, so a typo no longer
+silently does nothing. URLs can reference the platform's resolved names with the
+[`{download_name}`](/docs/proto/non-wasm-plugin#tokens) and
+[`{checksum_name}`](/docs/proto/non-wasm-plugin#tokens) tokens, which error if the current platform
+has no name configured, instead of quietly producing a broken URL. And
+[`source.latest`](/docs/proto/non-wasm-plugin#sections) can pin the latest version, instead of
+always using the highest stable one.
+
+Format v1 isn't going anywhere, and existing plugins continue to work as-is.
+
+> View the [format v2 documentation](/docs/proto/non-wasm-plugin#format-v2) for the full list of
+> settings.
+
+## WASM API changes
+
+### `load_git_tags` returns errors
+
+The [`load_git_tags`](/docs/proto/wasm-plugin#from-git-tags) function used to swallow failures and
+return an empty list. Which sounds harmless, until you realize every plugin then reported a
+confusing "Failed to resolve version" error, while the real cause — an unreachable remote, a missing
+credential, an unaccepted Xcode license on macOS (yes, really) — was nowhere to be seen. It also
+meant previously cached versions were never used as a fallback.
+
+It now returns an error that includes the exit code and stderr of
+[`git ls-remote`](https://git-scm.com/docs/git-ls-remote). If your plugin should continue without
+the tags, handle the error explicitly.
+
+```rust
+let tags = load_git_tags("https://github.com/org/repo").unwrap_or_default();
+```
+
+### `HostPlatform`
+
+The new [`HostPlatform`](/docs/guides/wasm-plugins#host-environment) type represents an
+architecture, operating system, and libc as a single value. It parses from proto's own
+[`<arch>-<os>[-<libc>]`](/docs/guides/wasm-plugins#host-environment) format, and from
+[Rust target triples](https://doc.rust-lang.org/rustc/platform-support.html), and converts back to a
+target triple with [`to_rust_platform`](/docs/guides/wasm-plugins#host-environment). Since so many
+tools name their release artifacts after target triples, this makes mapping them much less tedious.
+
+```rust
+let platform = HostPlatform::parse("aarch64-unknown-linux-musl")?;
+
+platform.arch; // HostArch::Arm64
+platform.os; // HostOS::Linux
+platform.libc; // HostLibc::Musl
+platform.to_string(); // "arm64-linux-musl"
+platform.to_rust_platform(); // "aarch64-unknown-linux-musl"
+```
+
+We also updated [`HostLibc`](/docs/guides/wasm-plugins#host-environment) to treat unsupported values
+as unknown, instead of failing to deserialize, so plugins built against this version keep working
+when a future proto release adds a libc.
+
+### Testing other platforms
+
+The [`ConfigBuilder::host`](/docs/proto/wasm-plugin#configuring-the-host-platform) test utility now
+requires a [`HostPlatform`](/docs/guides/wasm-plugins#host-environment), instead of an operating
+system and architecture, so the libc can be configured too. The libc is no longer detected from the
+current machine, and defaults to GNU on Linux, so tests behave the same on every machine.
+
+```rust
+let plugin = sandbox
+    .create_plugin_with_config("id", |config| {
+        config.host(HostPlatform::parse("x64-linux-musl").unwrap());
+    })
+    .await;
+```
+
+## Breaking changes
+
+- The security-sensitive settings of local [`.prototools`](/docs/proto/config) files are ignored
+  until the file is [trusted](/docs/proto/config#trust). Run
+  [`proto trust`](/docs/proto/commands/trust) in your projects, or set
+  [`PROTO_TRUSTED_PATHS`](/docs/proto/config#trusted-configurations). CI environments are
+  unaffected.
+- Version pins for tools that aren't built-in, including community plugins and the
+  [`asdf`](/docs/proto/tool-spec#asdf) backend, also require trust.
+- [`proto pin`](/docs/proto/commands/pin), [`unpin`](/docs/proto/commands/unpin),
+  [`alias`](/docs/proto/commands/alias), [`unalias`](/docs/proto/commands/unalias),
+  [`plugin add`](/docs/proto/commands/plugin/add),
+  [`plugin remove`](/docs/proto/commands/plugin/remove), and
+  [`install --pin`](/docs/proto/commands/install#pinning-the-version) now write to the
+  [closest](/docs/proto/config#closest) configuration file, instead of the one in the current
+  directory. Pass [`--to local`](/docs/proto/config#locations) (or
+  [`--from local`](/docs/proto/config#locations)) for the previous behavior.
+- [`proto install --immutable-lockfile`](/docs/proto/lockfile#immutable-lockfiles) now errors when
+  only other platforms (including other libcs) have locked a version.
+- **WASM API:** [`load_git_tags`](/docs/proto/wasm-plugin#from-git-tags) returns an error when the
+  tags fail to load, instead of an empty list.
+- **WASM API:** [`ConfigBuilder::host`](/docs/proto/wasm-plugin#configuring-the-host-platform)
+  requires a [`HostPlatform`](/docs/guides/wasm-plugins#host-environment), instead of an operating
+  system and architecture.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.63.0) for a full list
+of changes.
+
+- Executable paths in non-WASM plugins now support tokens, like
+  [`{version}`](/docs/proto/non-wasm-plugin#platform-variations), for secondary executables too, not
+  just the primary executable.
+- Plugin downloads (from OCI registries, GitHub, and URLs) are now always attempted, even when the
+  hosts used to detect an internet connection are blocked or slow. The connection check is only used
+  to explain a failed download, which now includes the underlying error. VPN users, rejoice.
+- Updated Rust to v1.99.0.

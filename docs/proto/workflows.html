@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.ae67d130.js" defer="defer"></script>
-<script src="/assets/js/main.c807ce47.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.afc0c684.js" defer="defer"></script>
+<script src="/assets/js/main.92cc8011.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -89,6 +89,11 @@ detected version</li>
 </li>
 </ul>
 <div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ </span><span class="token builtin class-name" style="color:#ff94ff;font-weight:bold">cd</span><span class="token plain"> /some/path </span><span class="token operator" style="color:#b7a9f9">&amp;&amp;</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--version</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token number" style="color:#94dded">20.0</span><span class="token plain">.0</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ </span><span class="token builtin class-name" style="color:#ff94ff;font-weight:bold">cd</span><span class="token plain"> /another/path </span><span class="token operator" style="color:#b7a9f9">&amp;&amp;</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--version</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token number" style="color:#94dded">18.0</span><span class="token plain">.0</span><br></div></code></pre></div></div>
+<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>Since activation applies environment variables and shell aliases as soon as you enter a directory,
+the <a class="" href="/docs/proto/config#security-sensitive-settings">security-sensitive settings</a> of a <code>.prototools</code> file are
+only applied once it has been <a class="" href="/docs/proto/config#trust">trusted</a> with <a class="" href="/docs/proto/commands/trust"><code>proto trust</code></a>.
+Untrusted configurations still have their built-in tool versions activated, and you&#x27;ll be warned
+about them once per shell session. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 inline-block ml-1">v0.63.0</span></p></div></div>
 <h3 class="anchor anchorTargetStickyNavbar_tleR" id="setup-2">Setup<a href="#setup-2" class="hash-link" aria-label="Direct link to Setup" title="Direct link to Setup" translate="no">​</a></h3>
 <p>View the <a class="" href="/docs/proto/commands/activate#setup"><code>proto activate</code></a> documentation for information on how to setup
 your shell profile for this workflow.</p>

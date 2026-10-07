@@ -153,15 +153,17 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [setup](https://moonrepo.dev/docs/proto/commands/setup): The `proto setup` command will setup proto in your current shell by modifying an applicable profile
 - [shell](https://moonrepo.dev/docs/proto/commands/shell): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [status](https://moonrepo.dev/docs/proto/commands/status): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [trust](https://moonrepo.dev/docs/proto/commands/trust): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [unalias](https://moonrepo.dev/docs/proto/commands/unalias): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [uninstall](https://moonrepo.dev/docs/proto/commands/uninstall): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [unpin](https://moonrepo.dev/docs/proto/commands/unpin): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [untrust](https://moonrepo.dev/docs/proto/commands/untrust): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [upgrade](https://moonrepo.dev/docs/proto/commands/upgrade): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [use](https://moonrepo.dev/docs/proto/commands/use): :::danger
 - [versions](https://moonrepo.dev/docs/proto/commands/versions): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [Configuration](https://moonrepo.dev/docs/proto/config): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [Version detection](https://moonrepo.dev/docs/proto/detection): import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
-- [FAQ](https://moonrepo.dev/docs/proto/faq): We wanted to keep with the space theme, and spent quite some time digging through Wikipedia and
+- [FAQ](https://moonrepo.dev/docs/proto/faq): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [What is proto?](https://moonrepo.dev/docs/proto): import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
 - [Install proto](https://moonrepo.dev/docs/proto/install): import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
 - [Lockfiles](https://moonrepo.dev/docs/proto/lockfile): import VersionLabel from '@site/src/components/Docs/VersionLabel';
@@ -297,3 +299,4 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [proto v0.61 - Swift support, GPG verification, and immutable lockfiles](https://moonrepo.dev/blog/2026-08-22_proto-v0.61): A new language joins the toolchain, downloads can now be verified with GPG signatures, and
 - [proto v0.62 - Community plugins, shell deactivation, and Zig support](https://moonrepo.dev/blog/2026-09-03_proto-v0.62): Dozens of community tools now install by name alone, shell activation learned how to turn itself
 - [moon v2.6 - Cleanup and wait task dependencies, OpenTelemetry metrics, Pkl type checking, and more](https://moonrepo.dev/blog/2026-10-05_moon-v2.6): This release is all about what happens _around_ your tasks. Dependencies can now run after a task to
+- [proto v0.63 - Trusted configs, Kotlin support, and schema plugins v2](https://moonrepo.dev/blog/2026-10-06_proto-v0.63): This release is all about trust. Configuration files now have to earn it before they can touch your

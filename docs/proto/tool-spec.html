@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.ae67d130.js" defer="defer"></script>
-<script src="/assets/js/main.c807ce47.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.afc0c684.js" defer="defer"></script>
+<script src="/assets/js/main.92cc8011.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -56,6 +56,11 @@ from the shortname plugin index.</li>
 <li class=""><code>exes</code> (string[]) - List of executable file names (relative from <code>bin</code>) to be linked as a
 shim/bin. If not defined, we&#x27;ll automatically scan the <code>bin</code> directory.</li>
 </ul>
+<blockquote>
+<p>Since asdf plugins clone and execute third-party scripts, <code>asdf:</code> version pins in a local
+<code>.prototools</code> file are only applied once that file has been <a class="" href="/docs/proto/config#trust">trusted</a>.</p>
+<span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 inline-block ml-1">v0.63.0</span>
+</blockquote>
 <h3 class="anchor anchorTargetStickyNavbar_tleR" id="cargo"><code>cargo</code><span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v0.57.0</span><a href="#cargo" class="hash-link" aria-label="Direct link to cargo" title="Direct link to cargo" translate="no">​</a></h3>
 <p>The <code>cargo</code> backend will install CLIs from <a href="https://crates.io/" target="_blank" rel="noopener noreferrer" class="">crates.io</a> using
 <a href="https://doc.rust-lang.org/cargo/commands/cargo-install.html" target="_blank" rel="noopener noreferrer" class=""><code>cargo install</code></a> under the hood. The

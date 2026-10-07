@@ -2,7 +2,7 @@ use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 use moon_bench_utils::{create_simple_workspace, handle_unwrap};
 use moon_common::{is_ci, is_local};
 use moon_test_utils::WorkspaceMocker;
-use moon_workspace::{WorkspaceBuilder, WorkspaceBuilderAsync};
+use moon_workspace::{WorkspaceBuilder};
 use tokio::runtime::Runtime;
 
 fn id(max: u16, label: &str) -> BenchmarkId {
@@ -32,7 +32,7 @@ fn do_limit(c: &mut Criterion, max: u16) {
 
     group.bench_function(id(max, "build_graphs_async"), |b| {
         b.to_async(Runtime::new().unwrap()).iter(async || {
-            let mut builder = WorkspaceBuilderAsync::new(mocker.mock_workspace_builder_context())
+            let mut builder = WorkspaceBuilder::new(mocker.mock_workspace_builder_context())
                 .await
                 .unwrap();
 

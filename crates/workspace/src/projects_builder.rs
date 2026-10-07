@@ -69,24 +69,6 @@ impl ProjectBuildData {
 
         None
     }
-
-    // TODO deprecated
-    pub fn resolve_id(id_or_alias: &str, project_data: &ProjectBuildDataMap) -> Id {
-        if project_data.contains_key(id_or_alias) {
-            Id::raw(id_or_alias)
-        } else {
-            match project_data.iter().find_map(|(id, build_data)| {
-                if build_data.aliases.contains_key(id_or_alias) {
-                    Some(id)
-                } else {
-                    None
-                }
-            }) {
-                Some(project_id) => project_id.to_owned(),
-                None => Id::raw(id_or_alias),
-            }
-        }
-    }
 }
 
 pub fn load_project_build_data(

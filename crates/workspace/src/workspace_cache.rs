@@ -28,10 +28,6 @@ fingerprint!(
         // Project sources derived from the workspace graph builder.
         projects: BTreeMap<&'graph Id, &'graph WorkspaceRelativePathBuf>,
 
-        // Whether the graph was built with the async builder. The builders
-        // serialize into different shapes, so they cannot share a hash.
-        async_graph_building: bool,
-
         // Environment variables required for cache invalidation.
         env: BTreeMap<String, String>,
 
@@ -62,7 +58,6 @@ impl Default for WorkspaceGraphFingerprint<'_> {
     fn default() -> Self {
         WorkspaceGraphFingerprint {
             projects: BTreeMap::default(),
-            async_graph_building: false,
             inputs: BTreeMap::default(),
             env: BTreeMap::default(),
             in_docker: is_docker(),
@@ -76,10 +71,6 @@ impl Default for WorkspaceGraphFingerprint<'_> {
 }
 
 impl<'graph> WorkspaceGraphFingerprint<'graph> {
-    pub fn set_async_graph_building(&mut self, value: bool) {
-        self.async_graph_building = value;
-    }
-
     pub fn add_projects(&mut self, projects: &'graph BTreeMap<Id, WorkspaceRelativePathBuf>) {
         self.projects.extend(projects.iter());
     }
@@ -193,7 +184,6 @@ pub async fn generate_graph_cache_digest(
     projects: &BTreeMap<Id, WorkspaceRelativePathBuf>,
     config_paths: BTreeSet<WorkspaceRelativePathBuf>,
     plugin_input_paths: BTreeSet<WorkspaceRelativePathBuf>,
-    async_graph_building: bool,
 ) -> miette::Result<Digest> {
     let extension_context = Arc::clone(&context);
     let extension_handle = tokio::spawn(async move {
@@ -252,7 +242,6 @@ pub async fn generate_graph_cache_digest(
     all_paths.extend(find_inherited_by_files(&context, projects));
 
     let mut fingerprint = WorkspaceGraphFingerprint::default();
-    fingerprint.set_async_graph_building(async_graph_building);
     fingerprint.add_projects(projects);
     fingerprint.add_inputs(hash_input_paths(&context, all_paths).await?);
     fingerprint.add_extension_versions(&extension_versions);

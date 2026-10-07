@@ -51,9 +51,6 @@ pub struct ProjectBuildData {
     #[serde(skip)]
     pub id: Option<Id>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub node_index: Option<NodeIndex>,
-
     pub source: WorkspaceRelativePathBuf,
 }
 

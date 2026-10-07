@@ -9,6 +9,13 @@
     always used, and the synchronous tracker has been removed. The setting must be removed from
     `.moon/workspace.*`, as unknown settings fail validation, and the
     `MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING` environment variable no longer has any effect.
+  - Removed the `asyncGraphBuilding` experiment, as the project and task graphs are now always built
+    asynchronously, and the synchronous graph builder has been removed. The setting must be removed
+    from `.moon/workspace.*`, as unknown settings fail validation, and the
+    `MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING` environment variable no longer has any effect. If it was
+    disabled to work around a dependency cycle error, the cycle must now be broken, or one of its
+    edges moved to a different dependency scope, so that it crosses the production and development
+    partitions.
   - Removed the `casOutputsCache` experiment, as task outputs are now always stored in the local
     content-addressable store, and the `.tar.gz` archive cache has been removed. The setting must be
     removed from `.moon/workspace.*`, as unknown settings fail validation, and the

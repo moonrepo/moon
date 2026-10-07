@@ -52,7 +52,7 @@ pub struct WorkspaceBuilder {
 
 impl WorkspaceBuilder {
     pub async fn new(context: WorkspaceBuilderContext) -> miette::Result<Self> {
-        debug!("Building workspace graph asynchronously (project and task graphs)");
+        debug!("Building workspace graph (project and task graphs)");
 
         let context = Arc::new(context);
 
@@ -212,7 +212,6 @@ impl WorkspaceBuilder {
             projects,
             self.projects.config_paths.iter().cloned().collect(),
             plugin_input_paths,
-            true,
         )
         .await
     }

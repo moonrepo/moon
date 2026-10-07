@@ -1,1 +1,3 @@
-dependsOn: ['cycle-a']
+dependsOn:
+  - id: 'cycle-a'
+    scope: 'development'

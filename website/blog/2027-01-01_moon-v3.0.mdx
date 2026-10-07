@@ -20,6 +20,8 @@ setting no longer exists.
 
 - `asyncAffectedTracking` (added in v2.2) - Affected projects and tasks are now always tracked
   asynchronously, and the synchronous tracker has been removed.
+- `asyncGraphBuilding` (added in v2.2) - The project and task graphs are now always built
+  asynchronously, and the synchronous builder has been removed.
 - `casOutputsCache` (added in v2.3) - Task outputs are now always stored in the local
   content-addressable cache, and the tarball-based cache has been removed.
 - `nativeFileHashing` (added in v2.3) - Files are now always hashed natively within moon's task
@@ -31,6 +33,7 @@ a resolved experiment, so be sure to remove it.
 ```diff title=".moon/workspace.yml"
  experiments:
 -  asyncAffectedTracking: true
+-  asyncGraphBuilding: true
 -  casOutputsCache: true
 -  nativeFileHashing: true
 ```
@@ -38,6 +41,12 @@ a resolved experiment, so be sure to remove it.
 Their `MOON_EXPERIMENT_*` environment variables, like `MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING`, no
 longer have any effect. If you had disabled one of these experiments to work around an issue,
 please [report it](https://github.com/moonrepo/moon/issues), as it can no longer be disabled.
+
+If you had disabled `asyncGraphBuilding` because of a dependency cycle error, the cycle itself is
+the problem, as the synchronous builder would silently drop some of the edges that formed it. Break
+the cycle, or move one of its edges to a different dependency scope, so that it crosses the
+production and development [scope partitions](/docs/how-it-works/project-graph#scope-partitions),
+which is allowed.
 
 ## Content-addressable local cache
 

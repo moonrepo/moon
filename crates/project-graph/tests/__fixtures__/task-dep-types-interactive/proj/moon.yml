@@ -1,0 +1,15 @@
+tasks:
+  server:
+    command: 'server'
+    options:
+      interactive: true
+  client:
+    command: 'client'
+    # An interactive task runs in isolation, so it can't be waited on.
+    # Interactive tasks don't run in CI, so neither does this one, which
+    # avoids a `runInCI` mismatch error.
+    deps:
+      - target: 'server'
+        type: 'wait'
+    options:
+      runInCI: false

@@ -16,13 +16,16 @@ $ proto plugin remove node
 
 > Built-in plugins _cannot_ be removed!
 
+By default this will update the [closest](../../config#closest) `.prototools` file, starting from
+the current directory and traversing upwards. <VersionLabel version="0.63.0" />
+
 ### Arguments
 
 - `<id>` - ID of the tool.
 
 ### Options
 
-- `--from` - [Location of `.prototools`](../../config#locations) to update.
+- `--from` - [Location of `.prototools`](../../config#locations) to update. Defaults to `closest`.
   <VersionLabel version="0.41.0" />
 - `--type` - Type of plugin to remove, either `tool` (default) or `backend`.
   <VersionLabel version="0.52.0" />

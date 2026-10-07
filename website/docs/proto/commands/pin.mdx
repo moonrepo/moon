@@ -16,8 +16,12 @@ $ proto pin node lts --resolve
 $ proto pin npm latest --resolve --tool-native
 ```
 
-By default this will update the local [`./.prototools`](../config) file. Pass `--to` to customize
-the location, or use the `--tool-native` option to use a location unique to the tool.
+By default this will update the [closest](../config#closest) `.prototools` file, starting from the
+current directory and traversing upwards, or the current directory if none is found. Pass `--to` to
+customize the location, or use the `--tool-native` option to use a location unique to the tool.
+
+> Before v0.63, this defaulted to the local `./.prototools` file in the current directory. Pass
+> `--to local` for the previous behavior.
 
 When a [lockfile](../lockfile) is in use, matching records will be migrated to the
 newly pinned specification. <VersionLabel version="0.60.0" />
@@ -35,7 +39,8 @@ file being modified is always kept in sync, even when another configuration file
 
 - `--resolve` - Resolve the version to a fully-qualified semantic version before pinning.
 - `--to` <VersionLabel version="0.41.0" /> - [Location of `.prototools`](../config#locations) to
-  update. Supports `global`, `local`, and `user`.
+  update. Supports `closest` (default) <VersionLabel version="0.63.0" inline />, `global`, `local`,
+  and `user`.
 - `--tool-native` <VersionLabel version="0.55.0" /> - Pins the version in a tool specific location.
   Examples:
   - JavaScript tooling (Node, Bun, Deno, npm, pnpm, Yarn, etc) - Pins version in the `devEngines`

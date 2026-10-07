@@ -22,10 +22,12 @@ function convertToKebabCase(data: object, parentKey?: string): object {
 
 export interface NonWasmTabsProps {
 	data: object;
+	// Format 2 uses snake_case keys in all file types, so keys are rendered as-is
+	format?: 1 | 2;
 	title?: string;
 }
 
-export default function NonWasmTabs({ data, title }: NonWasmTabsProps) {
+export default function NonWasmTabs({ data, format = 1, title }: NonWasmTabsProps) {
 	return (
 		<Tabs
 			groupId="non-wasm-type"
@@ -43,7 +45,7 @@ export default function NonWasmTabs({ data, title }: NonWasmTabsProps) {
 			</TabItem>
 			<TabItem value="toml">
 				<CodeBlock language="toml" title={`${title}.toml`}>
-					{TOML.stringify(convertToKebabCase(data))}
+					{TOML.stringify(format === 2 ? data : convertToKebabCase(data))}
 				</CodeBlock>
 			</TabItem>
 			<TabItem value="yaml">

@@ -36,6 +36,23 @@ $ proto status
 When a [lockfile](../lockfile) is in use, a "Locked" column will also be displayed,
 showing the version locked for each configured specification. <VersionLabel version="0.60.0" />
 
+If any configuration files have not been [trusted](../config#trust), they'll be listed above the
+table along with their ignored security-sensitive settings, as these may be the reason a tool or
+setting is missing. Tools whose plugin is configured in an untrusted file are not displayed.
+
+<VersionLabel version="0.63.0" />
+
+```
+$ proto status
+
+Untrusted configs ─────────────────────────────────────────────────────────
+
+  The security-sensitive settings of these configs were ignored, so some tools or settings may be
+  missing. Review them, then trust each with proto trust [path]
+
+  - /Users/name/Projects/example/.prototools (env, plugins.tools)
+```
+
 ### Options
 
 - `--json` - Print the list in JSON format.

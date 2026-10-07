@@ -50,8 +50,10 @@ binary available. If you would like to also pin the resolved version to a `.prot
 the `--pin` option.
 
 ```shell
-# ./.prototools
+# Closest .prototools (traversing upwards)
 $ proto install bun --pin
+
+# ./.prototools
 $ proto install bun --pin local
 
 # ~/.proto/.prototools
@@ -60,6 +62,11 @@ $ proto install bun --pin global
 # ~/.prototools
 $ proto install bun --pin user
 ```
+
+When no location is provided, the version is pinned to the [closest](../config#closest)
+`.prototools` file, starting from the current directory and traversing upwards.
+
+<VersionLabel version="0.63.0" />
 
 #### Immutable lockfiles<VersionLabel version="0.61.0" />
 
@@ -72,6 +79,11 @@ CI.
 ```shell
 $ proto install --immutable-lockfile
 ```
+
+The install also fails when the only records for a version were created by _other_ platforms
+(operating systems, architectures, or [libcs](../lockfile#records)), as their checksums can't be
+used to verify the download on this machine. Run `proto install` without the flag on each platform
+to record its checksum. <VersionLabel version="0.63.0" />
 
 > This option cannot be combined with `--update-lockfile` or `--pin`.
 
@@ -110,4 +122,5 @@ $ proto install go -- --no-gobin
   - `--build` - Build from source if available. <VersionLabel version="0.45.0" />
   - `--no-build` - Download a pre-built if available. <VersionLabel version="0.45.0" />
   - `--pin` - Pin the resolved version and create a symlink in `~/.proto/bin`. Accepts a boolean
-    (pins locally by default), or the string "global", or the string "local".
+    (pins to the closest `.prototools` by default), or a [location](../config#locations):
+    `closest` <VersionLabel version="0.63.0" inline />, `global`, `local`, or `user`.

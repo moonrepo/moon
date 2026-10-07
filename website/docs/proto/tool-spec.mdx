@@ -69,6 +69,11 @@ The following settings are supported:
 - `exes` (string[]) - List of executable file names (relative from `bin`) to be linked as a
   shim/bin. If not defined, we'll automatically scan the `bin` directory.
 
+> Since asdf plugins clone and execute third-party scripts, `asdf:` version pins in a local
+> `.prototools` file are only applied once that file has been [trusted](./config#trust).
+>
+> <VersionLabel version="0.63.0" inline />
+
 ### `cargo`<VersionLabel version="0.57.0" />
 
 The `cargo` backend will install CLIs from [crates.io](https://crates.io/) using

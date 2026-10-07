@@ -124,6 +124,16 @@ $ cd /another/path && node --version
 18.0.0
 ```
 
+:::info
+
+Since activation applies environment variables and shell aliases as soon as you enter a directory,
+the [security-sensitive settings](./config#security-sensitive-settings) of a `.prototools` file are
+only applied once it has been [trusted](./config#trust) with [`proto trust`](./commands/trust).
+Untrusted configurations still have their built-in tool versions activated, and you'll be warned
+about them once per shell session. <VersionLabel version="0.63.0" inline />
+
+:::
+
 ### Setup
 
 View the [`proto activate`](./commands/activate#setup) documentation for information on how to setup

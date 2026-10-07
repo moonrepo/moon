@@ -1,0 +1,64 @@
+---
+title: trust
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="0.63.0" header />
+
+The `proto trust [path]` command will trust a `.prototools` configuration file, or all configuration
+files within a directory, so that their
+[security-sensitive settings](../config#security-sensitive-settings) — like environment variables,
+shell aliases, and plugins — are applied. Local configuration files are untrusted by default, as
+they may have come from a cloned repository.
+
+```shell
+# Trust the current directory
+$ proto trust
+
+# Trust a directory
+$ proto trust ./path/to/project
+
+# Trust a single file
+$ proto trust ./path/to/.prototools
+```
+
+When a directory is trusted, every configuration file within it, _and_ its sub-directories, is
+trusted, including [environment configurations](../config#environment-mode) and files that don't
+exist yet. When a file is trusted, _only_ that file is trusted. A path is considered a file when its
+name is a configuration file name, like `.prototools` or `.prototools.production`.
+
+Once trusted, the security-sensitive settings of the configuration file (or each configuration file
+directly within the directory) are printed for review, along with which settings will now be
+applied.
+
+```
+$ proto trust .prototools
+
+/Users/name/Projects/example/.prototools ──────────────────────────────────
+
+  [env]
+  NODE_OPTIONS = "--require ./setup.js"
+
+  [plugins.tools]
+  my-tool = "https://example.com/my-tool.toml"
+
+Trusted config /Users/name/Projects/example/.prototools. Its security-sensitive settings (env, plugins.tools) will now be applied.
+```
+
+> Trust is recorded against the path, not the file's contents, so changes to a trusted
+> configuration are applied without needing to trust it again.
+> [Learn more about trust](../config#trust).
+
+### Arguments
+
+- `[path]` - Configuration file, or directory of configuration files, to trust. Either absolute, or
+  relative to the current directory. Defaults to the current directory.
+
+### Caveats
+
+- The `user` (`~/.prototools`) and `global` (`~/.proto/.prototools`) configurations are always
+  trusted, so trusting them is a no-op.
+- Trusting your home directory (or a parent of it) is allowed, but a warning is displayed, as it
+  trusts every configuration within it, including repositories that are cloned in the future.
+- Symlinked directories are resolved, so messages display the real path that was trusted.

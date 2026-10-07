@@ -30,7 +30,9 @@ $ proto mcp --info
 
 The server exposes the following tools to MCP clients:
 
-- `install_tool` - Install a tool with a specified version.
+- `install_tool` - Install a tool with a specified version. When pinning is requested, the version
+  is pinned to the [closest](../config#closest) `.prototools` file.
+  <VersionLabel version="0.63.0" inline />
 - `uninstall_tool` - Uninstall a tool with a specified version.
 - `list_tool_versions` - List available and installed versions for a tool.
 - `get_config` - Get the current proto configuration.

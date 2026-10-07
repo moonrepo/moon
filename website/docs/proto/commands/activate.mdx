@@ -60,6 +60,10 @@ $ eval "$(proto activate zsh)"
   - Do note that this will worsen performance depending on the number of tools.
 - Activation only removes `PATH` entries that a previous activation injected. Entries inherited from
   your shell profile are left exactly as they were. <VersionLabel version="0.62.0" />
+- The [security-sensitive settings](../config#security-sensitive-settings) of configuration files
+  that have not been [trusted](../config#trust), like `[env]` and `[shell.aliases]`, are _not_
+  applied. A warning is logged for each untrusted configuration, but only once per shell session,
+  as the hook runs on every prompt. <VersionLabel version="0.63.0" />
 
 ### JSON output<VersionLabel version="0.62.0" />
 

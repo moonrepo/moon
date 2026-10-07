@@ -18,6 +18,11 @@ JSON and YAML support was added in proto v0.42.
 
 :::
 
+Plugins support 2 formats. Format v1 is the default, and is documented in the sections that
+immediately follow. Format v2 <VersionLabel version="0.63.0" inline /> mirrors the
+[WASM plugin](./wasm-plugin) API, and supports version specific overrides. Jump to the
+[format v2 documentation](#format-v2) for more information.
+
 ## Create a plugin
 
 Let's start by creating a new plugin, and defining the `name` and `type` fields. The type can either
@@ -183,7 +188,8 @@ value is an object of the following options:
 
 - `exe-path` - The file to execute, relative from the tool directory. On Windows, the `.exe`
   extension will automatically be appended. If you need more control over platform variance, use
-  `[platform.*.exe-path]` instead.
+  `[platform.*.exe-path]` instead. Supports [tokens](#platform-variations), like `{version}`, for
+  both the primary and secondary executables. <VersionLabel version="0.63.0" inline />
 - `no-bin` - Do not symlink a binary in `~/.proto/bin`.
 - `no-shim`- Do not generate a shim in `~/.proto/shims`.
 - `parent-exe-name` - Name of a parent executable required to execute the executable path. For
@@ -341,3 +347,270 @@ the `[detect]` setting. At this time, we only support 1 setting:
     },
   }}
 />
+
+## Format v2<VersionLabel version="0.63.0" />
+
+Format v2 is a reworked format, in which settings mirror the
+[WASM plugin](./wasm-plugin#implementing-tool-functions) API types, instead of having their own
+vocabulary. If you've written a WASM plugin, or read the
+[API documentation](https://docs.rs/proto_pdk_api/latest/proto_pdk_api/), you already know most of
+its settings. It's enabled by setting `format` to `"2"` at the top of the file.
+
+Some notable differences from format v1:
+
+- Keys are snake_case in every file type (JSON, TOML, and YAML), like the API types.
+- Unknown fields at the top-level, and within the `plugin`, `resolve`, `platform`, and `overrides`
+  sections, are an error, so typos don't silently do nothing.
+- Settings can be overridden for specific versions with [`[[overrides]]`](#overrides).
+
+<NonWasmTabs
+  format={2}
+  title="protostar"
+  data={{
+    format: '2',
+    plugin: {
+      description: 'A fake CLI tool for demonstration purposes.',
+      repository_url: 'https://github.com/moonrepo/protostar',
+    },
+    metadata: {
+      name: 'Protostar',
+      type: 'command-line',
+    },
+    detect: {
+      files: ['.protostar-version'],
+    },
+    resolve: {
+      git_url: 'https://github.com/moonrepo/protostar',
+    },
+    install: {
+      download_url:
+        'https://github.com/moonrepo/protostar/releases/download/v{version}/{download_name}',
+      checksum_url:
+        'https://github.com/moonrepo/protostar/releases/download/v{version}/{checksum_name}',
+    },
+    locate: {
+      exes: {
+        protostar: {
+          exe_path: 'bin/protostar',
+          primary: true,
+        },
+      },
+    },
+    platform: {
+      linux: {
+        download_name: 'protostar-{arch}-unknown-linux-{libc}.tar.gz',
+        checksum_name: 'protostar-{arch}-unknown-linux-{libc}.sha256',
+      },
+      macos: {
+        download_name: 'protostar-{arch}-apple-darwin.tar.xz',
+        checksum_name: 'protostar-{arch}-apple-darwin.sha256',
+      },
+      windows: {
+        download_name: 'protostar-{arch}-pc-windows-msvc.zip',
+        checksum_name: 'protostar-{arch}-pc-windows-msvc.sha256',
+      },
+    },
+  }}
+/>
+
+### Sections
+
+Each section maps directly to the output of a WASM plugin function. Refer to the linked API types
+for every available setting.
+
+- `plugin` - Information about the plugin itself: `description`, `homepage_url`, and
+  `repository_url`. Optional.
+- `metadata` (required) - Maps to the output of
+  [`register_tool`](./wasm-plugin#registering-the-tool)
+  ([`RegisterToolOutput`](https://docs.rs/proto_pdk_api/latest/proto_pdk_api/struct.RegisterToolOutput.html)).
+  Requires a `name`, and a `type` of `language`, `dependency-manager`, `command-line` (or `cli`),
+  or `version-manager`. Also supports settings like `default_version`, `minimum_proto_version`, and
+  `requires`.
+- `detect` - Maps to the output of [`detect_version_files`](./wasm-plugin#detecting-versions)
+  ([`DetectVersionOutput`](https://docs.rs/proto_pdk_api/latest/proto_pdk_api/struct.DetectVersionOutput.html)).
+  Supports `files` and `ignore`.
+- `source` - Maps to the output of [`load_versions`](./wasm-plugin#loading-versions)
+  ([`LoadVersionsOutput`](https://docs.rs/proto_pdk_api/latest/proto_pdk_api/struct.LoadVersionsOutput.html)).
+  Supports a static list of `versions`, a mapping of `aliases`, and the `latest` version.
+- `resolve` - How to load versions remotely. [Learn more](#loading-versions).
+- `install` - Maps to the output of [`download_prebuilt`](./wasm-plugin#downloading-pre-builts)
+  ([`DownloadPrebuiltOutput`](https://docs.rs/proto_pdk_api/latest/proto_pdk_api/struct.DownloadPrebuiltOutput.html)).
+  Requires a `download_url`, and supports settings like `download_name`, `checksum_url`,
+  `checksum_name`, `checksum_public_key`, `archive_prefix`, and `http_headers`.
+- `locate` - Maps to the output of [`locate_executables`](./wasm-plugin#locating-executables)
+  ([`LocateExecutablesOutput`](https://docs.rs/proto_pdk_api/latest/proto_pdk_api/struct.LocateExecutablesOutput.html)).
+  Supports `exes`, `exes_dirs`, `globals_lookup_dirs`, and `globals_prefix`.
+  [Learn more](#locating-executables).
+- `platform` - Settings that vary per operating system. [Learn more](#platforms).
+- `overrides` - Settings that vary per version. [Learn more](#overrides).
+
+### Platforms
+
+Like format v1, the `platform` section requires a mapping of operating systems to platform settings.
+BSD based operating systems fall back to the `linux` settings when they have none of their own. The
+following settings are available:
+
+- `download_name` - Name of the file to download.
+- `checksum_name` - Name of the checksum file to verify the download with.
+- `archive_prefix` - The name of the direct folder within the archive that contains the tool, which
+  is removed when unpacking.
+- `exe_path` - The path to the primary executable, relative from the tool directory.
+- `exes_dirs` - A list of relative directories that contain pre-installed executables.
+- `archs` - A list of architectures supported for this platform. If not provided, supports all
+  architectures.
+- `arch` - A mapping of architectures to custom values for the `{arch}` token.
+- `libc` - A mapping of libcs to custom values for the `{libc}` token.
+
+Platform settings take precedence over the same settings in `install` and `locate`, so shared
+values can be defined once in `install`, with only the differences defined per platform.
+
+<NonWasmTabs
+  format={2}
+  title="protostar"
+  data={{
+    install: {
+      archive_prefix: 'protostar-{version}',
+    },
+    platform: {
+      linux: {
+        download_name: 'protostar-linux-{arch}-{libc}.tar.gz',
+        archs: ['x64', 'arm64'],
+        arch: {
+          x64: 'amd64',
+        },
+      },
+      windows: {
+        download_name: 'protostar-windows-{arch}.zip',
+        archive_prefix: 'protostar-{version}-windows',
+      },
+    },
+  }}
+/>
+
+> Unlike format v1, there are no global `install.arch` or `install.libc` mappings. Define them per
+> platform instead.
+
+#### Tokens
+
+Names, archive prefixes, URLs, and executable paths support the same [tokens](#platform-variations)
+as format v1, like `{version}`, `{arch}`, `{os}`, and `{libc}`.
+
+Furthermore, the `download_url` setting supports a `{download_name}` token, and the `checksum_url`
+setting supports both `{download_name}` and `{checksum_name}` tokens, which are replaced with the
+resolved names. The format v1 `{download_file}` and `{checksum_file}` tokens are also supported. If
+a URL uses one of these tokens, but the name has not been configured for the current platform, an
+error is returned, instead of silently creating a broken URL.
+
+### Loading versions
+
+Versions can be loaded remotely using the `resolve` section, from either Git tags, or an index URL
+that returns a JSON array of versions. These settings work the same as their
+[format v1 counterparts](#resolving-versions), with the following names:
+
+- `git_url` - The remote Git repository to load tags from.
+- `git_tag_pattern` - A regex pattern to parse each tag with. Defaults to `version_pattern`.
+- `index_url` - A URL that returns a JSON array of strings or objects.
+- `index_version_key` - When the index returns objects, the key to extract the version from.
+  Defaults to `version`.
+- `version_pattern` - A regex pattern to parse each version with, using
+  [named capture groups](#version-patterns).
+
+<NonWasmTabs
+  format={2}
+  title="protostar"
+  data={{
+    resolve: {
+      git_url: 'https://github.com/moonrepo/protostar',
+    },
+    source: {
+      aliases: {
+        stable: '1.2.4',
+      },
+    },
+  }}
+/>
+
+Static versions and aliases are configured in the `source` section instead. When `source.latest` is
+set, it's used as the latest version, instead of the highest stable version.
+
+### Locating executables
+
+Executables are configured in the `locate.exes` section, where each key is the executable file name,
+and the value is an
+[`ExecutableConfig`](https://docs.rs/proto_pdk_api/latest/proto_pdk_api/struct.ExecutableConfig.html),
+which supports settings like `exe_path`, `primary`, `no_bin`, `no_shim`, `parent_exe_name`, and
+`shim_env_vars`. On Windows, the `.exe` extension is automatically appended to paths without an
+extension.
+
+<NonWasmTabs
+  format={2}
+  title="protostar"
+  data={{
+    locate: {
+      exes: {
+        protostar: {
+          exe_path: 'bin/protostar',
+          primary: true,
+        },
+        'protostar-debug': {
+          exe_path: 'bin/protostar-debug-{version}',
+          no_shim: true,
+        },
+      },
+    },
+  }}
+/>
+
+If no executable is marked as `primary`, a primary executable named after the plugin is created
+automatically, using the platform's `exe_path` when configured.
+
+### Overrides
+
+Tools change over time. Assets get renamed, hosts move, and platforms get dropped. The `overrides`
+section is a list of settings that only apply to specific versions, so that a single plugin can
+support the entire history of a tool. Each entry requires a `range`, which is a
+[version range](./tool-spec#requirements-and-ranges), or `canary` to match canary releases, and can
+override the `install`, `locate`, `platform`, and `resolve` sections.
+
+<NonWasmTabs
+  format={2}
+  title="protostar"
+  data={{
+    platform: {
+      linux: {
+        download_name: 'protostar-{arch}.tar.gz',
+      },
+    },
+    overrides: [
+      {
+        range: '>=2',
+        platform: {
+          linux: {
+            download_name: 'protostar-v2-{arch}.tar.gz',
+            archs: ['x64'],
+          },
+        },
+      },
+      {
+        range: 'canary',
+        install: {
+          download_url: 'https://example.com/protostar/nightly/{download_name}',
+        },
+      },
+      {
+        range: '<1',
+        resolve: {
+          git_tag_pattern:
+            '^@protostar/cli@((?<major>[0-9]+)\\.(?<minor>[0-9]+)\\.(?<patch>[0-9]+))$',
+        },
+      },
+    ],
+  }}
+/>
+
+- Every entry that matches the version is applied, in the order they're declared, so later entries
+  take precedence over earlier entries.
+- Within the same entry, platform settings take precedence over `install` and `locate` settings.
+- Pre-releases match the range of their release, so `>=2` matches `2.0.0-rc.1`.
+- `resolve` overrides are matched against the version being resolved, instead of an installed
+  version. A requirement or range (like `^0.5`) matches if it overlaps the entry's range.

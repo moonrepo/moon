@@ -1,0 +1,41 @@
+---
+title: untrust
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="0.63.0" header />
+
+The `proto untrust [path]` command will remove trust from a `.prototools` configuration file, or a
+directory, that was previously trusted with [`proto trust`](./trust). Once removed, the
+[security-sensitive settings](../config#security-sensitive-settings) of the affected configuration
+files will be ignored.
+
+```shell
+# Untrust the current directory
+$ proto untrust
+
+# Untrust a single file
+$ proto untrust ./path/to/.prototools
+```
+
+Trust can come from multiple sources, so after untrusting, proto will let you know if the
+configuration files are _still_ trusted through another source: a parent directory that was also
+trusted, a directory listed in the `PROTO_TRUSTED_PATHS` environment variable, or because a CI
+environment was detected. [Learn more about trust](../config#trusted-configurations).
+
+```
+$ proto untrust .prototools
+
+Untrusted config /Users/name/Projects/example/.prototools. Its security-sensitive settings will no longer be applied.
+
+The config is still trusted, as /Users/name/Projects is trusted. Untrust it with proto untrust /Users/name/Projects
+```
+
+> Paths that no longer exist can also be untrusted, but it's easier to remove those with
+> [`proto clean trust`](./clean).
+
+### Arguments
+
+- `[path]` - Configuration file, or directory of configuration files, to untrust. Either absolute,
+  or relative to the current directory. Defaults to the current directory.

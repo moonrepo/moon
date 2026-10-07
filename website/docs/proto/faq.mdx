@@ -2,6 +2,8 @@
 title: FAQ
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 ## General
 
 ### Where did the name "proto" come from?
@@ -121,3 +123,19 @@ issues, or the request is timing out, you can bypass these checks with the follo
   ```shell
   PROTO_BYPASS_VERSION_CHECK=1 node --version
   ```
+
+### Why are my environment variables, aliases, or plugins being ignored?<VersionLabel version="0.63.0" />
+
+Settings that can execute code on your machine, like [`[env]`](./config#env),
+[`[shell.aliases]`](./config#aliases), and plugins, are
+[security-sensitive](./config#security-sensitive-settings), and are only applied from a local
+`.prototools` file once it has been [trusted](./config#trust). Run
+[`proto status`](./commands/status) or [`proto diagnose`](./commands/diagnose) to see which
+configuration files are untrusted, review them, and then trust them.
+
+```shell
+$ proto trust
+```
+
+Configuration files in CI are always trusted, as are your `~/.prototools` and
+`~/.proto/.prototools` files.

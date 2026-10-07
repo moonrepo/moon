@@ -45,6 +45,8 @@ pub struct WorkspaceTasksBuilder {
     pub graph: TaskDag,
 
     /// Map of task targets to their graph index.
+    /// Only used while building, so it's not serialized for the cache.
+    #[serde(skip)]
     pub targets_to_indexes: FxHashMap<Target, NodeIndex>,
 }
 

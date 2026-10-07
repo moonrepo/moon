@@ -1,6 +1,7 @@
+use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::Output;
-use moon_task::{Task, TaskFileInput, TaskFileOutput, TaskGlobInput, TaskGlobOutput};
+use moon_task::{Target, Task, TaskFileInput, TaskFileOutput, TaskGlobInput, TaskGlobOutput};
 use rustc_hash::FxHashMap;
 use starbase_sandbox::create_sandbox;
 
@@ -244,5 +245,76 @@ mod task {
 
             assert!(task.has_outputs());
         }
+    }
+}
+
+mod task_serde {
+    use super::*;
+
+    fn round_trip<T: serde::Serialize + serde::de::DeserializeOwned>(value: &T) -> (String, T) {
+        let json = serde_json::to_string(value).unwrap();
+        let value = serde_json::from_str(&json).unwrap();
+
+        (json, value)
+    }
+
+    fn create_task() -> Task {
+        Task {
+            id: Id::raw("task"),
+            target: Target::parse("project:task").unwrap(),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn round_trips_defaults() {
+        let task = create_task();
+
+        assert_eq!(round_trip(&task).1, task);
+    }
+
+    #[test]
+    fn round_trips_empty_toolchains() {
+        // The default includes the system toolchain
+        let task = Task {
+            toolchains: vec![],
+            ..create_task()
+        };
+
+        assert_eq!(round_trip(&task).1, task);
+
+        let task = Task {
+            toolchains: vec![Id::raw("node")],
+            ..create_task()
+        };
+
+        assert_eq!(round_trip(&task).1, task);
+    }
+
+    #[test]
+    fn round_trips_glob_input_cache() {
+        // Cached by default
+        let (json, input) = round_trip(&TaskGlobInput::default());
+
+        assert_eq!(json, "{}");
+        assert!(input.cache);
+
+        let (json, input) = round_trip(&TaskGlobInput { cache: false });
+
+        assert_eq!(json, r#"{"cache":false}"#);
+        assert!(!input.cache);
+    }
+
+    #[test]
+    fn round_trips_file_output_optional() {
+        let (json, output) = round_trip(&TaskFileOutput::default());
+
+        assert_eq!(json, "{}");
+        assert!(!output.optional);
+
+        let (json, output) = round_trip(&TaskFileOutput { optional: true });
+
+        assert_eq!(json, r#"{"optional":true}"#);
+        assert!(output.optional);
     }
 }

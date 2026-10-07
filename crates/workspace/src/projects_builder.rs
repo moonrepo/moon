@@ -188,6 +188,8 @@ pub async fn build_project(
     builder.build().await
 }
 
+// Only the graph and aliases are serialized for the cache, as they're all that's
+// required to finalize the graph, while the other fields are only used to build it
 #[derive(Deserialize, Serialize)]
 pub struct WorkspaceProjectsBuilder {
     /// The context is not serialized, so it's optional for deserializing
@@ -199,6 +201,7 @@ pub struct WorkspaceProjectsBuilder {
     aliases_to_ids: FxHashMap<String, Id>,
 
     /// Cached projects build data.
+    #[serde(skip)]
     pub build_data: ProjectBuildDataMap,
 
     /// Whether the build data was preloaded, as it may be empty.
@@ -207,6 +210,7 @@ pub struct WorkspaceProjectsBuilder {
 
     /// List of config paths used in the hashing process.
     /// These are used for invalidation.
+    #[serde(skip)]
     pub config_paths: FxHashSet<WorkspaceRelativePathBuf>,
 
     /// Input files discovered by plugins while extending the graph.
@@ -215,27 +219,34 @@ pub struct WorkspaceProjectsBuilder {
     pub plugin_input_paths: BTreeSet<WorkspaceRelativePathBuf>,
 
     /// Map of project IDs to their graph index.
+    #[serde(skip)]
     pub ids_to_indexes: FxHashMap<Id, NodeIndex>,
 
     /// Map of project IDs to task options, indexed by target.
+    #[serde(skip)]
     ids_to_target_options: FxHashMap<Id, FxHashMap<Target, TaskOptions>>,
 
     /// Map of task targets to whether they declare any outputs.
+    #[serde(skip)]
     target_to_has_outputs: FxHashMap<Target, bool>,
 
     /// The project DAG.
     pub graph: ProjectDiGraph,
 
     /// The type of repository: monorepo or polyrepo.
+    #[serde(skip)]
     repo_type: RepoType,
 
     /// The root project ID (only if a monorepo).
+    #[serde(skip)]
     root_id: Option<Id>,
 
     /// Map of tag IDs to a list of project IDs that belong to the tag.
+    #[serde(skip)]
     tags_to_ids: FxHashMap<Id, Vec<Id>>,
 
     /// Map of tag IDs to a list of task targets that belong to the tag.
+    #[serde(skip)]
     tags_to_targets: FxHashMap<Id, Vec<Target>>,
 }
 

@@ -483,6 +483,29 @@ tasks:
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn only_caches_whats_required_to_finalize() {
+            let (sandbox, _graph) = build_cached_graph(|sandbox| {
+                sandbox.enable_git();
+            })
+            .await;
+
+            let cache: json::JsonValue = json::read_file(sandbox.path().join(CACHE_PATH)).unwrap();
+            let keys = |key: &str| {
+                let mut keys = cache[key]
+                    .as_object()
+                    .unwrap()
+                    .keys()
+                    .cloned()
+                    .collect::<Vec<_>>();
+                keys.sort();
+                keys
+            };
+
+            assert_eq!(keys("projects"), ["aliases_to_ids", "graph"]);
+            assert_eq!(keys("tasks"), ["graph"]);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn loads_from_cache() {
             let (sandbox, graph) = build_cached_graph(|sandbox| {
                 sandbox.enable_git();

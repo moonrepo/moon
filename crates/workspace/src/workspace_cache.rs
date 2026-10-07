@@ -6,7 +6,12 @@ use moon_common::{Id, is_docker};
 use moon_env_var::GlobalEnvBag;
 use moon_hash::{ContentHasher, fingerprint};
 use moon_pdk_api::VirtualPath;
+use serde::Serialize;
+use serde::de::DeserializeOwned;
+use starbase_utils::fs;
+use starbase_utils::json::{JsonError, serde_json};
 use std::collections::{BTreeMap, BTreeSet};
+use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::sync::Arc;
 use tracing::trace;
@@ -246,4 +251,35 @@ pub async fn create_graph_cache_hasher(
     hasher.hash_content(&fingerprint)?;
 
     Ok(hasher)
+}
+
+/// Read the cached graph from the file system. The file is written by moon,
+/// and never contains comments, so it's parsed directly from bytes, without
+/// stripping comments, or converting to a string.
+pub fn read_cache_file<T: DeserializeOwned>(path: &Path) -> miette::Result<T> {
+    let data = fs::read_file_bytes(path)?;
+
+    serde_json::from_slice(&data).map_err(|error| {
+        JsonError::ReadFile {
+            path: path.to_path_buf(),
+            error: Box::new(error),
+        }
+        .into()
+    })
+}
+
+/// Write the cached graph to the file system, streaming it through a buffer
+/// instead of serializing it into a string first.
+pub fn write_cache_file<T: Serialize>(path: &Path, data: &T) -> miette::Result<()> {
+    let mut writer = BufWriter::new(fs::create_file(path)?);
+
+    serde_json::to_writer(&mut writer, data)
+        .and_then(|_| writer.flush().map_err(serde_json::Error::io))
+        .map_err(|error| {
+            JsonError::WriteFile {
+                path: path.to_path_buf(),
+                error: Box::new(error),
+            }
+            .into()
+        })
 }

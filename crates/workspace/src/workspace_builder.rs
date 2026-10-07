@@ -8,14 +8,13 @@ use moon_common::{Id, path::WorkspaceRelativePathBuf};
 use moon_config::{ExtensionsConfig, InheritedTasksManager, ToolchainsConfig, WorkspaceConfig};
 use moon_config_loader::ConfigLoader;
 use moon_extension_plugin::ExtensionRegistry;
-use moon_graph_utils::GraphExpanderContext;
+use moon_graph_utils::{GraphExpanderContext, NodeState};
 use moon_hash::{ContentHasher, Digest};
 use moon_toolchain_plugin::ToolchainRegistry;
 use moon_vcs::BoxedVcs;
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
-use starbase_utils::json;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -133,19 +132,27 @@ impl WorkspaceBuilder {
         );
 
         if digest.hash == state.data.last_hash && cache_path.exists() {
-            let mut cache: WorkspaceBuilder = json::read_file(&cache_path)?;
+            let mut cache: WorkspaceBuilder = read_cache_file(&cache_path)?;
 
             // Verify that the cached projects match the current projects
             // on disk. If a project has been added or removed since the
             // cache was created, we need to rebuild the graph
-            let cached_ids: FxHashSet<&Id> = cache.projects.ids_to_indexes.keys().collect();
+            let cached_ids: FxHashSet<&Id> = cache
+                .projects
+                .graph
+                .node_weights()
+                .filter_map(|node| match node {
+                    NodeState::Loaded(project) => Some(&project.id),
+                    NodeState::Loading => None,
+                })
+                .collect();
             let current_ids: FxHashSet<&Id> = graph.projects.build_data.keys().collect();
 
             if cached_ids == current_ids {
                 debug!(
                     cache = ?cache_path,
                     "Loading workspace graph with {} projects from cache",
-                    cache.projects.ids_to_indexes.len(),
+                    cached_ids.len(),
                 );
 
                 cache.projects.context = graph.projects.context.take();
@@ -197,7 +204,7 @@ impl WorkspaceBuilder {
         state.data.last_hash = digest.hash;
         state.save()?;
 
-        json::write_file(cache_path, &graph, false)?;
+        write_cache_file(&cache_path, &graph)?;
 
         Ok(graph)
     }

@@ -5,7 +5,7 @@ use moon_common::{
 };
 use moon_config::{
     DependencyScope, InheritedTasks, LanguageType, LayerType, ProjectConfig,
-    ProjectDependencyConfig, StackType,
+    ProjectDependencyConfig, StackType, is_default,
 };
 use moon_file_group::FileGroup;
 use moon_task::{Target, Task};
@@ -54,9 +54,11 @@ cacheable!(
         pub inherited: Option<InheritedTasks>,
 
         /// Primary programming language of the project.
+        #[serde(skip_serializing_if = "is_default")]
         pub language: LanguageType,
 
         /// The type of layer within the stack. Is used for layer constraints.
+        #[serde(skip_serializing_if = "is_default")]
         pub layer: LayerType,
 
         /// Absolute path to the project's root folder.
@@ -66,6 +68,7 @@ cacheable!(
         pub source: WorkspaceRelativePathBuf,
 
         /// The technology stack of the project.
+        #[serde(skip_serializing_if = "is_default")]
         pub stack: StackType,
 
         /// Tasks specific to the project. Inherits all tasks from the global config.

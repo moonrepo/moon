@@ -127,26 +127,6 @@ only load plugins whose entry is missing or stale. Keep `load_all` on the miss p
   aren't instantiated on a hit" (a `register_toolchain` marker file in `tc-tier1`, like the existing
   `extend_project_graph` one, makes this testable).
 
-### F6. Slim the cache file and its I/O
-
-- **a.** `#[serde(skip)]` the builder-only fields (`ids_to_indexes`, `targets_to_indexes`,
-  `config_paths`, `renamed_ids`, `build_data`). `finalize` rebuilds its maps from node weights, but
-  the ID set guard currently reads `ids_to_indexes`, so do this with or after F1/F9.
-- **b.** Read and write the graph with `serde_json` directly (`from_slice` and a buffered
-  `to_writer`), skipping the comment-stripping pass and the intermediate `String`. The file is
-  machine-written, so it never has comments.
-- **c.** `Project.inherited` stores the full `InheritedTasks` (every config, plus layers) per
-  project, but after the build only `moon project` (config names) and `moon task` (layers) read it.
-  A summary type would remove ~half the project graph bytes and a per-project deep clone. **This
-  changes the `moon project --json` shape**, so it needs a decision.
-- **d.** `TaskOptions` serializes all ~34 fields with no `skip_serializing_if` (55% of task bytes
-  here), but it's also the `moon query tasks --json` shape. Lower priority than (c).
-
-- **Impact:** (a) and (b) are small but free. (c) is the big one for large repos (estimate 30–50%
-  smaller file, and proportionally faster parsing).
-- **Risk:** All of these change the cache format, so caches miss once. (c) and (d) change public
-  JSON and the TypeScript types.
-
 ### F7. Check cycles once, in bulk
 
 The miss path checks each edge with `would_cycle_in_scope`
@@ -179,15 +159,6 @@ instead of a hard error. With F1, compare cached project sources instead of IDs.
 - **Verify:** A new `cache` test that corrupts `workspaceGraph.json`, and asserts the next build
   rebuilds instead of erroring.
 
-### F10. Don't panic without a VCS
-
-`new_with_cache` calls `.expect("VCS is required for workspace graph caching!")`
-([workspace_builder.rs:71](../../crates/workspace/src/workspace_builder.rs#L71)), and the mocker
-only avoids it by checking for `.git` first.
-
-**Change:** `context.vcs.as_ref().is_some_and(|vcs| vcs.is_enabled())`, falling through to the
-existing uncached branch.
-
 ### F11. Bound config loading, and apply it in order
 
 `load_build_data` spawns a blocking task per project
@@ -202,18 +173,6 @@ applies outputs in input order, with sources sorted by ID.
 - **Impact:** Bounded threads and deterministic errors. Probably most of the 1000 project bench
   variance (a hypothesis, so re-run the bench to confirm).
 - **Verify:** `errors_duplicate_ids`, `custom_id::errors_duplicate_ids_from_rename`, and the bench.
-
-### F12. Let `hash_files` probe `inheritedBy.files`
-
-`find_inherited_by_files` stats every project and file pair serially on the async thread
-([workspace_cache.rs:145](../../crates/workspace/src/workspace_cache.rs#L145)), but `hash_files`
-already omits missing files.
-
-**Change:** Add every `source.join(file_name)` to the hashed paths directly, as toolchain manifest
-paths already are. Missing files still contribute by their absence, so the hash inputs are
-identical.
-
-- **Verify:** `cache::invalidation::with_inherited_by_file_*`.
 
 ### F13. Reduce allocation churn
 

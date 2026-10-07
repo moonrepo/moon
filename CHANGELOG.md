@@ -25,6 +25,12 @@
     moon's task pool, and hashing files through the VCS has been removed. The setting must be
     removed from `.moon/workspace.*`, as unknown settings fail validation, and the
     `MOON_EXPERIMENT_NATIVE_FILE_HASHING` environment variable no longer has any effect.
+- **Projects and tasks**
+  - Fields that are the default value are now omitted when projects and tasks are serialized to
+    JSON, like in `moon project --json`, `moon task --json`, and `moon query projects|tasks`. This
+    includes most task `options` (like `cache`, `persistent`, and `runInCI`), a project's
+    `language`, `layer`, and `stack` when they're `unknown`, and empty file group lists. A missing
+    field is its default value, and the `@moonrepo/types` types have been updated to match.
 
 #### 🚀 Updates
 
@@ -71,12 +77,17 @@
     - A workspace without any projects no longer locates and loads projects twice.
   - The graph's cache now stores a single hash manifest, instead of also storing an unused one when
     plugins discovered new input files.
+  - The graph's cache file is now about a third smaller, as data that's only used while building the
+    graph is no longer cached, and task options are omitted when they're the default value. It's
+    also read and written directly, without stripping comments or creating an intermediate string.
 
 #### 🐞 Fixes
 
 - Fixed an issue where project constraints (layers and tags) were only enforced for one of the
   relationships between 2 projects, when a project depended on another multiple times (like by its
   ID and an alias) with different scopes.
+- Fixed an issue where task input globs configured with `cache: false` were read back as cached
+  when deserialized from JSON, like when WASM plugins load tasks.
 
 ## 2.6.1
 

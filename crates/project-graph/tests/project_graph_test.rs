@@ -457,6 +457,22 @@ tasks:
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_cache_if_no_vcs_adapter() {
+            let sandbox = create_moon_sandbox("dependencies");
+
+            // Without a `.git` folder, the mocker doesn't create a VCS adapter,
+            // so caching must be skipped, instead of requiring one
+            create_workspace_mocker(sandbox.path())
+                .mock_workspace_graph_with_options(WorkspaceMockOptions {
+                    cache: true,
+                    ..Default::default()
+                })
+                .await;
+
+            assert!(!sandbox.path().join(CACHE_PATH).exists())
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn caches_if_vcs() {
             let (sandbox, _graph) = build_cached_graph(|sandbox| {
                 sandbox.enable_git();
@@ -751,6 +767,33 @@ tasks:
                 do_generate_with_plugins(sandbox.path()).await;
 
                 assert!(!marker.exists());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn stores_one_manifest_after_discovering_plugin_input_files() {
+                let sandbox = build_plugins_cached_graph(|sandbox| {
+                    sandbox.create_file("a/tc.lock", "");
+                })
+                .await;
+
+                let state = load_state(&sandbox);
+                let mut blobs = vec![];
+
+                for shard in std::fs::read_dir(sandbox.path().join(".moon/cache/blobs")).unwrap() {
+                    let shard = shard.unwrap();
+
+                    for blob in std::fs::read_dir(shard.path()).unwrap() {
+                        blobs.push(format!(
+                            "{}{}",
+                            shard.file_name().to_string_lossy(),
+                            blob.unwrap().file_name().to_string_lossy()
+                        ));
+                    }
+                }
+
+                // The hash was regenerated with the discovered input files,
+                // but only the final manifest is stored
+                assert_eq!(blobs, [state.last_hash.as_str()]);
             }
 
             #[tokio::test(flavor = "multi_thread")]
@@ -2009,6 +2052,22 @@ tasks:
                 append_file(
                     sandbox.path().join("app/moon.yml"),
                     "dependsOn: [app-other]",
+                );
+            })
+            .await;
+        }
+
+        // A project may depend on another multiple times, by its ID and an
+        // alias, so every relationship must be enforced, with its own scope
+        #[tokio::test(flavor = "multi_thread")]
+        #[should_panic(expected = "Layering violation: Project app with layer application")]
+        async fn app_cannot_use_app_through_another_relationship() {
+            build_layer_constraints_graph(|sandbox| {
+                sandbox.create_file("app-other/package.json", r#"{ "name": "other" }"#);
+
+                append_file(
+                    sandbox.path().join("app/moon.yml"),
+                    "dependsOn:\n  - id: 'other'\n    scope: 'production'\n  - id: 'app-other'\n    scope: 'build'",
                 );
             })
             .await;

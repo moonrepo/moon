@@ -66,6 +66,17 @@
       background while the graph is built, instead of one command after another once it was built.
     - Projects and tasks are no longer cloned when finalizing the graph.
     - Project configs are no longer formatted into tracing spans while building.
+    - Files that `inheritedBy.files` depends on are no longer checked for existence one at a time
+      when hashing the graph's cache, as missing files are already omitted from the hash.
+    - A workspace without any projects no longer locates and loads projects twice.
+  - The graph's cache now stores a single hash manifest, instead of also storing an unused one when
+    plugins discovered new input files.
+
+#### 🐞 Fixes
+
+- Fixed an issue where project constraints (layers and tags) were only enforced for one of the
+  relationships between 2 projects, when a project depended on another multiple times (like by its
+  ID and an alias) with different scopes.
 
 ## 2.6.1
 

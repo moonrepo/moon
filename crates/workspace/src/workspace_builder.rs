@@ -9,7 +9,7 @@ use moon_config::{ExtensionsConfig, InheritedTasksManager, ToolchainsConfig, Wor
 use moon_config_loader::ConfigLoader;
 use moon_extension_plugin::ExtensionRegistry;
 use moon_graph_utils::GraphExpanderContext;
-use moon_hash::Digest;
+use moon_hash::{ContentHasher, Digest};
 use moon_toolchain_plugin::ToolchainRegistry;
 use moon_vcs::BoxedVcs;
 use moon_workspace_graph::WorkspaceGraph;
@@ -43,8 +43,15 @@ pub struct WorkspaceBuilderContext {
 
 #[derive(Deserialize, Serialize)]
 pub struct WorkspaceBuilder {
+    /// The context is not serialized, so it's optional for deserializing
+    /// a cached builder, and is set immediately after.
     #[serde(skip)]
     context: Option<Arc<WorkspaceBuilderContext>>,
+
+    /// Whether the graphs have been loaded. A cached builder has always
+    /// been loaded, and is marked as such immediately after deserializing.
+    #[serde(skip)]
+    loaded: bool,
 
     /// VCS information, which is loaded in the background while
     /// the graphs are built, and awaited when finalizing them.
@@ -65,6 +72,7 @@ impl WorkspaceBuilder {
         let context = Arc::new(context);
 
         Ok(WorkspaceBuilder {
+            loaded: false,
             projects: WorkspaceProjectsBuilder::new(Arc::clone(&context)),
             tasks: WorkspaceTasksBuilder::new(),
             vcs_handle: context
@@ -77,11 +85,7 @@ impl WorkspaceBuilder {
 
     #[instrument(skip_all)]
     pub async fn new_with_cache(context: WorkspaceBuilderContext) -> miette::Result<Self> {
-        let is_vcs_enabled = context
-            .vcs
-            .as_ref()
-            .expect("VCS is required for workspace graph caching!")
-            .is_enabled();
+        let is_vcs_enabled = context.vcs.as_ref().is_some_and(|vcs| vcs.is_enabled());
         let mut graph = Self::new(context).await?;
 
         // No VCS to hash with, so abort caching
@@ -118,9 +122,10 @@ impl WorkspaceBuilder {
             .map(|(id, build_data)| (id.clone(), build_data.source.clone()))
             .collect::<BTreeMap<_, _>>();
 
-        let mut digest = graph
-            .generate_cache_digest(&projects, state.data.plugin_input_paths.clone())
+        let mut hasher = graph
+            .create_cache_hasher(&projects, state.data.plugin_input_paths.clone())
             .await?;
+        let digest = Digest::from_hasher(&mut hasher)?;
 
         debug!(
             hash = digest.hash.as_str(),
@@ -145,7 +150,14 @@ impl WorkspaceBuilder {
 
                 cache.projects.context = graph.projects.context.take();
                 cache.context = graph.context;
+                cache.loaded = true;
                 cache.vcs_handle = graph.vcs_handle;
+
+                context
+                    .cache_engine
+                    .storage
+                    .store_hash_manifest_with_hasher(hasher)
+                    .await?;
 
                 return Ok(cache);
             }
@@ -165,15 +177,22 @@ impl WorkspaceBuilder {
         graph.load_graphs().await?;
 
         // If plugins discovered a different set of input files, regenerate
-        // the digest with them included, otherwise the next run would be
+        // the hash with them included, otherwise the next run would be
         // a guaranteed cache miss
         if graph.projects.plugin_input_paths != state.data.plugin_input_paths {
             state.data.plugin_input_paths = graph.projects.plugin_input_paths.clone();
 
-            digest = graph
-                .generate_cache_digest(&projects, state.data.plugin_input_paths.clone())
+            hasher = graph
+                .create_cache_hasher(&projects, state.data.plugin_input_paths.clone())
                 .await?;
         }
+
+        // Only store the final manifest, as the hash may have been regenerated
+        let digest = context
+            .cache_engine
+            .storage
+            .store_hash_manifest_with_hasher(hasher)
+            .await?;
 
         state.data.last_hash = digest.hash;
         state.save()?;
@@ -190,37 +209,35 @@ impl WorkspaceBuilder {
     }
 
     pub async fn load_graphs(&mut self) -> miette::Result<()> {
-        if self.has_loaded_graphs() {
+        if self.loaded {
             return Ok(());
         }
 
         self.projects.build(None).await?;
         self.tasks.build(self.projects.extract_tasks()?)?;
+        self.loaded = true;
 
         Ok(())
     }
 
     pub async fn load_graphs_for(&mut self, ids: Vec<Id>) -> miette::Result<()> {
-        if self.has_loaded_graphs() {
+        if self.loaded {
             return Ok(());
         }
 
         self.projects.build(Some(ids)).await?;
         self.tasks.build(self.projects.extract_tasks()?)?;
+        self.loaded = true;
 
         Ok(())
     }
 
-    fn has_loaded_graphs(&self) -> bool {
-        self.projects.graph.node_count() > 0
-    }
-
-    async fn generate_cache_digest(
+    async fn create_cache_hasher(
         &self,
         projects: &BTreeMap<Id, WorkspaceRelativePathBuf>,
         plugin_input_paths: BTreeSet<WorkspaceRelativePathBuf>,
-    ) -> miette::Result<Digest> {
-        generate_graph_cache_digest(
+    ) -> miette::Result<ContentHasher> {
+        create_graph_cache_hasher(
             self.context(),
             projects,
             self.projects.config_paths.iter().cloned().collect(),

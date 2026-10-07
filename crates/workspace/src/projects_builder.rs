@@ -190,6 +190,8 @@ pub async fn build_project(
 
 #[derive(Deserialize, Serialize)]
 pub struct WorkspaceProjectsBuilder {
+    /// The context is not serialized, so it's optional for deserializing
+    /// a cached builder, and is set immediately after.
     #[serde(skip)]
     pub context: Option<Arc<WorkspaceBuilderContext>>,
 
@@ -198,6 +200,10 @@ pub struct WorkspaceProjectsBuilder {
 
     /// Cached projects build data.
     pub build_data: ProjectBuildDataMap,
+
+    /// Whether the build data was preloaded, as it may be empty.
+    #[serde(skip)]
+    preloaded: bool,
 
     /// List of config paths used in the hashing process.
     /// These are used for invalidation.
@@ -219,9 +225,6 @@ pub struct WorkspaceProjectsBuilder {
 
     /// The project DAG.
     pub graph: ProjectDiGraph,
-
-    /// Map of original project IDs to renamed IDs.
-    renamed_ids: FxHashMap<Id, Id>,
 
     /// The type of repository: monorepo or polyrepo.
     repo_type: RepoType,
@@ -289,7 +292,7 @@ impl WorkspaceProjectsBuilder {
             ids_to_target_options: FxHashMap::default(),
             target_to_has_outputs: FxHashMap::default(),
             graph: ProjectDiGraph::default(),
-            renamed_ids: FxHashMap::default(),
+            preloaded: false,
             repo_type: RepoType::Unknown,
             root_id: None,
             tags_to_ids: FxHashMap::default(),
@@ -301,6 +304,7 @@ impl WorkspaceProjectsBuilder {
     #[instrument(skip_all)]
     pub async fn preload(&mut self) -> miette::Result<()> {
         self.build_data = self.load().await?;
+        self.preloaded = true;
 
         Ok(())
     }
@@ -308,16 +312,16 @@ impl WorkspaceProjectsBuilder {
     /// Load and build all projects into the graph, as configured in the workspace.
     #[instrument(skip_all)]
     pub async fn build(&mut self, ids: Option<Vec<Id>>) -> miette::Result<()> {
-        let mut data = if self.build_data.is_empty() {
-            self.load().await?
-        } else {
+        let mut data = if self.preloaded {
             mem::take(&mut self.build_data)
+        } else {
+            self.load().await?
         };
 
         // Extend projects with plugins before building, so that the
         // cached flow can skip these plugin calls entirely on a hit
         self.extend_build_data(&mut data).await?;
-        self.determine_repo_type(&data)?;
+        self.determine_repo_type(&data);
         self.build_graph(ids, data).await?;
 
         Ok(())
@@ -517,7 +521,7 @@ impl WorkspaceProjectsBuilder {
 
     /// Determine the repository type/structure based on the number of project
     /// sources, and where the point to.
-    fn determine_repo_type(&mut self, projects_data: &ProjectBuildDataMap) -> miette::Result<()> {
+    fn determine_repo_type(&mut self, projects_data: &ProjectBuildDataMap) {
         let single_project = projects_data.len() == 1;
         let mut has_root_project = false;
         let mut root_project_id = None;
@@ -539,8 +543,6 @@ impl WorkspaceProjectsBuilder {
         if self.repo_type == RepoType::MonorepoWithRoot {
             self.root_id = root_project_id;
         }
-
-        Ok(())
     }
 
     /// Enforce project constraints and boundaries after all nodes have been inserted.
@@ -558,36 +560,23 @@ impl WorkspaceProjectsBuilder {
             return Ok(());
         }
 
-        let default_scope = DependencyScope::Build;
-
         for (project_index, project_state) in self.graph.node_references() {
             let NodeState::Loaded(project) = project_state else {
                 continue;
             };
 
-            let deps: Vec<_> = self
+            // A project may depend on another multiple times (by its ID and
+            // an alias), so check every edge, as each may have a different scope
+            for edge in self
                 .graph
-                .neighbors_directed(project_index, Direction::Outgoing)
-                .flat_map(|dep_index| {
-                    self.graph.node_weight(dep_index).and_then(|dep| {
-                        match dep {
-                            NodeState::Loading => None,
-                            NodeState::Loaded(dep) => {
-                                Some((
-                                    dep,
-                                    // Is this safe?
-                                    self.graph
-                                        .find_edge(project_index, dep_index)
-                                        .and_then(|ei| self.graph.edge_weight(ei))
-                                        .unwrap_or(&default_scope),
-                                ))
-                            }
-                        }
-                    })
-                })
-                .collect();
+                .edges_directed(project_index, Direction::Outgoing)
+            {
+                let Some(NodeState::Loaded(dep)) = self.graph.node_weight(edge.target()) else {
+                    continue;
+                };
 
-            for (dep, dep_scope) in deps {
+                let dep_scope = edge.weight();
+
                 if layer_relationships {
                     enforce_layer_relationships(project, dep, dep_scope)?;
                 }
@@ -677,9 +666,6 @@ impl WorkspaceProjectsBuilder {
             .into());
         }
 
-        // Free up some memory
-        mem::take(&mut self.renamed_ids);
-
         Ok(build_data)
     }
 
@@ -692,7 +678,8 @@ impl WorkspaceProjectsBuilder {
         let config_label = context.config_loader.get_debug_label("moon");
         let config_names = context.config_loader.get_project_file_names();
         let mut projects_data = FxHashMap::<Id, ProjectBuildData>::default();
-        let mut dupe_original_ids = FxHashSet::default();
+        let mut renamed_ids = FxHashSet::default();
+        let mut dupe_renamed_ids = FxHashSet::default();
 
         debug!("Loading projects");
 
@@ -719,9 +706,21 @@ impl WorkspaceProjectsBuilder {
         while let Some(result) = set.join_next().await {
             let mut build_data = result.into_diagnostic()??;
 
-            // Track ID renames
+            // Rename the project if an explicit ID was configured
             if let Some((old_id, new_id)) = build_data.rename_id_if_configured() {
-                self.track_id_rename(old_id, new_id, &mut dupe_original_ids, &mut build_data);
+                debug!(
+                    old_id = old_id.as_str(),
+                    new_id = new_id.as_str(),
+                    "Project has been configured with an explicit identifier of {}, renaming from {}",
+                    color::id(&new_id),
+                    color::id(&old_id),
+                );
+
+                if !renamed_ids.insert(old_id.clone()) {
+                    dupe_renamed_ids.insert(old_id);
+                }
+
+                build_data.id = Some(new_id);
             }
 
             let id = build_data.id.take().expect("Missing project ID!");
@@ -741,15 +740,11 @@ impl WorkspaceProjectsBuilder {
             projects_data.insert(id, build_data);
         }
 
-        if !dupe_original_ids.is_empty() {
+        if !dupe_renamed_ids.is_empty() {
             debug!(
-                original_ids = ?dupe_original_ids.iter().collect::<Vec<_>>(),
-                "Found multiple renamed projects with the same original ID; will ignore these IDs within lookups"
+                original_ids = ?dupe_renamed_ids.iter().collect::<Vec<_>>(),
+                "Found multiple renamed projects with the same original ID",
             );
-
-            for dupe_id in dupe_original_ids {
-                self.renamed_ids.remove(&dupe_id);
-            }
         }
 
         debug!("Loaded {} projects", projects_data.len());
@@ -875,30 +870,6 @@ impl WorkspaceProjectsBuilder {
         }
 
         Ok(())
-    }
-
-    fn track_id_rename(
-        &mut self,
-        old_id: Id,
-        new_id: Id,
-        duplicate_ids: &mut FxHashSet<Id>,
-        project_data: &mut ProjectBuildData,
-    ) {
-        debug!(
-            old_id = old_id.as_str(),
-            new_id = new_id.as_str(),
-            "Project has been configured with an explicit identifier of {}, renaming from {}",
-            color::id(&new_id),
-            color::id(&old_id),
-        );
-
-        if self.renamed_ids.contains_key(&old_id) {
-            duplicate_ids.insert(old_id.clone());
-        } else {
-            self.renamed_ids.insert(old_id.clone(), new_id.clone());
-        }
-
-        project_data.id = Some(new_id);
     }
 
     fn context(&self) -> Arc<WorkspaceBuilderContext> {

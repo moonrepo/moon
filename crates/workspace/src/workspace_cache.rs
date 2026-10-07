@@ -4,7 +4,7 @@ use moon_cache::{ContentHash, cache_item};
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_common::{Id, is_docker};
 use moon_env_var::GlobalEnvBag;
-use moon_hash::{Digest, fingerprint};
+use moon_hash::{ContentHasher, fingerprint};
 use moon_pdk_api::VirtualPath;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
@@ -140,9 +140,10 @@ async fn hash_input_paths(
 }
 
 /// Tasks may only be inherited when a file exists within a project
-/// (`inheritedBy.files`), so we must track which of these files exist,
-/// otherwise adding or removing them would not invalidate the cache.
-fn find_inherited_by_files(
+/// (`inheritedBy.files`), so these files must be hashed, otherwise adding,
+/// removing, or changing them would not invalidate the cache. Every possible
+/// path is returned, as missing files are omitted when hashing.
+fn get_inherited_by_paths(
     context: &WorkspaceBuilderContext,
     projects: &BTreeMap<Id, WorkspaceRelativePathBuf>,
 ) -> BTreeSet<WorkspaceRelativePathBuf> {
@@ -157,34 +158,27 @@ fn find_inherited_by_files(
 
     let mut paths = BTreeSet::default();
 
-    if file_names.is_empty() {
-        return paths;
-    }
-
-    for source in projects.values() {
-        let root = source.to_logical_path(&context.workspace_root);
-
-        for file_name in &file_names {
-            if root.join(file_name).exists() {
-                paths.insert(source.join(file_name));
-            }
+    for file_name in file_names {
+        for source in projects.values() {
+            paths.insert(source.join(file_name));
         }
     }
 
     paths
 }
 
-/// Generate a digest for the current workspace, derived from project
+/// Create a hasher for the current workspace, derived from project
 /// sources, config and `inheritedBy` file contents, plugin input files
 /// (discovered while extending the graph during the previous build),
-/// plugin versions, and environment variables. This digest is used to
-/// invalidate the cached workspace graph.
-pub async fn generate_graph_cache_digest(
+/// plugin versions, and environment variables. Its hash is used to
+/// invalidate the cached workspace graph. The hasher is not stored as
+/// a manifest, as the hash may be regenerated before it's stored.
+pub async fn create_graph_cache_hasher(
     context: Arc<WorkspaceBuilderContext>,
     projects: &BTreeMap<Id, WorkspaceRelativePathBuf>,
     config_paths: BTreeSet<WorkspaceRelativePathBuf>,
     plugin_input_paths: BTreeSet<WorkspaceRelativePathBuf>,
-) -> miette::Result<Digest> {
+) -> miette::Result<ContentHasher> {
     let extension_context = Arc::clone(&context);
     let extension_handle = tokio::spawn(async move {
         let mut versions = BTreeMap::default();
@@ -239,7 +233,7 @@ pub async fn generate_graph_cache_digest(
     let mut all_paths = config_paths;
     all_paths.extend(toolchain_paths);
     all_paths.extend(plugin_input_paths);
-    all_paths.extend(find_inherited_by_files(&context, projects));
+    all_paths.extend(get_inherited_by_paths(&context, projects));
 
     let mut fingerprint = WorkspaceGraphFingerprint::default();
     fingerprint.add_projects(projects);
@@ -248,9 +242,8 @@ pub async fn generate_graph_cache_digest(
     fingerprint.add_toolchain_versions(&toolchain_versions);
     fingerprint.gather_env();
 
-    context
-        .cache_engine
-        .storage
-        .store_hash_manifest("workspace-graph", &fingerprint)
-        .await
+    let mut hasher = ContentHasher::new("workspace-graph");
+    hasher.hash_content(&fingerprint)?;
+
+    Ok(hasher)
 }

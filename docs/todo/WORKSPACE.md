@@ -127,53 +127,6 @@ only load plugins whose entry is missing or stale. Keep `load_all` on the miss p
   aren't instantiated on a hit" (a `register_toolchain` marker file in `tc-tier1`, like the existing
   `extend_project_graph` one, makes this testable).
 
-### F7. Check cycles once, in bulk
-
-The miss path checks each edge with `would_cycle_in_scope`
-([projects_builder.rs:455](../../crates/workspace/src/projects_builder.rs#L455)), and every path
-then inserts each edge into 2 daggy `Dag`s in `set_graph`, whose `add_edge` runs its own path check
-([project_graph.rs:341](../../crates/project-graph/src/project_graph.rs#L341)). That's O(E·(V+E)),
-on a graph that's already been validated on a hit.
-
-**Change:** In `set_graph`, add each partition's edges in bulk and check once with
-`is_cyclic_directed` (as daggy's `add_edges` does). Only on failure, fall back to per-edge insertion
-to report the same first offending edge. `would_cycle_in_scope` in `build_graph` then becomes
-redundant, unless failing before building the remaining projects is preferred.
-
-- **Impact:** Small for sparse graphs. Estimate tens of ms at 5000 projects with deep chains.
-- **Risk:** Low–medium. Cross-crate, and the error messages and first offending edge must match.
-- **Verify:** `set_graph_*` unit tests, and the `cycles` module.
-
-### F9. Write the graph before the state, and treat a bad cache as a miss
-
-`new_with_cache` saves the state (with the new hash) _before_ writing `workspaceGraph.json`
-([workspace_builder.rs:165](../../crates/workspace/src/workspace_builder.rs#L165)). If the process
-dies between the two, the next run hits on a stale graph, and the ID set guard only catches added or
-removed projects, not changed ones. The workspace watcher also deletes both files without taking the
-lock ([workspace_watcher.rs:149](../../crates/app/src/watchers/workspace_watcher.rs#L149)).
-
-**Change:** Write the graph first (ideally to a temp file, then rename), then save the state. Drop
-the `cache_path.exists()` pre-check, and treat an unreadable graph as a miss (logged at debug)
-instead of a hard error. With F1, compare cached project sources instead of IDs.
-
-- **Verify:** A new `cache` test that corrupts `workspaceGraph.json`, and asserts the next build
-  rebuilds instead of erroring.
-
-### F11. Bound config loading, and apply it in order
-
-`load_build_data` spawns a blocking task per project
-([projects_builder.rs:715](../../crates/workspace/src/projects_builder.rs#L715)) and applies results
-in completion order. Tokio's blocking pool grows to 512 threads, so large repos spin up hundreds of
-threads to parse YAML (contending with the rayon glob walker), and which `DuplicateProjectId` error
-is reported depends on which parse finishes first.
-
-**Change:** Use `moon_async_utils::run_pooled_blocking_tasks`, which is bounded to the CPU count and
-applies outputs in input order, with sources sorted by ID.
-
-- **Impact:** Bounded threads and deterministic errors. Probably most of the 1000 project bench
-  variance (a hypothesis, so re-run the bench to confirm).
-- **Verify:** `errors_duplicate_ids`, `custom_id::errors_duplicate_ids_from_rename`, and the bench.
-
 ### F13. Reduce allocation churn
 
 Small and mechanical, best done while touching these files:

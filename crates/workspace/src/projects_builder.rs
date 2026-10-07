@@ -5,7 +5,7 @@ use crate::workspace_builder::WorkspaceBuilderContext;
 use crate::workspace_builder_error::WorkspaceBuilderError;
 use crate::workspace_cache::map_plugin_input_paths;
 use miette::IntoDiagnostic;
-use moon_async_utils::run_pooled_tasks;
+use moon_async_utils::{run_pooled_blocking_tasks, run_pooled_tasks};
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source};
 use moon_common::{Id, color};
 use moon_config::{
@@ -17,7 +17,7 @@ use moon_pdk_api::{ExtendProjectGraphInput, ExtendProjectGraphOutput, ExtendProj
 use moon_project::{Project, ProjectAlias};
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_layer_relationships, enforce_tag_relationships};
-use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectNode, would_cycle_in_scope};
+use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectNode, find_cycle_in_scopes};
 use moon_task::{Target, Task, TaskOptions};
 use moon_task_builder::TaskDepsBuilder;
 use petgraph::prelude::*;
@@ -28,7 +28,6 @@ use starbase_utils::glob::{self, GlobWalkOptions};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::mem;
 use std::sync::Arc;
-use tokio::task::JoinSet;
 use tracing::{debug, instrument};
 
 pub type ProjectDiGraph = DiGraph<NodeState<Project>, DependencyScope>;
@@ -465,22 +464,6 @@ impl WorkspaceProjectsBuilder {
                     if !dep_config.is_root_scope() {
                         let to_index = self.get_or_insert_node(&dep_config.id);
 
-                        // Only error when the cycle exists within the scope's
-                        // partition, as cycles that cross the production and
-                        // development boundary are legitimate
-                        if would_cycle_in_scope(
-                            &self.graph,
-                            from_index,
-                            to_index,
-                            &dep_config.scope,
-                        ) {
-                            return Err(ProjectGraphError::WouldCycle {
-                                source_id: project.id.to_string(),
-                                target_id: dep_config.id.to_string(),
-                            }
-                            .into());
-                        }
-
                         self.graph.add_edge(from_index, to_index, dep_config.scope);
                     }
                 }
@@ -526,6 +509,27 @@ impl WorkspaceProjectsBuilder {
             },
         )
         .await?;
+
+        // Only error when a cycle exists within a scope's partition, as cycles that
+        // cross the production and development boundary are legitimate. This is
+        // checked once all edges exist, instead of on every insertion, but before
+        // the task graph is built, so that the cycle is what's reported
+        if let Some(edge) = find_cycle_in_scopes(&self.graph) {
+            let (source, target) = self.graph.edge_endpoints(edge).unwrap();
+            let label = |index| {
+                self.ids_to_indexes
+                    .iter()
+                    .find(|(_, node_index)| **node_index == index)
+                    .map(|(id, _)| id.to_string())
+                    .unwrap_or_default()
+            };
+
+            return Err(ProjectGraphError::WouldCycle {
+                source_id: label(source),
+                target_id: label(target),
+            }
+            .into());
+        }
 
         Ok(())
     }
@@ -683,7 +687,7 @@ impl WorkspaceProjectsBuilder {
     #[instrument(skip_all)]
     async fn load_build_data(
         &mut self,
-        sources: Vec<(Id, WorkspaceRelativePathBuf)>,
+        mut sources: Vec<(Id, WorkspaceRelativePathBuf)>,
     ) -> miette::Result<ProjectBuildDataMap> {
         let context = self.context();
         let config_label = context.config_loader.get_debug_label("moon");
@@ -694,9 +698,11 @@ impl WorkspaceProjectsBuilder {
 
         debug!("Loading projects");
 
-        let mut set = JoinSet::new();
+        // Sort the sources, as the results are applied in this order,
+        // so that duplicate ID errors (and debug logs) are deterministic
+        sources.sort();
 
-        for (id, source) in sources {
+        for (id, source) in &sources {
             debug!(
                 project_id = id.as_str(),
                 "Attempting to load {} (optional)",
@@ -707,16 +713,26 @@ impl WorkspaceProjectsBuilder {
             for name in &config_names {
                 self.config_paths.insert(source.join(name));
             }
-
-            // Load each project config in parallel
-            let context = Arc::clone(&context);
-
-            set.spawn_blocking(move || load_project_build_data(context, id, source));
         }
 
-        while let Some(result) = set.join_next().await {
-            let mut build_data = result.into_diagnostic()??;
+        // Load project configs in parallel, bounded to the number of CPUs,
+        // instead of a blocking thread per project
+        let mut results = vec![];
 
+        run_pooled_blocking_tasks(
+            sources,
+            move |(id, source)| {
+                load_project_build_data(Arc::clone(&context), id.to_owned(), source.to_owned())
+            },
+            |build_data| {
+                results.push(build_data);
+
+                Ok(())
+            },
+        )
+        .await?;
+
+        for mut build_data in results {
             // Rename the project if an explicit ID was configured
             if let Some((old_id, new_id)) = build_data.rename_id_if_configured() {
                 debug!(

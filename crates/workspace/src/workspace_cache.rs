@@ -12,7 +12,7 @@ use starbase_utils::fs;
 use starbase_utils::json::{JsonError, serde_json};
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::{BufWriter, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tracing::trace;
 
@@ -269,17 +269,30 @@ pub fn read_cache_file<T: DeserializeOwned>(path: &Path) -> miette::Result<T> {
 }
 
 /// Write the cached graph to the file system, streaming it through a buffer
-/// instead of serializing it into a string first.
+/// instead of serializing it into a string first. It's written to a temporary
+/// file that's then renamed, so that a partially written graph is never read.
 pub fn write_cache_file<T: Serialize>(path: &Path, data: &T) -> miette::Result<()> {
-    let mut writer = BufWriter::new(fs::create_file(path)?);
+    let mut temp_path = path.as_os_str().to_owned();
+    temp_path.push(".tmp");
 
-    serde_json::to_writer(&mut writer, data)
+    let temp_path = PathBuf::from(temp_path);
+    let mut writer = BufWriter::new(fs::create_file(&temp_path)?);
+
+    if let Err(error) = serde_json::to_writer(&mut writer, data)
         .and_then(|_| writer.flush().map_err(serde_json::Error::io))
-        .map_err(|error| {
-            JsonError::WriteFile {
-                path: path.to_path_buf(),
-                error: Box::new(error),
-            }
-            .into()
-        })
+    {
+        drop(writer);
+        fs::remove_file(&temp_path)?;
+
+        return Err(JsonError::WriteFile {
+            path: path.to_path_buf(),
+            error: Box::new(error),
+        }
+        .into());
+    }
+
+    drop(writer);
+    fs::rename(&temp_path, path)?;
+
+    Ok(())
 }

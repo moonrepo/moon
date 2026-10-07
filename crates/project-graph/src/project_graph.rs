@@ -7,8 +7,8 @@ use moon_graph_utils::*;
 use moon_project::Project;
 use moon_project_expander::{ProjectExpander, ProjectExpanderContext};
 use petgraph::Direction;
-use petgraph::algo::{has_path_connecting, toposort};
-use petgraph::graph::{DiGraph, NodeIndex};
+use petgraph::algo::{has_path_connecting, is_cyclic_directed, toposort};
+use petgraph::graph::{DiGraph, EdgeIndex, NodeIndex};
 use petgraph::visit::{EdgeFiltered, EdgeRef};
 use rustc_hash::{FxHashMap, FxHashSet};
 use scc::hash_map::Entry;
@@ -58,6 +58,39 @@ pub fn would_cycle_in_scope<N>(
     });
 
     has_path_connecting(&partitioned_graph, target, source, None)
+}
+
+/// Return the first edge (in insertion order) that closes a cycle within the
+/// partition that its scope belongs to, if any. Each partition is checked for
+/// cycles once, and the edges are only replayed to find the offending edge when
+/// a cycle exists, instead of checking for a path on every edge insertion.
+pub fn find_cycle_in_scopes<N>(graph: &DiGraph<N, DependencyScope>) -> Option<EdgeIndex> {
+    let is_cyclic = |production: bool| {
+        is_cyclic_directed(&EdgeFiltered::from_fn(graph, |edge| {
+            edge.weight().is_production_group() == production
+        }))
+    };
+
+    if !is_cyclic(true) && !is_cyclic(false) {
+        return None;
+    }
+
+    let mut replay_graph =
+        DiGraph::<(), DependencyScope>::with_capacity(graph.node_count(), graph.edge_count());
+
+    for _ in graph.node_indices() {
+        replay_graph.add_node(());
+    }
+
+    for edge in graph.edge_references() {
+        if would_cycle_in_scope(&replay_graph, edge.source(), edge.target(), edge.weight()) {
+            return Some(edge.id());
+        }
+
+        replay_graph.add_edge(edge.source(), edge.target(), *edge.weight());
+    }
+
+    None
 }
 
 #[derive(Clone, Debug)]
@@ -353,23 +386,34 @@ impl ProjectGraph {
             development_graph.add_node(graph[index]);
         }
 
-        // Then route each edge into the graph its scope belongs to,
-        // relying on daggy's insertion checks to detect cycles
+        // Then route each edge into the graph its scope belongs to
+        let mut production_edges = vec![];
+        let mut development_edges = vec![];
+
         for edge in graph.edge_references() {
             let scope = *edge.weight();
+            let edge = (edge.source(), edge.target(), scope);
 
-            let partitioned_graph = if scope.is_production_group() {
-                &mut production_graph
+            if scope.is_production_group() {
+                production_edges.push(edge);
             } else {
-                &mut development_graph
-            };
+                development_edges.push(edge);
+            }
+        }
 
-            partitioned_graph
-                .add_edge(edge.source(), edge.target(), scope)
-                .map_err(|_| ProjectGraphError::WouldCycle {
-                    source_id: self.label_index(edge.source()),
-                    target_id: self.label_index(edge.target()),
-                })?;
+        // Adding edges in bulk only checks each graph for cycles once, instead
+        // of on every insertion, so only find the offending edge when one fails
+        if production_graph.add_edges(production_edges).is_err()
+            || development_graph.add_edges(development_edges).is_err()
+        {
+            let edge = find_cycle_in_scopes(&graph).expect("Partition cycle must exist!");
+            let (source, target) = graph.edge_endpoints(edge).unwrap();
+
+            return Err(ProjectGraphError::WouldCycle {
+                source_id: self.label_index(source),
+                target_id: self.label_index(target),
+            }
+            .into());
         }
 
         self.graph = graph;
@@ -703,6 +747,36 @@ mod tests {
             .unwrap_err();
 
         assert!(error.to_string().contains("would introduce a cycle"));
+    }
+
+    #[test]
+    fn finds_no_cycle_across_partitions() {
+        let graph = loop_graph(DependencyScope::Production, DependencyScope::Development);
+
+        assert_eq!(find_cycle_in_scopes(&graph), None);
+    }
+
+    #[test]
+    fn finds_the_first_edge_that_closes_a_cycle() {
+        // 0 <-> 1 (development) closes before 2 <-> 3 (production)
+        let mut graph = DiGraph::new();
+        let nodes = (0..4)
+            .map(|i| graph.add_node(NodeIndex::new(i)))
+            .collect::<Vec<_>>();
+
+        graph.add_edge(nodes[0], nodes[1], DependencyScope::Development);
+        graph.add_edge(nodes[2], nodes[3], DependencyScope::Production);
+        let closing = graph.add_edge(nodes[1], nodes[0], DependencyScope::Build);
+        graph.add_edge(nodes[3], nodes[2], DependencyScope::Production);
+
+        assert_eq!(find_cycle_in_scopes(&graph), Some(closing));
+
+        let error = ProjectGraph::default().set_graph(graph).unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "Unable to create project graph, adding a relationship from 1 to 0 would introduce a cycle."
+        );
     }
 
     #[test]

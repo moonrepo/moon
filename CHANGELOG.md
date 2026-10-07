@@ -79,6 +79,10 @@
       instead of a copy of each config, which was copied again every time a project was expanded.
       The configs are derived from these paths when a project is output, like in `moon project`,
       and the paths are available in a new `inheritedFrom` field.
+    - Dependency cycles are now checked once per scope partition, after all project relationships
+      have been added, instead of once for every relationship.
+    - Project configs are now loaded on a thread pool bounded to the number of CPUs, instead of on a
+      thread per project.
   - The graph's cache now stores a single hash manifest, instead of also storing an unused one when
     plugins discovered new input files.
   - The graph's cache file is now less than half the size, as data that's only used while building
@@ -93,6 +97,12 @@
   ID and an alias) with different scopes.
 - Fixed an issue where task input globs configured with `cache: false` were read back as cached
   when deserialized from JSON, like when WASM plugins load tasks.
+- Fixed an issue where the workspace graph's cache could be left in an inconsistent state if moon
+  was interrupted while saving it, which would load an outdated graph, or fail every command until
+  the cache was removed. The graph is now saved before the state that marks it as valid, and an
+  unreadable graph is rebuilt instead of failing.
+- Fixed an issue where duplicate project ID errors could report the existing and new project sources
+  in a different order between runs.
 
 ## 2.6.1
 

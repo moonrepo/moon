@@ -131,9 +131,23 @@ impl WorkspaceBuilder {
             "Generated hash for workspace graph"
         );
 
-        if digest.hash == state.data.last_hash && cache_path.exists() {
-            let mut cache: WorkspaceBuilder = read_cache_file(&cache_path)?;
+        // A missing or unreadable cache, like one that was only partially
+        // written, or is from an incompatible version, is treated as a miss
+        let read_cache = || match read_cache_file::<WorkspaceBuilder>(&cache_path) {
+            Ok(cache) => Some(cache),
+            Err(error) => {
+                debug!(
+                    cache = ?cache_path,
+                    "Unable to read cached workspace graph, rebuilding: {error}",
+                );
 
+                None
+            }
+        };
+
+        if digest.hash == state.data.last_hash
+            && let Some(mut cache) = read_cache()
+        {
             // Verify that the cached projects match the current projects
             // on disk. If a project has been added or removed since the
             // cache was created, we need to rebuild the graph
@@ -201,10 +215,12 @@ impl WorkspaceBuilder {
             .store_hash_manifest_with_hasher(hasher)
             .await?;
 
+        // Write the graph before saving the state, as the state's hash is what
+        // marks the cached graph as valid, so a failure in between is a miss
+        write_cache_file(&cache_path, &graph)?;
+
         state.data.last_hash = digest.hash;
         state.save()?;
-
-        write_cache_file(&cache_path, &graph)?;
 
         Ok(graph)
     }

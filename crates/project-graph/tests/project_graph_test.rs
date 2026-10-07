@@ -10,7 +10,7 @@ use moon_task::{Target, TaskFileInput, TaskFileOutput, TaskGlobInput};
 use moon_test_utils::{
     MoonSandbox, WorkspaceGraph, WorkspaceMockOptions, WorkspaceMocker, create_moon_sandbox,
 };
-use moon_workspace::WorkspaceGraphCacheState;
+use moon_workspace::{WorkspaceBuilder, WorkspaceGraphCacheState};
 use rustc_hash::FxHashMap;
 use starbase_sandbox::assert_snapshot;
 use starbase_utils::{fs, json, string_vec};
@@ -62,6 +62,21 @@ pub async fn build_graph_from_fixture(fixture: &str) -> (MoonSandbox, WorkspaceG
     let graph = build_graph(sandbox.path()).await;
 
     (sandbox, graph)
+}
+
+pub async fn build_graph_error(fixture: &str) -> String {
+    let sandbox = create_moon_sandbox(fixture);
+    let mocker = create_workspace_mocker(sandbox.path());
+    let mut builder = WorkspaceBuilder::new(mocker.mock_workspace_builder_context())
+        .await
+        .unwrap();
+
+    let result = match builder.load_graphs().await {
+        Ok(_) => builder.build().await.map(|_| ()),
+        Err(error) => Err(error),
+    };
+
+    result.unwrap_err().to_string()
 }
 
 mod project_graph {
@@ -116,6 +131,20 @@ mod project_graph {
     #[should_panic(expected = "A project already exists with the identifier id")]
     async fn errors_duplicate_ids() {
         build_graph_from_fixture("dupe-folder-conflict").await;
+    }
+
+    // Sources are loaded in order (sorted by ID), so the existing
+    // and new sources are always reported the same way
+    #[tokio::test(flavor = "multi_thread")]
+    async fn reports_duplicate_ids_deterministically() {
+        assert_eq!(
+            build_graph_error("dupe-folder-conflict").await,
+            "A project already exists with the identifier id (existing source one/id, new source two/id).\nTry renaming the project folder to make it unique, or configure the id setting in moon.yml."
+        );
+        assert_eq!(
+            build_graph_error("custom-id-conflict").await,
+            "A project already exists with the identifier foo (existing source foo, new source foo-other).\nTry renaming the project folder to make it unique, or configure the id setting in moon.yml."
+        );
     }
 
     mod sources {
@@ -480,6 +509,56 @@ tasks:
             .await;
 
             assert!(sandbox.path().join(CACHE_PATH).exists());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn rebuilds_when_cache_is_unreadable() {
+            let (sandbox, graph) = build_cached_graph(|sandbox| {
+                sandbox.enable_git();
+            })
+            .await;
+
+            // Like a partially written file
+            fs::write_file(sandbox.path().join(CACHE_PATH), "{\"projects\": {").unwrap();
+
+            let rebuilt_graph = do_generate(sandbox.path()).await;
+
+            assert_eq!(
+                graph.projects.get_node_keys(),
+                rebuilt_graph.projects.get_node_keys()
+            );
+
+            // And the cache was written again
+            let _: json::JsonValue = json::read_file(sandbox.path().join(CACHE_PATH)).unwrap();
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn rebuilds_when_cache_is_missing() {
+            let (sandbox, graph) = build_cached_graph(|sandbox| {
+                sandbox.enable_git();
+            })
+            .await;
+
+            fs::remove_file(sandbox.path().join(CACHE_PATH)).unwrap();
+
+            let rebuilt_graph = do_generate(sandbox.path()).await;
+
+            assert_eq!(
+                graph.projects.get_node_keys(),
+                rebuilt_graph.projects.get_node_keys()
+            );
+            assert!(sandbox.path().join(CACHE_PATH).exists());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_leave_a_temporary_cache_file() {
+            let (sandbox, _graph) = build_cached_graph(|sandbox| {
+                sandbox.enable_git();
+            })
+            .await;
+
+            assert!(sandbox.path().join(CACHE_PATH).exists());
+            assert!(!sandbox.path().join(format!("{CACHE_PATH}.tmp")).exists());
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -924,6 +1003,37 @@ tasks:
 
     mod cycles {
         use super::*;
+
+        // The first relationship (sorted by project ID) that closes a cycle is reported
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn reports_the_relationship_that_closes_the_cycle() {
+            assert_eq!(
+                build_graph_error("cycle").await,
+                "Unable to create project graph, adding a relationship from c to a would introduce a cycle."
+            );
+            assert_eq!(
+                build_graph_error("self-loop").await,
+                "Unable to create project graph, adding a relationship from a to a would introduce a cycle."
+            );
+            assert_eq!(
+                build_graph_error("peer-prod-loop").await,
+                "Unable to create project graph, adding a relationship from b to a would introduce a cycle."
+            );
+            assert_eq!(
+                build_graph_error("build-dev-loop").await,
+                "Unable to create project graph, adding a relationship from b to a would introduce a cycle."
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn reports_the_first_cycle_across_partitions() {
+            // a <-> b (development) closes before c <-> d (production)
+            assert_eq!(
+                build_graph_error("cycles-in-both-partitions").await,
+                "Unable to create project graph, adding a relationship from b to a would introduce a cycle."
+            );
+        }
 
         #[tokio::test(flavor = "multi_thread")]
         #[should_panic(expected = "project_graph::would_cycle")]

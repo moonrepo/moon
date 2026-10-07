@@ -206,13 +206,6 @@ export interface ExperimentsConfig {
 	 */
 	asyncGraphBuilding?: boolean;
 	/**
-	 * Store task outputs in a local CAS (content-addressable storage) cache.
-	 *
-	 * @env MOON_EXPERIMENT_CAS_OUTPUTS_CACHE
-	 * @since 2.3.0
-	 */
-	casOutputsCache: boolean;
-	/**
 	 * Always use the task's `outputStyle` option, even when running
 	 * the task as a primary target.
 	 *
@@ -940,13 +933,6 @@ export interface PartialExperimentsConfig {
 	 * @since 2.2.0
 	 */
 	asyncGraphBuilding?: boolean | null;
-	/**
-	 * Store task outputs in a local CAS (content-addressable storage) cache.
-	 *
-	 * @env MOON_EXPERIMENT_CAS_OUTPUTS_CACHE
-	 * @since 2.3.0
-	 */
-	casOutputsCache?: boolean | null;
 	/**
 	 * Always use the task's `outputStyle` option, even when running
 	 * the task as a primary target.

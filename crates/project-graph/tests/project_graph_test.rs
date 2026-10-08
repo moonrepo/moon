@@ -558,7 +558,12 @@ tasks:
             .await;
 
             assert!(sandbox.path().join(CACHE_PATH).exists());
-            assert!(!sandbox.path().join(format!("{CACHE_PATH}.tmp")).exists());
+
+            for entry in std::fs::read_dir(sandbox.path().join(".moon/cache/states")).unwrap() {
+                let name = entry.unwrap().file_name();
+
+                assert!(!name.to_string_lossy().ends_with(".tmp"), "{name:?}");
+            }
         }
 
         #[tokio::test(flavor = "multi_thread")]

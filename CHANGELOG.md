@@ -34,6 +34,9 @@
 
 #### 🚀 Updates
 
+- **Action pipeline**
+  - Reading the states of task dependencies, while hashing and running tasks, no longer takes an
+    exclusive lock, which serialized tasks running concurrently.
 - **Affected**
   - Improved the performance of affected tracking.
     - Tasks and projects that were checked while tracking, and found to not be affected, are no
@@ -66,6 +69,11 @@
       spawning a blocking task per file.
     - Each file is now stat-ed once before hashing, instead of twice, and read with a single read
       when it fits within the hashing buffer.
+- **Plugins**
+  - Improved the performance of calling plugins concurrently, like when building projects and their
+    tasks in parallel. Looking up a loaded plugin, and a toolchain's cached tool locations, no longer
+    takes an exclusive lock, which serialized concurrent callers, and on a busy machine could stall
+    building the workspace graph for multiple seconds.
 - **Workspace graph**
   - Improved the performance of building the workspace graph.
     - Git information (branch, revision, and repository) is now loaded concurrently in the
@@ -87,8 +95,8 @@
     plugins discovered new input files.
   - The graph's cache file is now less than half the size, as data that's only used while building
     the graph is no longer cached, task options are omitted when they're the default value, and
-    projects only store the paths of the configs they inherited from. It's also read and written
-    directly, without stripping comments or creating an intermediate string.
+    projects only store the paths of the configs they inherited from. It's also read without
+    stripping comments, and serialized without creating an intermediate string.
 
 #### 🐞 Fixes
 
@@ -99,8 +107,8 @@
   when deserialized from JSON, like when WASM plugins load tasks.
 - Fixed an issue where the workspace graph's cache could be left in an inconsistent state if moon
   was interrupted while saving it, which would load an outdated graph, or fail every command until
-  the cache was removed. The graph is now saved before the state that marks it as valid, and an
-  unreadable graph is rebuilt instead of failing.
+  the cache was removed. The graph is now written atomically, and saved before the state that marks
+  it as valid, and an unreadable graph is rebuilt instead of failing.
 - Fixed an issue where duplicate project ID errors could report the existing and new project sources
   in a different order between runs.
 

@@ -161,6 +161,7 @@ impl WorkspaceWatcher {
 
         let mut env = ProtoEnvironment::new()?;
         env.working_dir = self.session.working_dir.clone();
+        env.trust.add_trusted_path(&self.session.workspace_root);
 
         self.session.proto_env = Arc::new(env);
         self.session.reset_components();

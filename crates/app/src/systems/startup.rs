@@ -100,10 +100,11 @@ pub fn detect_moon_environment(
 #[instrument]
 pub fn detect_proto_environment(
     working_dir: &Path,
-    _workspace_root: &Path,
+    workspace_root: &Path,
 ) -> miette::Result<Arc<ProtoEnvironment>> {
     let mut env = ProtoEnvironment::new()?;
     env.working_dir = working_dir.to_path_buf();
+    env.trust.add_trusted_path(workspace_root);
 
     Ok(Arc::new(env))
 }

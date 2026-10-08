@@ -189,16 +189,7 @@ export interface DockerConfig {
 }
 
 /** Configures experiments across the entire moon workspace. */
-export interface ExperimentsConfig {
-	/**
-	 * Always use the task's `outputStyle` option, even when running
-	 * the task as a primary target.
-	 * @since 2.6.0
-	 *
-	 * @env MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE
-	 */
-	explicitTaskOutputStyle: boolean;
-}
+export interface ExperimentsConfig {}
 
 /** Configures the generator for scaffolding from templates. */
 export interface GeneratorConfig {
@@ -879,16 +870,7 @@ export interface PartialDockerConfig {
 }
 
 /** Configures experiments across the entire moon workspace. */
-export interface PartialExperimentsConfig {
-	/**
-	 * Always use the task's `outputStyle` option, even when running
-	 * the task as a primary target.
-	 * @since 2.6.0
-	 *
-	 * @env MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE
-	 */
-	explicitTaskOutputStyle?: boolean | null;
-}
+export interface PartialExperimentsConfig {}
 
 /** Configures the generator for scaffolding from templates. */
 export interface PartialGeneratorConfig {

@@ -1,46 +1,24 @@
-use crate::projects_builder::ProjectBuildData;
-use crate::projects_locator::locate_projects_with_globs;
-use crate::repo_type::RepoType;
+use crate::projects_builder::*;
 use crate::tasks_builder::*;
-use crate::tasks_querent::*;
-use crate::workspace_builder_error::WorkspaceBuilderError;
+use crate::vcs_info::*;
 use crate::workspace_cache::*;
-use daggy::Dag;
 use miette::IntoDiagnostic;
 use moon_cache::CacheEngine;
-use moon_common::{
-    Id, color,
-    path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source},
-};
-use moon_config::{
-    DependencyScope, ExtensionsConfig, InheritedTasksManager, ProjectDependencyConfig,
-    TaskDependencyType, ToolchainsConfig, WorkspaceConfig, WorkspaceProjectGlobFormat,
-    WorkspaceProjects, finalize_config,
-};
+use moon_common::{Id, path::WorkspaceRelativePathBuf};
+use moon_config::{ExtensionsConfig, InheritedTasksManager, ToolchainsConfig, WorkspaceConfig};
 use moon_config_loader::ConfigLoader;
 use moon_extension_plugin::ExtensionRegistry;
-use moon_hash::Digest;
-use moon_pdk_api::{ExtendProjectGraphInput, ExtendProjectGraphOutput};
-use moon_project::{Project, ProjectAlias, ProjectError};
-use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
-use moon_project_constraints::{enforce_layer_relationships, enforce_tag_relationships};
-use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectNode, would_cycle_in_scope};
-use moon_task::{Target, Task};
-use moon_task_builder::TaskDepsBuilder;
-use moon_task_graph::{GraphExpanderContext, NodeState, TaskGraph, TaskGraphError, TaskNode};
+use moon_graph_utils::{GraphExpanderContext, NodeState};
+use moon_hash::{ContentHasher, Digest};
 use moon_toolchain_plugin::ToolchainRegistry;
 use moon_vcs::BoxedVcs;
 use moon_workspace_graph::WorkspaceGraph;
-use petgraph::prelude::*;
-use petgraph::visit::IntoNodeReferences;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
-use starbase_utils::glob::{self, GlobWalkOptions};
-use starbase_utils::json;
 use std::collections::{BTreeMap, BTreeSet};
-use std::mem;
 use std::path::PathBuf;
 use std::sync::Arc;
+use tokio::task::JoinHandle;
 use tracing::{debug, instrument};
 
 pub const LOCK_FILE_NAME: &str = "workspaceGraph.lock";
@@ -62,116 +40,56 @@ pub struct WorkspaceBuilderContext {
     pub workspace_root: PathBuf,
 }
 
-/// A dependency edge that was skipped while recursively loading projects,
-/// because its target was actively being loaded further up the stack. These
-/// are connected once loading completes and the graph can be checked for
-/// cycles within the edge's scope partition.
-struct DeferredProjectEdge {
-    source_id: Id,
-    source_index: NodeIndex,
-    target_id: Id,
-    target_index: NodeIndex,
-    scope: DependencyScope,
-}
-
 #[derive(Deserialize, Serialize)]
 pub struct WorkspaceBuilder {
+    /// The context is not serialized, so it's optional for deserializing
+    /// a cached builder, and is set immediately after.
     #[serde(skip)]
     context: Option<Arc<WorkspaceBuilderContext>>,
 
-    /// Edges that could not be connected during recursive loading.
-    /// Always drained before loading completes.
+    /// Whether the graphs have been loaded. A cached builder has always
+    /// been loaded, and is marked as such immediately after deserializing.
     #[serde(skip)]
-    deferred_project_edges: Vec<DeferredProjectEdge>,
+    loaded: bool,
 
-    /// List of config paths used in the hashing process.
-    /// These are used for invalidation.
-    config_paths: Vec<WorkspaceRelativePathBuf>,
-
-    /// Input files discovered by plugins while extending the graph.
-    /// These are used for invalidation.
+    /// VCS information, which is loaded in the background while
+    /// the graphs are built, and awaited when finalizing them.
     #[serde(skip)]
-    plugin_input_paths: BTreeSet<WorkspaceRelativePathBuf>,
+    vcs_handle: Option<JoinHandle<miette::Result<VcsInfo>>>,
 
-    /// Aliases to their associated project.
-    aliases: FxHashMap<String, Id>,
+    /// Builder for everything projects related.
+    projects: WorkspaceProjectsBuilder,
 
-    /// Projects grouped by tag, for use in task dependency resolution.
-    projects_by_tag: FxHashMap<Id, Vec<Id>>,
-
-    /// Mapping of project IDs to associated data required for building
-    /// the project itself. Currently we track the following:
-    ///   - The alias, derived from manifests (`package.json`).
-    ///   - Their `moon.yml` in the project root.
-    ///   - Their file source location, relative from the workspace root.
-    project_data: FxHashMap<Id, ProjectBuildData>,
-
-    /// The project graph. Cycle validation happens per scope partition
-    /// when edges are added, not across the graph as a whole.
-    project_graph: DiGraph<NodeState<Project>, DependencyScope>,
-
-    /// Projects that have explicitly renamed themselves with the `id` setting.
-    /// Maps original ID to renamed ID.
-    renamed_project_ids: FxHashMap<Id, Id>,
-
-    /// The type of repository: monorepo or polyrepo.
-    repo_type: RepoType,
-
-    /// The root project ID (only if a monorepo).
-    root_project_id: Option<Id>,
-
-    /// Mapping of task targets to associated data required for building
-    /// the project itself. Currently we track the following:
-    ///   - Their task options, for resolving deps.
-    task_data: FxHashMap<Target, TaskBuildData>,
-
-    /// The task DAG.
-    task_graph: Dag<NodeState<Task>, TaskDependencyType>,
+    /// Builder for everything tasks related.
+    tasks: WorkspaceTasksBuilder,
 }
 
 impl WorkspaceBuilder {
-    #[instrument(skip_all)]
-    pub async fn new(context: WorkspaceBuilderContext) -> miette::Result<WorkspaceBuilder> {
+    pub async fn new(context: WorkspaceBuilderContext) -> miette::Result<Self> {
         debug!("Building workspace graph (project and task graphs)");
 
-        let mut graph = WorkspaceBuilder {
-            aliases: FxHashMap::default(),
-            config_paths: vec![],
-            context: Some(Arc::new(context)),
-            deferred_project_edges: vec![],
-            plugin_input_paths: BTreeSet::default(),
-            project_data: FxHashMap::default(),
-            project_graph: DiGraph::new(),
-            projects_by_tag: FxHashMap::default(),
-            renamed_project_ids: FxHashMap::default(),
-            repo_type: RepoType::Unknown,
-            root_project_id: None,
-            task_data: FxHashMap::default(),
-            task_graph: Dag::new(),
-        };
+        let context = Arc::new(context);
 
-        graph.preload_build_data().await?;
-        graph.determine_repo_type()?;
-
-        Ok(graph)
+        Ok(WorkspaceBuilder {
+            loaded: false,
+            projects: WorkspaceProjectsBuilder::new(Arc::clone(&context)),
+            tasks: WorkspaceTasksBuilder::new(),
+            vcs_handle: context
+                .vcs
+                .clone()
+                .map(|vcs| tokio::spawn(load_vcs_info(vcs))),
+            context: Some(context),
+        })
     }
 
     #[instrument(skip_all)]
-    pub async fn new_with_cache(
-        context: WorkspaceBuilderContext,
-    ) -> miette::Result<WorkspaceBuilder> {
-        let is_vcs_enabled = context
-            .vcs
-            .as_ref()
-            .expect("VCS is required for workspace graph caching!")
-            .is_enabled();
+    pub async fn new_with_cache(context: WorkspaceBuilderContext) -> miette::Result<Self> {
+        let is_vcs_enabled = context.vcs.as_ref().is_some_and(|vcs| vcs.is_enabled());
         let mut graph = Self::new(context).await?;
 
         // No VCS to hash with, so abort caching
         if !is_vcs_enabled {
-            graph.extend_projects_from_plugins().await?;
-            graph.load_projects().await?;
-            graph.load_tasks().await?;
+            graph.load_graphs().await?;
 
             return Ok(graph);
         }
@@ -191,33 +109,76 @@ impl WorkspaceBuilder {
             .state
             .resolve_path(STATE_GRAPH_FILE_NAME);
 
-        // Hash the project graph based on the preloaded state
-        let mut digest = graph
-            .generate_cache_digest(state.data.plugin_input_paths.clone())
+        // Preload sources and configs, and hash the graph based on that state
+        graph.preload().await?;
+
+        // Capture the project sources now, as `load_graphs` consumes the
+        // build data, and they're needed if the digest is regenerated after
+        let projects = graph
+            .projects
+            .build_data
+            .iter()
+            .map(|(id, build_data)| (id.clone(), build_data.source.clone()))
+            .collect::<BTreeMap<_, _>>();
+
+        let mut hasher = graph
+            .create_cache_hasher(&projects, state.data.plugin_input_paths.clone())
             .await?;
+        let digest = Digest::from_hasher(&mut hasher)?;
 
         debug!(
             hash = digest.hash.as_str(),
             "Generated hash for workspace graph"
         );
 
-        if digest.hash == state.data.last_hash && cache_path.exists() {
-            let mut cache: WorkspaceBuilder = json::read_file(&cache_path)?;
+        // A missing or unreadable cache, like one that was only partially
+        // written, or is from an incompatible version, is treated as a miss
+        let read_cache = || match read_cache_file::<WorkspaceBuilder>(&cache_path) {
+            Ok(cache) => Some(cache),
+            Err(error) => {
+                debug!(
+                    cache = ?cache_path,
+                    "Unable to read cached workspace graph, rebuilding: {error}",
+                );
 
+                None
+            }
+        };
+
+        if digest.hash == state.data.last_hash
+            && let Some(mut cache) = read_cache()
+        {
             // Verify that the cached projects match the current projects
             // on disk. If a project has been added or removed since the
             // cache was created, we need to rebuild the graph
-            let cached_ids: FxHashSet<&Id> = cache.project_data.keys().collect();
-            let current_ids: FxHashSet<&Id> = graph.project_data.keys().collect();
+            let cached_ids: FxHashSet<&Id> = cache
+                .projects
+                .graph
+                .node_weights()
+                .filter_map(|node| match node {
+                    NodeState::Loaded(project) => Some(&project.id),
+                    NodeState::Loading => None,
+                })
+                .collect();
+            let current_ids: FxHashSet<&Id> = graph.projects.build_data.keys().collect();
 
             if cached_ids == current_ids {
                 debug!(
                     cache = ?cache_path,
                     "Loading workspace graph with {} projects from cache",
-                    cache.project_data.len(),
+                    cached_ids.len(),
                 );
 
+                cache.projects.context = graph.projects.context.take();
                 cache.context = graph.context;
+                cache.loaded = true;
+                cache.vcs_handle = graph.vcs_handle;
+
+                context
+                    .cache_engine
+                    .storage
+                    .store_hash_manifest_with_hasher(hasher)
+                    .await?;
 
                 return Ok(cache);
             }
@@ -231,42 +192,96 @@ impl WorkspaceBuilder {
         // Build the graph, update the state, and save the cache
         debug!(
             "Preparing workspace graph with {} projects",
-            graph.project_data.len(),
+            graph.projects.build_data.len(),
         );
 
-        graph.extend_projects_from_plugins().await?;
-        graph.load_projects().await?;
-        graph.load_tasks().await?;
+        graph.load_graphs().await?;
 
         // If plugins discovered a different set of input files, regenerate
-        // the digest with them included, otherwise the next run would be
+        // the hash with them included, otherwise the next run would be
         // a guaranteed cache miss
-        if graph.plugin_input_paths != state.data.plugin_input_paths {
-            state.data.plugin_input_paths = graph.plugin_input_paths.clone();
+        if graph.projects.plugin_input_paths != state.data.plugin_input_paths {
+            state.data.plugin_input_paths = graph.projects.plugin_input_paths.clone();
 
-            digest = graph
-                .generate_cache_digest(state.data.plugin_input_paths.clone())
+            hasher = graph
+                .create_cache_hasher(&projects, state.data.plugin_input_paths.clone())
                 .await?;
         }
+
+        // Only store the final manifest, as the hash may have been regenerated
+        let digest = context
+            .cache_engine
+            .storage
+            .store_hash_manifest_with_hasher(hasher)
+            .await?;
+
+        // Write the graph before saving the state, as the state's hash is what
+        // marks the cached graph as valid, so a failure in between is a miss
+        write_cache_file(&cache_path, &graph)?;
 
         state.data.last_hash = digest.hash;
         state.save()?;
 
-        json::write_file(cache_path, &graph, false)?;
-
         Ok(graph)
+    }
+
+    pub async fn preload(&mut self) -> miette::Result<()> {
+        self.projects.preload().await?;
+
+        Ok(())
+    }
+
+    pub async fn load_graphs(&mut self) -> miette::Result<()> {
+        if self.loaded {
+            return Ok(());
+        }
+
+        self.projects.build(None).await?;
+        self.tasks.build(self.projects.extract_tasks()?)?;
+        self.loaded = true;
+
+        Ok(())
+    }
+
+    pub async fn load_graphs_for(&mut self, ids: Vec<Id>) -> miette::Result<()> {
+        if self.loaded {
+            return Ok(());
+        }
+
+        self.projects.build(Some(ids)).await?;
+        self.tasks.build(self.projects.extract_tasks()?)?;
+        self.loaded = true;
+
+        Ok(())
+    }
+
+    async fn create_cache_hasher(
+        &self,
+        projects: &BTreeMap<Id, WorkspaceRelativePathBuf>,
+        plugin_input_paths: BTreeSet<WorkspaceRelativePathBuf>,
+    ) -> miette::Result<ContentHasher> {
+        create_graph_cache_hasher(
+            self.context(),
+            projects,
+            self.projects.config_paths.iter().cloned().collect(),
+            plugin_input_paths,
+        )
+        .await
     }
 
     /// Build the project graph and return a new structure.
     #[instrument(name = "build_workspace_graph", skip_all)]
     pub async fn build(mut self) -> miette::Result<WorkspaceGraph> {
-        self.enforce_constraints()?;
+        let context = self.context();
 
-        let context = self.context.take().unwrap();
+        // Enforce constraints before finalizing, so that they also
+        // apply to graphs that were loaded from the cache
+        self.projects.enforce_constraints()?;
 
         let mut graph_context = GraphExpanderContext {
             config_dir: context.config_loader.dir.clone(),
             extensions_config: context.extensions_config.clone(),
+            inherited_tasks: context.inherited_tasks.clone(),
             toolchains_config: context.toolchains_config.clone(),
             working_dir: context.working_dir.to_owned(),
             workspace_config: context.workspace_config.clone(),
@@ -274,87 +289,21 @@ impl WorkspaceBuilder {
             ..Default::default()
         };
 
-        // These are only in conditionals for tests that don't have git
-        // initialized, which is most of them!
-        if let Some(vcs) = &context.vcs {
-            if vcs.is_enabled() {
-                graph_context.vcs_branch = Arc::new(vcs.get_local_branch().await?);
-                graph_context.vcs_revision = Arc::new(vcs.get_local_branch_revision().await?);
+        if let Some(vcs_handle) = self.vcs_handle.take() {
+            let vcs_info = vcs_handle.await.into_diagnostic()??;
 
-                if let Ok(repo) = vcs.get_repository_slug().await {
-                    graph_context.vcs_repository = Arc::new(repo);
-                }
-            } else {
-                graph_context.vcs_branch = Arc::new(vcs.get_default_branch().await?);
-            }
+            graph_context.vcs_branch = Arc::new(vcs_info.branch);
+            graph_context.vcs_repository = Arc::new(vcs_info.repository);
+            graph_context.vcs_revision = Arc::new(vcs_info.revision);
         }
 
         // Build the graphs
-        let mut project_graph = ProjectGraph::new(graph_context.clone());
-        project_graph.default_id = context.workspace_config.default_project.clone();
-        project_graph.aliases.extend(self.aliases);
-        let mut loaded_projects = FxHashMap::default();
+        let project_graph = Arc::new(self.projects.finalize(graph_context.clone())?);
 
-        let graph = self.project_graph.filter_map(
-            |ni, node| match node {
-                NodeState::Loading => None,
-                NodeState::Loaded(project) => {
-                    loaded_projects.insert(ni, project.to_owned());
-
-                    Some(ni)
-                }
-            },
-            |_, edge| Some(*edge),
+        let task_graph = Arc::new(
+            self.tasks
+                .finalize(graph_context, Arc::clone(&project_graph)),
         );
-
-        for index in graph.node_indices() {
-            let old_index = *graph.node_weight(index).unwrap();
-            let project = loaded_projects.remove(&old_index).unwrap();
-            let id = project.id.clone();
-
-            project_graph.indexes.insert(index, id.clone());
-            project_graph
-                .nodes
-                .insert(id, ProjectNode { index, project });
-        }
-
-        project_graph.set_graph(graph)?;
-
-        let project_graph = Arc::new(project_graph);
-
-        let mut task_graph = TaskGraph::new(graph_context, Arc::clone(&project_graph));
-        let mut loaded_tasks = FxHashMap::default();
-
-        task_graph.graph = self.task_graph.filter_map(
-            |ni, node| match node {
-                NodeState::Loading => None,
-                NodeState::Loaded(task) => {
-                    loaded_tasks.insert(ni, task.to_owned());
-
-                    Some(ni)
-                }
-            },
-            |_, edge| Some(*edge),
-        );
-
-        for index in task_graph.graph.graph().node_indices() {
-            let old_index = *task_graph.graph.node_weight(index).unwrap();
-            let task = loaded_tasks.remove(&old_index).unwrap();
-            let target = task.target.clone();
-
-            task_graph.indexes.insert(index, target.clone());
-            task_graph.nodes.insert(target, TaskNode { index, task });
-        }
-
-        // Weight-based lookups require each node's weight to be its own
-        // index, which may not be the case when placeholder nodes were
-        // dropped by the filter above, so rewrite them
-        for index in 0..task_graph.graph.node_count() {
-            let index = NodeIndex::new(index);
-            *task_graph.graph.node_weight_mut(index).unwrap() = index;
-        }
-
-        let task_graph = Arc::new(task_graph);
 
         Ok(WorkspaceGraph::new(
             project_graph,
@@ -363,1019 +312,11 @@ impl WorkspaceBuilder {
         ))
     }
 
-    /// Load a single project by ID or alias into the graph.
-    pub async fn load_project(&mut self, id_or_alias: &str) -> miette::Result<()> {
-        Box::pin(self.internal_load_project(id_or_alias, &mut FxHashSet::default())).await?;
-
-        self.connect_deferred_project_edges();
-
-        Ok(())
-    }
-
-    /// Connect dependency edges that were deferred during recursive loading,
-    /// now that the graph is whole and cycles can accurately be detected.
-    /// Edges that would cycle within their own scope partition are
-    /// disconnected entirely, while cross-partition cycles are allowed.
-    fn connect_deferred_project_edges(&mut self) {
-        for edge in mem::take(&mut self.deferred_project_edges) {
-            if would_cycle_in_scope(
-                &self.project_graph,
-                edge.source_index,
-                edge.target_index,
-                &edge.scope,
-            ) {
-                debug!(
-                    project_id = edge.source_id.as_str(),
-                    dependency_id = edge.target_id.as_str(),
-                    "Encountered a dependency cycle (from project); will disconnect nodes to avoid recursion",
-                );
-            } else {
-                self.project_graph
-                    .add_edge(edge.source_index, edge.target_index, edge.scope);
-            }
-        }
-    }
-
-    /// Load all projects into the graph, as configured in the workspace.
-    pub async fn load_projects(&mut self) -> miette::Result<()> {
-        let ids = self.project_data.keys().cloned().collect::<Vec<_>>();
-
-        for id in ids {
-            self.load_project(&id).await?;
-        }
-
-        Ok(())
-    }
-
-    #[instrument(name = "load_project", skip(self))]
-    async fn internal_load_project(
-        &mut self,
-        id_or_alias: &str,
-        cycle: &mut FxHashSet<Id>,
-    ) -> miette::Result<Option<(Id, NodeIndex)>> {
-        let id = ProjectBuildData::resolve_id(id_or_alias, &self.project_data);
-
-        if cycle.contains(&id) {
-            return Ok(None);
-        }
-
-        {
-            let Some(build_data) = self.project_data.get(&id) else {
-                return Err(ProjectGraphError::UnconfiguredID { id: id.to_string() }.into());
-            };
-
-            // Already loaded, exit early with existing index
-            if let Some(index) = &build_data.node_index {
-                return Ok(Some((id, *index)));
-            }
-        }
-
-        // Not loaded, insert a temporary node so that we have an index
-        let index = self.project_graph.add_node(NodeState::Loading);
-
-        self.project_data.get_mut(&id).unwrap().node_index = Some(index);
-
-        // Build the project
-        let project = self.build_project(&id).await?;
-
-        cycle.insert(id.clone());
-
-        // Then group projects by relevant data
-        for tag in &project.config.tags {
-            self.projects_by_tag
-                .entry(tag.to_owned())
-                .or_default()
-                .push(id.clone());
-        }
-
-        // Then persist task build data
-        for task in project.tasks.values() {
-            self.task_data.insert(
-                task.target.clone(),
-                TaskBuildData {
-                    tags: task.tags.clone(),
-                    options: task.options.clone(),
-                    has_outputs: task.has_outputs(),
-                    ..Default::default()
-                },
-            );
-        }
-
-        // Then build dependency projects
-        for dep_config in &project.dependencies {
-            if cycle.contains(&dep_config.id) {
-                let dep_id = ProjectBuildData::resolve_id(&dep_config.id, &self.project_data);
-
-                // The dependency is actively being loaded further up the stack,
-                // so its subtree of edges doesn't exist yet, and a cycle check
-                // here would be meaningless. Defer the edge until loading has
-                // completed and the graph is whole.
-                if !dep_config.is_root_scope()
-                    && let Some(dep_index) = self
-                        .project_data
-                        .get(&dep_id)
-                        .and_then(|build_data| build_data.node_index)
-                {
-                    self.deferred_project_edges.push(DeferredProjectEdge {
-                        source_id: id.clone(),
-                        source_index: index,
-                        target_id: dep_id,
-                        target_index: dep_index,
-                        scope: dep_config.scope,
-                    });
-                } else {
-                    debug!(
-                        project_id = id.as_str(),
-                        dependency_id = dep_config.id.as_str(),
-                        "Encountered a dependency cycle (from project); will disconnect nodes to avoid recursion",
-                    );
-                }
-
-                continue;
-            }
-
-            if let Some(dep) = Box::pin(self.internal_load_project(&dep_config.id, cycle)).await? {
-                // Don't link the root project to any project, but still load it
-                if !dep_config.is_root_scope() {
-                    // Only error when the cycle exists within the scope's
-                    // partition, as cycles that cross the production and
-                    // development boundary are legitimate
-                    if would_cycle_in_scope(&self.project_graph, index, dep.1, &dep_config.scope) {
-                        return Err(ProjectGraphError::WouldCycle {
-                            source_id: id.to_string(),
-                            target_id: dep.0.to_string(),
-                        }
-                        .into());
-                    }
-
-                    self.project_graph.add_edge(index, dep.1, dep_config.scope);
-                }
-            }
-        }
-
-        // And finally, update the node weight state
-        *self.project_graph.node_weight_mut(index).unwrap() = NodeState::Loaded(project);
-
-        cycle.clear();
-
-        Ok(Some((id, index)))
-    }
-
-    /// Create and build the project with the provided ID and source.
-    #[instrument(skip(self))]
-    async fn build_project(&mut self, id: &Id) -> miette::Result<Project> {
-        debug!(
-            project_id = id.as_str(),
-            "Building project {}",
-            color::id(id)
-        );
-
-        let context = self.context();
-        let build_data = self.project_data.get(id).unwrap();
-
-        if !build_data.source.to_path(&context.workspace_root).exists() {
-            return Err(WorkspaceBuilderError::MissingProjectAtSource(
-                build_data.source.to_string(),
-            )
-            .into());
-        }
-
-        let mut builder = ProjectBuilder::new(
-            id,
-            &build_data.source,
-            ProjectBuilderContext {
-                config_loader: &context.config_loader,
-                enabled_toolchains: &context.enabled_toolchains,
-                monorepo: self.repo_type.is_monorepo(),
-                root_project_id: self.root_project_id.as_ref(),
-                toolchains_config: &context.toolchains_config,
-                toolchain_registry: context.toolchain_registry.clone(),
-                workspace_root: &context.workspace_root,
-            },
-        )?;
-
-        if let Some(config) = &build_data.config {
-            builder.inherit_local_config(config).await?;
-        } else {
-            builder.load_local_config().await?;
-        }
-
-        builder.inherit_global_configs(&context.inherited_tasks)?;
-
-        // Inherit from build data (toolchains, etc)
-        for extended_data in &build_data.extensions {
-            for dep_config in &extended_data.dependencies {
-                builder.extend_with_dependency(ProjectDependencyConfig {
-                    id: ProjectBuildData::resolve_id(&dep_config.id, &self.project_data),
-                    scope: dep_config.scope,
-                    ..Default::default()
-                });
-            }
-
-            for (task_id, task_config) in &extended_data.tasks {
-                builder.extend_with_task(task_id.to_owned(), finalize_config(task_config.clone())?);
-            }
-        }
-
-        // Inherit aliases before building in case the project
-        // references itself in tasks or dependencies
-        builder.set_aliases(
-            build_data
-                .aliases
-                .iter()
-                .map(|(alias, plugin_id)| ProjectAlias {
-                    alias: alias.to_owned(),
-                    plugin: plugin_id.to_owned(),
-                })
-                .collect(),
-        );
-
-        let project = builder.build().await?;
-
-        Ok(project)
-    }
-
-    /// Load a single task by target into the graph.
-    pub async fn load_task(&mut self, target: &Target) -> miette::Result<()> {
-        Box::pin(self.internal_load_task(target, &mut FxHashSet::default())).await?;
-
-        // Tasks may lazily load their owning project
-        self.connect_deferred_project_edges();
-
-        Ok(())
-    }
-
-    /// Load all tasks into the graph, derived from the loaded projects.
-    pub async fn load_tasks(&mut self) -> miette::Result<()> {
-        let mut targets = vec![];
-
-        for node in self.project_graph.raw_nodes() {
-            if let NodeState::Loaded(project) = &node.weight {
-                for task in project.tasks.values() {
-                    targets.push(task.target.clone());
-                }
-            }
-        }
-
-        for target in targets {
-            self.load_task(&target).await?;
-        }
-
-        Ok(())
-    }
-
-    #[instrument(name = "load_task", skip(self))]
-    async fn internal_load_task(
-        &mut self,
-        target: &Target,
-        cycle: &mut FxHashSet<Target>,
-    ) -> miette::Result<Option<NodeIndex>> {
-        let target = TaskBuildData::resolve_target(target, &self.project_data)?;
-
-        if cycle.contains(&target) {
-            return Ok(None);
-        }
-
-        {
-            let Some(build_data) = self.task_data.get(&target) else {
-                return Err(ProjectError::UnknownTask {
-                    task_id: target.get_task_id().unwrap().to_string(),
-                    project_id: target.get_project_id().unwrap().to_string(),
-                }
-                .into());
-            };
-
-            // Already loaded, exit early with existing index
-            if let Some(index) = &build_data.node_index {
-                return Ok(Some(*index));
-            }
-        }
-
-        // Not loaded, resolve the task
-        let Some((_, project_index)) = Box::pin(
-            self.internal_load_project(target.get_project_id()?, &mut FxHashSet::default()),
-        )
-        .await?
-        else {
-            panic!("Unable to load task, owning project does not exist!");
-        };
-
-        let NodeState::Loaded(project) = self.project_graph.node_weight_mut(project_index).unwrap()
-        else {
-            panic!("Unable to load task, owning project is in a non-loaded state!");
-        };
-
-        // Not loaded, insert a temporary node so that we have an index
-        let index = self.task_graph.add_node(NodeState::Loading);
-
-        self.task_data.get_mut(&target).unwrap().node_index = Some(index);
-
-        // Build the task (remove from project)
-        let mut task = project.tasks.remove(target.get_task_id()?).unwrap();
-
-        cycle.insert(target.clone());
-
-        // Resolve the task dependencies so we can link edges correctly
-        TaskDepsBuilder {
-            querent: Box::new(WorkspaceBuilderTasksQuerent {
-                project_data: &self.project_data,
-                projects_by_tag: &self.projects_by_tag,
-                task_data: &self.task_data,
-            }),
-            project: Some(project),
-            root_project_id: self.root_project_id.as_ref(),
-            task: &mut task,
-        }
-        .build()?;
-
-        // Then resolve dependency tasks
-        for dep_config in &task.deps {
-            let edge_type = resolve_dep_edge_type(dep_config);
-            let is_cleanup = matches!(edge_type, TaskDependencyType::Cleanup);
-
-            // Resolve the target the same way that `internal_load_task` does,
-            // as the cycle set tracks resolved targets
-            let dep_target = TaskBuildData::resolve_target(&dep_config.target, &self.project_data)?;
-            let in_cycle = cycle.contains(&dep_target);
-
-            // Tasks that are currently being loaded (they're in the cycle set)
-            // have a pending edge that points from them down to this task, so
-            // linking back up to them would close a loop. This only applies to
-            // edges that point from this task to the dependency — a `cleanup`
-            // edge points from the dependency to this task, which runs *with*
-            // the pending edge instead of against it, and is safe to add.
-            if in_cycle && !is_cleanup {
-                debug!(
-                    task_target = target.as_str(),
-                    dependency_target = dep_config.target.as_str(),
-                    "Encountered a dependency cycle (from task); will disconnect nodes to avoid recursion",
-                );
-
-                continue;
-            }
-
-            // A `cleanup` edge is reversed, so the tasks that are currently being
-            // loaded don't point down to the dependency, and its own dependencies
-            // on them are not cycles. Load it with its own cycle set, otherwise
-            // those edges would be dropped. A task being loaded higher up the
-            // stack already has a node, which is returned as-is.
-            let dep_node_index = if is_cleanup {
-                Box::pin(self.internal_load_task(&dep_config.target, &mut FxHashSet::default()))
-                    .await?
-            } else {
-                Box::pin(self.internal_load_task(&dep_config.target, cycle)).await?
-            };
-
-            if let Some(dep_index) = dep_node_index {
-                let (source_index, target_index) =
-                    resolve_dep_edge_endpoints(index, dep_index, edge_type);
-
-                self.task_graph
-                    .add_edge(source_index, target_index, edge_type)
-                    .map_err(|_| {
-                        let (source, target) = if is_cleanup {
-                            (&dep_config.target, &task.target)
-                        } else {
-                            (&task.target, &dep_config.target)
-                        };
-
-                        TaskGraphError::WouldCycle {
-                            source_target: source.to_string(),
-                            target_target: target.to_string(),
-                        }
-                    })?;
-            }
-        }
-
-        // And finally, update the node weight state
-        *self.task_graph.node_weight_mut(index).unwrap() = NodeState::Loaded(task);
-
-        cycle.clear();
-
-        Ok(Some(index))
-    }
-
-    /// Determine the repository type/structure based on the number of project
-    /// sources, and where the point to.
-    fn determine_repo_type(&mut self) -> miette::Result<()> {
-        let single_project = self.project_data.len() == 1;
-        let mut has_root_project = false;
-        let mut root_project_id = None;
-
-        for (id, build_data) in &self.project_data {
-            if is_root_level_source(&build_data.source) {
-                has_root_project = true;
-                root_project_id = Some(id.to_owned());
-                break;
-            }
-        }
-
-        self.repo_type = match (single_project, has_root_project) {
-            (true, true) => RepoType::Polyrepo,
-            (false, true) => RepoType::MonorepoWithRoot,
-            (false, false) | (true, false) => RepoType::Monorepo,
-        };
-
-        if self.repo_type == RepoType::MonorepoWithRoot {
-            self.root_project_id = root_project_id;
-        }
-
-        Ok(())
-    }
-
-    /// Enforce project constraints and boundaries after all nodes have been inserted.
-    #[instrument(skip_all)]
-    fn enforce_constraints(&self) -> miette::Result<()> {
-        debug!("Enforcing project constraints");
-
-        let context = self.context();
-        let layer_relationships = context
-            .workspace_config
-            .constraints
-            .enforce_layer_relationships;
-        let tag_relationships = &context.workspace_config.constraints.tag_relationships;
-
-        if !layer_relationships && tag_relationships.is_empty() {
-            return Ok(());
-        }
-
-        let default_scope = DependencyScope::Build;
-
-        for (project_index, project_state) in self.project_graph.node_references() {
-            let NodeState::Loaded(project) = project_state else {
-                continue;
-            };
-
-            let deps: Vec<_> = self
-                .project_graph
-                .neighbors_directed(project_index, Direction::Outgoing)
-                .flat_map(|dep_index| {
-                    self.project_graph.node_weight(dep_index).and_then(|dep| {
-                        match dep {
-                            NodeState::Loading => None,
-                            NodeState::Loaded(dep) => {
-                                Some((
-                                    dep,
-                                    // Is this safe?
-                                    self.project_graph
-                                        .find_edge(project_index, dep_index)
-                                        .and_then(|ei| self.project_graph.edge_weight(ei))
-                                        .unwrap_or(&default_scope),
-                                ))
-                            }
-                        }
-                    })
-                })
-                .collect();
-
-            for (dep, dep_scope) in deps {
-                if layer_relationships {
-                    enforce_layer_relationships(project, dep, dep_scope)?;
-                }
-
-                for (source_tag, required_tags) in tag_relationships {
-                    enforce_tag_relationships(project, source_tag, dep, required_tags)?;
-                }
-            }
-        }
-
-        Ok(())
-    }
-
-    async fn generate_cache_digest(
-        &self,
-        plugin_input_paths: BTreeSet<WorkspaceRelativePathBuf>,
-    ) -> miette::Result<Digest> {
-        let projects = self
-            .project_data
-            .iter()
-            .map(|(id, build_data)| (id.clone(), build_data.source.clone()))
-            .collect::<BTreeMap<_, _>>();
-
-        generate_graph_cache_digest(
-            self.context(),
-            &projects,
-            self.config_paths.iter().cloned().collect(),
-            plugin_input_paths,
-            false,
-        )
-        .await
-    }
-
-    /// Preload the graph with project sources from the workspace configuration.
-    /// If globs are provided, walk the file system and gather sources.
-    async fn preload_build_data(&mut self) -> miette::Result<()> {
-        let context = self.context();
-        let mut glob_format = WorkspaceProjectGlobFormat::default();
-        let mut globs = vec![];
-        let mut sources = vec![];
-
-        // Gather all project sources
-        let mut add_sources = |map: &FxHashMap<Id, String>| {
-            for (id, source) in map {
-                sources.push((
-                    id.to_owned(),
-                    WorkspaceRelativePathBuf::from(source.trim_start_matches("./")),
-                ));
-            }
-        };
-
-        match &context.workspace_config.projects {
-            WorkspaceProjects::Sources(map) => {
-                add_sources(map);
-            }
-            WorkspaceProjects::Globs(list) => {
-                globs.extend(list);
-            }
-            WorkspaceProjects::Both(cfg) => {
-                glob_format = cfg.glob_format;
-                globs.extend(&cfg.globs);
-                add_sources(&cfg.sources);
-            }
-        };
-
-        if !sources.is_empty() {
-            debug!(
-                sources = ?sources,
-                "Using configured project sources",
-            );
-        }
-
-        if !globs.is_empty() {
-            debug!(
-                globs = ?globs,
-                "Locating projects with globs",
-            );
-
-            locate_projects_with_globs(&context, &globs, &mut sources, glob_format)?;
-        }
-
-        // Load projects and configs
-        self.load_project_build_data(sources)?;
-
-        // Include all workspace-level config files
-        let ext_glob = context.config_loader.get_ext_glob();
-
-        for file in glob::walk_fast_with_options(
-            &context.config_loader.dir,
-            [&format!("*.{ext_glob}"), &format!("tasks/**/*.{ext_glob}")],
-            GlobWalkOptions::default().cache().log_results(),
-        )? {
-            self.config_paths.push(
-                file.relative_to(&context.workspace_root)
-                    .into_diagnostic()?,
-            );
-        }
-
-        // Validate the default project exists
-        if let Some(default_id) = &context.workspace_config.default_project
-            && !self.project_data.contains_key(default_id)
-        {
-            return Err(ProjectGraphError::InvalidDefaultId {
-                id: default_id.to_string(),
-            }
-            .into());
-        }
-
-        Ok(())
-    }
-
-    fn load_project_build_data(
-        &mut self,
-        sources: Vec<(Id, WorkspaceRelativePathBuf)>,
-    ) -> miette::Result<()> {
-        let context = self.context();
-        let config_label = context.config_loader.get_debug_label("moon");
-        let config_names = context.config_loader.get_project_file_names();
-        let mut project_data: FxHashMap<Id, ProjectBuildData> = FxHashMap::default();
-        let mut renamed_ids = FxHashMap::default();
-        let mut dupe_original_ids = FxHashSet::default();
-
-        debug!("Loading projects");
-
-        for (mut id, source) in sources {
-            debug!(
-                project_id = id.as_str(),
-                "Attempting to load {} (optional)",
-                color::file(source.join(&config_label))
-            );
-
-            // Hash all project-level config files
-            for name in &config_names {
-                self.config_paths.push(source.join(name));
-            }
-
-            // Load the config file
-            let config = context
-                .config_loader
-                .load_project_config_from_source(&context.workspace_root, &source)?;
-
-            let mut build_data = ProjectBuildData {
-                source,
-                ..Default::default()
-            };
-
-            // Track ID renames
-            if let Some(new_id) = &config.id
-                && new_id != &id
-            {
-                debug!(
-                    old_id = id.as_str(),
-                    new_id = new_id.as_str(),
-                    "Project has been configured with an explicit identifier of {}, renaming from {}",
-                    color::id(new_id),
-                    color::id(id.as_str()),
-                );
-
-                if renamed_ids.contains_key(&id) {
-                    dupe_original_ids.insert(id.clone());
-                } else {
-                    renamed_ids.insert(id.clone(), new_id.to_owned());
-                }
-
-                id = new_id.to_owned();
-            }
-
-            // Check for duplicate IDs
-            if let Some(existing_data) = project_data.get(&id)
-                && existing_data.source != build_data.source
-            {
-                return Err(WorkspaceBuilderError::DuplicateProjectId {
-                    id: id.to_string(),
-                    old_source: existing_data.source.to_string(),
-                    new_source: build_data.source.to_string(),
-                }
-                .into());
-            }
-
-            // Otherwise persist the build data
-            build_data.config = Some(config);
-            project_data.insert(id, build_data);
-        }
-
-        if !dupe_original_ids.is_empty() {
-            debug!(
-                original_ids = ?dupe_original_ids.iter().collect::<Vec<_>>(),
-                "Found multiple renamed projects with the same original ID; will ignore these IDs within lookups"
-            );
-
-            for dupe_id in dupe_original_ids {
-                renamed_ids.remove(&dupe_id);
-            }
-        }
-
-        debug!("Loaded {} projects", project_data.len());
-
-        self.project_data.extend(project_data);
-        self.renamed_project_ids.extend(renamed_ids);
-
-        Ok(())
-    }
-
-    /// Extend the graph's project build data with data derived from all
-    /// registered plugins, like aliases, dependencies, and tasks. This
-    /// must be called before projects are loaded into the graph.
-    pub async fn extend_projects_from_plugins(&mut self) -> miette::Result<()> {
-        self.extend_projects_from_extensions().await?;
-        self.extend_projects_from_toolchains().await?;
-
-        debug!("Loaded {} project aliases", self.aliases.len());
-
-        Ok(())
-    }
-
-    #[instrument(skip_all)]
-    async fn extend_projects_from_extensions(&mut self) -> miette::Result<()> {
-        let context = self.context();
-
-        if !context.extension_registry.has_plugin_configs() {
-            return Ok(());
-        }
-
-        let project_sources = self.map_project_sources();
-
-        debug!("Extending project graph from extension plugins");
-
-        let registry = &context.extension_registry;
-
-        for result in registry
-            .extend_project_graph_all(|extension| ExtendProjectGraphInput {
-                context: registry.create_context(),
-                project_sources: project_sources.clone(),
-                extension_config: registry.create_config(&extension.id),
-                ..Default::default()
-            })
-            .await?
-        {
-            self.apply_extend_output(result.id, result.output, false)?;
-        }
-
-        Ok(())
-    }
-
-    #[instrument(skip_all)]
-    async fn extend_projects_from_toolchains(&mut self) -> miette::Result<()> {
-        let context = self.context();
-
-        if !context.toolchain_registry.has_plugin_configs() {
-            return Ok(());
-        }
-
-        let project_sources = self.map_project_sources();
-
-        debug!("Extending project graph from toolchain plugins");
-
-        let registry = &context.toolchain_registry;
-
-        for result in registry
-            .extend_project_graph_all(|toolchain| ExtendProjectGraphInput {
-                context: registry.create_context(),
-                project_sources: project_sources.clone(),
-                toolchain_config: registry.create_config(&toolchain.id),
-                ..Default::default()
-            })
-            .await?
-        {
-            self.apply_extend_output(result.id, result.output, true)?;
-        }
-
-        Ok(())
-    }
-
-    fn apply_extend_output(
-        &mut self,
-        plugin_id: Id,
-        output: ExtendProjectGraphOutput,
-        is_toolchain: bool,
-    ) -> miette::Result<()> {
-        let context = self.context();
-
-        map_plugin_input_paths(
-            &context.workspace_root,
-            output.input_files,
-            &mut self.plugin_input_paths,
-        );
-
-        let inherit_aliases = if is_toolchain {
-            context
-                .toolchains_config
-                .get_plugin_config(&plugin_id)
-                .is_none_or(|cfg| cfg.inherit_aliases)
-        } else {
-            true
-        };
-
-        for (project_id, mut project_extend) in output.extended_projects {
-            if !self.project_data.contains_key(&project_id) {
-                return Err(ProjectGraphError::UnconfiguredID {
-                    id: project_id.to_string(),
-                }
-                .into());
-            }
-
-            if inherit_aliases && let Some(alias) = project_extend.alias.take() {
-                self.track_alias(project_id.clone(), alias, plugin_id.clone())?;
-            }
-
-            if let Some(build_data) = self.project_data.get_mut(&project_id) {
-                build_data.extensions.push(project_extend);
-            }
-        }
-
-        Ok(())
-    }
-
-    fn map_project_sources(&self) -> BTreeMap<Id, String> {
-        self.project_data
-            .iter()
-            .map(|(id, build_data)| (id.clone(), build_data.source.to_string()))
-            .collect()
-    }
-
-    fn track_alias(&mut self, id: Id, alias: String, plugin_id: Id) -> miette::Result<()> {
-        // Skip aliases that are an invalid ID format
-        if let Err(error) = Id::new(&alias) {
-            debug!(
-                error = error.to_string(),
-                "Skipping alias {} for project {} as its an invalid format",
-                color::label(&alias),
-                color::id(&id),
-            );
-
-            return Ok(());
-        }
-
-        // Skip aliases that would override a different ID
-        if alias != id.as_str() && self.project_data.contains_key(alias.as_str()) {
-            debug!(
-                "Skipping alias {} for project {} as it conflicts with the existing project {}",
-                color::label(&alias),
-                color::id(&id),
-                color::id(&alias),
-            );
-
-            return Ok(());
-        }
-
-        // Skip aliases that collide with another alias
-        if let Some(existing_id) = self.aliases.get(&alias) {
-            // Skip if the existing ID is already for this ID.
-            // This scenario is possible when multiple toolchains
-            // extract the same aliases (Bun vs Node, etc).
-            if existing_id == &id {
-                return Ok(());
-            }
-
-            debug!(
-                "Skipping alias {} for project {} as it already exists for project {}",
-                color::label(&alias),
-                color::id(&id),
-                color::id(existing_id),
-            );
-
-            return Ok(());
-        }
-
-        self.project_data
-            .get_mut(&id)
-            .expect("Project build data not found!")
-            .aliases
-            .insert(alias.clone(), plugin_id);
-
-        if alias != id.as_str() {
-            self.aliases.insert(alias, id);
-        }
-
-        Ok(())
-    }
-
     pub fn context(&self) -> Arc<WorkspaceBuilderContext> {
         Arc::clone(
             self.context
                 .as_ref()
                 .expect("Missing workspace builder context!"),
         )
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use moon_cache::CacheContext;
-    use moon_extension_plugin::ExtensionRegistry;
-    use moon_graph_utils::GraphConnections;
-    use moon_test_utils::create_empty_moon_sandbox;
-    use moon_toolchain_plugin::ToolchainRegistry;
-
-    fn create_cache_engine(root: &std::path::Path) -> CacheEngine {
-        CacheEngine::new(CacheContext::new(root)).unwrap()
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn reindexes_project_graph_after_filtering_loading_nodes() {
-        let sandbox = create_empty_moon_sandbox();
-        let context = WorkspaceBuilderContext {
-            cache_engine: Arc::new(create_cache_engine(sandbox.path())),
-            config_loader: ConfigLoader::default(),
-            enabled_toolchains: vec![],
-            extensions_config: Arc::new(ExtensionsConfig::default()),
-            extension_registry: Arc::new(ExtensionRegistry::default()),
-            inherited_tasks: Arc::new(InheritedTasksManager::default()),
-            toolchains_config: Arc::new(ToolchainsConfig::default()),
-            toolchain_registry: Arc::new(ToolchainRegistry::default()),
-            vcs: None,
-            working_dir: sandbox.path().to_path_buf(),
-            workspace_config: Arc::new(WorkspaceConfig::default()),
-            workspace_root: sandbox.path().to_path_buf(),
-        };
-
-        let mut project_graph = DiGraph::new();
-        let _ghost = project_graph.add_node(NodeState::Loading);
-        let app_index = project_graph.add_node(NodeState::Loaded(Project {
-            id: Id::raw("app"),
-            ..Project::default()
-        }));
-        let dep_index = project_graph.add_node(NodeState::Loaded(Project {
-            id: Id::raw("dep"),
-            ..Project::default()
-        }));
-
-        project_graph.add_edge(app_index, dep_index, DependencyScope::Build);
-
-        let graph = WorkspaceBuilder {
-            context: Some(Arc::new(context)),
-            config_paths: vec![],
-            aliases: FxHashMap::default(),
-            deferred_project_edges: vec![],
-            plugin_input_paths: BTreeSet::default(),
-            projects_by_tag: FxHashMap::default(),
-            project_data: FxHashMap::default(),
-            project_graph,
-            renamed_project_ids: FxHashMap::default(),
-            repo_type: RepoType::Monorepo,
-            root_project_id: None,
-            task_data: FxHashMap::default(),
-            task_graph: Dag::new(),
-        }
-        .build()
-        .await
-        .unwrap();
-
-        let app = graph.get_project("app").unwrap();
-
-        assert_eq!(
-            graph.projects.dependencies_of(app.as_ref()),
-            vec![Id::raw("dep")]
-        );
-
-        // Weight-based lookups must also resolve the reindexed nodes
-        let mut keys = graph.projects.get_node_keys();
-        keys.sort();
-
-        assert_eq!(keys, vec![Id::raw("app"), Id::raw("dep")]);
-        assert_eq!(
-            graph.projects.deep_dependencies_of(app.as_ref()),
-            vec![Id::raw("dep")]
-        );
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn reindexes_task_graph_after_filtering_loading_nodes() {
-        let sandbox = create_empty_moon_sandbox();
-        let context = WorkspaceBuilderContext {
-            cache_engine: Arc::new(create_cache_engine(sandbox.path())),
-            config_loader: ConfigLoader::default(),
-            enabled_toolchains: vec![],
-            extensions_config: Arc::new(ExtensionsConfig::default()),
-            extension_registry: Arc::new(ExtensionRegistry::default()),
-            inherited_tasks: Arc::new(InheritedTasksManager::default()),
-            toolchains_config: Arc::new(ToolchainsConfig::default()),
-            toolchain_registry: Arc::new(ToolchainRegistry::default()),
-            vcs: None,
-            working_dir: sandbox.path().to_path_buf(),
-            workspace_config: Arc::new(WorkspaceConfig::default()),
-            workspace_root: sandbox.path().to_path_buf(),
-        };
-
-        let mut project_graph = DiGraph::new();
-        project_graph.add_node(NodeState::Loaded(Project {
-            id: Id::raw("app"),
-            ..Project::default()
-        }));
-
-        let mut task_graph = Dag::new();
-        let _ghost = task_graph.add_node(NodeState::Loading);
-        let build_target = Target::parse("app:build").unwrap();
-        let lint_target = Target::parse("app:lint").unwrap();
-        let build_index = task_graph.add_node(NodeState::Loaded(Task {
-            id: Id::raw("build"),
-            target: build_target.clone(),
-            ..Task::default()
-        }));
-        let lint_index = task_graph.add_node(NodeState::Loaded(Task {
-            id: Id::raw("lint"),
-            target: lint_target.clone(),
-            ..Task::default()
-        }));
-
-        task_graph
-            .add_edge(build_index, lint_index, TaskDependencyType::Required)
-            .unwrap();
-
-        let graph = WorkspaceBuilder {
-            context: Some(Arc::new(context)),
-            config_paths: vec![],
-            aliases: FxHashMap::default(),
-            deferred_project_edges: vec![],
-            plugin_input_paths: BTreeSet::default(),
-            projects_by_tag: FxHashMap::default(),
-            project_data: FxHashMap::default(),
-            project_graph,
-            renamed_project_ids: FxHashMap::default(),
-            repo_type: RepoType::Monorepo,
-            root_project_id: None,
-            task_data: FxHashMap::default(),
-            task_graph,
-        }
-        .build()
-        .await
-        .unwrap();
-
-        let build_task = graph.get_task(&build_target).unwrap();
-
-        assert_eq!(
-            graph.tasks.dependencies_of(build_task.as_ref()),
-            vec![lint_target.clone()]
-        );
-
-        // Weight-based lookups must also resolve the reindexed nodes
-        let mut keys = graph.tasks.get_node_keys();
-        keys.sort_by_key(|target| target.to_string());
-
-        assert_eq!(keys, vec![build_target, lint_target.clone()]);
-        assert_eq!(
-            graph.tasks.deep_dependencies_of(build_task.as_ref()),
-            vec![lint_target]
-        );
     }
 }

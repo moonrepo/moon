@@ -4,7 +4,7 @@ use moon_common::path::{WorkspaceRelativeGlob, WorkspaceRelativePathBuf};
 use moon_common::{Id, cacheable};
 use moon_config::{
     EnvMap, Input, Output, TaskCheck, TaskDependencyConfig, TaskOptionRunInCI, TaskPreset,
-    TaskType, is_false, schematic::RegexSetting,
+    TaskType, is_false, is_true, schematic::RegexSetting,
 };
 use moon_target::Target;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -60,7 +60,7 @@ cacheable!(
     #[derive(Clone, Debug, Eq, PartialEq)]
     #[serde(default)]
     pub struct TaskGlobInput {
-        #[serde(skip_serializing_if = "is_false")]
+        #[serde(skip_serializing_if = "is_true")]
         pub cache: bool,
 
         /// The glob to walk and match with, when it differs from the glob as
@@ -105,6 +105,7 @@ cacheable!(
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
     #[serde(default)]
     pub struct TaskFileOutput {
+        #[serde(skip_serializing_if = "is_false")]
         pub optional: bool,
     }
 );
@@ -204,7 +205,9 @@ cacheable!(
 
         pub target: Target,
 
-        #[serde(skip_serializing_if = "Vec::is_empty")]
+        // Not skipped from the `Default` implementation, as it includes
+        // the system toolchain, so an empty list must stay empty
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub toolchains: Vec<Id>,
 
         #[serde(rename = "type")]

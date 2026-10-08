@@ -6433,6 +6433,7 @@ dependencies = [
  "moon_file_group",
  "moon_task",
  "serde",
+ "serde_json",
  "thiserror 2.0.21",
 ]
 
@@ -6550,6 +6551,7 @@ dependencies = [
  "rustc-hash",
  "scc",
  "serde",
+ "serde_json",
  "starbase_sandbox",
  "starbase_utils",
 ]

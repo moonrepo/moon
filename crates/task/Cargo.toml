@@ -20,6 +20,7 @@ serde = { workspace = true }
 starbase_utils = { workspace = true, features = ["glob"] }
 
 [dev-dependencies]
+serde_json = { workspace = true }
 starbase_sandbox = { workspace = true }
 
 [lints]

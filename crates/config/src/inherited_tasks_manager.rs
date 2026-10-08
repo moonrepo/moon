@@ -33,10 +33,32 @@ impl InheritedTasksManager {
     }
 
     pub fn get_inherited_config(&self, input: InheritFor) -> miette::Result<InheritedTasks> {
+        Self::create_inherited_config(self.match_inherited_configs_in_order(input))
+    }
+
+    pub fn get_inherited_config_from_sources(
+        &self,
+        sources: &[String],
+    ) -> miette::Result<InheritedTasks> {
+        Self::create_inherited_config(
+            sources
+                .iter()
+                .filter_map(|source| {
+                    self.configs
+                        .iter()
+                        .find(|entry| standardize_separators(entry.input.as_str()) == *source)
+                })
+                .collect(),
+        )
+    }
+
+    fn create_inherited_config(
+        entries: Vec<&InheritedTasksEntry>,
+    ) -> miette::Result<InheritedTasks> {
         let mut configs = IndexMap::default();
         let mut layers = FxHashMap::<String, Vec<String>>::default();
 
-        for config_entry in self.match_inherited_configs_in_order(input) {
+        for config_entry in entries {
             let source_path = standardize_separators(config_entry.input.as_str());
             let mut config = config_entry.config.clone();
 

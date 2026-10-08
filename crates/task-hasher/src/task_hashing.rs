@@ -56,8 +56,12 @@ pub async fn hash_common_task_contents(
                 continue;
             }
 
-            if let Some(entry) = action_context.target_states.get_sync(&dep.target)
-                && let Some(value) = dep_hash_input(dep.cache_strategy, entry.get())
+            if let Some(value) = action_context
+                .target_states
+                .read_sync(&dep.target, |_, state| {
+                    dep_hash_input(dep.cache_strategy, state)
+                })
+                .flatten()
             {
                 deps.insert(&dep.target, value);
             }

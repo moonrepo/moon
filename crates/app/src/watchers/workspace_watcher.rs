@@ -143,11 +143,12 @@ impl WorkspaceWatcher {
             handle.abort();
         }
 
-        // Ensure the cache/state files are cleared before rebuilding
+        // Ensure the cache/state files are cleared before rebuilding. The state
+        // is removed first, as its hash is what marks the cached graph as valid
         let cache_engine = self.session.get_cache_engine()?;
 
-        fs::remove_file(cache_engine.state.resolve_path(STATE_GRAPH_FILE_NAME))?;
         fs::remove_file(cache_engine.state.resolve_path(STATE_CACHE_FILE_NAME))?;
+        fs::remove_file(cache_engine.state.resolve_path(STATE_GRAPH_FILE_NAME))?;
 
         // Rebuild the graphs in a background thread
         self.graph_handle = Some(self.session.rebuild_graphs(Arc::clone(state)));

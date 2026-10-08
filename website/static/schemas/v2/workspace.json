@@ -477,12 +477,6 @@
       "description": "Configures experiments across the entire moon workspace.",
       "type": "object",
       "properties": {
-        "asyncGraphBuilding": {
-          "title": "asyncGraphBuilding",
-          "description": "Build the project and task graphs asynchronously. @since 2.2.0",
-          "default": true,
-          "type": "boolean"
-        },
         "explicitTaskOutputStyle": {
           "title": "explicitTaskOutputStyle",
           "description": "Always use the task's outputStyle option, even when running the task as a primary target. @since 2.6.0",

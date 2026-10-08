@@ -27,7 +27,7 @@ use moon_project_graph::ProjectGraph;
 use moon_task_graph::TaskGraph;
 use moon_toolchain_plugin::*;
 use moon_vcs::{BoxedVcs, git::Git};
-use moon_workspace::{WorkspaceBuilder, WorkspaceBuilderAsync, WorkspaceBuilderContext};
+use moon_workspace::{WorkspaceBuilder, WorkspaceBuilderContext};
 use moon_workspace_graph::WorkspaceGraph;
 use proto_core::ProtoEnvironment;
 use starbase::{AppExitCode, AppResult, AppSession};
@@ -390,17 +390,12 @@ impl MoonSession {
     async fn load_workspace_graph(&self) -> miette::Result<Arc<WorkspaceGraph>> {
         let context = self.create_workspace_graph_context().await?;
 
-        let workspace_graph = Arc::new(if self.workspace_config.experiments.async_graph_building {
-            WorkspaceBuilderAsync::new_with_cache(context)
-                .await?
-                .build()
-                .await?
-        } else {
+        let workspace_graph = Arc::new(
             WorkspaceBuilder::new_with_cache(context)
                 .await?
                 .build()
-                .await?
-        });
+                .await?,
+        );
 
         // Update the plugin registries with the graph
         let extensions = self.get_extension_registry().await?;

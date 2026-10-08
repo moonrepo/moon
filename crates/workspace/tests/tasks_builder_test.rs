@@ -1,8 +1,11 @@
 use moon_common::Id;
 use moon_config::{TaskDependencyConfig, TaskDependencyType};
+use moon_graph_utils::{GraphConnections, GraphExpanderContext};
+use moon_project_graph::ProjectGraph;
 use moon_task::{Target, Task};
 use moon_workspace::WorkspaceTasksBuilder;
 use rustc_hash::FxHashMap;
+use std::sync::Arc;
 
 fn create_task(id: &str, deps: Vec<TaskDependencyConfig>) -> Task {
     Task {
@@ -190,5 +193,45 @@ mod tasks_builder {
                 .contains("adding a relationship from proj:b to proj:a would introduce a cycle"),
             "{error}"
         );
+    }
+
+    // `missing` is never built, so it remains a placeholder that's indexed
+    // before `lint`, which shifts down an index when it's filtered out
+    #[test]
+    fn reindexes_after_filtering_placeholders() {
+        let mut builder = WorkspaceTasksBuilder::new();
+
+        builder
+            .build(vec![
+                create_task(
+                    "build",
+                    vec![
+                        create_dep("missing", TaskDependencyType::Required),
+                        create_dep("lint", TaskDependencyType::Required),
+                    ],
+                ),
+                create_task("lint", vec![]),
+            ])
+            .unwrap();
+
+        let graph = builder.finalize(
+            GraphExpanderContext::default(),
+            Arc::new(ProjectGraph::default()),
+        );
+        let build = graph
+            .get_unexpanded(&Target::parse("proj:build").unwrap())
+            .unwrap();
+        let lint_target = Target::parse("proj:lint").unwrap();
+
+        let mut targets = graph
+            .get_node_keys()
+            .into_iter()
+            .map(|target| target.to_string())
+            .collect::<Vec<_>>();
+        targets.sort();
+
+        assert_eq!(targets, ["proj:build", "proj:lint"]);
+        assert_eq!(graph.dependencies_of(build), vec![lint_target.clone()]);
+        assert_eq!(graph.deep_dependencies_of(build), vec![lint_target]);
     }
 }

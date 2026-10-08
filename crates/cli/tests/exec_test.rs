@@ -2903,7 +2903,6 @@ tasks:
             let sandbox = create_cases_sandbox_with_config(|workspace_config| {
                 workspace_config.experiments = Some(PartialExperimentsConfig {
                     explicit_task_output_style: Some(true),
-                    ..PartialExperimentsConfig::default()
                 });
             });
 
@@ -2933,7 +2932,6 @@ tasks:
             let sandbox = create_cases_sandbox_with_config(|workspace_config| {
                 workspace_config.experiments = Some(PartialExperimentsConfig {
                     explicit_task_output_style: Some(true),
-                    ..PartialExperimentsConfig::default()
                 });
             });
 

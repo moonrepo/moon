@@ -42,9 +42,9 @@ both.
 
 :::caution
 
-Projects that depend on each other and form a cycle must be avoided! While we do our best to avoid
-an infinite loop and disconnect nodes from each other, there's no guarantee that tasks will run in
-the correct order.
+Projects that depend on each other and form a cycle must be avoided, as they'll fail with an error
+when building the project graph. The only exception is a cycle that crosses the production and
+development [scope partitions](../how-it-works/project-graph#scope-partitions).
 
 :::
 
@@ -414,20 +414,6 @@ Enable or disable experiments that alter core functionality.
 Experiments are a work in progress and may be buggy. Please report any issues you encounter!
 
 :::
-
-### `asyncGraphBuilding`<VersionLabel version="2.2.0" />
-
-<HeadingApiLink to="/api/types/interface/ExperimentsConfig#asyncGraphBuilding" />
-
-Utilizes an asynchronous graph building implementation that can improve performance by 100-170% in
-large workspaces. Defaults to `true` in v2.5+, otherwise `false`.
-
-```yaml title=".moon/workspace.yml" {2}
-experiments:
-  asyncGraphBuilding: true
-```
-
-Can also be enabled with the `MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING` environment variable.
 
 ### `explicitTaskOutputStyle`<VersionLabel version="2.6.0" />
 

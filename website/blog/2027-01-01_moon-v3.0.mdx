@@ -52,7 +52,7 @@ the cycle, or move one of its edges to a different dependency scope, so that it 
 production and development [scope partitions](/docs/how-it-works/project-graph#scope-partitions),
 which is allowed.
 
-## Content-addressable local cache
+### Content-addressable local cache
 
 Since v1.30, moon's remote cache has stored task outputs in a content-addressable storage (CAS)
 format, while the local cache archived them as `.tar.gz` tarballs. In v2.3, we introduced a local
@@ -75,7 +75,7 @@ When upgrading, the legacy `.moon/cache/hashes` and `.moon/cache/outputs` direct
 automatically removed. Previously archived outputs are not migrated, so the first run of each task
 after upgrading will miss the local cache, unless its outputs are in your remote cache.
 
-## Task output styles
+### Task output styles
 
 The [`outputStyle`](/docs/config/project#outputstyle) task option controls how a task's output is
 displayed, but until now, it only applied to transitive targets (those run as a dependency of

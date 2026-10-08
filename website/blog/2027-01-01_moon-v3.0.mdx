@@ -2,7 +2,7 @@
 slug: moon-v3.0
 title: moon v3.0 - ???
 authors: [milesj]
-tags: [async, experiments, affected, hashing, cache, cas, graph]
+tags: [async, experiments, affected, hashing, cache, cas, graph, tasks]
 # image: ./img/moon/v2.6.png
 ---
 
@@ -12,11 +12,12 @@ TODO
 
 ## Resolved experiments
 
-Over the last few releases, we've rebuilt moon's hottest code paths and its local cache, and shipped
-them behind [experiments](/docs/config/workspace#experiments), most of which were enabled by default
-in v2.5. They've since proven themselves, so in v3, the following experiments have been resolved.
-Their implementation is now the _only_ implementation, the previous one has been removed, and the
-setting no longer exists.
+Over the last few releases, we've rebuilt moon's hottest code paths and its local cache, reworked
+how task output is displayed, and shipped these changes behind
+[experiments](/docs/config/workspace#experiments), most of which were enabled by default in v2.5.
+They've since proven themselves, so in v3, the following experiments have been resolved. Their
+implementation is now the _only_ implementation, the previous one has been removed, and the setting
+no longer exists.
 
 - `asyncAffectedTracking` (added in v2.2) - Affected projects and tasks are now always tracked
   asynchronously, and the synchronous tracker has been removed.
@@ -24,6 +25,8 @@ setting no longer exists.
   asynchronously, and the synchronous builder has been removed.
 - `casOutputsCache` (added in v2.3) - Task outputs are now always stored in the local
   content-addressable cache, and the tarball-based cache has been removed.
+- `explicitTaskOutputStyle` (added in v2.6) - A task's `outputStyle` option is now always applied,
+  including to primary targets, which previously ignored it and always displayed their output.
 - `nativeFileHashing` (added in v2.3) - Files are now always hashed natively within moon's task
   pool, and hashing files through the VCS has been removed.
 
@@ -35,6 +38,7 @@ a resolved experiment, so be sure to remove it.
 -  asyncAffectedTracking: true
 -  asyncGraphBuilding: true
 -  casOutputsCache: true
+-  explicitTaskOutputStyle: true
 -  nativeFileHashing: true
 ```
 
@@ -48,7 +52,7 @@ the cycle, or move one of its edges to a different dependency scope, so that it 
 production and development [scope partitions](/docs/how-it-works/project-graph#scope-partitions),
 which is allowed.
 
-## Content-addressable local cache
+### Content-addressable local cache
 
 Since v1.30, moon's remote cache has stored task outputs in a content-addressable storage (CAS)
 format, while the local cache archived them as `.tar.gz` tarballs. In v2.3, we introduced a local
@@ -56,8 +60,9 @@ CAS layer behind the `casOutputsCache` experiment, which stores outputs in the s
 remote cache, and over the following releases, we moved archiving and hydration into the
 [daemon](/docs/guides/daemon), and hash manifests into the CAS.
 
-In v3, the local CAS is now the _only_ local cache, and tarballs are gone. Unlike the other resolved
-experiments, this one was opt-in, so if you hadn't enabled it, this is a change in behavior:
+In v3, the local CAS is now the _only_ local cache, and tarballs are gone. Unlike most of the
+resolved experiments, this one was opt-in, so if you hadn't enabled it, this is a change in
+behavior:
 
 - Outputs are stored as deduplicated blobs, so identical files produced by multiple tasks, or by
   multiple runs of the same task, are only stored once.
@@ -69,6 +74,46 @@ experiments, this one was opt-in, so if you hadn't enabled it, this is a change 
 When upgrading, the legacy `.moon/cache/hashes` and `.moon/cache/outputs` directories are
 automatically removed. Previously archived outputs are not migrated, so the first run of each task
 after upgrading will miss the local cache, unless its outputs are in your remote cache.
+
+### Task output styles
+
+The [`outputStyle`](/docs/config/project#outputstyle) task option controls how a task's output is
+displayed, but until now, it only applied to transitive targets (those run as a dependency of
+another task). Primary targets (those you explicitly requested on the command line) ignored it, and
+always displayed their output, so the same task could display its output differently, depending on
+how it was run. In v2.6, we introduced the `explicitTaskOutputStyle` experiment, which applies the
+option to primary targets as well.
+
+In v3, the option is applied to _all_ targets. Like `casOutputsCache`, this experiment was opt-in,
+so if you hadn't enabled it, a primary target that configures `outputStyle` will now display its
+output accordingly, both when it runs and when it's hydrated from the cache. For example, a task
+with `buffer-only-failure` no longer displays any output when it passes, even when run directly.
+
+```yaml title="moon.yml" {5}
+tasks:
+  test:
+    command: 'vitest'
+    options:
+      outputStyle: 'buffer-only-failure'
+```
+
+```shell
+# v2: Always displays the output
+# v3: Only displays the output when the task fails
+$ moon run app:test
+```
+
+To change how output is displayed for a single run, pass the `--output-style` option, which still
+takes precedence over the task option, for primary and transitive targets alike.
+
+```shell
+$ moon run app:test --output-style stream
+```
+
+If a [persistent task](/docs/concepts/task#persistent), like a dev server, configures a style other
+than `stream`, its output is now captured even when run directly, and is only displayed once it
+exits. [Interactive tasks](/docs/config/project#interactive) are still the exception, as they must
+remain attached to the terminal, and always stream their output.
 
 ## Performance improvements
 

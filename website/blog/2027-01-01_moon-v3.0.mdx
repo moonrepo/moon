@@ -2,7 +2,7 @@
 slug: moon-v3.0
 title: moon v3.0 - ???
 authors: [milesj]
-tags: [async, experiments, affected, hashing, cache, cas]
+tags: [async, experiments, affected, hashing, cache, cas, graph]
 # image: ./img/moon/v2.6.png
 ---
 
@@ -111,7 +111,45 @@ with coarse timestamps can't serve a stale hash.
 Files are also now hashed by a fixed pool of workers, instead of spawning a task per file, and each
 file is stat-ed once instead of twice.
 
+### Project and task graphs
+
+Building the project and task graphs is now **~3x faster**, and far more consistent. In our
+benchmarks, building the graphs for 1,000 projects went from 260ms to 86ms on average, and in a real
+1,000 project workspace, a `moon project` command went from 335ms to 225ms.
+
+The bigger win is consistency. Previously in that same workspace, whenever the graphs had to be
+rebuilt, 1 in 8 commands took over a second, and the slowest took 1.9s. While building, every task
+asks its toolchains whether they apply to it, and looking up a loaded plugin took an exclusive lock,
+so the projects being built in parallel had to take turns. On a busy machine, one slow handoff would
+stall everything queued behind it. These lookups now take a shared lock, and the slowest command
+went from 1.9s to 331ms. On top of that:
+
+- Git information (the branch, revision, and repository) is loaded in the background while the
+  graphs are built, instead of one command after another once they were built.
+- Projects and tasks are moved into the final graphs, instead of being cloned.
+- Dependency cycles are checked once per scope partition, after all relationships have been added,
+  instead of once for every relationship.
+- Project configs are loaded on a thread pool bounded to the number of CPUs, instead of on a thread
+  per project.
+
+The cached workspace graph is also **less than half the size**, going from 4.8MB to 2MB for 1,000
+projects. Projects now only store the paths of the `.moon/tasks` configs they inherited from,
+instead of a copy of each config, data that's only needed while building the graphs is no longer
+cached, and task options are omitted when they're the default value. The cache is also written
+atomically, so if moon is interrupted while saving it, the next run rebuilds the graphs, instead of
+loading an outdated one.
+
 ## Other changes
 
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v3.0.0) for a full list
 of changes, but here's a few more worth calling out:
+
+- When projects and tasks are serialized to JSON, like in `moon project --json`, `moon task --json`,
+  and `moon query projects|tasks`, fields that are the default value are now omitted, which makes
+  task options ~90% smaller. A missing field is its default value, and the `@moonrepo/types` types
+  have been updated to match. Projects also have a new `inheritedFrom` field, which lists the paths
+  of the `.moon/tasks` configs they inherited from.
+- Project [constraints](/docs/config/workspace#constraints) are now enforced for every relationship
+  between 2 projects. Previously, when a project depended on another more than once (like by its ID
+  and an alias) with different scopes, only one of those relationships was checked, so a layer or
+  tag violation could go unreported, and will now fail.

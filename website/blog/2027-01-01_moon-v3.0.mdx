@@ -147,8 +147,9 @@ of changes, but here's a few more worth calling out:
 - When projects and tasks are serialized to JSON, like in `moon project --json`, `moon task --json`,
   and `moon query projects|tasks`, fields that are the default value are now omitted, which makes
   task options ~90% smaller. A missing field is its default value, and the `@moonrepo/types` types
-  have been updated to match. Projects also have a new `inheritedFrom` field, which lists the paths
-  of the `.moon/tasks` configs they inherited from.
+  have been updated to match. A project's `inherited` field is also only included by
+  `moon project --json` now, while other output includes a new `inheritedFrom` field instead, which
+  lists the paths of the `.moon/tasks` configs the project inherited from.
 - Project [constraints](/docs/config/workspace#constraints) are now enforced for every relationship
   between 2 projects. Previously, when a project depended on another more than once (like by its ID
   and an alias) with different scopes, only one of those relationships was checked, so a layer or

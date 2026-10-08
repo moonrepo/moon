@@ -31,6 +31,10 @@
     includes most task `options` (like `cache`, `persistent`, and `runInCI`), a project's
     `language`, `layer`, and `stack` when they're `unknown`, and empty file group lists. A missing
     field is its default value, and the `@moonrepo/types` types have been updated to match.
+  - A project's `inherited` field, the configs it inherited from `.moon/tasks`, is now only included
+    in `moon project --json`. Other output, like `moon projects --json`, `moon query projects`, and
+    `moon project-graph --json`, includes the paths of those configs in a new `inheritedFrom` field
+    instead.
 
 #### 🚀 Updates
 
@@ -71,9 +75,9 @@
       when it fits within the hashing buffer.
 - **Plugins**
   - Improved the performance of calling plugins concurrently, like when building projects and their
-    tasks in parallel. Looking up a loaded plugin, and a toolchain's cached tool locations, no longer
-    takes an exclusive lock, which serialized concurrent callers, and on a busy machine could stall
-    building the workspace graph for multiple seconds.
+    tasks in parallel. Looking up a loaded plugin, and a toolchain's cached tool locations, no
+    longer takes an exclusive lock, which serialized concurrent callers, and on a busy machine could
+    stall building the workspace graph for multiple seconds.
 - **Workspace graph**
   - Improved the performance of building the workspace graph.
     - Git information (branch, revision, and repository) is now loaded concurrently in the
@@ -85,8 +89,8 @@
     - A workspace without any projects no longer locates and loads projects twice.
     - Projects now only store the paths of the `.moon/tasks` configs that they inherited from,
       instead of a copy of each config, which was copied again every time a project was expanded.
-      The configs are derived from these paths when a project is output, like in `moon project`,
-      and the paths are available in a new `inheritedFrom` field.
+      The configs are derived from these paths when required, like by `moon project`, and the paths
+      are available in a new `inheritedFrom` field.
     - Dependency cycles are now checked once per scope partition, after all project relationships
       have been added, instead of once for every relationship.
     - Project configs are now loaded on a thread pool bounded to the number of CPUs, instead of on a
@@ -103,8 +107,8 @@
 - Fixed an issue where project constraints (layers and tags) were only enforced for one of the
   relationships between 2 projects, when a project depended on another multiple times (like by its
   ID and an alias) with different scopes.
-- Fixed an issue where task input globs configured with `cache: false` were read back as cached
-  when deserialized from JSON, like when WASM plugins load tasks.
+- Fixed an issue where task input globs configured with `cache: false` were read back as cached when
+  deserialized from JSON, like when WASM plugins load tasks.
 - Fixed an issue where the workspace graph's cache could be left in an inconsistent state if moon
   was interrupted while saving it, which would load an outdated graph, or fail every command until
   the cache was removed. The graph is now written atomically, and saved before the state that marks

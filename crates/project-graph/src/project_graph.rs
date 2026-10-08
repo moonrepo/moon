@@ -616,25 +616,7 @@ impl GraphConversions<Project, DependencyScope, Id> for ProjectGraph {}
 
 impl GraphToDot<Project, DependencyScope, Id> for ProjectGraph {}
 
-impl GraphToJson<Project, DependencyScope, Id> for ProjectGraph {
-    fn to_json(&self, pretty: bool) -> miette::Result<String> {
-        // Include the inherited task configuration for consumers
-        let mut projects = FxHashMap::default();
-
-        for node in self.nodes.values() {
-            projects.insert(node.index, self.get_with_inherited_tasks(&node.project)?);
-        }
-
-        GraphCache {
-            graph: self.get_graph(),
-            data: projects
-                .iter()
-                .map(|(index, project)| (*index, project))
-                .collect(),
-        }
-        .to_json(pretty)
-    }
-}
+impl GraphToJson<Project, DependencyScope, Id> for ProjectGraph {}
 
 #[cfg(test)]
 mod tests {

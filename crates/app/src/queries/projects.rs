@@ -32,17 +32,7 @@ fn load_with_query(
     workspace_graph: &WorkspaceGraph,
     query: &str,
 ) -> miette::Result<Vec<Arc<Project>>> {
-    // Include inherited tasks for JSON output
-    workspace_graph
-        .query_projects(moon_query::build_query(query)?)?
-        .into_iter()
-        .map(|project| {
-            workspace_graph
-                .projects
-                .get_with_inherited_tasks(&project)
-                .map(Arc::new)
-        })
-        .collect()
+    workspace_graph.query_projects(moon_query::build_query(query)?)
 }
 
 fn load_with_regex(
@@ -60,7 +50,7 @@ fn load_with_regex(
     let mut filtered = vec![];
 
     for project_id in workspace_graph.projects.get_node_keys() {
-        // Include tasks (and inherited tasks) for JSON output
+        // Include tasks for JSON output
         let project = workspace_graph.get_project_with_tasks(project_id)?;
 
         if let Some(regex) = &id_regex

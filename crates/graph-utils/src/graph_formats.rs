@@ -11,8 +11,8 @@ use std::hash::Hash;
 
 #[derive(Serialize)]
 pub struct GraphCache<'graph, N, E> {
-    pub graph: &'graph DiGraph<NodeIndex, E>,
-    pub data: FxHashMap<NodeIndex, &'graph N>,
+    graph: &'graph DiGraph<NodeIndex, E>,
+    data: FxHashMap<NodeIndex, &'graph N>,
 }
 
 impl<N: Serialize, E: Serialize> GraphCache<'_, N, E> {

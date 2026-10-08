@@ -1316,10 +1316,14 @@ tasks:
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn includes_inherited_tasks_for_output() {
+        async fn only_includes_inherited_tasks_when_requested() {
             let graph = build_inheritance_graph("inheritance/scoped").await;
 
-            let project = graph.get_project_with_tasks("node").unwrap();
+            // Like the project detail command
+            let project = graph
+                .projects
+                .get_with_inherited_tasks(&graph.get_project("node").unwrap())
+                .unwrap();
 
             assert_eq!(
                 project
@@ -1332,6 +1336,15 @@ tasks:
                 NODE_SOURCES
             );
 
+            // While lists of projects only include the sources
+            assert!(
+                graph
+                    .get_project_with_tasks("node")
+                    .unwrap()
+                    .inherited
+                    .is_none()
+            );
+
             let json: json::JsonValue =
                 json::parse(graph.projects.to_json(false).unwrap()).unwrap();
             let node = json["data"]
@@ -1341,14 +1354,8 @@ tasks:
                 .find(|project| project["id"] == "node")
                 .unwrap();
 
-            assert_eq!(
-                node["inherited"]["configs"]
-                    .as_object()
-                    .unwrap()
-                    .keys()
-                    .collect::<Vec<_>>(),
-                NODE_SOURCES
-            );
+            assert!(node.get("inherited").is_none());
+            assert_eq!(node["inheritedFrom"], json::json!(NODE_SOURCES));
         }
 
         #[tokio::test(flavor = "multi_thread")]

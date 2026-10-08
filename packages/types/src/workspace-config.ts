@@ -191,14 +191,6 @@ export interface DockerConfig {
 /** Configures experiments across the entire moon workspace. */
 export interface ExperimentsConfig {
 	/**
-	 * Build the project and task graphs asynchronously.
-	 * @since 2.2.0
-	 *
-	 * @default true
-	 * @env MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING
-	 */
-	asyncGraphBuilding?: boolean;
-	/**
 	 * Always use the task's `outputStyle` option, even when running
 	 * the task as a primary target.
 	 * @since 2.6.0
@@ -888,14 +880,6 @@ export interface PartialDockerConfig {
 
 /** Configures experiments across the entire moon workspace. */
 export interface PartialExperimentsConfig {
-	/**
-	 * Build the project and task graphs asynchronously.
-	 * @since 2.2.0
-	 *
-	 * @default true
-	 * @env MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING
-	 */
-	asyncGraphBuilding?: boolean | null;
 	/**
 	 * Always use the task's `outputStyle` option, even when running
 	 * the task as a primary target.

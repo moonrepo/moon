@@ -49,6 +49,9 @@ pub async fn project(session: MoonSession, args: ProjectArgs) -> SessionResult {
     .await?;
 
     let project = workspace_graph.get_project_with_tasks(&id)?;
+    let project = workspace_graph
+        .projects
+        .get_with_inherited_tasks(&project)?;
     let config = &project.config;
     let console = &session.console;
 

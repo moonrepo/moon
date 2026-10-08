@@ -2802,7 +2802,6 @@ tasks:
 
     mod output_styles {
         use super::*;
-        use moon_config::PartialExperimentsConfig;
 
         #[test]
         fn buffer() {
@@ -2875,36 +2874,8 @@ tasks:
         }
 
         #[test]
-        fn ignores_style_for_direct_tasks() {
+        fn applies_style_to_direct_tasks() {
             let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg("outputStyles:none");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("stdout").eval(&output));
-            assert!(predicate::str::contains("stderr").eval(&output));
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg("outputStyles:none");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("cached").eval(&output));
-            assert!(predicate::str::contains("stdout").eval(&output));
-            assert!(predicate::str::contains("stderr").eval(&output));
-        }
-
-        #[test]
-        fn applies_style_to_direct_tasks_when_experiment_enabled() {
-            let sandbox = create_cases_sandbox_with_config(|workspace_config| {
-                workspace_config.experiments = Some(PartialExperimentsConfig {
-                    explicit_task_output_style: Some(true),
-                });
-            });
 
             let assert = sandbox.run_bin(|cmd| {
                 cmd.arg("run").arg("outputStyles:none");
@@ -2928,12 +2899,23 @@ tasks:
         }
 
         #[test]
-        fn streams_direct_tasks_when_experiment_enabled() {
-            let sandbox = create_cases_sandbox_with_config(|workspace_config| {
-                workspace_config.experiments = Some(PartialExperimentsConfig {
-                    explicit_task_output_style: Some(true),
-                });
+        fn applies_hash_style_to_direct_tasks() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("run").arg("outputStyles:hash");
             });
+
+            let output = assert.output();
+
+            // Output is captured (not streamed), and only the hash is displayed
+            assert!(predicate::str::contains("stdout").not().eval(&output));
+            assert!(predicate::str::contains("stderr").not().eval(&output));
+        }
+
+        #[test]
+        fn streams_direct_tasks() {
+            let sandbox = create_cases_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
                 cmd.arg("run").arg("outputStyles:stream");
@@ -2978,6 +2960,54 @@ tasks:
 
             assert!(predicate::str::contains("stdout").not().eval(&output));
             assert!(predicate::str::contains("stderr").not().eval(&output));
+        }
+
+        #[test]
+        fn option_overrides_the_task_option_when_cached() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("run")
+                    .arg("outputStyles:none")
+                    .arg("--output-style")
+                    .arg("buffer");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("stdout").eval(&output));
+            assert!(predicate::str::contains("stderr").eval(&output));
+
+            // And again when hydrating from the cache
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("run")
+                    .arg("outputStyles:none")
+                    .arg("--output-style")
+                    .arg("buffer");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("cached").eval(&output));
+            assert!(predicate::str::contains("stdout").eval(&output));
+            assert!(predicate::str::contains("stderr").eval(&output));
+        }
+
+        #[test]
+        fn option_overrides_the_task_option_for_transitive_tasks() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("run")
+                    .arg("outputStyles:nonePrimary")
+                    .arg("--output-style")
+                    .arg("buffer");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("outputStyles:none | stdout").eval(&output));
+            assert!(predicate::str::contains("outputStyles:none | stderr").eval(&output));
         }
 
         #[test]

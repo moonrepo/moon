@@ -122,6 +122,10 @@
 - Fixed an issue where duplicate project ID errors could report the existing and new project sources
   in a different order between runs.
 
+#### ⚙️ Internal
+
+- Updated proto to [v0.63.1](https://github.com/moonrepo/proto/releases/tag/v0.63.0).
+
 ## Unreleased
 
 #### 🐞 Fixes

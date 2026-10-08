@@ -467,12 +467,7 @@ impl WorkspaceMocker {
             .take()
             .unwrap_or_else(|| self.mock_workspace_builder_context());
 
-        // Mirror how the session decides which builder to use
-        let workspace_graph = if self.workspace_config.experiments.async_graph_building {
-            self.build_workspace_async(context, &options).await
-        } else {
-            self.build_workspace_sync(context, &options).await
-        };
+        let workspace_graph = self.build_workspace(context, &options).await;
 
         if options.ids.is_empty() {
             workspace_graph.projects.get_all().unwrap();
@@ -485,17 +480,15 @@ impl WorkspaceMocker {
         workspace_graph
     }
 
-    async fn build_workspace_async(
+    async fn build_workspace(
         &self,
         context: WorkspaceBuilderContext,
         options: &WorkspaceMockOptions,
     ) -> WorkspaceGraph {
         let mut builder = if options.cache {
-            WorkspaceBuilderAsync::new_with_cache(context)
-                .await
-                .unwrap()
+            WorkspaceBuilder::new_with_cache(context).await.unwrap()
         } else {
-            WorkspaceBuilderAsync::new(context).await.unwrap()
+            WorkspaceBuilder::new(context).await.unwrap()
         };
 
         if options.ids.is_empty() {
@@ -507,34 +500,6 @@ impl WorkspaceMocker {
                 .unwrap();
         }
 
-        builder.build().await.unwrap()
-    }
-
-    async fn build_workspace_sync(
-        &self,
-        context: WorkspaceBuilderContext,
-        options: &WorkspaceMockOptions,
-    ) -> WorkspaceGraph {
-        let mut builder = if options.cache {
-            WorkspaceBuilder::new_with_cache(context).await.unwrap()
-        } else {
-            let mut builder = WorkspaceBuilder::new(context).await.unwrap();
-
-            // The cached flow above extends internally, so only
-            // extend for the uncached flow
-            builder.extend_projects_from_plugins().await.unwrap();
-            builder
-        };
-
-        if options.ids.is_empty() {
-            builder.load_projects().await.unwrap();
-        } else {
-            for id in &options.ids {
-                builder.load_project(id).await.unwrap();
-            }
-        }
-
-        builder.load_tasks().await.unwrap();
         builder.build().await.unwrap()
     }
 }

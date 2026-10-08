@@ -512,9 +512,11 @@ impl WorkspaceProjectsBuilder {
                         .or_default()
                         .insert(
                             task.target.clone(),
-                            // Only copy fields needed for task deps resolution
+                            // Only copy fields needed for task deps resolution,
+                            // which must include every field read by `TaskDepsBuilder`
                             TaskOptions {
                                 allow_failure: task.options.allow_failure,
+                                interactive: task.options.interactive,
                                 run_in_ci: task.options.run_in_ci.clone(),
                                 persistent: task.options.persistent,
                                 ..Default::default()

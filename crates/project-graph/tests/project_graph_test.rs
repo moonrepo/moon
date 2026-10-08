@@ -1939,6 +1939,18 @@ tasks:
         async fn links_edges_across_cleanups_with_async_builder() {
             assert_edges_across_cleanups(true).await;
         }
+
+        #[tokio::test(flavor = "multi_thread")]
+        #[should_panic(expected = "task_builder::dependency::interactive_wait_dep")]
+        async fn errors_for_interactive_wait_dep_with_sync_builder() {
+            build_graph_from_fixture_for_builder("task-dep-types-interactive", false).await;
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        #[should_panic(expected = "task_builder::dependency::interactive_wait_dep")]
+        async fn errors_for_interactive_wait_dep_with_async_builder() {
+            build_graph_from_fixture_for_builder("task-dep-types-interactive", true).await;
+        }
     }
 
     mod aliases {

@@ -21,35 +21,37 @@ export interface InheritedTasks {
 	layers: Record<string, string[]>;
 }
 
+/** Options are omitted when they're the default value. */
 export interface TaskOptions {
 	affectedFiles?: TaskOptionAffectedFilesConfig | boolean | 'args' | 'env' | null;
-	allowFailure: boolean;
-	cache: boolean | 'local' | 'remote';
+	allowFailure?: boolean;
+	cache?: boolean | 'local' | 'remote';
 	cacheKey?: string | null;
 	cacheLifetime?: string | null;
 	envFiles?: string[] | null;
-	envOverride: boolean | string[];
-	expectFailure: boolean;
-	inferInputs: boolean;
-	internal: boolean;
-	interactive: boolean;
-	mergeArgs: MergeStrategy;
-	mergeDeps: MergeStrategy;
-	mergeEnv: MergeStrategy;
-	mergeInputs: MergeStrategy;
-	mergeOutputs: MergeStrategy;
-	mergeTags: MergeStrategy;
-	mergeToolchains: MergeStrategy;
+	envOverride?: boolean | string[];
+	expectFailure?: boolean;
+	inferInputs?: boolean;
+	internal?: boolean;
+	interactive?: boolean;
+	mergeArgs?: MergeStrategy;
+	mergeChecks?: MergeStrategy;
+	mergeDeps?: MergeStrategy;
+	mergeEnv?: MergeStrategy;
+	mergeInputs?: MergeStrategy;
+	mergeOutputs?: MergeStrategy;
+	mergeTags?: MergeStrategy;
+	mergeToolchains?: MergeStrategy;
 	mutex?: string | null;
 	os?: TaskOperatingSystem[] | null;
 	outputStyle?: TaskOutputStyle | null;
-	persistent: boolean;
-	priority: TaskPriority;
-	retryCount: number;
-	runDepsInParallel: boolean;
-	runInCI: boolean;
-	runInSyncPhase: boolean;
-	runFromWorkspaceRoot: boolean;
+	persistent?: boolean;
+	priority?: TaskPriority;
+	retryCount?: number;
+	runDepsInParallel?: boolean;
+	runInCI?: boolean;
+	runInSyncPhase?: boolean;
+	runFromWorkspaceRoot?: boolean;
 	shell?: boolean | null;
 	timeout?: number | null;
 	unixShell?: TaskUnixShell | null;
@@ -97,7 +99,7 @@ export interface Task {
 	preset?: TaskPreset | null;
 	script?: string | null;
 	state: TaskState;
-	tags: Id[];
+	tags?: Id[];
 	target: string;
 	toolchains?: Id[];
 	type: TaskType;

@@ -150,11 +150,12 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
     }
 
     pub async fn get_instance(&self, id: &Id) -> miette::Result<Arc<Inst>> {
+        // Read with a shared lock, as this is called for every plugin call,
+        // and an exclusive lock (`get_async`) serializes concurrent callers
         Ok(self
             .plugins
-            .get_async(id)
+            .read_async(id, |_, plugin| Arc::clone(plugin))
             .await
-            .map(|entry| Arc::clone(entry.get()))
             .ok_or_else(|| PluginError::UnknownId {
                 id: id.to_string(),
                 ty: self.type_of,

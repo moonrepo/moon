@@ -26,22 +26,6 @@ async fn build_graph(fixture: &str) -> WorkspaceGraph {
     build_graph_with_sandbox(fixture).await.0
 }
 
-// Cycles are only tolerated by the sync builder (which disconnects offending
-// edges), while the async builder errors when building the graph
-async fn build_graph_with_sync_builder(fixture: &str) -> WorkspaceGraph {
-    let sandbox = create_sandbox(fixture);
-
-    WorkspaceMocker::new(sandbox.path())
-        .with_default_projects()
-        .with_global_envs()
-        .with_inherited_tasks()
-        .update_workspace_config(|config| {
-            config.experiments.async_graph_building = false;
-        })
-        .mock_workspace_graph()
-        .await
-}
-
 mod affected_projects {
     use super::*;
 
@@ -320,9 +304,11 @@ mod affected_projects {
             );
         }
 
+        // The cycle crosses the production and development partitions,
+        // which the graph allows, so the walk must still terminate
         #[tokio::test(flavor = "multi_thread")]
         async fn deep_cycle() {
-            let workspace_graph = build_graph_with_sync_builder("projects-cycle").await;
+            let workspace_graph = build_graph("projects-cycle").await;
             let changed_files = FxHashSet::from_iter(["cycle-a/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
@@ -509,9 +495,11 @@ mod affected_projects {
             );
         }
 
+        // The cycle crosses the production and development partitions,
+        // which the graph allows, so the walk must still terminate
         #[tokio::test(flavor = "multi_thread")]
         async fn deep_cycle() {
-            let workspace_graph = build_graph_with_sync_builder("projects-cycle").await;
+            let workspace_graph = build_graph("projects-cycle").await;
             let changed_files = FxHashSet::from_iter(["cycle-c/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
@@ -522,12 +510,13 @@ mod affected_projects {
             assert_eq!(
                 affected.projects,
                 FxHashMap::from_iter([
+                    (Id::raw("cycle-a"), create_state_from_dependency("cycle-b")),
                     (Id::raw("cycle-b"), create_state_from_dependency("cycle-c")),
-                    // (Id::raw("cycle-a"), create_state_from_dependency("cycle-b")),
-                    (
-                        Id::raw("cycle-c"),
-                        create_state_from_file("cycle-c/file.txt")
-                    ),
+                    (Id::raw("cycle-c"), {
+                        let mut state = create_state_from_file("cycle-c/file.txt");
+                        state.upstream.insert(Id::raw("cycle-a"));
+                        state
+                    }),
                     (Id::raw("root"), create_state_from_file("cycle-c/file.txt")),
                 ])
             );
@@ -1158,40 +1147,6 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test(flavor = "multi_thread")]
-        async fn deep_cycle() {
-            let workspace_graph = build_graph_with_sync_builder("tasks-cycle").await;
-            let changed_files = FxHashSet::from_iter(["cycle/c.txt".into()]);
-
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.set_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
-            tracker.track_tasks().await.unwrap();
-            let affected = tracker.build();
-
-            assert_eq!(
-                affected.tasks,
-                FxHashMap::from_iter([
-                    (
-                        Target::parse("cycle:global").unwrap(),
-                        create_state_from_file("cycle/c.txt")
-                    ),
-                    (Target::parse("cycle:c").unwrap(), {
-                        let mut state = create_state_from_file("cycle/c.txt");
-                        state.downstream.insert(Target::parse("cycle:b").unwrap());
-                        state
-                    }),
-                    (
-                        Target::parse("cycle:a").unwrap(),
-                        create_state_from_dependent("cycle:c")
-                    ),
-                    (
-                        Target::parse("cycle:b").unwrap(),
-                        create_state_from_dependent("cycle:a")
-                    ),
-                ])
-            );
-        }
-
         // Multiple affected tasks share dependencies, which are
         // walked once, but marked from every task that reaches them
         #[tokio::test(flavor = "multi_thread")]
@@ -1375,39 +1330,6 @@ mod affected_tasks {
                     (
                         Target::parse("chain:z").unwrap(),
                         create_state_from_file("chain/z.txt")
-                    ),
-                ])
-            );
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn deep_cycle() {
-            let workspace_graph = build_graph_with_sync_builder("tasks-cycle").await;
-            let changed_files = FxHashSet::from_iter(["cycle/c.txt".into()]);
-
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
-            tracker.track_tasks().await.unwrap();
-            let affected = tracker.build();
-
-            assert_eq!(
-                affected.tasks,
-                FxHashMap::from_iter([
-                    (
-                        Target::parse("cycle:global").unwrap(),
-                        create_state_from_file("cycle/c.txt")
-                    ),
-                    (
-                        Target::parse("cycle:c").unwrap(),
-                        create_state_from_file("cycle/c.txt")
-                    ),
-                    (
-                        Target::parse("cycle:b").unwrap(),
-                        create_state_from_dependency("cycle:c")
-                    ),
-                    (
-                        Target::parse("cycle:a").unwrap(),
-                        create_state_from_dependency("cycle:b")
                     ),
                 ])
             );

@@ -61,10 +61,15 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
         let mut list = vec![];
 
         // First check if all of the requested plugins are already registered,
-        // and if so, return them immediately
+        // and if so, return them immediately. This is the hot path for every
+        // plugin call, so read with a shared lock, and only once per plugin
         for id in &ids {
-            if self.is_registered(id).await {
-                list.push(self.get_instance(id).await?);
+            if let Some(plugin) = self
+                .plugins
+                .read_async(id, |_, plugin| Arc::clone(plugin))
+                .await
+            {
+                list.push(plugin);
             }
         }
 
@@ -114,8 +119,12 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
         // doing so serializes loads that collide on a bucket and can deadlock
         // under concurrent loads (e.g. `load_many`), since a guard held across
         // an `.await` blocks other tasks (and map resizes) from making progress.
-        if let Some(existing) = self.plugins.get_async(&id).await {
-            return Ok(Arc::clone(existing.get()));
+        if let Some(existing) = self
+            .plugins
+            .read_async(&id, |_, plugin| Arc::clone(plugin))
+            .await
+        {
+            return Ok(existing);
         }
 
         debug!(

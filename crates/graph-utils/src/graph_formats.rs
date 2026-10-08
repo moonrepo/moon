@@ -15,6 +15,13 @@ pub struct GraphCache<'graph, N, E> {
     data: FxHashMap<NodeIndex, &'graph N>,
 }
 
+impl<N: Serialize, E: Serialize> GraphCache<'_, N, E> {
+    /// Format graph as a JSON string.
+    pub fn to_json(&self, pretty: bool) -> miette::Result<String> {
+        Ok(json::format(self, pretty)?)
+    }
+}
+
 fn should_use_compact_view() -> bool {
     is_test_env() || cfg!(debug_assertions)
 }
@@ -59,12 +66,10 @@ pub trait GraphToDot<N: Clone + Debug + Display, E: Clone + Debug + Display, K: 
 pub trait GraphToJson<N: Serialize, E: Serialize, K>: GraphData<N, E, K> {
     /// Format graph as a JSON string.
     fn to_json(&self, pretty: bool) -> miette::Result<String> {
-        Ok(json::format(
-            &GraphCache {
-                graph: self.get_graph(),
-                data: self.get_nodes(),
-            },
-            pretty,
-        )?)
+        GraphCache {
+            graph: self.get_graph(),
+            data: self.get_nodes(),
+        }
+        .to_json(pretty)
     }
 }

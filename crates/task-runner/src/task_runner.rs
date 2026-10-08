@@ -61,8 +61,11 @@ pub fn is_task_dependencies_complete(task: &Task, context: &ActionContext) -> mi
             continue;
         }
 
-        if let Some(dep_state) = context.target_states.get_sync(&dep.target) {
-            if dep_state.get().is_complete() {
+        if let Some(is_complete) = context
+            .target_states
+            .read_sync(&dep.target, |_, state| state.is_complete())
+        {
+            if is_complete {
                 continue;
             }
 

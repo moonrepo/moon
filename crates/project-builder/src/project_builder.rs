@@ -321,7 +321,10 @@ impl<'app> ProjectBuilder<'app> {
             ..Project::default()
         };
 
-        project.inherited = self.global_configs.take();
+        // Only store the source paths, as the configs can be derived from them
+        if let Some(global_configs) = self.global_configs.take() {
+            project.inherited_from = global_configs.configs.into_keys().collect();
+        }
 
         let config = self.local_config.take().unwrap_or_default();
 

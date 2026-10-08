@@ -1,14 +1,13 @@
-use crate::projects_builder::ProjectBuildData;
 use daggy::Dag;
-use moon_common::Id;
 use moon_config::{TaskDependencyConfig, TaskDependencyType};
 use moon_graph_utils::{GraphExpanderContext, NodeState};
 use moon_project_graph::ProjectGraph;
-use moon_task::{Target, Task, TaskOptions};
+use moon_task::{Target, Task};
 use moon_task_graph::{TaskGraph, TaskGraphError, TaskNode};
 use petgraph::graph::NodeIndex;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
+use std::mem;
 use std::sync::Arc;
 use tracing::instrument;
 
@@ -40,42 +39,14 @@ pub fn resolve_dep_edge_endpoints(
     }
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
-#[serde(default)]
-pub struct TaskBuildData {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub node_index: Option<NodeIndex>,
-
-    #[serde(skip)]
-    pub options: TaskOptions,
-
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub tags: Vec<Id>,
-
-    #[serde(skip)]
-    pub has_outputs: bool,
-}
-
-impl TaskBuildData {
-    // TODO deprecated
-    pub fn resolve_target(
-        target: &Target,
-        project_data: &FxHashMap<Id, ProjectBuildData>,
-    ) -> miette::Result<Target> {
-        // Target may be using an alias!
-        let project_id = ProjectBuildData::resolve_id(target.get_project_id()?, project_data);
-
-        // IDs should be valid here, so ignore the result
-        Target::new(&project_id, target.get_task_id()?)
-    }
-}
-
 #[derive(Default, Deserialize, Serialize)]
 pub struct WorkspaceTasksBuilder {
     /// The task DAG.
     pub graph: TaskDag,
 
     /// Map of task targets to their graph index.
+    /// Only used while building, so it's not serialized for the cache.
+    #[serde(skip)]
     pub targets_to_indexes: FxHashMap<Target, NodeIndex>,
 }
 
@@ -153,18 +124,24 @@ impl WorkspaceTasksBuilder {
         project_graph: Arc<ProjectGraph>,
     ) -> TaskGraph {
         let mut task_graph = TaskGraph::new(context, project_graph);
+        let mut graph = self.graph;
         let mut loaded_tasks = FxHashMap::default();
 
-        // TODO switch to filter_map_owned
-        task_graph.graph = self.graph.filter_map(
-            |ni, node| match node {
-                NodeState::Loading => None,
-                NodeState::Loaded(task) => {
-                    loaded_tasks.insert(ni, task.to_owned());
+        // Move the loaded tasks out of the graph instead of cloning them. The
+        // DAG can only be filtered by reference, so they're swapped for
+        // placeholders, and the filter only keeps the nodes that were loaded
+        for index in 0..graph.node_count() {
+            let index = NodeIndex::new(index);
 
-                    Some(ni)
-                }
-            },
+            if let Some(node) = graph.node_weight_mut(index)
+                && let NodeState::Loaded(task) = mem::replace(node, NodeState::Loading)
+            {
+                loaded_tasks.insert(index, task);
+            }
+        }
+
+        task_graph.graph = graph.filter_map(
+            |ni, _| loaded_tasks.contains_key(&ni).then_some(ni),
             |_, edge| Some(*edge),
         );
 

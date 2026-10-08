@@ -2,18 +2,42 @@ use moon_common::cacheable;
 use moon_config::{
     Input, MergeStrategy, TaskOperatingSystem, TaskOptionAffectedFilesPattern, TaskOptionCache,
     TaskOptionEnvOverride, TaskOptionRunInCI, TaskOutputStyle, TaskPriority, TaskUnixShell,
-    TaskWindowsShell,
+    TaskWindowsShell, is_default, is_false, is_true,
 };
 use std::fmt;
+
+// Fields are not serialized when they're the default value, which must match
+// the value in the `Default` implementation, as that's used when deserializing
+
+fn is_cache_enabled(value: &TaskOptionCache) -> bool {
+    *value == TaskOptionCache::Enabled(true)
+}
+
+fn is_run_in_ci_enabled(value: &TaskOptionRunInCI) -> bool {
+    *value == TaskOptionRunInCI::Enabled(true)
+}
+
+fn is_shell_enabled(value: &Option<bool>) -> bool {
+    *value == Some(true)
+}
 
 cacheable!(
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
     #[serde(default)]
     pub struct TaskOptionAffectedFiles {
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub filter: Vec<String>,
+
+        #[serde(skip_serializing_if = "is_false")]
         pub ignore_project_boundary: bool,
+
+        #[serde(skip_serializing_if = "is_default")]
         pub pass: TaskOptionAffectedFilesPattern,
+
+        #[serde(skip_serializing_if = "is_false")]
         pub pass_inputs_when_no_match: bool,
+
+        #[serde(skip_serializing_if = "is_false")]
         pub pass_dot_when_no_results: bool,
     }
 );
@@ -25,8 +49,10 @@ cacheable!(
         #[serde(skip_serializing_if = "Option::is_none")]
         pub affected_files: Option<TaskOptionAffectedFiles>,
 
+        #[serde(skip_serializing_if = "is_false")]
         pub allow_failure: bool,
 
+        #[serde(skip_serializing_if = "is_cache_enabled")]
         pub cache: TaskOptionCache,
 
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -38,30 +64,43 @@ cacheable!(
         #[serde(skip_serializing_if = "Option::is_none")]
         pub env_files: Option<Vec<Input>>,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub env_override: TaskOptionEnvOverride,
 
+        #[serde(skip_serializing_if = "is_false")]
         pub expect_failure: bool,
 
+        #[serde(skip_serializing_if = "is_false")]
         pub infer_inputs: bool,
 
+        #[serde(skip_serializing_if = "is_false")]
         pub internal: bool,
 
+        #[serde(skip_serializing_if = "is_false")]
         pub interactive: bool,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub merge_args: MergeStrategy,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub merge_checks: MergeStrategy,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub merge_deps: MergeStrategy,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub merge_env: MergeStrategy,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub merge_inputs: MergeStrategy,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub merge_outputs: MergeStrategy,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub merge_tags: MergeStrategy,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub merge_toolchains: MergeStrategy,
 
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -73,29 +112,37 @@ cacheable!(
         #[serde(skip_serializing_if = "Option::is_none")]
         pub output_style: Option<TaskOutputStyle>,
 
+        #[serde(skip_serializing_if = "is_false")]
         pub persistent: bool,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub priority: TaskPriority,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub retry_count: u8,
 
+        #[serde(skip_serializing_if = "is_true")]
         pub run_deps_in_parallel: bool,
 
-        #[serde(rename = "runInCI")]
+        #[serde(rename = "runInCI", skip_serializing_if = "is_run_in_ci_enabled")]
         pub run_in_ci: TaskOptionRunInCI,
 
+        #[serde(skip_serializing_if = "is_false")]
         pub run_in_sync_phase: bool,
 
+        #[serde(skip_serializing_if = "is_false")]
         pub run_from_workspace_root: bool,
 
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "is_shell_enabled")]
         pub shell: Option<bool>,
 
         #[serde(skip_serializing_if = "Option::is_none")]
         pub timeout: Option<u64>,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub unix_shell: TaskUnixShell,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub windows_shell: TaskWindowsShell,
     }
 );

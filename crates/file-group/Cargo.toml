@@ -19,6 +19,7 @@ starbase_utils = { workspace = true, features = ["glob"] }
 thiserror = { workspace = true }
 
 [dev-dependencies]
+serde_json = { workspace = true }
 starbase_sandbox = { workspace = true }
 
 [lints]

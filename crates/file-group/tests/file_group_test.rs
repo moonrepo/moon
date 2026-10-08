@@ -308,3 +308,35 @@ mod file_group {
         }
     }
 }
+
+mod file_group_serde {
+    use super::*;
+
+    #[test]
+    fn doesnt_serialize_empty_lists() {
+        let group = FileGroup::new("id").unwrap();
+
+        assert_eq!(serde_json::to_string(&group).unwrap(), r#"{"id":"id"}"#);
+
+        let group: FileGroup = serde_json::from_str(r#"{"id":"id"}"#).unwrap();
+
+        assert!(group.env.is_empty());
+        assert!(group.files.is_empty());
+        assert!(group.globs.is_empty());
+    }
+
+    #[test]
+    fn round_trips_lists() {
+        let mut group = FileGroup::new("id").unwrap();
+        group.env.push("ENV".into());
+        group.files.push(file("file.txt"));
+        group.globs.push(file("*.js"));
+
+        let group: FileGroup =
+            serde_json::from_str(&serde_json::to_string(&group).unwrap()).unwrap();
+
+        assert_eq!(group.env, ["ENV"]);
+        assert_eq!(group.files, [file("file.txt")]);
+        assert_eq!(group.globs, [file("*.js")]);
+    }
+}

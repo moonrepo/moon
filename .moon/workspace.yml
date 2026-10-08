@@ -23,9 +23,6 @@ generator:
 pipeline:
   logRunningCommand: true
 
-experiments:
-  asyncGraphBuilding: true
-
 vcs:
   defaultBranch: 'master'
   # hooks:

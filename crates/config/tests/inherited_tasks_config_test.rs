@@ -1061,6 +1061,54 @@ mod task_manager {
         );
     }
 
+    mod from_sources {
+        use super::*;
+        use starbase_sandbox::pretty_assertions::assert_eq;
+
+        #[test]
+        fn recreates_the_matched_config() {
+            let sandbox = create_sandbox("inheritance/files");
+            let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
+
+            let matched = manager
+                .get_inherited_config(create_inherit_for(
+                    &[Id::raw("node"), Id::raw("javascript")],
+                    &StackType::Backend,
+                    &LayerType::Application,
+                    &[],
+                ))
+                .unwrap();
+            let sources = matched.configs.keys().cloned().collect::<Vec<_>>();
+            let recreated = manager.get_inherited_config_from_sources(&sources).unwrap();
+
+            assert_eq!(
+                recreated.configs.keys().collect::<Vec<_>>(),
+                matched.configs.keys().collect::<Vec<_>>()
+            );
+            assert_eq!(recreated.configs, matched.configs);
+            assert_eq!(recreated.layers, matched.layers);
+        }
+
+        #[test]
+        fn ignores_unknown_sources() {
+            let sandbox = create_sandbox("inheritance/files");
+            let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
+
+            let recreated = manager
+                .get_inherited_config_from_sources(&[
+                    "tasks/all.yml".into(),
+                    "tasks/unknown.yml".into(),
+                    "tasks/node.yml".into(),
+                ])
+                .unwrap();
+
+            assert_eq!(
+                recreated.configs.keys().collect::<Vec<_>>(),
+                ["tasks/all.yml", "tasks/node.yml"]
+            );
+        }
+    }
+
     mod config_order {
         use super::*;
         use starbase_sandbox::pretty_assertions::assert_eq;

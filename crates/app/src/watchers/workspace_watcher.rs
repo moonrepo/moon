@@ -1,11 +1,11 @@
 use crate::session::MoonSession;
+use crate::systems::startup::detect_proto_environment;
 use async_trait::async_trait;
 use moon_common::path::WorkspaceRelativePath;
 use moon_config::WorkspaceProjects;
 use moon_daemon::AtomicDaemonState;
 use moon_file_watcher::*;
 use moon_workspace::{STATE_CACHE_FILE_NAME, STATE_GRAPH_FILE_NAME};
-use proto_core::ProtoEnvironment;
 use regex::Regex;
 use starbase_utils::fs;
 use starbase_utils::glob::GlobSet;
@@ -159,11 +159,8 @@ impl WorkspaceWatcher {
     async fn reset_proto(&mut self, state: &AtomicDaemonState) -> miette::Result<()> {
         debug!("Updating proto environment");
 
-        let mut env = ProtoEnvironment::new()?;
-        env.working_dir = self.session.working_dir.clone();
-        env.trust.add_trusted_path(&self.session.workspace_root);
-
-        self.session.proto_env = Arc::new(env);
+        self.session.proto_env =
+            detect_proto_environment(&self.session.working_dir, &self.session.workspace_root)?;
         self.session.reset_components();
         self.rebuild_context(state).await?;
 

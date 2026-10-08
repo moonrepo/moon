@@ -211,3 +211,41 @@ pub fn register_feature_flags(_config: &WorkspaceConfig) -> miette::Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use proto_core::{TrustSource, normalize_path};
+    use starbase_sandbox::create_empty_sandbox;
+
+    mod detect_proto_environment {
+        use super::*;
+
+        #[test]
+        fn trusts_configs_within_the_workspace_root() {
+            let sandbox = create_empty_sandbox();
+            sandbox.create_file("outside/.prototools", "");
+            sandbox.create_file("workspace/.prototools", "");
+            sandbox.create_file("workspace/apps/web/.prototools", "");
+
+            let root = sandbox.path().join("workspace");
+            let env = detect_proto_environment(&root.join("apps/web"), &root).unwrap();
+
+            // All configs are trusted in CI, so ignore that
+            let mut trust = env.trust.clone();
+            trust.trust_all = false;
+
+            let source = Some(TrustSource::TrustedPath(normalize_path(&root)));
+
+            assert_eq!(trust.get_trust_source(&root.join(".prototools")), source);
+            assert_eq!(
+                trust.get_trust_source(&root.join("apps/web/.prototools")),
+                source
+            );
+            assert_ne!(
+                trust.get_trust_source(&sandbox.path().join("outside/.prototools")),
+                source
+            );
+        }
+    }
+}

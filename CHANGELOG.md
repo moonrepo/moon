@@ -21,6 +21,12 @@
     removed from `.moon/workspace.*`, as unknown settings fail validation, and the
     `MOON_EXPERIMENT_CAS_OUTPUTS_CACHE` environment variable no longer has any effect. The legacy
     `.moon/cache/hashes` and `.moon/cache/outputs` directories are automatically removed.
+  - Removed the `explicitTaskOutputStyle` experiment, as a task's `outputStyle` option is now always
+    applied, including to primary targets (those passed on the command line), which previously
+    ignored it and always displayed their output. The `--output-style` option still overrides it for
+    every task. The setting must be removed from `.moon/workspace.*`, as unknown settings fail
+    validation, and the `MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE` environment variable no longer
+    has any effect.
   - Removed the `nativeFileHashing` experiment, as files are now always hashed natively within
     moon's task pool, and hashing files through the VCS has been removed. The setting must be
     removed from `.moon/workspace.*`, as unknown settings fail validation, and the

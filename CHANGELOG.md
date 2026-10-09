@@ -7,6 +7,8 @@
 - Fixed an issue where a `wait` dependency on an interactive task was allowed, instead of failing
   with an error, as an interactive task runs in isolation, so nothing can run alongside it. The
   error was only raised when the `asyncGraphBuilding` experiment was disabled.
+- Fixed an issue where the task hasher logged "only files can be hashed" warnings for directories
+  (or symlinks to directories) that match `hasher.ignorePatterns`.
 
 ## 2.6.1
 

@@ -263,6 +263,15 @@ impl<'task> TaskHasher<'task> {
                 continue;
             }
 
+            if ignore.is_included(&abs_path) {
+                debug!(
+                    "Not hashing input {} as it matches an ignore pattern",
+                    color::rel_path(&rel_path),
+                );
+
+                continue;
+            }
+
             if !abs_path.is_file() {
                 warn!(
                     "Attempted to hash input {} but only files can be hashed, try using a glob instead",
@@ -272,14 +281,7 @@ impl<'task> TaskHasher<'task> {
                 continue;
             }
 
-            if ignore.is_included(abs_path) {
-                debug!(
-                    "Not hashing input {} as it matches an ignore pattern",
-                    color::rel_path(&rel_path),
-                );
-            } else {
-                files.insert(rel_path);
-            }
+            files.insert(rel_path);
         }
 
         Ok(files)

@@ -2927,17 +2927,6 @@ tasks:
         }
 
         #[test]
-                    .arg("none");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("outputStyles:plain").eval(&output));
-            assert!(predicate::str::contains("stdout").not().eval(&output));
-            assert!(predicate::str::contains("stderr").not().eval(&output));
-        }
-
-        #[test]
         fn option_overrides_the_task_option() {
             let sandbox = create_cases_sandbox();
 

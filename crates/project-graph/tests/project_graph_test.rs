@@ -2045,6 +2045,14 @@ tasks:
                 ]
             );
         }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn errors_for_interactive_wait_dep() {
+            assert_eq!(
+                build_graph_error("task-dep-types-interactive").await,
+                "Task proj:client cannot depend on interactive task proj:server as a wait dependency, as an interactive task runs in isolation, so nothing can run alongside it.\nA task is marked interactive with the options.interactive setting."
+            );
+        }
     }
 
     mod aliases {

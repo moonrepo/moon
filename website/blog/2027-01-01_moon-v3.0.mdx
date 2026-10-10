@@ -2,7 +2,7 @@
 slug: moon-v3.0
 title: moon v3.0 - ???
 authors: [milesj]
-tags: [async, experiments, affected, hashing, cache, cas, graph, tasks]
+tags: [async, experiments, affected, hashing, cache, cas, graph, tasks, proto]
 # image: ./img/moon/v2.6.png
 ---
 
@@ -167,7 +167,10 @@ rebuilt, 1 in 8 commands took over a second, and the slowest took 1.9s. While bu
 asks its toolchains whether they apply to it, and looking up a loaded plugin took an exclusive lock,
 so the projects being built in parallel had to take turns. On a busy machine, one slow handoff would
 stall everything queued behind it. These lookups now take a shared lock, and the slowest command
-went from 1.9s to 331ms. On top of that:
+went from 1.9s to 331ms. We then fixed the same problem in proto v0.63.1, where calling a plugin
+function with a cached result also took an exclusive lock. Under CPU contention, the slowest builds
+in our 1,000 project benchmark went from 500ms to 310ms, and builds that took over twice the median
+went from 11 to 1 (across 400 builds). On top of that:
 
 - Git information (the branch, revision, and repository) is loaded in the background while the
   graphs are built, instead of one command after another once they were built.
@@ -199,3 +202,9 @@ of changes, but here's a few more worth calling out:
   between 2 projects. Previously, when a project depended on another more than once (like by its ID
   and an alias) with different scopes, only one of those relationships was checked, so a layer or
   tag violation could go unreported, and will now fail.
+- moon now uses proto v0.63, which only applies the
+  [security-sensitive settings](/docs/proto/config#security-sensitive-settings) of a local
+  `.prototools`, like `[env]`, `[plugins]`, and `[tools.*]`, once the config has been
+  [trusted](/docs/proto/config#trust). As moon already runs your workspace's tasks, configs within
+  the workspace are always trusted, while other local configs, like one in a parent directory, must
+  be trusted with [`proto trust`](/docs/proto/commands/trust).

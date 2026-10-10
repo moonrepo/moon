@@ -5362,9 +5362,9 @@ checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
 
 [[package]]
 name = "minisign-verify"
-version = "0.2.5"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22f9645cb765ea72b8111f36c522475d2daa0d22c957a9826437e97534bc4e9e"
+checksum = "871285dc19d8d0ebe0eef3d0e99a205f2a71363b122632cbbfa4a6c370a960ce"
 
 [[package]]
 name = "miniz_oxide"
@@ -8222,11 +8222,12 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.62.2"
+version = "0.63.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "561c9315fc02dda04371990575c13a70cfffcc1afa92c662f2638707ba5bc5ab"
+checksum = "f0057194eaa909f69496821efd7dab103b989549a144c260ae0296a8bb4d75b3"
 dependencies = [
  "ai_env",
+ "ci_env",
  "convert_case 0.12.0",
  "docker_credential",
  "dotenv-ng",
@@ -8265,9 +8266,9 @@ dependencies = [
 
 [[package]]
 name = "proto_pdk_api"
-version = "0.34.5"
+version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70176cacf3b0e5490f7f93f8999845a8c3d219b80ed0f62f42a055f215d11242"
+checksum = "2039e1514fd2087dc12c2067c4505bc268c97d36d663333eaf529a8c5399b4a2"
 dependencies = [
  "derive_setters",
  "rustc-hash",
@@ -8282,9 +8283,9 @@ dependencies = [
 
 [[package]]
 name = "proto_pdk_test_utils"
-version = "0.50.2"
+version = "0.51.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d2031c30deb247d79f41c4c6e8e23787d015909dd7e1e8ca78c46434d81772f"
+checksum = "6a2f513353c05786590c3e5c363e9ce205387ccae736d796fb2ca70354371ff4"
 dependencies = [
  "extism",
  "proto_core",
@@ -8297,11 +8298,11 @@ dependencies = [
 
 [[package]]
 name = "proto_shim"
-version = "0.8.5"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61c51e5253906b21be9afdc659a62e47dd589fd64955388924f24af6deb7324a"
+checksum = "7dcd97056b8b1b7beb3ae3b8dd65894b46c5a08d00425b274e46f15a34eb9d62"
 dependencies = [
- "dirs 6.0.0",
+ "dirs 7.0.0",
  "windows-sys 0.61.2",
 ]
 
@@ -10143,9 +10144,9 @@ dependencies = [
 
 [[package]]
 name = "system_env"
-version = "0.10.4"
+version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77b597c4f3e486b30ec42eed3af9e151306f3663efc91d11d69af954de9053fd"
+checksum = "fe6c522ad936bb3dd20dbcad9b5955abc652f3479104a7fbbe3653d296496d9c"
 dependencies = [
  "regex",
  "schematic",
@@ -11038,9 +11039,9 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "version_spec"
-version = "0.11.6"
+version = "0.11.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2859fddf24c7a87d6e4d8a5f5f1d012fea47b96fcb2a3f8717982f33509c2a5c"
+checksum = "100f61cec86e1d0116a0ec9a14e31f66bb8dfe7a4d85a3b6b0a6e980341acdc8"
 dependencies = [
  "compact_str 0.10.0",
  "pest",
@@ -11087,9 +11088,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.36.4"
+version = "0.37.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "511bb457afafbe0c7a4ac0c754e6d3a56108719489fd101983e7bc9c422766ce"
+checksum = "9ef41e4611f3a29962f0b7fa1352b9065a87394c5529521bf79da33cb17fc49c"
 dependencies = [
  "async-trait",
  "compact_str 0.10.0",
@@ -11124,9 +11125,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate_api"
-version = "0.19.4"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "01dc5cd1f1ad22caf261e2aea996a0868d2e4702aac3bf468cc7f183693f0eda"
+checksum = "32f0809fdab9202c17d928f96cca004313e1e4bb8fb94b70beee75ea215b5011"
 dependencies = [
  "anyhow",
  "derive_setters",
@@ -11141,9 +11142,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate_pdk"
-version = "0.18.4"
+version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9b8a835fd5b7db5031a105ce5c069eebcec7e71f138db7315f84e8c310a4848"
+checksum = "0c6a0fb469d17fe4ec917175e9361115201a8f2cdfbd632f7e768bd656ff900b"
 dependencies = [
  "extism-pdk",
  "serde",

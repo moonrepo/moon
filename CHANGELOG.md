@@ -84,6 +84,14 @@
     tasks in parallel. Looking up a loaded plugin, and a toolchain's cached tool locations, no
     longer takes an exclusive lock, which serialized concurrent callers, and on a busy machine could
     stall building the workspace graph for multiple seconds.
+  - Loading the same plugin concurrently, like when the daemon reloads changed configs, now only
+    loads it once. Previously, each caller loaded and compiled its own instance of the plugin, and
+    all but one were discarded.
+- **Toolchains**
+  - Added support for proto v0.63's config trust. As moon already runs the workspace's tasks,
+    `.prototools` configs within the workspace are always trusted, while other local configs, like
+    one in a parent directory, must be trusted with `proto trust` before their security-sensitive
+    settings (like `[env]`, `[plugins]`, and `[tools.*]`) are applied.
 - **Workspace graph**
   - Improved the performance of building the workspace graph.
     - Git information (branch, revision, and repository) is now loaded concurrently in the
@@ -121,6 +129,10 @@
   it as valid, and an unreadable graph is rebuilt instead of failing.
 - Fixed an issue where duplicate project ID errors could report the existing and new project sources
   in a different order between runs.
+
+#### ⚙️ Internal
+
+- Updated proto to [v0.63.1](https://github.com/moonrepo/proto/releases/tag/v0.63.1).
 
 ## Unreleased
 

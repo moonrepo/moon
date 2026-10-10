@@ -9,6 +9,7 @@ use moon_common::{Id, IdExt};
 use scc::hash_map::Entry;
 use std::fmt::Debug;
 use std::sync::Arc;
+use tokio::sync::OnceCell;
 use tracing::{debug, instrument};
 use warpgate::{PluginContainer, PluginLocator, host::HostData};
 
@@ -127,6 +128,39 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
             return Ok(existing);
         }
 
+        // Loading compiles the WASM module, which may take multiple seconds,
+        // so concurrent loads of the same plugin wait on a single load, instead
+        // of each loading their own instance and discarding all but one. Like
+        // above, the bucket lock is only held for the synchronous lookup.
+        let once = match self.loading.entry_async(id.clone()).await {
+            Entry::Occupied(entry) => Arc::clone(entry.get()),
+            Entry::Vacant(entry) => {
+                let once = Arc::new(OnceCell::new());
+                entry.insert_entry(Arc::clone(&once));
+                once
+            }
+        };
+
+        once.get_or_try_init(|| self.load_and_register(&id, locator))
+            .await
+            .map(Arc::clone)
+    }
+
+    async fn load_and_register(
+        &self,
+        id: &Id,
+        locator: &PluginLocator,
+    ) -> miette::Result<Arc<Inst>> {
+        // A concurrent load may have finished, and stopped tracking its load,
+        // between the registered check above and acquiring a new load
+        if let Some(existing) = self
+            .plugins
+            .read_async(id, |_, plugin| Arc::clone(plugin))
+            .await
+        {
+            return Ok(existing);
+        }
+
         debug!(
             plugin_type = self.type_of.get_label(),
             id = id.as_str(),
@@ -134,7 +168,7 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
         );
 
         // Load the WASM file (this must happen first because of async)
-        let plugin_file = self.loader.load_plugin(&id, locator).await?;
+        let plugin_file = self.loader.load_plugin(id, locator).await?;
 
         // Create host functions (provided by warpgate)
         let functions = create_host_functions(
@@ -148,10 +182,10 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
         );
 
         // Create the manifest and let the consumer configure it
-        let mut manifest = self.create_manifest(&id, plugin_file.clone())?;
+        let mut manifest = self.create_manifest(id, plugin_file.clone())?;
 
         self.config_data
-            .configure_manifest(&id, &self.host_data, &mut manifest)?;
+            .configure_manifest(id, &self.host_data, &mut manifest)?;
 
         debug!(
             plugin_type = self.type_of.get_label(),
@@ -186,14 +220,20 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
         let instance = Arc::new(plugin);
 
         // Insert into the registry, holding the bucket lock only around the
-        // synchronous insert (never across an `.await`). If another task loaded
-        // the same plugin concurrently, discard ours and use the race winner.
-        Ok(match self.plugins.entry_async(id).await {
+        // synchronous insert (never across an `.await`). If an instance was
+        // registered manually in the meantime, discard ours and use that one.
+        let instance = match self.plugins.entry_async(id.clone()).await {
             Entry::Occupied(entry) => Arc::clone(entry.get()),
             Entry::Vacant(entry) => {
                 entry.insert_entry(Arc::clone(&instance));
                 instance
             }
-        })
+        };
+
+        // Stop tracking the load, as it's now read from the registry. Callers
+        // waiting on the load hold their own reference to it
+        let _ = self.loading.remove_async(id).await;
+
+        Ok(instance)
     }
 }

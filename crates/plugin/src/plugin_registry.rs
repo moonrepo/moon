@@ -11,6 +11,7 @@ use std::fmt::Debug;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::OnceCell;
 use tracing::debug;
 use warpgate::{
     PluginLoader, PluginLocator, PluginManifest, Wasm,
@@ -42,6 +43,7 @@ pub struct PluginRegistry<Cfg: PluginsConfig, Inst: Plugin> {
     pub host_data: MoonHostData,
 
     pub(crate) loader: Arc<PluginLoader>,
+    pub(crate) loading: Arc<scc::HashMap<Id, Arc<OnceCell<Arc<Inst>>>>>,
     pub(crate) plugins: Arc<scc::HashMap<Id, Arc<Inst>>>,
     pub(crate) type_of: PluginType,
     pub(crate) virtual_paths: Vec<(PathBuf, PathBuf)>,
@@ -85,6 +87,7 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
         Ok(Self {
             loader: Arc::new(loader),
             config_data: Arc::new(config_data),
+            loading: Arc::new(scc::HashMap::default()),
             plugins: Arc::new(scc::HashMap::default()),
             host_data,
             type_of,
@@ -207,6 +210,7 @@ impl<Cfg: PluginsConfig, Inst: Plugin> Clone for PluginRegistry<Cfg, Inst> {
             config_data: Arc::clone(&self.config_data),
             host_data: self.host_data.clone(),
             loader: Arc::clone(&self.loader),
+            loading: Arc::clone(&self.loading),
             plugins: Arc::clone(&self.plugins),
             type_of: self.type_of,
             virtual_paths: self.virtual_paths.clone(),

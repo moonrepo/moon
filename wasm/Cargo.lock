@@ -560,12 +560,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
-name = "human-sort"
-version = "0.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "140a09c9305e6d5e557e2ed7cbc68e05765a7d4213975b87cb04920689cc6219"
-
-[[package]]
 name = "icu_collections"
 version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -990,9 +984,9 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 
 [[package]]
 name = "pest"
-version = "2.9.1"
+version = "2.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d45aeb61b4bf818e12d4205f2466f8c4748f85f4fce0146d1c03d69d753f0ad"
+checksum = "45d3aca230fad2e6f6317ca0a72724338c4960cb97168a85cdee66df4a9a21a8"
 dependencies = [
  "memchr",
  "ucd-trie",
@@ -1000,9 +994,9 @@ dependencies = [
 
 [[package]]
 name = "pest_derive"
-version = "2.9.1"
+version = "2.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "89cc5a242e25ed4e7704d0be240f2cfbe20a8c27e7e252d94835be93d92dc39f"
+checksum = "284b60557f2c4a2e72ad3f2d34d42685a2fa4a6a61d0d2a10c0ae2a5e916c2cf"
 dependencies = [
  "pest",
  "pest_generator",
@@ -1010,9 +1004,9 @@ dependencies = [
 
 [[package]]
 name = "pest_generator"
-version = "2.9.1"
+version = "2.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7abf21475cc3820fe4b2ca2dc2142902f67a02189f3b5b3a229f4febc01a43e5"
+checksum = "1d9d1f08a115309ee99268cf85e5228e0e56aa9caf8841ec12866b6be07c3109"
 dependencies = [
  "pest",
  "pest_meta",
@@ -1023,9 +1017,9 @@ dependencies = [
 
 [[package]]
 name = "pest_meta"
-version = "2.9.1"
+version = "2.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "adba4db388f687393c18c51348d44a41d870ca9df71a2c98172ea3035dc6936e"
+checksum = "ed93ba1a9ffcca32130a5188701c81c0c49cf00d4b7c5007d5148951d743adcb"
 dependencies = [
  "pest",
 ]
@@ -1132,9 +1126,9 @@ dependencies = [
 
 [[package]]
 name = "proto_pdk_api"
-version = "0.34.4"
+version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d2209b47694bfb22b35ddb1381b834b0c89b2b2847fcdfa5d856eb559a30f2d"
+checksum = "2039e1514fd2087dc12c2067c4505bc268c97d36d663333eaf529a8c5399b4a2"
 dependencies = [
  "derive_setters",
  "rustc-hash",
@@ -1550,9 +1544,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.14.6"
+version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "65258aca9c5ab7cd71fe7243140791d1f5dbe2ffa4c794486f9636aa4a7e603e"
+checksum = "0f90f1393ab1277e490c09cc12e085e9d3b1dc855a37694d29fe78180c7e4fed"
 dependencies = [
  "dirs 7.0.0",
  "ec4rs",
@@ -1632,9 +1626,9 @@ dependencies = [
 
 [[package]]
 name = "system_env"
-version = "0.10.4"
+version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77b597c4f3e486b30ec42eed3af9e151306f3663efc91d11d69af954de9053fd"
+checksum = "fe6c522ad936bb3dd20dbcad9b5955abc652f3479104a7fbbe3653d296496d9c"
 dependencies = [
  "regex",
  "schematic",
@@ -1918,12 +1912,11 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "version_spec"
-version = "0.11.5"
+version = "0.11.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "871d734f979e409cb6dba287adc8dc541a9d8b5d37a680af66134884e1de7a2a"
+checksum = "100f61cec86e1d0116a0ec9a14e31f66bb8dfe7a4d85a3b6b0a6e980341acdc8"
 dependencies = [
  "compact_str 0.10.0",
- "human-sort",
  "pest",
  "pest_derive",
  "regex",
@@ -1944,9 +1937,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate_api"
-version = "0.19.3"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63e62f4c76726aec3eefb37bfe94b4b2329a91530bbcbd0ee191cb6a3e5e447d"
+checksum = "32f0809fdab9202c17d928f96cca004313e1e4bb8fb94b70beee75ea215b5011"
 dependencies = [
  "anyhow",
  "derive_setters",
@@ -1961,9 +1954,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate_pdk"
-version = "0.18.3"
+version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f9c3616648b599c88083f40774e9368a24a82e25009c48c18e8b50fe39900547"
+checksum = "0c6a0fb469d17fe4ec917175e9361115201a8f2cdfbd632f7e768bd656ff900b"
 dependencies = [
  "extism-pdk",
  "serde",

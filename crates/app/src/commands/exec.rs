@@ -290,13 +290,6 @@ impl ExecWorkflow {
             .execute_action_pipeline(action_context, action_graph)
             .await?;
 
-        // Set when the pipeline was stopped by a signal (130 / 143).
-        // Return it before the task-failure fallback, which would collapse
-        // an interrupt to 1.
-        if let Some(code) = self.session.exit_code.get() {
-            return Ok(Some(code));
-        }
-
         let targets = self.get_targets();
         let is_single_target = targets.len() == 1
             && targets
@@ -304,7 +297,8 @@ impl ExecWorkflow {
                 .is_some_and(|target| target.is_fully_qualified());
 
         let mut any_failed = false;
-        let mut exit_code = None;
+        // Set when the pipeline was stopped by a signal (130 / 143).
+        let mut exit_code = self.session.exit_code.get();
 
         for result in &results {
             if !result.has_failed() || result.allow_failure {

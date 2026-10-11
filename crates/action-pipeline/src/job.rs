@@ -70,7 +70,7 @@ impl Job {
                 "Job cancelled before it was started (because a signal)"
             );
 
-            action.finish(ActionStatus::Skipped);
+            action.finish(status_when_signal_cancels(action.started_at.is_some()));
             context.send_result(action).await;
 
             return;
@@ -110,14 +110,44 @@ impl Job {
             context.abort_state.mark_casualty(node_index);
             action.finish(ActionStatus::Aborted);
         }
-        // Cancel if we receive a shutdown signal
+        // Cancel if we receive a shutdown signal. A job that already started
+        // is a failed run, not a skip. One that never started stays skipped.
         else if context.cancel_token.is_cancelled() {
             debug!(index = node_index, "Job cancelled (because a signal)");
 
-            action.finish(ActionStatus::Skipped);
+            action.finish(status_when_signal_cancels(action.started_at.is_some()));
         }
 
         // Send the result back to the pipeline
         context.send_result(action).await;
+    }
+}
+
+/// Status for a job cancelled by a signal.
+///
+/// A job that already started had a command in flight, so the run failed.
+/// One that never started did not run, and stays skipped.
+pub(crate) fn status_when_signal_cancels(started: bool) -> ActionStatus {
+    if started {
+        ActionStatus::Failed
+    } else {
+        ActionStatus::Skipped
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::status_when_signal_cancels;
+    use moon_action::ActionStatus;
+
+    #[test]
+    fn in_flight_signal_is_not_skipped() {
+        assert_eq!(status_when_signal_cancels(true), ActionStatus::Failed);
+        assert_ne!(status_when_signal_cancels(true), ActionStatus::Skipped);
+    }
+
+    #[test]
+    fn signal_before_start_stays_skipped() {
+        assert_eq!(status_when_signal_cancels(false), ActionStatus::Skipped);
     }
 }

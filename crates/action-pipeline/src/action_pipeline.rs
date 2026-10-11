@@ -23,7 +23,7 @@ use moon_task_runner::is_task_dependencies_complete;
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::FxHashMap;
 use std::mem;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::{RwLock, Semaphore, mpsc, oneshot};
@@ -45,6 +45,8 @@ pub struct ActionPipeline {
     // State
     actions: Vec<Action>,
     duration: Option<Duration>,
+    /// The signal that stopped this run, when one was received.
+    received_signal: Option<SignalType>,
     status: ActionPipelineStatus,
 
     // Data
@@ -95,6 +97,7 @@ impl ActionPipeline {
             duration: None,
             emitter: Arc::new(EventEmitter::default()),
             quiet: false,
+            received_signal: None,
             report_name: "runReport.json".into(),
             status: ActionPipelineStatus::Pending,
             summary: None,
@@ -102,14 +105,21 @@ impl ActionPipeline {
         }
     }
 
-    pub async fn run(self, action_graph: ActionGraph) -> miette::Result<Vec<Action>> {
+    pub async fn run(mut self, action_graph: ActionGraph) -> miette::Result<Vec<Action>> {
         self.run_with_context(action_graph, ActionContext::default())
             .await
     }
 
+    /// Exit code for a pipeline stopped by a signal: 128 plus the signal
+    /// number. `SIGINT` is 130 and `SIGTERM` is 143. Same formula as a
+    /// prompt that is interrupted.
+    pub fn signal_exit_code(&self) -> Option<u8> {
+        self.received_signal.map(exit_code_for_signal)
+    }
+
     #[instrument(name = "run_pipeline", skip_all)]
     pub async fn run_with_context(
-        mut self,
+        &mut self,
         action_graph: ActionGraph,
         action_context: ActionContext,
     ) -> miette::Result<Vec<Action>> {
@@ -206,8 +216,15 @@ impl ActionPipeline {
         // Cleanup jobs may need to run after the pipeline was aborted
         let has_cleanups = !action_graph.get_cleanup_indices().is_empty();
 
-        // Monitor signals and ctrl+c
-        let signal_handle = self.monitor_signals(cancel_token.clone(), Arc::clone(&abort_state));
+        // Monitor signals and ctrl+c. The slot is written before the token
+        // is cancelled, so the receive loop can read the real signal without
+        // waiting on the task.
+        let signal_slot = Arc::new(Mutex::new(None));
+        let signal_handle = self.monitor_signals(
+            cancel_token.clone(),
+            Arc::clone(&abort_state),
+            Arc::clone(&signal_slot),
+        );
 
         // Dispatch jobs from the graph to run actions
         let queue_handle =
@@ -323,13 +340,18 @@ impl ActionPipeline {
         // The dispatcher may be waiting on the abort to be handled
         abort_state.handle(false, None, None);
 
-        // Capture and handle any signals
-        if cancel_token.is_cancelled() && self.status == ActionPipelineStatus::Pending {
-            self.status = match signal_handle.await.into_diagnostic()? {
-                SignalType::Interrupt => ActionPipelineStatus::Interrupted,
-                SignalType::Terminate => ActionPipelineStatus::Terminated,
-                _ => ActionPipelineStatus::Aborted,
-            };
+        // Capture and handle any signals. A task that was already running
+        // cancels the token before this point, so the status may already be
+        // set. Read the signal that was stored, instead of assuming interrupt.
+        if let Some(signal) = signal_slot.lock().ok().and_then(|slot| *slot) {
+            self.received_signal = Some(signal);
+            self.status = status_for_signal(signal);
+            signal_handle.abort();
+        } else if cancel_token.is_cancelled() && self.status == ActionPipelineStatus::Pending {
+            let signal = signal_handle.await.into_diagnostic()?;
+
+            self.received_signal = Some(signal);
+            self.status = status_for_signal(signal);
         } else {
             signal_handle.abort();
         }
@@ -579,6 +601,7 @@ impl ActionPipeline {
         &self,
         cancel_token: CancellationToken,
         abort_state: Arc<AbortState>,
+        signal_slot: Arc<Mutex<Option<SignalType>>>,
     ) -> JoinHandle<SignalType> {
         // Subscribe before spawning, so that no signals are missed, including
         // the pipeline's own termination, which must be accounted for
@@ -593,6 +616,10 @@ impl ActionPipeline {
                         if matches!(signal, SignalType::Terminate) && abort_state.take_terminated()
                         {
                             continue;
+                        }
+
+                        if let Ok(mut slot) = signal_slot.lock() {
+                            *slot = Some(signal);
                         }
 
                         cancel_token.cancel();
@@ -887,4 +914,51 @@ async fn exhaust_job_handles<T: 'static>(set: &mut JoinSet<T>, job_context: &Job
     set.detach_all();
 
     job_context.is_aborted_or_cancelled()
+}
+
+/// `128 + signal`. `SIGINT` is 130, `SIGTERM` is 143.
+pub(crate) fn exit_code_for_signal(signal: SignalType) -> u8 {
+    (128 + signal.get_code()) as u8
+}
+
+fn status_for_signal(signal: SignalType) -> ActionPipelineStatus {
+    match signal {
+        SignalType::Interrupt => ActionPipelineStatus::Interrupted,
+        SignalType::Terminate => ActionPipelineStatus::Terminated,
+        _ => ActionPipelineStatus::Aborted,
+    }
+}
+
+#[cfg(test)]
+mod signal_exit_tests {
+    use super::{exit_code_for_signal, status_for_signal};
+    use moon_action::ActionPipelineStatus;
+    use moon_process::SignalType;
+
+    #[test]
+    fn interrupt_exits_130_and_is_interrupted() {
+        assert_eq!(exit_code_for_signal(SignalType::Interrupt), 130);
+        assert_eq!(
+            status_for_signal(SignalType::Interrupt),
+            ActionPipelineStatus::Interrupted
+        );
+    }
+
+    #[test]
+    fn terminate_exits_143_and_is_terminated() {
+        assert_eq!(exit_code_for_signal(SignalType::Terminate), 143);
+        assert_eq!(
+            status_for_signal(SignalType::Terminate),
+            ActionPipelineStatus::Terminated
+        );
+    }
+
+    #[test]
+    fn other_signals_use_128_plus_the_signal_number() {
+        assert_eq!(exit_code_for_signal(SignalType::Quit), 131);
+        assert_eq!(
+            status_for_signal(SignalType::Quit),
+            ActionPipelineStatus::Aborted
+        );
+    }
 }

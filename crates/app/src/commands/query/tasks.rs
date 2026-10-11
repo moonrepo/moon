@@ -4,8 +4,9 @@ use crate::queries::changed_files::*;
 use crate::queries::tasks::*;
 use crate::session::{MoonSession, SessionResult};
 use clap::Args;
-use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
+use moon_affected::{AffectedTracker, Depth};
 use moon_common::{Id, is_ci};
+use moon_workspace_graph::GraphConnections;
 use starbase_utils::json;
 use std::collections::BTreeMap;
 use tracing::instrument;
@@ -27,22 +28,22 @@ pub struct QueryTasksArgs {
     #[arg(
         long,
         default_value_t,
-        visible_alias = "dependents",
-        help = "Include downstream dependents of queried tasks",
+        alias = "upstream",
+        help = "Include dependencies of affected tasks, up to this depth (none, direct, deep, or a number of hops)",
         help_heading = HEADING_AFFECTED,
         requires = "affected-args",
     )]
-    downstream: DownstreamScope,
+    dependencies: Depth,
 
     #[arg(
         long,
         default_value_t,
-        visible_alias = "dependencies",
-        help = "Include upstream dependencies of queried tasks",
+        alias = "downstream",
+        help = "Include dependents of affected tasks, up to this depth (none, direct, deep, or a number of hops)",
         help_heading = HEADING_AFFECTED,
         requires = "affected-args",
     )]
-    upstream: UpstreamScope,
+    dependents: Depth,
 
     // Filters
     #[arg(long, help = "Filter tasks that match this ID", help_heading = HEADING_FILTERS)]
@@ -76,6 +77,7 @@ pub async fn tasks(session: MoonSession, args: QueryTasksArgs) -> SessionResult 
         id: args.id,
         command: args.command,
         query: args.query,
+        include: Default::default(),
         project: args.project,
         script: args.script,
         tags: args.tags,
@@ -90,10 +92,28 @@ pub async fn tasks(session: MoonSession, args: QueryTasksArgs) -> SessionResult 
 
         let mut affected_tracker = AffectedTracker::new(workspace_graph.clone(), changed_files);
         affected_tracker.set_ci_check(is_ci());
-        affected_tracker.set_task_scopes(args.upstream, args.downstream);
+        affected_tracker.set_depth(args.dependents);
         affected_tracker.track_tasks().await?;
 
-        options.affected = Some(affected_tracker.build());
+        let affected = affected_tracker.build();
+
+        // Dependencies are never affected, so include them explicitly
+        if !args.dependencies.is_none() {
+            let tasks = affected
+                .tasks
+                .keys()
+                .map(|target| workspace_graph.get_task(target))
+                .collect::<miette::Result<Vec<_>>>()?;
+            let tasks = tasks.iter().map(|task| task.as_ref()).collect::<Vec<_>>();
+
+            options.include.extend(
+                workspace_graph
+                    .tasks
+                    .dependencies_within(&tasks, args.dependencies),
+            );
+        }
+
+        options.affected = Some(affected);
     }
 
     // Query for tasks that match the filters

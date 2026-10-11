@@ -140,7 +140,7 @@ Most map to a command line option.
 | `MOON_AFFECTED`          | `--affected`          | Only run tasks affected by changed files.                                                                |
 | `MOON_BASE`              | `--base`              | Base branch, commit, or revision to compare [affected](./concepts/affected) against.                     |
 | `MOON_HEAD`              | `--head`              | Current branch, commit, or revision to compare with.                                                     |
-| `MOON_INCLUDE_RELATIONS` | `--include-relations` | Include graph relations for affected checks, instead of just changed files.                              |
+| `MOON_AFFECTED_DEPTH`    | `--affected-depth`    | How far affected state propagates to dependent tasks (none, direct, deep, or a number of hops).          |
 | `MOON_ON_FAILURE`        | `--on-failure`        | When a task fails, either bail the pipeline or continue executing.                                       |
 | `MOON_OUTPUT_STYLE`      | —                     | The [`outputStyle`](./config/project#outputstyle) task option in which output is printed.                |
 | `MOON_RETRY_COUNT`       | —                     | The [`retryCount`](./config/project#retrycount) task option — number of times a failing task is retried. |

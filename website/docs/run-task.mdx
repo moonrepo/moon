@@ -28,20 +28,31 @@ When this command is ran, it will do the following:
   - On cache hit, exit early and return the last run.
   - On cache miss, run the task and generate a new cache.
 
-## Running dependents
+## Running dependencies
 
-moon will _always_ run upstream dependencies ([`deps`](./config/project#deps)) before running the
-primary target, as their outputs may be required for the primary target to function correctly. The
-exceptions are `cleanup` and `wait` dependencies, which run after or alongside the primary target,
-based on their [`type`](./config/project#type).
+moon will _always_ run the dependencies ([`deps`](./config/project#deps)) of a target before running
+the target itself, as their outputs may be required for the target to function correctly. The
+exceptions are `cleanup` and `wait` dependencies, which run after or alongside the target, based on
+their [`type`](./config/project#type).
 
-However, if you're working on a project that is shared and consumed by other projects, you may want
-to verify that downstream dependents have not been indirectly broken by any changes. This can be
-achieved by passing the `--downstream` option (aliased as `--dependents`), which will run dependent
-targets _after_ the primary target.
+If you're confident that the outputs of the dependencies are up to date, you can skip the
+dependencies that were not selected themselves with the `--no-deps` flag. Be aware that this can
+produce incorrect results when a dependency's outputs are stale.
+[Learn more about dependencies](./concepts/affected#dependencies).
 
 ```shell
-$ moon run app:build --downstream direct
+$ moon run app:build --no-deps
+```
+
+## Running dependents
+
+If you're working on a project that is shared and consumed by other projects, you may want to verify
+that its dependents have not been indirectly broken by any changes. This can be achieved by passing
+the `--dependents` option, which will also run the dependents of the target, up to the provided
+depth (`none`, `direct`, `deep`, or a number of hops).
+
+```shell
+$ moon run app:build --dependents direct
 ```
 
 ## Running based on affected files only
@@ -58,6 +69,15 @@ $ moon run app:build --affected
 Under the hood, we extract locally changed (created, modified, staged, etc) files from your
 configured [VCS](./config/workspace#vcs), and exit early if no files intersect with the task's
 [inputs](./config/project#inputs).
+
+A task is also affected when a task it depends on is affected. How far this propagates can be
+controlled with the `--affected-depth` option, which defaults to `deep`. This only changes which
+tasks count as affected, and never adds tasks that were not targeted.
+[Learn more about affected](./concepts/affected#affected-depth).
+
+```shell
+$ moon run :build --affected --affected-depth direct
+```
 
 ### Using remote changes
 

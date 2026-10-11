@@ -90,19 +90,35 @@ For a declarative alternative to CLI options, see the [execution plan guide](../
   "remote".
 - `--base <BASE>` - Base branch, commit, or revision to compare against.
 - `--head <HEAD>` - Current branch, commit, or revision to compare with.
-- `-g`, `--include-relations` - Include graph relations for affected checks, instead of just changed
-  files.
+- `--affected-depth <DEPTH>` - How far affected state propagates to dependent tasks. Supports "none",
+  "direct", "deep" (default), or a number of hops. Only changes which tasks count as affected, and
+  never adds tasks.
+  <VersionLabel version="3.0.0" />
 - `--status <STATUS>` - Filter changed files based on a changed status.
 - `--stdin` - Accept changed files from stdin for affected checks.
 
 ### Graph
 
-- `--downstream <DEPTH>`, `--dependents <DEPTH>` - Control the depth of downstream dependents.
-  Supports "none" (default), "direct", "deep".
-- `--upstream <DEPTH>`, `--dependencies <DEPTH>` - Control the depth of upstream dependencies.
-  Supports "none", "direct", "deep" (default).
+- `--dependents <DEPTH>` - Also run the dependents of every selected target, up to the depth.
+  Supports "none" (default), "direct", "deep", or a number of hops. When `--affected` is active, the
+  dependents must also be affected to run.
+- `--no-deps` - Do not insert dependency tasks that were not selected themselves. Tasks in the graph
+  are still ran in dependency order, and `cleanup` dependencies still run after their owner. This is
+  an escape hatch that can produce incorrect builds when a dependency's outputs are stale.
+  <VersionLabel version="3.0.0" />
+
+> Dependencies (via [`deps`](../config/project#deps)) are always ran, unless `--no-deps` is passed.
+> [Learn more about graph depth](../concepts/affected#graph-depth).
 
 ### Parallelism
 
 - `--job <INDEX>` - Index of the current job (0 based).
 - `--job-total <TOTAL>` - Total amount of jobs to run.
+
+## Migrating from v2
+
+- `-g`, `--include-relations` &rarr; `--affected-depth deep`, which is now the default.
+- `--downstream <DEPTH>` &rarr; `--dependents <DEPTH>`. The `--downstream` alias is deprecated.
+- `--upstream deep` &rarr; remove it, as it's now the only behavior. `--upstream none` or
+  `--upstream direct` &rarr; `--no-deps`, if the intent was to not run unchanged dependencies.
+- [`moon ci`](./ci) no longer runs the direct dependents of affected tasks by default.

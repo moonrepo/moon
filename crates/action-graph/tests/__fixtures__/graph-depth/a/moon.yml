@@ -1,0 +1,4 @@
+tasks:
+  deploy:
+    command: 'deploy'
+    inputs: ['src.txt']

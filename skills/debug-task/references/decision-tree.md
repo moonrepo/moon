@@ -115,6 +115,18 @@ MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING=false moon run <project>:<task> --affect
 
 If the results differ, report it upstream — and keep the experiment disabled as a workaround.
 
+<sup>v3.0+</sup> A task is also affected when a task it depends on (via `deps`) is affected, up to
+`--affected-depth` hops (`none`, `direct`, `deep`, or a number; defaults to `deep`). If a dependent
+task was expected to run but didn't, check for a lowered `--affected-depth`. The "Tracking affected
+tasks" step always prints why each task is affected, including
+`affected by dependency task <target>` lines. Note that `--affected-depth` never adds tasks that the
+target locators didn't match; to also run dependents of the requested targets, pass
+`--dependents <DEPTH>`.
+
+<sup>v3.0+</sup> `moon ci` no longer runs the direct dependents of affected tasks by default
+(`--dependents` defaults to `none` everywhere). If a dependent outside of the requested targets used
+to run in CI, pass `--dependents direct`, or add its target to the `moon ci` command.
+
 **Check 2: Is `runInCI` blocking execution?**
 
 ```bash
@@ -323,6 +335,12 @@ moon run <project>:<task> --force
 In v2.3, deps without outputs default to `cacheStrategy: 'ignored'`, so changes to them don't
 invalidate this task. If you expected an upstream lint/test change to bust the cache, this is why.
 See `cache-issues.md` § Dependency cache strategies.
+
+**Dependencies were skipped with `--no-deps`** <sup>v3.0+</sup>:
+
+`--no-deps` (or `graph.noDeps` in an execution plan) doesn't insert dependency tasks that weren't
+selected themselves, so a task can consume a dependency's stale or missing outputs. Re-run without
+`--no-deps` to confirm.
 
 **The output is missing files:**
 

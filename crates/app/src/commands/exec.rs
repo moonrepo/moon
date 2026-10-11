@@ -10,7 +10,7 @@ use iocraft::prelude::element;
 use moon_action::Action;
 use moon_action_context::ActionContext;
 use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, RunRequirements};
-use moon_affected::{DownstreamScope, UpstreamScope};
+use moon_affected::Depth;
 use moon_app_macros::{with_affected_args, with_shared_exec_args};
 use moon_cache::CacheMode;
 use moon_common::{apply_style_tags, is_ci, is_test_env, path::WorkspaceRelativePathBuf};
@@ -221,6 +221,13 @@ impl ExecWorkflow {
             self.session
                 .get_cache_engine()?
                 .force_mode(CacheMode::Write);
+        }
+
+        // Removed in v3, so only point users to the replacement
+        if self.args.upstream.is_some() {
+            warn!(
+                "--upstream has been removed; dependencies always run, use --no-deps to skip unselected dependencies"
+            );
         }
 
         // Step 1
@@ -465,12 +472,13 @@ impl ExecWorkflow {
         action_graph_builder.set_changed_files(changed_files)?;
 
         // Only track affected if enabled
-        let upstream = self.get_upstream();
-        let downstream = self.get_downstream();
+        let affected_depth = self.get_affected_depth();
+        let dependents = self.get_dependents();
+        let no_deps = self.get_no_deps();
 
         if self.affected {
             action_graph_builder
-                .track_affected(upstream, downstream, self.ci_env && self.ci_check)
+                .track_affected(affected_depth, self.ci_env && self.ci_check)
                 .await?;
         }
 
@@ -489,9 +497,8 @@ impl ExecWorkflow {
                 RunRequirements {
                     ci: self.ci_env,
                     ci_check: self.ci_check,
-                    dependencies: upstream,
-                    dependents: downstream,
-                    include_relations: self.get_include_relations(),
+                    no_deps,
+                    dependents,
                     interactive: self.args.interactive,
                     job,
                     job_total,
@@ -516,6 +523,18 @@ impl ExecWorkflow {
                 "Partition size: <property>{}</property>",
                 partition.size.unwrap_or_default()
             ))?;
+        }
+
+        if self.affected {
+            self.print(format!(
+                "Affected depth: <property>{affected_depth}</property>"
+            ))?;
+        }
+
+        self.print(format!("Dependents: <property>{dependents}</property>"))?;
+
+        if no_deps {
+            self.print("Skipping dependencies: <property>yes</property>")?;
         }
 
         self.print(format!(
@@ -565,25 +584,11 @@ impl ExecWorkflow {
                     "\t<id>{target}</id> affected by file <file>{}</file>",
                     state.files.iter().next().unwrap()
                 ))?;
-            } else if !state.projects.is_empty() {
+            } else if !state.dependencies.is_empty() {
                 self.print(format!(
-                    "\t<id>{target}</id> affected by project <id>{}</id>",
-                    state.projects.iter().next().unwrap()
+                    "\t<id>{target}</id> affected by dependency task <label>{}</label>",
+                    state.dependencies.iter().next().unwrap()
                 ))?;
-            } else if !state.upstream.is_empty() {
-                if self.get_include_relations() {
-                    self.print(format!(
-                        "\t<id>{target}</id> affected by dependency task <label>{}</label>",
-                        state.upstream.iter().next().unwrap()
-                    ))?;
-                }
-            } else if !state.downstream.is_empty() {
-                if self.get_include_relations() {
-                    self.print(format!(
-                        "\t<id>{target}</id> affected by dependent task <label>{}</label>",
-                        state.downstream.iter().next().unwrap()
-                    ))?;
-                }
             } else {
                 self.print(format!("\t<id>{target}</id> affected"))?;
             }
@@ -679,12 +684,48 @@ impl ExecWorkflow {
             .or(self.args.base.clone())
     }
 
-    fn get_downstream(&self) -> DownstreamScope {
-        self.plan
-            .graph
-            .downstream
-            .or(self.args.downstream)
-            .unwrap_or(DownstreamScope::None)
+    fn get_affected_depth(&self) -> Depth {
+        let affected = self.plan.affected.as_ref();
+
+        if let Some(depth) = affected.and_then(|aff| aff.depth) {
+            return depth;
+        }
+
+        if let Some(include_relations) = affected.and_then(|aff| aff.include_relations) {
+            warn!(
+                "The affected.includeRelations execution plan setting is deprecated, use affected.depth instead"
+            );
+
+            return if include_relations {
+                Depth::Deep
+            } else {
+                Depth::NONE
+            };
+        }
+
+        self.args.affected_depth.unwrap_or(Depth::Deep)
+    }
+
+    fn get_dependents(&self) -> Depth {
+        if self.plan.graph.upstream.is_some() {
+            warn!(
+                "The graph.upstream execution plan setting is deprecated and ignored, as dependencies always run; use graph.noDeps to skip unselected dependencies"
+            );
+        }
+
+        if let Some(depth) = self.plan.graph.dependents {
+            return depth;
+        }
+
+        if let Some(depth) = self.plan.graph.downstream {
+            warn!(
+                "The graph.downstream execution plan setting is deprecated, use graph.dependents instead"
+            );
+
+            return depth;
+        }
+
+        self.args.dependents.unwrap_or(Depth::NONE)
     }
 
     fn get_head(&self) -> Option<String> {
@@ -695,20 +736,16 @@ impl ExecWorkflow {
             .or(self.args.head.clone())
     }
 
-    fn get_include_relations(&self) -> bool {
-        self.plan
-            .affected
-            .as_ref()
-            .and_then(|aff| aff.include_relations)
-            .unwrap_or(self.args.include_relations)
-    }
-
     fn get_job(&self) -> Option<usize> {
         self.plan.pipeline.job.or(self.args.job)
     }
 
     fn get_job_total(&self) -> Option<usize> {
         self.plan.pipeline.job_total.or(self.args.job_total)
+    }
+
+    fn get_no_deps(&self) -> bool {
+        self.plan.graph.no_deps.unwrap_or(self.args.no_deps)
     }
 
     fn get_no_actions(&self) -> bool {
@@ -740,13 +777,5 @@ impl ExecWorkflow {
             TargetsBlock::Filtered { include } => Vec::from_iter(include),
             TargetsBlock::Included(targets) => Vec::from_iter(targets),
         }
-    }
-
-    fn get_upstream(&self) -> UpstreamScope {
-        self.plan
-            .graph
-            .upstream
-            .or(self.args.upstream)
-            .unwrap_or(UpstreamScope::Deep)
     }
 }

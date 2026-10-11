@@ -1,0 +1,5 @@
+tasks:
+  deploy:
+    command: 'deploy'
+    deps: ['b:deploy']
+    inputs: ['src.txt']

@@ -1034,7 +1034,7 @@ Other reasons a cleanup won't run:
   run. Cleanups should be self-contained.
 
 Shared cleanups (same `args`/`env`) run once, after all of the tasks that depend on them. They also
-still run when the task's deps don't, like with `--upstream none`.
+still run when the task's deps don't, like with `--no-deps` <sup>v3.0+</sup>.
 
 ### Wait dep problems
 

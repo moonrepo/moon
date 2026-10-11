@@ -899,7 +899,7 @@ Cleanup dependencies:
 - Still run when a failure aborts the pipeline (like with [`moon run`](../commands/run)), but only
   when there's something to clean up. They start once the processes that were running have been
   terminated, after [`pipeline.killProcessThreshold`](./workspace#killprocessthreshold).
-- Still run when the dependencies of this task are not, like with `--upstream none`.
+- Still run when the dependencies of this task are not, like with `--no-deps`.
 - Fail the pipeline when they fail, like any other task, unless they
   [allow failure](#allowfailure).
 - Run their own dependencies like any other task, as soon as possible, and not after this task. When

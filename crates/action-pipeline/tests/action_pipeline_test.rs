@@ -1,6 +1,5 @@
 use moon_action::{Action, ActionStatus};
 use moon_action_graph::RunRequirements;
-use moon_affected::UpstreamScope;
 use moon_common::Id;
 use moon_process::ProcessRegistry;
 use moon_task::Target;
@@ -447,11 +446,9 @@ mod action_pipeline {
     mod scopes {
         use super::*;
 
-        // Multiple actions may run the same task (with different args), and with
-        // a direct scope, its dependencies are in scope for the one that was
-        // requested, but not for the one that is a dependency of another task.
-        // Both must wait for them to complete regardless (the latter did not,
-        // and failed, as the hash of the dependency was missing)
+        // Multiple actions may run the same task (with different args), the one
+        // that was requested, and the one that is a dependency of another task.
+        // Both must wait for its dependencies to complete
         #[tokio::test(flavor = "multi_thread")]
         async fn waits_for_dependencies_in_every_action_of_a_task() {
             for targets in [
@@ -461,10 +458,7 @@ mod action_pipeline {
                 let sandbox = create_sandbox("pipeline");
                 let mocker = WorkspaceMocker::new(sandbox.path()).with_default_projects();
 
-                let reqs = RunRequirements {
-                    dependencies: UpstreamScope::Direct,
-                    ..RunRequirements::default()
-                };
+                let reqs = RunRequirements::default();
                 let mut graph = mocker.create_action_graph().await;
 
                 for target in targets {
@@ -498,6 +492,62 @@ mod action_pipeline {
                 assert_eq!(
                     statuses("RunTask(scopes:shared)"),
                     [ActionStatus::Passed, ActionStatus::Passed],
+                    "{targets:?}"
+                );
+                assert_eq!(
+                    statuses("RunTask(scopes:with-args)"),
+                    [ActionStatus::Passed],
+                    "{targets:?}"
+                );
+            }
+        }
+        // Dependencies that weren't selected are not ran, nor waited on (their
+        // hash is missing), while the ones that were selected are ran first
+        #[tokio::test(flavor = "multi_thread")]
+        async fn runs_selected_dependencies_when_skipping_dependencies() {
+            for targets in [
+                ["scopes:with-args", "scopes:shared"],
+                ["scopes:shared", "scopes:with-args"],
+            ] {
+                let sandbox = create_sandbox("pipeline");
+
+                // Skipping dependencies assumes their outputs are up to date
+                sandbox.create_file("scopes/prepped", "signaled");
+                let mocker = WorkspaceMocker::new(sandbox.path()).with_default_projects();
+
+                let reqs = RunRequirements {
+                    no_deps: true,
+                    ..RunRequirements::default()
+                };
+                let mut graph = mocker.create_action_graph().await;
+
+                for target in targets {
+                    graph
+                        .run_task_by_target(&Target::parse(target).unwrap(), &reqs)
+                        .await
+                        .unwrap();
+                }
+
+                let (context, graph) = graph.build();
+                let actions = mocker
+                    .mock_action_pipeline()
+                    .await
+                    .run_with_context(graph, context)
+                    .await
+                    .unwrap_or_else(|error| panic!("{targets:?}: {error}"));
+
+                let statuses = |label: &str| {
+                    actions
+                        .iter()
+                        .filter(|action| action.label == label)
+                        .map(|action| action.status)
+                        .collect::<Vec<_>>()
+                };
+
+                assert!(statuses("RunTask(scopes:prep)").is_empty(), "{targets:?}");
+                assert_eq!(
+                    statuses("RunTask(scopes:shared)"),
+                    [ActionStatus::Passed],
                     "{targets:?}"
                 );
                 assert_eq!(

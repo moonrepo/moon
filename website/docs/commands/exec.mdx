@@ -91,9 +91,9 @@ For a declarative alternative to CLI options, see the [execution plan guide](../
   "remote".
 - `--base <BASE>` - Base branch, commit, or revision to compare against.
 - `--head <HEAD>` - Current branch, commit, or revision to compare with.
-- `--affected-depth <DEPTH>` - How far affected state propagates to dependent tasks. Supports "none",
-  "direct", "deep" (default), or a number of hops. Only changes which tasks count as affected, and
-  never adds tasks.
+- `-d`, `--affected-depth <DEPTH>` - How far affected state propagates to dependent tasks. Supports
+  "none", "direct", "deep" (default), or a number of hops. Only changes which tasks count as
+  affected, and never adds tasks.
   <VersionLabel version="3.0.0" />
 - `--status <STATUS>` - Filter changed files based on a changed status.
 - `--stdin` - Accept changed files from stdin for affected checks.

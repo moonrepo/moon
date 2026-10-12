@@ -86,7 +86,9 @@ $ moon run :build --affected --affected-depth 2
 
 This option only changes _which_ tasks count as affected. It never adds tasks that were not matched
 by the target locators. The "Tracking affected tasks" step will always print why a task is affected,
-including `affected by dependency task <target>` for tasks that were affected through a dependency.
+including `affected by dependency task <target>` for tasks that were affected through a dependency,
+followed by how many hops away from a directly affected task they are (when more than 1). The same
+distance is available in the `distance` field of [`moon query affected`](../commands/query/affected).
 
 ### Dependents<VersionLabel version="3.0.0" />
 
@@ -106,6 +108,9 @@ $ moon run lib:build --dependents direct
 ```
 
 When [`--affected`](../run-task#running-based-on-affected-files-only) is active, the added dependents must also be affected to run.
+
+When `--query` is passed, it also bounds which dependents are added: dependents in projects that do
+not match the query are not added, and are not traversed through to reach their own dependents.
 
 ### Dependencies<VersionLabel version="3.0.0" />
 
@@ -129,7 +134,8 @@ $ moon ci :deploy --no-dependencies
 
 When a dependency's outputs are stale or missing, `--no-dependencies` can produce incorrect builds,
 as the dependency will not be ran to update them. Similar to `--only` in Turborepo, or
-`--excludeTaskDependencies` in Nx.
+`--excludeTaskDependencies` in Nx. Skipped dependencies are also excluded from the task's hash, so a
+task ran with `--no-dependencies` never shares a cache entry with a normal run of the same task.
 
 :::
 

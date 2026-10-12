@@ -3389,6 +3389,130 @@ mod action_graph_builder {
                     ["a:task", "b:task", "c:task", "d:task", "e:task"]
                 );
             }
+
+            // `c:deploy` (core) depends on `b:deploy` (edge), which depends on
+            // `a:deploy` (core)
+            async fn run_deploy_with_query(
+                locator: &str,
+                query: Option<&str>,
+                changed_file: Option<&str>,
+            ) -> (ActionContext, Vec<String>) {
+                let sandbox = create_sandbox("graph-depth");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                if let Some(query) = query {
+                    builder.set_query(query).unwrap();
+                }
+
+                if let Some(file) = changed_file {
+                    builder
+                        .set_changed_files(FxHashSet::from_iter([WorkspaceRelativePathBuf::from(
+                            file,
+                        )]))
+                        .unwrap();
+                    builder.track_affected(Depth::Deep, false).await.unwrap();
+                }
+
+                builder
+                    .run_tasks(
+                        vec![TargetLocator::parse(locator).unwrap()],
+                        RunRequirements {
+                            dependents: Depth::Deep,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (context, graph) = builder.build();
+
+                (context, extract_run_task_targets(graph))
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn expands_all_dependents_without_query() {
+                assert_eq!(
+                    run_deploy_with_query("a:deploy", None, None).await.1,
+                    ["a:deploy", "b:deploy", "c:deploy"]
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn query_bounds_dependents() {
+                // `b` doesn't match, so isn't added, and doesn't act as a bridge
+                // to `c`, which does match
+                assert_eq!(
+                    run_deploy_with_query("a:deploy", Some("projectTag=core"), None)
+                        .await
+                        .1,
+                    ["a:deploy"]
+                );
+                assert_eq!(
+                    run_deploy_with_query("a:deploy", Some("projectTag=[core, edge]"), None)
+                        .await
+                        .1,
+                    ["a:deploy", "b:deploy", "c:deploy"]
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn query_bounds_dependents_of_single_task() {
+                let sandbox = create_sandbox("graph-depth");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                builder.set_query("projectTag=edge").unwrap();
+
+                let task = wg.get_task_from_project("a", "deploy").unwrap();
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            dependents: Depth::Deep,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                // `a` doesn't match, but was explicitly selected
+                assert_eq!(extract_run_task_targets(graph), ["a:deploy", "b:deploy"]);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn query_doesnt_bound_explicit_targets() {
+                // `b` doesn't match, but was explicitly selected, and `a` is
+                // its dependency
+                assert_eq!(
+                    run_deploy_with_query("b:deploy", Some("projectTag=core"), None)
+                        .await
+                        .1,
+                    ["a:deploy", "b:deploy", "c:deploy"]
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn query_doesnt_bound_affected_propagation() {
+                let (context, targets) =
+                    run_deploy_with_query("a:deploy", Some("projectTag=core"), Some("a/src.txt"))
+                        .await;
+
+                assert_eq!(targets, ["a:deploy"]);
+
+                // `b` and `c` are still affected through their dependencies
+                let affected = context.affected.unwrap();
+
+                assert!(affected.is_task_affected(&Target::parse("b:deploy").unwrap()));
+                assert!(affected.is_task_affected(&Target::parse("c:deploy").unwrap()));
+            }
         }
     }
 

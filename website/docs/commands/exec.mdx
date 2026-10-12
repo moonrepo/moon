@@ -81,7 +81,8 @@ For a declarative alternative to CLI options, see the [execution plan guide](../
 
 - `--ignore-ci-checks` - Ignore "run in CI" task checks.
 - `--on-failure <ON>` - When a task fails, either bail the pipeline, or continue executing.
-- `--query <QUERY>` - Filter tasks based on the result of a query.
+- `--query <QUERY>` - Filter tasks based on the result of a query. Also bounds the dependents added
+  by `--dependents` to projects that match the query.
 - `--no-actions` - Run the pipeline without sync and setup related actions.
 
 ### Affected

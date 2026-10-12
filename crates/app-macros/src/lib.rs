@@ -189,6 +189,7 @@ pub fn with_affected_args(attr: TokenStream, item: TokenStream) -> TokenStream {
             quote! {
                 #[arg(
                     long,
+                    short = 'd',
                     env = "MOON_AFFECTED_DEPTH",
                     help = "How far affected state propagates to dependent tasks (none, direct, deep, or a number of hops)",
                     help_heading = super::HEADING_AFFECTED,
@@ -245,6 +246,7 @@ pub fn with_affected_args(attr: TokenStream, item: TokenStream) -> TokenStream {
             quote! {
                 #[arg(
                     long,
+                    short = 'd',
                     env = "MOON_AFFECTED_DEPTH",
                     help = "How far affected state propagates to dependent tasks (none, direct, deep, or a number of hops)",
                     help_heading = super::HEADING_AFFECTED,

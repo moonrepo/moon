@@ -958,6 +958,9 @@ impl<'query> ActionGraphBuilder<'query> {
 
     /// Resolve the dependents of the provided tasks, up to the depth, in
     /// breadth-first order. The provided tasks are excluded.
+    ///
+    /// When a query has been set, it bounds the expansion: dependents in
+    /// projects that don't match it are not added, nor walked through.
     async fn internal_resolve_dependents(
         &mut self,
         tasks: &[&Task],
@@ -967,6 +970,17 @@ impl<'query> ActionGraphBuilder<'query> {
             return Ok(vec![]);
         }
 
+        let query_project_ids = match &self.all_query {
+            Some(all_query) => Some(
+                self.workspace_graph
+                    .query_projects(all_query)?
+                    .into_iter()
+                    .map(|project| project.id.clone())
+                    .collect::<FxHashSet<_>>(),
+            ),
+            None => None,
+        };
+
         let mut targets = vec![];
 
         // Cleanup dependencies are dependents in the task graph, as they run
@@ -974,11 +988,18 @@ impl<'query> ActionGraphBuilder<'query> {
         // with their configured args and env (running them again as a dependent
         // would create a separate action that isn't ordered after the task),
         // so those edges are never followed
-        self.workspace_graph.tasks.traverse_within_filtered(
+        self.workspace_graph.tasks.traverse_within_filtered_nodes(
             tasks,
             Direction::Incoming,
             depth,
             |edge| !matches!(edge, TaskDependencyType::Cleanup),
+            |task| {
+                query_project_ids.as_ref().is_none_or(|ids| {
+                    task.target
+                        .get_project_id()
+                        .is_ok_and(|id| ids.contains(id))
+                })
+            },
             |task, _, _| {
                 targets.push(task.target.clone());
             },

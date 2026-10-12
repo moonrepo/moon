@@ -115,6 +115,106 @@ than `stream`, its output is now captured even when run directly, and is only di
 exits. [Interactive tasks](/docs/config/project#interactive) are still the exception, as they must
 remain attached to the terminal, and always stream their output.
 
+## Graph depth, reworked
+
+In v2, the `--upstream` and `--downstream` options controlled "how deep" moon traversed the graph,
+but each of them controlled 2 unrelated things at once: how far the _affected_ state spread across
+project and task relationships, and which dependency and dependent tasks were _inserted into the
+action graph and ran_. With a single value driving both, there was no way to express one without
+the other. Widening the affected walk far enough for a library change to mark an app's `publish`
+task also pulled every `deploy` task that depends on it into the run, and narrowing the dependency
+walk to skip unchanged dependencies also dropped the ordering between the tasks that _were_
+selected, so dependent deployments ran concurrently.
+
+In v3, we've split this into 3 independent concepts, each with its own option, and all named from
+the point of view of the target: _dependencies_ are what the target needs, and _dependents_ are what
+needs the target. [Learn more about graph depth](/docs/concepts/affected#graph-depth).
+
+### Affected depth
+
+A task is affected when its inputs changed, or when a task it depends on is affected. How far that
+state propagates is now controlled by the new `--affected-depth` (`-d`) option, which defaults to
+`deep`, so a change to a library affects everything that transitively depends on it, like you'd
+expect from a build system. This replaces the `--include-relations` (`-g`) flag, and the "Tracking
+affected tasks" step now always explains _why_ a task is affected, including how many hops away the
+affected dependency is.
+
+```shell
+# Only tasks whose own inputs changed
+$ moon run :test --affected --affected-depth none
+
+# Tasks whose inputs changed, and their dependents up to 2 hops away
+$ moon run :test --affected --affected-depth 2
+```
+
+Every depth option now accepts `none`, `direct`, `deep`, or a number of hops, and the distance is
+always the minimum number of hops from any affected task, so a task that is reachable through
+multiple chains is only ever counted once, at its closest.
+
+### Dependents
+
+The `--dependents` option (replacing `--downstream`) adds the dependents of every selected target as
+primary targets, up to the depth. It _only_ expands what you asked for, and never changes what
+counts as affected, so when combined with `--affected`, the added dependents still have to be
+affected to run. When a `--query` is also provided, only dependents within the queried projects are
+added.
+
+```shell
+# Build `lib`, and every task that directly depends on it
+$ moon run lib:build --dependents direct
+```
+
+Because affected state now propagates by default, `moon ci` no longer runs the direct dependents of
+affected tasks on its own. Affected dependents within the requested targets are already selected,
+and dependents _outside_ of them, like a `deploy` task that depends on `publish`, should never run
+unless requested. Pass `--dependents direct` to restore the previous behavior.
+
+### Dependencies
+
+A target's transitive dependencies are now _always_ inserted into the action graph and ran first, as
+their outputs are required for the target to function correctly, and the `--upstream` option has
+been removed. No other build system lets you run a target with only some of its dependencies, and
+in practice, the `direct` depth was the source of many missing hash and ordering bugs.
+
+For the cases where you really don't want unchanged dependencies to run, like cascading
+infrastructure deployments, the new `--no-dependencies` option skips dependency tasks that were not
+selected themselves, while still linking the ordering between the tasks that _are_ in the graph.
+
+```shell
+# Deploy the affected stacks in dependency order, without redeploying unchanged ones
+$ moon ci :deploy --no-dependencies
+```
+
+### Everywhere else
+
+The same depth values are now used across moon. The `moon query projects` and `moon query tasks`
+commands support `--dependencies` and `--dependents` for including related projects and tasks in
+the output, `moon query affected` supports `--dependents` and reports the `distance` of each
+affected project and task, and the `--dependents` option of `moon action-graph`,
+`moon project-graph`, and `moon task-graph` now accepts a depth instead of being a simple flag.
+
+For [execution plans](/docs/guides/exec-plan), `affected.includeRelations` has been replaced with
+`affected.depth`, and `graph.upstream` and `graph.downstream` with `graph.noDependencies` and
+`graph.dependents`.
+
+```diff title="plan.json"
+ {
+   "affected": {
+-    "includeRelations": true
++    "depth": "deep"
+   },
+   "graph": {
+-    "upstream": "deep",
+-    "downstream": "direct"
++    "dependents": "direct"
+   },
+   "targets": [":build"]
+ }
+```
+
+As this is a major release, the previous options have been removed outright, with no aliases or
+deprecation period.
+
 ## Performance improvements
 
 With the experiments resolved, we no longer have to keep two implementations of the same code path

@@ -2225,9 +2225,16 @@ tasks:
                 predicate::str::contains("b:build affected by dependency task a:build")
                     .eval(&output)
             );
+            // Only the distance of dependents further than 1 hop is printed
             assert!(
-                predicate::str::contains("c:build affected by dependency task b:build")
+                !predicate::str::contains("b:build affected by dependency task a:build (")
                     .eval(&output)
+            );
+            assert!(
+                predicate::str::contains(
+                    "c:build affected by dependency task b:build (2 hops away)"
+                )
+                .eval(&output)
             );
             assert!(predicate::str::contains("Tasks: 3 completed").eval(&output));
 
@@ -2316,6 +2323,46 @@ tasks:
             let output = format!("{}{}", assert.stderr(), assert.stdout());
 
             assert!(predicate::str::contains("Dependents: deep").eval(&output));
+            assert!(predicate::str::contains("Tasks: 3 completed").eval(&output));
+
+            assert.success();
+        }
+
+        #[test]
+        fn query_bounds_added_dependents() {
+            let sandbox = create_chain_sandbox();
+
+            // `b` doesn't match, so isn't added, nor walked through to `c`
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("a:build")
+                    .arg("--dependents")
+                    .arg("deep")
+                    .arg("--query")
+                    .arg("project!=b");
+            });
+
+            let output = format!("{}{}", assert.stderr(), assert.stdout());
+
+            assert!(predicate::str::contains("Dependents: deep").eval(&output));
+            assert!(!predicate::str::contains("RunTask(b:build)").eval(&output));
+            assert!(!predicate::str::contains("RunTask(c:build)").eval(&output));
+            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+
+            assert.success();
+
+            // `b` matches, and `c` is reached through it
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("a:build")
+                    .arg("--dependents")
+                    .arg("deep")
+                    .arg("--query")
+                    .arg("project=[b,c]");
+            });
+
+            let output = format!("{}{}", assert.stderr(), assert.stdout());
+
             assert!(predicate::str::contains("Tasks: 3 completed").eval(&output));
 
             assert.success();

@@ -578,10 +578,18 @@ impl ExecWorkflow {
                     state.files.iter().next().unwrap()
                 ))?;
             } else if !state.dependencies.is_empty() {
-                self.print(format!(
-                    "\t<id>{target}</id> affected by dependency task <label>{}</label>",
-                    state.dependencies.iter().next().unwrap()
-                ))?;
+                let dependency = state.dependencies.iter().next().unwrap();
+
+                self.print(if state.distance > 1 {
+                    format!(
+                        "\t<id>{target}</id> affected by dependency task <label>{dependency}</label> (<property>{}</property> hops away)",
+                        state.distance
+                    )
+                } else {
+                    format!(
+                        "\t<id>{target}</id> affected by dependency task <label>{dependency}</label>"
+                    )
+                })?;
             } else {
                 self.print(format!("\t<id>{target}</id> affected"))?;
             }

@@ -40,9 +40,10 @@ mod affected_projects {
         state
     }
 
-    fn create_state_from_dependency(id: &str) -> AffectedProjectState {
+    fn create_state_from_dependency(id: &str, distance: u32) -> AffectedProjectState {
         let mut state = AffectedProjectState::default();
         state.dependencies.insert(Id::raw(id));
+        state.distance = distance;
         state
     }
 
@@ -86,10 +87,10 @@ mod affected_projects {
             affected.projects,
             FxHashMap::from_iter([
                 // Reached directly from c, not through b
-                (Id::raw("a"), create_state_from_dependency("c")),
-                (Id::raw("b"), create_state_from_dependency("c")),
+                (Id::raw("a"), create_state_from_dependency("c", 1)),
+                (Id::raw("b"), create_state_from_dependency("c", 1)),
                 (Id::raw("c"), create_state_from_file("c/file.txt")),
-                (Id::raw("f"), create_state_from_dependency("a")),
+                (Id::raw("f"), create_state_from_dependency("a", 2)),
                 (Id::raw("root"), create_state_from_file("c/file.txt")),
             ])
         );
@@ -172,7 +173,7 @@ mod affected_projects {
             affected,
             FxHashMap::from_iter([
                 (Id::raw("a"), create_state_from_file("a/file.txt")),
-                (Id::raw("f"), create_state_from_dependency("a")),
+                (Id::raw("f"), create_state_from_dependency("a", 1)),
                 (Id::raw("root"), create_state_from_file("a/file.txt")),
             ])
         );
@@ -237,7 +238,7 @@ mod affected_projects {
             assert_eq!(
                 affected,
                 FxHashMap::from_iter([
-                    (Id::raw("c"), create_state_from_dependency("d")),
+                    (Id::raw("c"), create_state_from_dependency("d", 1)),
                     (Id::raw("d"), create_state_from_file("d/file.txt")),
                     (Id::raw("root"), create_state_from_file("d/file.txt")),
                 ])
@@ -265,9 +266,9 @@ mod affected_projects {
             assert_eq!(
                 affected,
                 FxHashMap::from_iter([
-                    (Id::raw("a"), create_state_from_dependency("c")),
-                    (Id::raw("b"), create_state_from_dependency("c")),
-                    (Id::raw("c"), create_state_from_dependency("d")),
+                    (Id::raw("a"), create_state_from_dependency("c", 2)),
+                    (Id::raw("b"), create_state_from_dependency("c", 2)),
+                    (Id::raw("c"), create_state_from_dependency("d", 1)),
                     (Id::raw("d"), create_state_from_file("d/file.txt")),
                     (Id::raw("root"), create_state_from_file("d/file.txt")),
                 ])
@@ -281,11 +282,11 @@ mod affected_projects {
             assert_eq!(
                 affected,
                 FxHashMap::from_iter([
-                    (Id::raw("a"), create_state_from_dependency("c")),
-                    (Id::raw("b"), create_state_from_dependency("c")),
-                    (Id::raw("c"), create_state_from_dependency("d")),
+                    (Id::raw("a"), create_state_from_dependency("c", 2)),
+                    (Id::raw("b"), create_state_from_dependency("c", 2)),
+                    (Id::raw("c"), create_state_from_dependency("d", 1)),
                     (Id::raw("d"), create_state_from_file("d/file.txt")),
-                    (Id::raw("f"), create_state_from_dependency("a")),
+                    (Id::raw("f"), create_state_from_dependency("a", 3)),
                     (Id::raw("root"), create_state_from_file("d/file.txt")),
                 ])
             );
@@ -315,8 +316,14 @@ mod affected_projects {
             assert_eq!(
                 affected,
                 FxHashMap::from_iter([
-                    (Id::raw("cycle-a"), create_state_from_dependency("cycle-b")),
-                    (Id::raw("cycle-b"), create_state_from_dependency("cycle-c")),
+                    (
+                        Id::raw("cycle-a"),
+                        create_state_from_dependency("cycle-b", 2)
+                    ),
+                    (
+                        Id::raw("cycle-b"),
+                        create_state_from_dependency("cycle-c", 1)
+                    ),
                     (
                         Id::raw("cycle-c"),
                         create_state_from_file("cycle-c/file.txt")
@@ -335,12 +342,18 @@ mod affected_projects {
 
             // Root is affected by any file, so isn't asserted
             assert_eq!(affected.len(), 5);
-            assert_eq!(affected[&Id::raw("a")], create_state_from_dependency("b"));
+            assert_eq!(
+                affected[&Id::raw("a")],
+                create_state_from_dependency("b", 1)
+            );
             assert_eq!(
                 affected[&Id::raw("b")],
                 create_state_from_file("b/file.txt")
             );
-            assert_eq!(affected[&Id::raw("c")], create_state_from_dependency("d"));
+            assert_eq!(
+                affected[&Id::raw("c")],
+                create_state_from_dependency("d", 1)
+            );
             assert_eq!(
                 affected[&Id::raw("d")],
                 create_state_from_file("d/file.txt")
@@ -359,9 +372,18 @@ mod affected_projects {
                 affected[&Id::raw("c")],
                 create_state_from_file("c/file.txt")
             );
-            assert_eq!(affected[&Id::raw("b")], create_state_from_dependency("c"));
-            assert_eq!(affected[&Id::raw("a")], create_state_from_dependency("c"));
-            assert_eq!(affected[&Id::raw("f")], create_state_from_dependency("a"));
+            assert_eq!(
+                affected[&Id::raw("b")],
+                create_state_from_dependency("c", 1)
+            );
+            assert_eq!(
+                affected[&Id::raw("a")],
+                create_state_from_dependency("c", 1)
+            );
+            assert_eq!(
+                affected[&Id::raw("f")],
+                create_state_from_dependency("a", 2)
+            );
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -387,7 +409,7 @@ mod affected_projects {
                             ..Default::default()
                         }
                     ),
-                    (Id::raw("c"), create_state_from_dependency("d")),
+                    (Id::raw("c"), create_state_from_dependency("d", 1)),
                 ])
             );
         }
@@ -409,9 +431,10 @@ mod affected_tasks {
         state
     }
 
-    fn create_state_from_dependency(id: &str) -> AffectedTaskState {
+    fn create_state_from_dependency(id: &str, distance: u32) -> AffectedTaskState {
         let mut state = AffectedTaskState::default();
         state.dependencies.insert(Target::parse(id).unwrap());
+        state.distance = distance;
         state
     }
 
@@ -600,11 +623,11 @@ mod affected_tasks {
             FxHashMap::from_iter([
                 (
                     Target::parse("parent:child").unwrap(),
-                    create_state_from_dependency("self:b")
+                    create_state_from_dependency("self:b", 1)
                 ),
                 (
                     Target::parse("self:a").unwrap(),
-                    create_state_from_dependency("self:b")
+                    create_state_from_dependency("self:b", 1)
                 ),
                 (
                     Target::parse("self:b").unwrap(),
@@ -612,7 +635,7 @@ mod affected_tasks {
                 ),
                 (
                     Target::parse("self:c").unwrap(),
-                    create_state_from_dependency("self:b")
+                    create_state_from_dependency("self:b", 1)
                 ),
             ])
         );
@@ -640,7 +663,7 @@ mod affected_tasks {
                 ),
                 (
                     Target::parse("parent:child").unwrap(),
-                    create_state_from_dependency("base:a")
+                    create_state_from_dependency("base:a", 1)
                 ),
             ])
         );
@@ -696,7 +719,7 @@ mod affected_tasks {
                 ),
                 (
                     Target::parse("downstream:task").unwrap(),
-                    create_state_from_dependency("upstream:task")
+                    create_state_from_dependency("upstream:task", 1)
                 ),
             ])
         );
@@ -868,7 +891,10 @@ mod affected_tasks {
                         create_state_from_file("chain/e.txt")
                     ),
                     (target("chain:e"), create_state_from_file("chain/e.txt")),
-                    (target("chain:d"), create_state_from_dependency("chain:e")),
+                    (
+                        target("chain:d"),
+                        create_state_from_dependency("chain:e", 1)
+                    ),
                 ])
             );
         }
@@ -901,8 +927,14 @@ mod affected_tasks {
                         create_state_from_file("chain/e.txt")
                     ),
                     (target("chain:e"), create_state_from_file("chain/e.txt")),
-                    (target("chain:d"), create_state_from_dependency("chain:e")),
-                    (target("chain:c"), create_state_from_dependency("chain:d")),
+                    (
+                        target("chain:d"),
+                        create_state_from_dependency("chain:e", 1)
+                    ),
+                    (
+                        target("chain:c"),
+                        create_state_from_dependency("chain:d", 2)
+                    ),
                 ])
             );
         }
@@ -919,10 +951,22 @@ mod affected_tasks {
                         create_state_from_file("chain/e.txt")
                     ),
                     (target("chain:e"), create_state_from_file("chain/e.txt")),
-                    (target("chain:d"), create_state_from_dependency("chain:e")),
-                    (target("chain:c"), create_state_from_dependency("chain:d")),
-                    (target("chain:b"), create_state_from_dependency("chain:c")),
-                    (target("chain:a"), create_state_from_dependency("chain:b")),
+                    (
+                        target("chain:d"),
+                        create_state_from_dependency("chain:e", 1)
+                    ),
+                    (
+                        target("chain:c"),
+                        create_state_from_dependency("chain:d", 2)
+                    ),
+                    (
+                        target("chain:b"),
+                        create_state_from_dependency("chain:c", 3)
+                    ),
+                    (
+                        target("chain:a"),
+                        create_state_from_dependency("chain:b", 4)
+                    ),
                 ])
             );
         }
@@ -956,7 +1000,7 @@ mod affected_tasks {
             );
             assert_eq!(
                 affected[&target("chain:d")],
-                create_state_from_dependency("chain:e")
+                create_state_from_dependency("chain:e", 1)
             );
             assert_eq!(
                 affected[&target("chain:c")],
@@ -964,11 +1008,11 @@ mod affected_tasks {
             );
             assert_eq!(
                 affected[&target("chain:b")],
-                create_state_from_dependency("chain:c")
+                create_state_from_dependency("chain:c", 1)
             );
             assert_eq!(
                 affected[&target("chain:a")],
-                create_state_from_dependency("chain:b")
+                create_state_from_dependency("chain:b", 2)
             );
             assert!(!affected.contains_key(&target("chain:z")));
         }
@@ -1004,19 +1048,19 @@ mod affected_tasks {
                     ),
                     (
                         target("depth:mid1"),
-                        create_state_from_dependency("depth:base")
+                        create_state_from_dependency("depth:base", 1)
                     ),
                     (
                         target("depth:mid2"),
-                        create_state_from_dependency("depth:mid1")
+                        create_state_from_dependency("depth:mid1", 2)
                     ),
                     (
                         target("depth:top"),
-                        create_state_from_dependency("depth:other")
+                        create_state_from_dependency("depth:other", 1)
                     ),
                     (
                         target("depth:above"),
-                        create_state_from_dependency("depth:top")
+                        create_state_from_dependency("depth:top", 2)
                     ),
                 ])
             );
@@ -1031,11 +1075,11 @@ mod affected_tasks {
             // is visited once, at its minimum distance, through other
             assert_eq!(
                 affected[&target("depth:top")],
-                create_state_from_dependency("depth:other")
+                create_state_from_dependency("depth:other", 1)
             );
             assert_eq!(
                 affected[&target("depth:above")],
-                create_state_from_dependency("depth:top")
+                create_state_from_dependency("depth:top", 2)
             );
         }
 
@@ -1045,7 +1089,7 @@ mod affected_tasks {
 
             assert_eq!(
                 affected[&target("depth:top")],
-                create_state_from_dependency("depth:mid2")
+                create_state_from_dependency("depth:mid2", 3)
             );
             assert!(!affected.contains_key(&target("depth:above")));
             assert!(!affected.contains_key(&target("depth:other")));
@@ -1074,8 +1118,14 @@ mod affected_tasks {
                             ..Default::default()
                         }
                     ),
-                    (target("chain:d"), create_state_from_dependency("chain:e")),
-                    (target("chain:c"), create_state_from_dependency("chain:d")),
+                    (
+                        target("chain:d"),
+                        create_state_from_dependency("chain:e", 1)
+                    ),
+                    (
+                        target("chain:c"),
+                        create_state_from_dependency("chain:d", 2)
+                    ),
                 ])
             );
 
@@ -1104,9 +1154,80 @@ mod affected_tasks {
                 affected.tasks,
                 FxHashMap::from_iter([(
                     target("chain:c"),
-                    create_state_from_dependency("chain:d")
+                    create_state_from_dependency("chain:d", 1)
                 )])
             );
+        }
+
+        // Each walk visits a task at its minimum distance from the tasks it
+        // started from, but separate walks may reach it from different
+        // distances, so the closest one is reported
+        #[tokio::test(flavor = "multi_thread")]
+        async fn minimum_distance_over_separate_walks() {
+            let workspace_graph = Arc::new(build_graph("tasks").await);
+            let e = workspace_graph.get_task(&target("chain:e")).unwrap();
+            let c = workspace_graph.get_task(&target("chain:c")).unwrap();
+
+            let mut tracker =
+                AffectedTracker::new(Arc::clone(&workspace_graph), FxHashSet::default());
+            tracker.set_depth(Depth::Deep);
+            tracker
+                .mark_task_affected(&e, AffectedBy::AlwaysAffected)
+                .unwrap();
+            tracker
+                .mark_task_affected(&c, AffectedBy::AlwaysAffected)
+                .unwrap();
+            let affected = tracker.build();
+
+            // Directly affected, even though also reached from e
+            assert_eq!(affected.tasks[&target("chain:c")].distance, 0);
+            assert!(
+                affected.tasks[&target("chain:c")]
+                    .dependencies
+                    .contains(&target("chain:d"))
+            );
+
+            // 3 hops from e, but 1 hop from c
+            assert_eq!(
+                affected.tasks[&target("chain:b")],
+                create_state_from_dependency("chain:c", 1)
+            );
+            assert_eq!(
+                affected.tasks[&target("chain:a")],
+                create_state_from_dependency("chain:b", 2)
+            );
+            assert_eq!(affected.tasks[&target("chain:d")].distance, 1);
+        }
+
+        #[test]
+        fn state_distance_is_zero_when_directly_affected() {
+            let dependency = || AffectedBy::DependencyTask {
+                target: target("chain:d"),
+                distance: 2,
+            };
+
+            assert_eq!(
+                AffectedTaskState::from(FxHashSet::from_iter([
+                    dependency(),
+                    AffectedBy::DependencyTask {
+                        target: target("chain:z"),
+                        distance: 1,
+                    },
+                ]))
+                .distance,
+                1
+            );
+
+            for direct in [
+                AffectedBy::AlwaysAffected,
+                AffectedBy::ChangedFile("chain/c.txt".into()),
+                AffectedBy::EnvironmentVariable("ENV".into()),
+            ] {
+                assert_eq!(
+                    AffectedTaskState::from(FxHashSet::from_iter([direct, dependency(),])).distance,
+                    0
+                );
+            }
         }
     }
 

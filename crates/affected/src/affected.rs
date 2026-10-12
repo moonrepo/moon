@@ -12,10 +12,23 @@ pub enum AffectedBy {
     EnvironmentVariable(String),
     /// A project is affected because one of its own tasks is.
     Task(Target),
-    /// A project is affected because a project it depends on is.
-    DependencyProject(Id),
-    /// A task is affected because a task it depends on is.
-    DependencyTask(Target),
+    /// A project is affected because a project it depends on is, which is
+    /// the provided distance (in hops) away from a directly affected project.
+    DependencyProject {
+        id: Id,
+        distance: u32,
+    },
+    /// A task is affected because a task it depends on is, which is the
+    /// provided distance (in hops) away from a directly affected task.
+    DependencyTask {
+        target: Target,
+        distance: u32,
+    },
+}
+
+/// Fold the distance of a dependency mark into the minimum distance.
+fn min_distance(current: Option<u32>, distance: u32) -> Option<u32> {
+    Some(current.map_or(distance, |current| current.min(distance)))
 }
 
 #[derive(Debug, Default, Deserialize, Serialize, PartialEq)]
@@ -32,28 +45,46 @@ pub struct AffectedProjectState {
     #[serde(skip_serializing_if = "FxHashSet::is_empty")]
     pub dependencies: FxHashSet<Id>,
 
+    /// How many hops away from a directly affected project this project is.
+    /// 0 when it is directly affected (by a file, or by one of its own tasks),
+    /// otherwise the minimum distance over its affected dependencies.
+    pub distance: u32,
+
     pub other: bool,
 }
 
 impl AffectedProjectState {
     pub fn from(list: FxHashSet<AffectedBy>) -> Self {
         let mut state = Self::default();
+        let mut direct = false;
+        let mut distance = None;
 
         for by in list {
             match by {
                 AffectedBy::ChangedFile(file) => {
                     state.files.insert(file);
+                    direct = true;
                 }
-                AffectedBy::DependencyProject(id) => {
+                AffectedBy::DependencyProject {
+                    id,
+                    distance: dep_distance,
+                } => {
                     state.dependencies.insert(id);
+                    distance = min_distance(distance, dep_distance);
                 }
                 AffectedBy::Task(target) => {
                     state.tasks.insert(target);
+                    direct = true;
                 }
                 _ => {
                     state.other = true;
+                    direct = true;
                 }
             };
+        }
+
+        if !direct {
+            state.distance = distance.unwrap_or_default();
         }
 
         state
@@ -74,28 +105,46 @@ pub struct AffectedTaskState {
     #[serde(skip_serializing_if = "FxHashSet::is_empty")]
     pub dependencies: FxHashSet<Target>,
 
+    /// How many hops away from a directly affected task this task is.
+    /// 0 when it is directly affected (by a file, an environment variable,
+    /// or always), otherwise the minimum distance over its affected dependencies.
+    pub distance: u32,
+
     pub other: bool,
 }
 
 impl AffectedTaskState {
     pub fn from(list: FxHashSet<AffectedBy>) -> Self {
         let mut state = Self::default();
+        let mut direct = false;
+        let mut distance = None;
 
         for by in list {
             match by {
                 AffectedBy::EnvironmentVariable(name) => {
                     state.env.insert(name);
+                    direct = true;
                 }
                 AffectedBy::ChangedFile(file) => {
                     state.files.insert(file);
+                    direct = true;
                 }
-                AffectedBy::DependencyTask(target) => {
+                AffectedBy::DependencyTask {
+                    target,
+                    distance: dep_distance,
+                } => {
                     state.dependencies.insert(target);
+                    distance = min_distance(distance, dep_distance);
                 }
                 _ => {
                     state.other = true;
+                    direct = true;
                 }
             };
+        }
+
+        if !direct {
+            state.distance = distance.unwrap_or_default();
         }
 
         state

@@ -168,6 +168,23 @@ pub trait GraphConnections<N, E, K: Hash + Eq>: GraphData<N, E, K> {
         direction: Direction,
         depth: Depth,
         edge_filter: impl Fn(&E) -> bool,
+        visit: impl FnMut(&N, &N, u32),
+    ) {
+        self.traverse_within_filtered_nodes(nodes, direction, depth, edge_filter, |_| true, visit);
+    }
+
+    /// Like [`GraphConnections::traverse_within_filtered`], but also only
+    /// reaches the nodes that pass the provided node filter. A node that is
+    /// filtered out is never visited, nor walked through, so the nodes beyond
+    /// it are only reached through other paths. The provided nodes are never
+    /// filtered.
+    fn traverse_within_filtered_nodes(
+        &self,
+        nodes: &[&N],
+        direction: Direction,
+        depth: Depth,
+        edge_filter: impl Fn(&E) -> bool,
+        node_filter: impl Fn(&N) -> bool,
         mut visit: impl FnMut(&N, &N, u32),
     ) {
         if depth.is_none() || nodes.is_empty() {
@@ -208,12 +225,15 @@ pub trait GraphConnections<N, E, K: Hash + Eq>: GraphData<N, E, K> {
             neighbors.dedup();
 
             for neighbor in &neighbors {
+                // A filtered out node stays visited, so that it's only checked once
                 if visited.insert(*neighbor) {
-                    visit(
-                        self.get_node_by_index(neighbor),
-                        self.get_node_by_index(&index),
-                        next_distance,
-                    );
+                    let node = self.get_node_by_index(neighbor);
+
+                    if !node_filter(node) {
+                        continue;
+                    }
+
+                    visit(node, self.get_node_by_index(&index), next_distance);
 
                     queue.push_back((*neighbor, next_distance));
                 }
@@ -540,6 +560,60 @@ mod tests {
             visits,
             graph.dependents_within(&graph.nodes(&["base"]), Depth::Deep)
         );
+    }
+
+    #[test]
+    fn filtered_nodes_are_not_visited_or_walked_through() {
+        let graph = create_graph();
+        let mut visits = vec![];
+
+        // `mid2` is filtered out, so `top` and `above` (only reachable
+        // through it from `base`) are never reached
+        graph.traverse_within_filtered_nodes(
+            &graph.nodes(&["base"]),
+            Direction::Incoming,
+            Depth::Deep,
+            |_| true,
+            |node| node != "mid2",
+            |node, via, distance| visits.push((node.clone(), via.clone(), distance)),
+        );
+
+        assert_eq!(visits, [("mid1".into(), "base".into(), 1)]);
+
+        // But they're still reached through another path
+        visits.clear();
+
+        graph.traverse_within_filtered_nodes(
+            &graph.nodes(&["base", "other"]),
+            Direction::Incoming,
+            Depth::Deep,
+            |_| true,
+            |node| node != "mid2",
+            |node, via, distance| visits.push((node.clone(), via.clone(), distance)),
+        );
+
+        assert_eq!(
+            visits,
+            [
+                ("mid1".into(), "base".into(), 1),
+                ("top".into(), "other".into(), 1),
+                ("above".into(), "top".into(), 2),
+            ]
+        );
+
+        // Seeds are never filtered
+        visits.clear();
+
+        graph.traverse_within_filtered_nodes(
+            &graph.nodes(&["base"]),
+            Direction::Incoming,
+            Depth::DIRECT,
+            |_| true,
+            |node| node != "base",
+            |node, via, distance| visits.push((node.clone(), via.clone(), distance)),
+        );
+
+        assert_eq!(visits, [("mid1".into(), "base".into(), 1)]);
     }
 
     #[test]

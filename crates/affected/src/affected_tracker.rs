@@ -76,6 +76,7 @@ impl AffectedTracker {
             debug!(
                 files = ?state.files.iter().collect::<Vec<_>>(),
                 dependencies = ?state.dependencies.iter().map(|id| id.as_str()).collect::<Vec<_>>(),
+                distance = state.distance,
                 tasks = ?state.tasks.iter().map(|target| target.as_str()).collect::<Vec<_>>(),
                 other = state.other,
                 "Project {} is affected by", color::id(&id),
@@ -91,6 +92,7 @@ impl AffectedTracker {
                 env = ?state.env.iter().collect::<Vec<_>>(),
                 files = ?state.files.iter().collect::<Vec<_>>(),
                 dependencies = ?state.dependencies.iter().map(|target| target.as_str()).collect::<Vec<_>>(),
+                distance = state.distance,
                 other = state.other,
                 "Task {} is affected by", color::id(&target),
             );
@@ -304,11 +306,13 @@ impl AffectedTracker {
             projects,
             Direction::Incoming,
             self.depth,
-            |project, via, _| {
-                marked
-                    .entry(project.id.clone())
-                    .or_default()
-                    .insert(AffectedBy::DependencyProject(via.id.clone()));
+            |project, via, distance| {
+                marked.entry(project.id.clone()).or_default().insert(
+                    AffectedBy::DependencyProject {
+                        id: via.id.clone(),
+                        distance,
+                    },
+                );
             },
         );
     }
@@ -527,11 +531,14 @@ impl AffectedTracker {
             tasks,
             Direction::Incoming,
             self.depth,
-            |task, via, _| {
+            |task, via, distance| {
                 marked
                     .entry(task.target.clone())
                     .or_default()
-                    .insert(AffectedBy::DependencyTask(via.target.clone()));
+                    .insert(AffectedBy::DependencyTask {
+                        target: via.target.clone(),
+                        distance,
+                    });
             },
         );
     }

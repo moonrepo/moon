@@ -91,6 +91,10 @@ mod query_affected {
     command: 'noop'
     deps: ['build']
     inputs: ['test.txt']
+  deploy:
+    command: 'noop'
+    deps: ['test']
+    inputs: ['deploy.txt']
 "#,
         );
 
@@ -134,6 +138,45 @@ mod query_affected {
                 .unwrap(),
             AffectedTaskState {
                 dependencies: FxHashSet::from_iter([Target::parse("metadata:build").unwrap()]),
+                distance: 1,
+                ..Default::default()
+            }
+        );
+        assert!(
+            !affected
+                .tasks
+                .contains_key(&Target::parse("metadata:deploy").unwrap())
+        );
+
+        // Reports how many hops away from the changed task each one is
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("query")
+                .arg("affected")
+                .arg("--dependents")
+                .arg("deep");
+        });
+
+        let output = assert.stdout();
+        let mut affected: Affected = serde_json::from_str(output.trim()).unwrap();
+
+        // Always serialized, even when directly affected
+        assert!(output.contains("\"distance\": 0"));
+        assert_eq!(
+            affected
+                .tasks
+                .remove(&Target::parse("metadata:build").unwrap())
+                .unwrap()
+                .distance,
+            0
+        );
+        assert_eq!(
+            affected
+                .tasks
+                .remove(&Target::parse("metadata:deploy").unwrap())
+                .unwrap(),
+            AffectedTaskState {
+                dependencies: FxHashSet::from_iter([Target::parse("metadata:test").unwrap()]),
+                distance: 2,
                 ..Default::default()
             }
         );

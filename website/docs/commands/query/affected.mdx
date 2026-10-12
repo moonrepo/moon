@@ -34,6 +34,7 @@ This will output a map of projects and tasks as JSON. The output has the followi
   <VersionLabel version="3.0.0" />
 
 > Included dependents are marked as affected by the dependency they were reached through, in their
-> `dependencies` field. The `--dependencies` option is not supported, as the output can only contain
-> affected projects and tasks.
+> `dependencies` field, and how many hops away from a directly affected project or task they are, in
+> their `distance` field (`0` when directly affected). The `--dependencies` option is not supported,
+> as the output can only contain affected projects and tasks.
 > [Learn more about graph depth](../../concepts/affected#graph-depth).

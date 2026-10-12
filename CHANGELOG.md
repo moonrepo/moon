@@ -34,7 +34,8 @@
   - The JSON output of `moon query affected` (and the `affected` state in the options of
     `moon query projects|tasks`) replaced the `upstream`, `downstream`, and `projects` fields of an
     affected task, and the `upstream` and `downstream` fields of an affected project, with a single
-    `dependencies` field, the affected dependencies that it was reached through.
+    `dependencies` field, the affected dependencies that it was reached through. The
+    `@moonrepo/types` types have been updated to match.
 - **Execution plans**
   - Replaced the `affected.includeRelations` field with `affected.depth`, the `graph.downstream`
     field with `graph.dependents`, and the `graph.upstream` field with the new
@@ -86,6 +87,12 @@
     `--affected-depth 2` only affects dependents up to 2 hops away from an affected task.
   - The "Building action graph" step now logs the affected depth, dependents depth, and whether
     dependencies are skipped.
+  - The `--query` option now also bounds the dependents added by `--dependents`. Dependents in
+    projects that don't match the query are no longer added, nor traversed through to reach their
+    own dependents. Explicitly selected targets and affected state are not bounded by it.
+  - The "Tracking affected tasks" step now reports how many hops away a task that was affected
+    through a dependency is, like `(2 hops away)`. Affected projects and tasks in the JSON output of
+    `moon query affected` also include a `distance` field, which is `0` when directly affected.
 - **Action pipeline**
   - Reading the states of task dependencies, while hashing and running tasks, no longer takes an
     exclusive lock, which serialized tasks running concurrently.

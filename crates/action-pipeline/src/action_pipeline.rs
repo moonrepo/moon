@@ -23,7 +23,7 @@ use moon_task_runner::is_task_dependencies_complete;
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::FxHashMap;
 use std::mem;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::{RwLock, Semaphore, mpsc, oneshot};
@@ -216,15 +216,8 @@ impl ActionPipeline {
         // Cleanup jobs may need to run after the pipeline was aborted
         let has_cleanups = !action_graph.get_cleanup_indices().is_empty();
 
-        // Monitor signals and ctrl+c. The slot is written before the token
-        // is cancelled, so the receive loop can read the real signal without
-        // waiting on the task.
-        let signal_slot = Arc::new(Mutex::new(None));
-        let signal_handle = self.monitor_signals(
-            cancel_token.clone(),
-            Arc::clone(&abort_state),
-            Arc::clone(&signal_slot),
-        );
+        // Monitor signals and ctrl+c
+        let signal_handle = self.monitor_signals(cancel_token.clone(), Arc::clone(&abort_state));
 
         // Dispatch jobs from the graph to run actions
         let queue_handle =
@@ -340,14 +333,10 @@ impl ActionPipeline {
         // The dispatcher may be waiting on the abort to be handled
         abort_state.handle(false, None, None);
 
-        // Capture and handle any signals. A task that was already running
-        // cancels the token before this point, so the status may already be
-        // set. Read the signal that was stored, instead of assuming interrupt.
-        if let Some(signal) = signal_slot.lock().ok().and_then(|slot| *slot) {
-            self.received_signal = Some(signal);
-            self.status = status_for_signal(signal);
-            signal_handle.abort();
-        } else if cancel_token.is_cancelled() && self.status == ActionPipelineStatus::Pending {
+        // Capture and handle any signals. Only the signal monitor cancels the
+        // token, and it returns the signal right after, so this doesn't block.
+        // The status may already be set by a running task, so always replace it
+        if cancel_token.is_cancelled() {
             let signal = signal_handle.await.into_diagnostic()?;
 
             self.received_signal = Some(signal);
@@ -601,7 +590,6 @@ impl ActionPipeline {
         &self,
         cancel_token: CancellationToken,
         abort_state: Arc<AbortState>,
-        signal_slot: Arc<Mutex<Option<SignalType>>>,
     ) -> JoinHandle<SignalType> {
         // Subscribe before spawning, so that no signals are missed, including
         // the pipeline's own termination, which must be accounted for
@@ -616,10 +604,6 @@ impl ActionPipeline {
                         if matches!(signal, SignalType::Terminate) && abort_state.take_terminated()
                         {
                             continue;
-                        }
-
-                        if let Ok(mut slot) = signal_slot.lock() {
-                            *slot = Some(signal);
                         }
 
                         cancel_token.cancel();

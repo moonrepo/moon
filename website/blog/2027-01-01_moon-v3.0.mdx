@@ -103,8 +103,9 @@ tasks:
 $ moon run app:test
 ```
 
-To change how output is displayed for a single run, pass the `--output-style` option, which still
-takes precedence over the task option, for primary and transitive targets alike.
+To change how output is displayed for a single run, pass the
+[`--output-style`](/docs/commands/exec#options) option, which still takes precedence over the task
+option, for primary and transitive targets alike.
 
 ```shell
 $ moon run app:test --output-style stream
@@ -133,7 +134,8 @@ needs the target. [Learn more about graph depth](/docs/concepts/affected#graph-d
 ### Affected depth
 
 A task is affected when its inputs changed, or when a task it depends on is affected. How far that
-state propagates is now controlled by the new `--affected-depth` (`-d`) option, which defaults to
+state propagates is now controlled by the new
+[`--affected-depth`](/docs/concepts/affected#affected-depth) (`-d`) option, which defaults to
 `deep`, so a change to a library affects everything that transitively depends on it, like you'd
 expect from a build system. This replaces the `--include-relations` (`-g`) flag, and the "Tracking
 affected tasks" step now always explains _why_ a task is affected, including how many hops away the
@@ -153,21 +155,22 @@ multiple chains is only ever counted once, at its closest.
 
 ### Dependents
 
-The `--dependents` option (replacing `--downstream`) adds the dependents of every selected target as
-primary targets, up to the depth. It _only_ expands what you asked for, and never changes what
-counts as affected, so when combined with `--affected`, the added dependents still have to be
-affected to run. When a `--query` is also provided, only dependents within the queried projects are
-added.
+The [`--dependents`](/docs/concepts/affected#dependents) option (replacing `--downstream`) adds the
+dependents of every selected target as primary targets, up to the depth. It _only_ expands what you
+asked for, and never changes what counts as affected, so when combined with
+[`--affected`](/docs/run-task#running-based-on-affected-files-only), the added dependents still have
+to be affected to run. When a [`--query`](/docs/concepts/query-lang) is also provided, only
+dependents within the queried projects are added.
 
 ```shell
 # Build `lib`, and every task that directly depends on it
 $ moon run lib:build --dependents direct
 ```
 
-Because affected state now propagates by default, `moon ci` no longer runs the direct dependents of
-affected tasks on its own. Affected dependents within the requested targets are already selected,
-and dependents _outside_ of them, like a `deploy` task that depends on `publish`, should never run
-unless requested. Pass `--dependents direct` to restore the previous behavior.
+Because affected state now propagates by default, [`moon ci`](/docs/commands/ci) no longer runs the
+direct dependents of affected tasks on its own. Affected dependents within the requested targets are
+already selected, and dependents _outside_ of them, like a `deploy` task that depends on `publish`,
+should never run unless requested. Pass `--dependents direct` to restore the previous behavior.
 
 ### Dependencies
 
@@ -177,8 +180,9 @@ been removed. No other build system lets you run a target with only some of its 
 in practice, the `direct` depth was the source of many missing hash and ordering bugs.
 
 For the cases where you really don't want unchanged dependencies to run, like cascading
-infrastructure deployments, the new `--no-dependencies` option skips dependency tasks that were not
-selected themselves, while still linking the ordering between the tasks that _are_ in the graph.
+infrastructure deployments, the new [`--no-dependencies`](/docs/concepts/affected#dependencies)
+option skips dependency tasks that were not selected themselves, while still linking the ordering
+between the tasks that _are_ in the graph.
 
 ```shell
 # Deploy the affected stacks in dependency order, without redeploying unchanged ones
@@ -187,15 +191,20 @@ $ moon ci :deploy --no-dependencies
 
 ### Everywhere else
 
-The same depth values are now used across moon. The `moon query projects` and `moon query tasks`
-commands support `--dependencies` and `--dependents` for including related projects and tasks in
-the output, `moon query affected` supports `--dependents` and reports the `distance` of each
-affected project and task, and the `--dependents` option of `moon action-graph`,
-`moon project-graph`, and `moon task-graph` now accepts a depth instead of being a simple flag.
+The same depth values are now used across moon. The
+[`moon query projects`](/docs/commands/query/projects) and
+[`moon query tasks`](/docs/commands/query/tasks) commands support `--dependencies` and
+`--dependents` for including related projects and tasks in the output,
+[`moon query affected`](/docs/commands/query/affected) supports `--dependents` and reports the
+`distance` of each affected project and task, and the `--dependents` option of
+[`moon action-graph`](/docs/commands/action-graph),
+[`moon project-graph`](/docs/commands/project-graph), and
+[`moon task-graph`](/docs/commands/task-graph) now accepts a depth instead of being a simple flag.
 
 For [execution plans](/docs/guides/exec-plan), `affected.includeRelations` has been replaced with
-`affected.depth`, and `graph.upstream` and `graph.downstream` with `graph.noDependencies` and
-`graph.dependents`.
+[`affected.depth`](/docs/guides/exec-plan#affected), and `graph.upstream` and `graph.downstream`
+with [`graph.noDependencies`](/docs/guides/exec-plan#graph) and
+[`graph.dependents`](/docs/guides/exec-plan#graph).
 
 ```diff title="plan.json"
  {
@@ -260,7 +269,8 @@ file is stat-ed once instead of twice.
 
 Building the project and task graphs is now **~3x faster**, and far more consistent. In our
 benchmarks, building the graphs for 1,000 projects went from 260ms to 86ms on average, and in a real
-1,000 project workspace, a `moon project` command went from 335ms to 225ms.
+1,000 project workspace, a [`moon project`](/docs/commands/project) command went from 335ms to
+225ms.
 
 The bigger win is consistency. Previously in that same workspace, whenever the graphs had to be
 rebuilt, 1 in 8 commands took over a second, and the slowest took 1.9s. While building, every task
@@ -292,19 +302,20 @@ loading an outdated one.
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v3.0.0) for a full list
 of changes, but here's a few more worth calling out:
 
-- When projects and tasks are serialized to JSON, like in `moon project --json`, `moon task --json`,
-  and `moon query projects|tasks`, fields that are the default value are now omitted, which makes
-  task options ~90% smaller. A missing field is its default value, and the `@moonrepo/types` types
-  have been updated to match. A project's `inherited` field is also only included by
+- When projects and tasks are serialized to JSON, like in
+  [`moon project --json`](/docs/commands/project), [`moon task --json`](/docs/commands/task), and
+  `moon query projects|tasks`, fields that are the default value are now omitted, which makes task
+  options ~90% smaller. A missing field is its default value, and the `@moonrepo/types` types have
+  been updated to match. A project's `inherited` field is also only included by
   `moon project --json` now, while other output includes a new `inheritedFrom` field instead, which
   lists the paths of the `.moon/tasks` configs the project inherited from.
 - Project [constraints](/docs/config/workspace#constraints) are now enforced for every relationship
   between 2 projects. Previously, when a project depended on another more than once (like by its ID
   and an alias) with different scopes, only one of those relationships was checked, so a layer or
   tag violation could go unreported, and will now fail.
-- moon now uses proto v0.63, which only applies the
-  [security-sensitive settings](/docs/proto/config#security-sensitive-settings) of a local
-  `.prototools`, like `[env]`, `[plugins]`, and `[tools.*]`, once the config has been
-  [trusted](/docs/proto/config#trust). As moon already runs your workspace's tasks, configs within
-  the workspace are always trusted, while other local configs, like one in a parent directory, must
-  be trusted with [`proto trust`](/docs/proto/commands/trust).
+- moon now uses proto v0.63, which only applies the [security-sensitive
+  settings](/docs/proto/config#security-sensitive-settings) of a local
+  [`.prototools`](/docs/proto/config), like `[env]`, `[plugins]`, and `[tools.*]`, once the config
+  has been [trusted](/docs/proto/config#trust). As moon already runs your workspace's tasks, configs
+  within the workspace are always trusted, while other local configs, like one in a parent
+  directory, must be trusted with [`proto trust`](/docs/proto/commands/trust).

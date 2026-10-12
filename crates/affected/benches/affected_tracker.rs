@@ -1,5 +1,5 @@
 use criterion::{BatchSize, BenchmarkId, Criterion, criterion_group, criterion_main};
-use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
+use moon_affected::{AffectedTracker, Depth};
 use moon_bench_utils::{create_chained_workspace, create_simple_workspace};
 use moon_common::is_local;
 use moon_common::{is_ci, path::WorkspaceRelativePathBuf};
@@ -83,8 +83,8 @@ fn do_limit(c: &mut Criterion, max: u16) {
 }
 
 // Every project (and its build task) sits in a single dependency chain, and
-// deep scopes are enabled in both directions, so that the cost of walking
-// relationships dominates over the cost of matching changed files
+// dependents are walked deeply, so that the cost of walking relationships
+// dominates over the cost of matching changed files
 fn do_limit_chained(c: &mut Criterion, max: u16) {
     let mut group = c.benchmark_group("AffectedTracker/chained");
     let runtime = Runtime::new().unwrap();
@@ -101,7 +101,7 @@ fn do_limit_chained(c: &mut Criterion, max: u16) {
             || (Arc::clone(&graph), files.clone()),
             |(graph, files)| async move {
                 let mut tracker = AffectedTracker::new(graph, files);
-                tracker.set_project_scopes(UpstreamScope::Deep, DownstreamScope::Deep);
+                tracker.set_depth(Depth::Deep);
                 tracker.track_projects().await.unwrap();
             },
             BatchSize::SmallInput,
@@ -113,7 +113,7 @@ fn do_limit_chained(c: &mut Criterion, max: u16) {
             || (Arc::clone(&graph), files.clone()),
             |(graph, files)| async move {
                 let mut tracker = AffectedTracker::new(graph, files);
-                tracker.set_task_scopes(UpstreamScope::Deep, DownstreamScope::Deep);
+                tracker.set_depth(Depth::Deep);
                 tracker.track_tasks().await.unwrap();
             },
             BatchSize::SmallInput,

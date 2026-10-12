@@ -110,10 +110,11 @@ impl TaskGraph {
         Ok(many)
     }
 
-    /// Focus the graph for a specific project by target.
-    pub fn focus_for(&self, target: &Target, with_dependents: bool) -> miette::Result<Self> {
+    /// Focus the graph for a specific task by target, including all of its
+    /// dependencies, and its dependents within the provided depth.
+    pub fn focus_for(&self, target: &Target, dependents: Depth) -> miette::Result<Self> {
         let task = self.get(target)?;
-        let graph = self.to_focused_graph(&task, with_dependents);
+        let graph = self.to_focused_graph(&task, dependents);
         let (nodes, edges) = graph.into_nodes_edges();
 
         let mut dag = Dag::with_capacity(nodes.len(), edges.len());

@@ -4,6 +4,43 @@
 
 #### 💥 Breaking
 
+- **CLI**
+  - Reworked how `moon run`, `moon exec`, `moon ci`, and `moon check` traverse the graph, by
+    splitting the previous `--upstream` and `--downstream` options into 3 independent concepts.
+    [Learn more about graph depth](https://moonrepo.dev/docs/concepts/affected#graph-depth).
+    - Added an `--affected-depth <DEPTH>` option (`-d`, `MOON_AFFECTED_DEPTH`), that controls how
+      far affected state propagates from an affected task to its dependents. Defaults to `deep`.
+      This only changes which tasks count as affected, and never adds tasks.
+    - Added a `--dependents <DEPTH>` option, that adds the dependents of every selected target as
+      primary targets. Defaults to `none`. It replaces the `--downstream` option, which has been
+      removed.
+    - Added a `--no-dependencies` option, that does not insert dependency tasks that were not
+      selected themselves. The ordering between the tasks that are in the graph is still honored.
+    - Removed the `--upstream` (and `--dependencies`) option, as dependencies are now always ran.
+      Use `--no-dependencies` instead of `--upstream none`.
+    - Removed the `-g`/`--include-relations` option (and `MOON_INCLUDE_RELATIONS`), as affected
+      state now always propagates through relations, use `--affected-depth` to limit it. The
+      "Tracking affected tasks" step now always reports tasks affected through a dependency.
+  - `moon ci` no longer runs the direct dependents of affected tasks by default, as affected
+    dependents that match the requested targets are already selected through `--affected-depth`.
+    Pass `--dependents direct` to restore the previous behavior.
+  - `moon action-graph`, `moon project-graph`, and `moon task-graph` `--dependents` now requires a
+    depth, like `--dependents deep`. For the project and task graphs, the previous flag included all
+    dependents (`deep`).
+  - `moon query affected`, `moon query projects`, and `moon query tasks` replaced `--downstream`
+    with `--dependents <DEPTH>`. `moon query projects` and `moon query tasks` replaced `--upstream`
+    with `--dependencies <DEPTH>`, while `moon query affected` no longer supports it. The
+    `--downstream` and `--upstream` options have been removed.
+  - The JSON output of `moon query affected` (and the `affected` state in the options of
+    `moon query projects|tasks`) replaced the `upstream`, `downstream`, and `projects` fields of an
+    affected task, and the `upstream` and `downstream` fields of an affected project, with a single
+    `dependencies` field, the affected dependencies that it was reached through. The
+    `@moonrepo/types` types have been updated to match.
+- **Execution plans**
+  - Replaced the `affected.includeRelations` field with `affected.depth`, the `graph.downstream`
+    field with `graph.dependents`, and the `graph.upstream` field with the new
+    `graph.noDependencies` field. The old fields have been removed, and plans that use them fail to
+    parse.
 - **Experiments**
   - Removed the `asyncAffectedTracking` experiment, as the asynchronous affected tracker is now
     always used, and the synchronous tracker has been removed. The setting must be removed from
@@ -44,6 +81,18 @@
 
 #### 🚀 Updates
 
+- **Action graph**
+  - Graph depths (`--affected-depth`, `--dependents`, and the query `--dependencies` options) now
+    accept a number of hops, in addition to `none`, `direct`, and `deep`. For example,
+    `--affected-depth 2` only affects dependents up to 2 hops away from an affected task.
+  - The "Building action graph" step now logs the affected depth, dependents depth, and whether
+    dependencies are skipped.
+  - The `--query` option now also bounds the dependents added by `--dependents`. Dependents in
+    projects that don't match the query are no longer added, nor traversed through to reach their
+    own dependents. Explicitly selected targets and affected state are not bounded by it.
+  - The "Tracking affected tasks" step now reports how many hops away a task that was affected
+    through a dependency is, like `(2 hops away)`. Affected projects and tasks in the JSON output of
+    `moon query affected` also include a `distance` field, which is `0` when directly affected.
 - **Action pipeline**
   - Reading the states of task dependencies, while hashing and running tasks, no longer takes an
     exclusive lock, which serialized tasks running concurrently.
@@ -118,6 +167,13 @@
 
 #### 🐞 Fixes
 
+- Fixed an issue where `--upstream none` would also remove the ordering edges between selected tasks
+  that depend on each other, allowing them to run concurrently or in the wrong order. Use
+  `--no-dependencies` instead, which keeps them ordered.
+  ([#2685](https://github.com/moonrepo/moon/issues/2685))
+- Fixed an issue where affected state propagating to a dependent task would also force the dependent
+  to run, even when it was not one of the requested targets. Affected depth now only changes which
+  of the requested targets are affected. ([#2686](https://github.com/moonrepo/moon/issues/2686))
 - Fixed an issue where project constraints (layers and tags) were only enforced for one of the
   relationships between 2 projects, when a project depended on another multiple times (like by its
   ID and an alias) with different scopes.

@@ -2,7 +2,7 @@ use crate::commands::graph::run_server;
 use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use moon_action_graph::{GraphToDot, GraphToJson, RunRequirements};
-use moon_affected::DownstreamScope;
+use moon_affected::Depth;
 use moon_task::Target;
 use tracing::instrument;
 
@@ -11,8 +11,12 @@ pub struct ActionGraphArgs {
     #[arg(help = "Task targets to *only* graph")]
     targets: Option<Vec<Target>>,
 
-    #[arg(long, help = "Include dependents of the focused target(s)")]
-    dependents: bool,
+    #[arg(
+        long,
+        default_value_t,
+        help = "Include dependents of the focused target(s), up to this depth (none, direct, deep, or a number of hops)"
+    )]
+    dependents: Depth,
 
     #[arg(
         long,
@@ -43,11 +47,7 @@ pub async fn action_graph(session: MoonSession, args: ActionGraphArgs) -> Sessio
     let mut action_graph_builder = session.build_action_graph().await?;
 
     let requirements = RunRequirements {
-        dependents: if args.dependents {
-            DownstreamScope::Deep
-        } else {
-            DownstreamScope::None
-        },
+        dependents: args.dependents,
         ..Default::default()
     };
 

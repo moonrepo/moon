@@ -7,7 +7,7 @@ use moon_action::{
     SyncProjectNode,
 };
 use moon_action_context::{ActionContext, TargetState};
-use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
+use moon_affected::{AffectedTracker, Depth};
 use moon_app_context::AppContext;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_common::{Id, color, is_ci};
@@ -25,7 +25,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use std::fmt::Debug;
 use std::mem;
 use std::sync::Arc;
-use tracing::{debug, instrument, trace};
+use tracing::{debug, instrument, trace, warn};
 
 macro_rules! insert_node_if_missing {
     ($builder:ident, $node:expr) => {{
@@ -53,16 +53,15 @@ macro_rules! insert_node_or_exit {
 
 #[derive(Clone, Debug)]
 pub struct RunRequirements {
-    pub ci: bool,                    // Are we in a CI environment
-    pub ci_check: bool,              // Check the `runInCI` option
-    pub dependencies: UpstreamScope, // Run dependency tasks
-    pub dependents: DownstreamScope, // Run dependent tasks
-    pub include_relations: bool,     // Include graph relations for affected
-    pub interactive: bool,           // Entire pipeline is interactive
-    pub job: Option<usize>,          // Current job index
-    pub job_total: Option<usize>,    // Total amount of jobs
-    pub skip_affected: bool,         // Skip all affected checks
-    pub skip_persistent: bool,       // Skip persistent tasks that aren't a dependency
+    pub ci: bool,                 // Are we in a CI environment
+    pub ci_check: bool,           // Check the `runInCI` option
+    pub no_dependencies: bool,    // Don't insert dependency tasks that weren't selected
+    pub dependents: Depth,        // Add dependent tasks of the selected tasks
+    pub interactive: bool,        // Entire pipeline is interactive
+    pub job: Option<usize>,       // Current job index
+    pub job_total: Option<usize>, // Total amount of jobs
+    pub skip_affected: bool,      // Skip all affected checks
+    pub skip_persistent: bool,    // Skip persistent tasks that aren't a dependency
 }
 
 impl Default for RunRequirements {
@@ -70,9 +69,8 @@ impl Default for RunRequirements {
         Self {
             ci: is_ci(),
             ci_check: false,
-            dependencies: UpstreamScope::Deep,
-            dependents: DownstreamScope::None,
-            include_relations: false,
+            no_dependencies: false,
+            dependents: Depth::NONE,
             interactive: false,
             job: None,
             job_total: None,
@@ -101,17 +99,21 @@ pub struct RunTaskDependencies {
     pub cleanups: Vec<NodeIndex>,
 }
 
-#[derive(Clone, Debug, Default)]
+/// Why a task is being inserted into the graph.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum TaskOrigin {
+    /// Selected by the target locators.
+    #[default]
+    Requested,
+    /// Added as a dependent of a selected task.
+    Dependent,
+    /// Inserted because another task in the graph depends on it.
+    Dependency,
+}
+
+#[derive(Clone, Copy, Debug, Default)]
 pub struct RunTaskState {
-    pub depth: u8,
-    // Whether this task was reached by traversing a dependency (upstream)
-    // edge. Dependents must not be expanded from such tasks, otherwise
-    // downstream expansion restarts from inside dependency subtrees and
-    // runs tasks that aren't dependents of the requested targets.
-    pub via_dependency: bool,
-    // Whether this task was reached by traversing a dependent (downstream)
-    // edge, instead of being requested, or being depended on.
-    pub via_dependent: bool,
+    pub origin: TaskOrigin,
 }
 
 pub struct ActionGraphBuilderOptions {
@@ -152,25 +154,18 @@ pub struct ActionGraphBuilder<'query> {
 
     // Affected tracking
     affected: Option<AffectedTracker>,
+    // How far affected state flows through relations (marks from dependencies)
+    affected_depth: Depth,
     changed_files: Option<FxHashSet<WorkspaceRelativePathBuf>>,
 
     // Target tracking
     //
-    // Dependencies that were not linked, as they were out of scope when the
-    // nodes of the task were created. Multiple nodes may run the same task
-    // (with different args or env), but this is tracked per task (not per
-    // node), as that's what a task knows when it runs. So that it's accurate
-    // for all of them, the dependencies of a task are linked for all of its
-    // nodes, or for none of them: the nodes without them are tracked, and
-    // linked once the dependencies are in scope for any of them, and so are
-    // the nodes that are created after that.
+    // Dependencies (that aren't a cleanup) of tasks that were inserted without
+    // their dependencies (`no_dependencies`). They're linked to the dependency nodes
+    // that are in the graph when it's built, regardless of the insertion order,
+    // and the ones that aren't are ignored.
+    no_dependencies_tasks: FxHashMap<Target, Vec<TaskDependencyConfig>>,
     ignored_dependencies: FxHashMap<Target, FxHashSet<Target>>,
-    unlinked_dependencies: FxHashMap<Target, Vec<NodeIndex>>,
-    linked_dependencies: FxHashSet<Target>,
-    // Tasks whose dependents were out of scope when their node was created.
-    // Consumed when the task is revisited with dependents in scope, since the
-    // node-exists early return would otherwise skip the expansion entirely.
-    ignored_dependents: FxHashSet<Target>,
     passthrough_targets: FxHashSet<Target>,
     primary_targets: FxHashSet<Target>,
 
@@ -208,10 +203,9 @@ impl<'query> ActionGraphBuilder<'query> {
             graph: Dag::new(),
             nodes: FxHashMap::default(),
             options,
+            affected_depth: Depth::Deep,
+            no_dependencies_tasks: FxHashMap::default(),
             ignored_dependencies: FxHashMap::default(),
-            unlinked_dependencies: FxHashMap::default(),
-            linked_dependencies: FxHashSet::default(),
-            ignored_dependents: FxHashSet::default(),
             passthrough_targets: FxHashSet::default(),
             primary_targets: FxHashSet::default(),
             serial_edges: FxHashMap::default(),
@@ -225,6 +219,8 @@ impl<'query> ActionGraphBuilder<'query> {
     }
 
     pub fn build(mut self) -> (ActionContext, ActionGraph) {
+        self.link_present_dependencies();
+
         let mut context = ActionContext {
             affected: self.affected.take().map(|affected| affected.build()),
             ..ActionContext::default()
@@ -343,26 +339,22 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(())
     }
 
-    pub async fn track_affected(
-        &mut self,
-        upstream: UpstreamScope,
-        downstream: DownstreamScope,
-        ci_check: bool,
-    ) -> miette::Result<()> {
-        // If we require dependents, then we must load all projects into the
-        // graph so that the edges are created!
-        if downstream != DownstreamScope::None {
+    pub async fn track_affected(&mut self, depth: Depth, ci_check: bool) -> miette::Result<()> {
+        // If affected state flows through relations, then we must load all
+        // projects into the graph so that the edges are created!
+        if !depth.is_none() {
             debug!("Force loading all projects and tasks to determine relationships");
 
             self.workspace_graph.get_projects()?;
             self.workspace_graph.get_tasks_with_internal()?;
         }
 
+        self.affected_depth = depth;
         self.set_affected()?;
 
         if let Some(affected) = self.affected.as_mut() {
             affected.set_ci_check(ci_check);
-            affected.set_scopes(upstream, downstream);
+            affected.set_depth(depth);
 
             // Projects must be tracked up front so that all marks exist
             // before tasks are inserted into the graph. Tracking lazily
@@ -570,23 +562,27 @@ impl<'query> ActionGraphBuilder<'query> {
             .await
     }
 
+    /// Run the provided task as a primary target, and when requested, its
+    /// dependents (up to the depth) as primary targets as well.
     #[instrument(skip(self))]
     pub async fn run_task(
         &mut self,
         task: &Task,
         reqs: &RunRequirements,
     ) -> miette::Result<Option<NodeIndex>> {
-        if let Some(index) =
-            Box::pin(self.internal_run_task(task, reqs, None, &mut RunTaskState::default())).await?
-        {
-            // Only track primary targets at the top-level run methods,
-            // as these are explicitly called by pipeline consumers!
-            self.primary_targets.insert(task.target.clone());
+        let index = self
+            .internal_run_primary_task(task, reqs, TaskOrigin::Requested)
+            .await?;
 
-            return Ok(Some(index));
+        for dep_task in self
+            .internal_resolve_dependents(&[task], reqs.dependents)
+            .await?
+        {
+            self.internal_run_primary_task(&dep_task, reqs, TaskOrigin::Dependent)
+                .await?;
         }
 
-        Ok(None)
+        Ok(index)
     }
 
     #[cfg(debug_assertions)]
@@ -596,8 +592,7 @@ impl<'query> ActionGraphBuilder<'query> {
         reqs: &RunRequirements,
         config: &TaskDependencyConfig,
     ) -> miette::Result<Option<NodeIndex>> {
-        Box::pin(self.internal_run_task(task, reqs, Some(config), &mut RunTaskState::default()))
-            .await
+        Box::pin(self.internal_run_task(task, reqs, Some(config), &RunTaskState::default())).await
     }
 
     #[instrument(skip(self))]
@@ -606,19 +601,11 @@ impl<'query> ActionGraphBuilder<'query> {
         target: T,
         reqs: &RunRequirements,
     ) -> miette::Result<FxHashSet<NodeIndex>> {
-        let target = target.as_ref();
-        let mut indexes = FxHashSet::default();
+        let tasks = self
+            .internal_resolve_tasks_from_target(target.as_ref(), false)
+            .await?;
 
-        for task in self
-            .internal_resolve_tasks_from_target(target, false)
-            .await?
-        {
-            if let Some(index) = self.run_task(&task, reqs).await? {
-                indexes.insert(index);
-            }
-        }
-
-        Ok(indexes)
+        self.internal_run_primary_tasks(tasks, reqs).await
     }
 
     #[instrument(skip(self))]
@@ -627,19 +614,11 @@ impl<'query> ActionGraphBuilder<'query> {
         locator: T,
         reqs: &RunRequirements,
     ) -> miette::Result<FxHashSet<NodeIndex>> {
-        let locator = locator.as_ref();
-        let mut indexes = FxHashSet::default();
+        let tasks = self
+            .internal_resolve_tasks_from_target_locator(locator.as_ref(), false)
+            .await?;
 
-        for task in self
-            .internal_resolve_tasks_from_target_locator(locator, false)
-            .await?
-        {
-            if let Some(index) = self.run_task(&task, reqs).await? {
-                indexes.insert(index);
-            }
-        }
-
-        Ok(indexes)
+        self.internal_run_primary_tasks(tasks, reqs).await
     }
 
     #[instrument(skip(self))]
@@ -658,26 +637,41 @@ impl<'query> ActionGraphBuilder<'query> {
             );
         }
 
+        // Expand the selection with the dependents of the selected tasks up
+        // front, so that the candidates don't depend on which tasks have been
+        // inserted (or skipped) by the time the dependents are expanded
+        let mut candidates = self
+            .internal_collect_candidates(tasks, reqs.dependents)
+            .await?;
+
         // Determine affected status of each task up front, as marking
         // lazily during insertion makes the result dependent on target
         // order: a task marked through another task's relationship walk
         // never runs its own checks and walks, starving its transitive
         // dependents of marks and dropping them from the graph
+        let affected_depth = self.affected_depth;
+
         if !reqs.skip_affected
             && let Some(affected) = &mut self.affected
         {
-            // When including relations, every task must be tracked, not just the
-            // requested ones. A task is only marked through a relation when the
-            // task on the other side of it has been marked itself, and that task
-            // is quite often not one that was requested
-            if reqs.include_relations {
-                affected.track_tasks().await?;
-            } else {
+            // When affected state flows through relations, every task must be
+            // tracked, not just the candidates. A task is only marked through a
+            // relation when the task on the other side of it has been marked
+            // itself, and that task is quite often not a candidate
+            if affected_depth.is_none() {
+                let tasks = candidates
+                    .iter()
+                    .map(|(task, _)| Arc::clone(task))
+                    .collect::<Vec<_>>();
+
                 affected.track_tasks_by_instance(&tasks).await?;
+            } else {
+                affected.track_tasks().await?;
             }
         }
 
-        // Now partition the tasks list based on the job information
+        // Now partition the candidates based on the job information, which
+        // includes the expanded dependents, so that they're spread across jobs
         if let Some(job_index) = reqs.job
             && let Some(job_total) = reqs.job_total
             && job_total > 0
@@ -691,21 +685,21 @@ impl<'query> ActionGraphBuilder<'query> {
             }
 
             // If we are going to parallelize, then we need to filter the
-            // tasks list based on affected state before partitioning!
+            // candidates based on affected state before partitioning!
             if !reqs.skip_affected {
-                let mut new_tasks = vec![];
+                let mut new_candidates = vec![];
 
-                for task in tasks {
+                for (task, origin) in candidates {
                     if self.is_task_affected(&task, &reqs)? {
-                        new_tasks.push(task);
+                        new_candidates.push((task, origin));
                     }
                 }
 
-                tasks = new_tasks;
+                candidates = new_candidates;
             }
 
-            // Then slice and partition the tasks based on the job index and total
-            let size = tasks.len().div_ceil(job_total);
+            // Then slice and partition the candidates based on the job index and total
+            let size = candidates.len().div_ceil(job_total);
             let (start, stop) =
                 // beginning
                 if job_index == 0 {
@@ -713,26 +707,26 @@ impl<'query> ActionGraphBuilder<'query> {
                 }
                 // end
                 else if job_index == job_total - 1 {
-                    ((size * job_index), tasks.len())
+                    ((size * job_index), candidates.len())
                 }
                 // middle
                 else {
                     ((size * job_index), (size * (job_index + 1)))
                 };
 
-            if tasks.get(start).is_some() {
-                if tasks.get(stop).is_some() {
-                    tasks = tasks[start..stop].to_vec();
+            if candidates.get(start).is_some() {
+                if candidates.get(stop).is_some() {
+                    candidates = candidates[start..stop].to_vec();
                 } else {
-                    tasks = tasks[start..].to_vec();
+                    candidates = candidates[start..].to_vec();
                 }
             }
 
             partition.size = Some(size);
         }
 
-        for task in tasks {
-            if let Some(index) = self.run_task(&task, &reqs).await? {
+        for (task, origin) in candidates {
+            if let Some(index) = self.internal_run_primary_task(&task, &reqs, origin).await? {
                 partition.targets.insert(index, task.target.clone());
             }
         }
@@ -794,17 +788,14 @@ impl<'query> ActionGraphBuilder<'query> {
         &mut self,
         task: &Task,
         reqs: &RunRequirements,
-        state: &RunTaskState,
     ) -> miette::Result<RunTaskDependencies> {
-        self.internal_run_task_dependencies(task, reqs, state, false)
-            .await
+        self.internal_run_task_dependencies(task, reqs, false).await
     }
 
     async fn internal_run_task_dependencies(
         &mut self,
         task: &Task,
         reqs: &RunRequirements,
-        state: &RunTaskState,
         cleanups_only: bool,
     ) -> miette::Result<RunTaskDependencies> {
         let parallel = task.options.run_deps_in_parallel;
@@ -821,13 +812,12 @@ impl<'query> ActionGraphBuilder<'query> {
                 .internal_resolve_tasks_from_target(&dep.target, true)
                 .await?
             {
-                let mut dep_state = state.clone();
-                dep_state.via_dependency = true;
-                dep_state.via_dependent = false;
+                let dep_state = RunTaskState {
+                    origin: TaskOrigin::Dependency,
+                };
 
                 if let Some(dep_index) =
-                    Box::pin(self.internal_run_task(&dep_task, reqs, Some(dep), &mut dep_state))
-                        .await?
+                    Box::pin(self.internal_run_task(&dep_task, reqs, Some(dep), &dep_state)).await?
                 {
                     // Cleanup dependencies run *after* the task, so the edge
                     // is reversed and must be linked by the caller, and they
@@ -894,48 +884,137 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(deps)
     }
 
-    #[instrument(skip(self))]
-    pub async fn run_task_dependents(
+    /// Insert the provided task as a primary target (without expanding its dependents).
+    async fn internal_run_primary_task(
         &mut self,
         task: &Task,
         reqs: &RunRequirements,
-        state: &RunTaskState,
-    ) -> miette::Result<Vec<Option<NodeIndex>>> {
-        let mut indexes = vec![];
+        origin: TaskOrigin,
+    ) -> miette::Result<Option<NodeIndex>> {
+        let state = RunTaskState { origin };
 
-        // Cleanup dependencies are dependents in the task graph, as they run
-        // after the task, but they're always linked through the task itself,
-        // with their configured args and env (running them again as a dependent
-        // would create a separate action that isn't ordered after the task)
-        let cleanup_targets = task
-            .deps
-            .iter()
-            .filter(|dep| matches!(dep.type_of, TaskDependencyType::Cleanup))
-            .map(|dep| &dep.target)
-            .collect::<FxHashSet<_>>();
+        if let Some(index) = Box::pin(self.internal_run_task(task, reqs, None, &state)).await? {
+            // Only track primary targets at the top-level run methods,
+            // as these are explicitly called by pipeline consumers!
+            self.primary_targets.insert(task.target.clone());
 
-        for dep_target in self.workspace_graph.tasks.dependents_of(task) {
-            if cleanup_targets.contains(&dep_target) {
-                continue;
-            }
+            return Ok(Some(index));
+        }
 
-            for dep_task in self
-                .internal_resolve_tasks_from_target(&dep_target, true)
-                .await?
-            {
-                // Dependent chains reset the marker, so that deep scopes
-                // keep cascading through transitive dependents
-                let mut dep_state = state.clone();
-                dep_state.via_dependency = false;
-                dep_state.via_dependent = true;
+        Ok(None)
+    }
 
-                indexes.push(
-                    Box::pin(self.internal_run_task(&dep_task, reqs, None, &mut dep_state)).await?,
-                );
+    async fn internal_run_primary_tasks(
+        &mut self,
+        tasks: Vec<Arc<Task>>,
+        reqs: &RunRequirements,
+    ) -> miette::Result<FxHashSet<NodeIndex>> {
+        let mut indexes = FxHashSet::default();
+
+        for (task, origin) in self
+            .internal_collect_candidates(tasks, reqs.dependents)
+            .await?
+        {
+            if let Some(index) = self.internal_run_primary_task(&task, reqs, origin).await? {
+                indexes.insert(index);
             }
         }
 
         Ok(indexes)
+    }
+
+    /// Dedupe the selected tasks, and append their dependents (up to the depth).
+    /// A task that was both selected and reached as a dependent is requested.
+    async fn internal_collect_candidates(
+        &mut self,
+        tasks: Vec<Arc<Task>>,
+        dependents: Depth,
+    ) -> miette::Result<Vec<(Arc<Task>, TaskOrigin)>> {
+        let mut seen = FxHashSet::default();
+        let mut candidates = Vec::with_capacity(tasks.len());
+
+        for task in tasks {
+            if seen.insert(task.target.clone()) {
+                candidates.push((task, TaskOrigin::Requested));
+            }
+        }
+
+        if !dependents.is_none() {
+            let seeds = candidates
+                .iter()
+                .map(|(task, _)| Arc::clone(task))
+                .collect::<Vec<_>>();
+            let seeds = seeds.iter().map(|task| task.as_ref()).collect::<Vec<_>>();
+
+            for dep_task in self.internal_resolve_dependents(&seeds, dependents).await? {
+                if seen.insert(dep_task.target.clone()) {
+                    candidates.push((dep_task, TaskOrigin::Dependent));
+                }
+            }
+        }
+
+        Ok(candidates)
+    }
+
+    /// Resolve the dependents of the provided tasks, up to the depth, in
+    /// breadth-first order. The provided tasks are excluded.
+    ///
+    /// When a query has been set, it bounds the expansion: dependents in
+    /// projects that don't match it are not added, nor walked through.
+    async fn internal_resolve_dependents(
+        &mut self,
+        tasks: &[&Task],
+        depth: Depth,
+    ) -> miette::Result<Vec<Arc<Task>>> {
+        if depth.is_none() || tasks.is_empty() {
+            return Ok(vec![]);
+        }
+
+        let query_project_ids = match &self.all_query {
+            Some(all_query) => Some(
+                self.workspace_graph
+                    .query_projects(all_query)?
+                    .into_iter()
+                    .map(|project| project.id.clone())
+                    .collect::<FxHashSet<_>>(),
+            ),
+            None => None,
+        };
+
+        let mut targets = vec![];
+
+        // Cleanup dependencies are dependents in the task graph, as they run
+        // after the task, but they're always linked through the task itself,
+        // with their configured args and env (running them again as a dependent
+        // would create a separate action that isn't ordered after the task),
+        // so those edges are never followed
+        self.workspace_graph.tasks.traverse_within_filtered_nodes(
+            tasks,
+            Direction::Incoming,
+            depth,
+            |edge| !matches!(edge, TaskDependencyType::Cleanup),
+            |task| {
+                query_project_ids.as_ref().is_none_or(|ids| {
+                    task.target
+                        .get_project_id()
+                        .is_ok_and(|id| ids.contains(id))
+                })
+            },
+            |task, _, _| {
+                targets.push(task.target.clone());
+            },
+        );
+
+        let mut dep_tasks = vec![];
+
+        for target in targets {
+            dep_tasks.extend(
+                self.internal_resolve_tasks_from_target(&target, true)
+                    .await?,
+            );
+        }
+
+        Ok(dep_tasks)
     }
 
     #[instrument(skip(self))]
@@ -1147,12 +1226,11 @@ impl<'query> ActionGraphBuilder<'query> {
         task: &Task,
         reqs: &RunRequirements,
         config: Option<&TaskDependencyConfig>,
-        state: &mut RunTaskState,
+        state: &RunTaskState,
     ) -> miette::Result<Option<NodeIndex>> {
         let project = self
             .workspace_graph
             .get_project(task.target.get_project_id()?)?;
-        let mut child_reqs = reqs.clone();
 
         // Abort early if not affected
         if !self.is_task_affected(task, reqs)? {
@@ -1170,12 +1248,6 @@ impl<'query> ActionGraphBuilder<'query> {
             return Ok(None);
         }
 
-        // Track depth information before proceeding
-        let should_run_dependencies = reqs.dependencies.is_in_scope(state.depth);
-        let should_run_dependents =
-            !state.via_dependency && reqs.dependents.is_in_scope(state.depth);
-        state.depth += 1;
-
         // Only apply CI checks when requested
         if reqs.ci_check && !task.should_run(reqs.ci) {
             self.passthrough_targets.insert(task.target.clone());
@@ -1187,13 +1259,6 @@ impl<'query> ActionGraphBuilder<'query> {
                 color::property("runInCI"),
             );
 
-            // Dependents may still want to run though!
-            if should_run_dependents {
-                child_reqs.skip_affected = false;
-
-                Box::pin(self.run_task_dependents(task, &child_reqs, state)).await?;
-            }
-
             return Ok(None);
         }
 
@@ -1202,21 +1267,15 @@ impl<'query> ActionGraphBuilder<'query> {
         // them), they're only ran when another task depends on them. In CI,
         // they're also never ran as a dependent of another task
         if task.is_persistent()
-            && !state.via_dependency
-            && (reqs.skip_persistent || (reqs.ci && reqs.ci_check && state.via_dependent))
+            && state.origin != TaskOrigin::Dependency
+            && (reqs.skip_persistent
+                || (reqs.ci && reqs.ci_check && state.origin == TaskOrigin::Dependent))
         {
             debug!(
                 task_target = task.target.as_str(),
                 "Not running persistent task {} because it has not been requested, and no task depends on it",
                 color::id(&task.target.id),
             );
-
-            // Dependents may still want to run though!
-            if should_run_dependents {
-                child_reqs.skip_affected = false;
-
-                Box::pin(self.run_task_dependents(task, &child_reqs, state)).await?;
-            }
 
             return Ok(None);
         }
@@ -1240,42 +1299,8 @@ impl<'query> ActionGraphBuilder<'query> {
             id: None,
         });
 
-        // Dependencies are in scope, so they're no longer ignored for this
-        // task, and must be linked for every node that runs it: those that
-        // were created while they were out of scope (which may not be this
-        // node), and those that are created from here on
-        let unlinked_indices = if should_run_dependencies && !task.deps.is_empty() {
-            self.ignored_dependencies.remove(&task.target);
-            self.linked_dependencies.insert(task.target.clone());
-            self.unlinked_dependencies
-                .remove(&task.target)
-                .unwrap_or_default()
-        } else {
-            vec![]
-        };
-
-        let had_ignored_dependents = if should_run_dependents {
-            self.ignored_dependents.remove(&task.target)
-        } else {
-            false
-        };
-
         // Check if the node exists to avoid all the overhead below
         if let Some(index) = self.get_index_from_node(&node) {
-            if !unlinked_indices.is_empty() {
-                child_reqs.skip_affected = true;
-
-                let deps = Box::pin(self.run_task_dependencies(task, &child_reqs, state)).await?;
-
-                self.link_task_dependencies(&unlinked_indices, &deps)?;
-            }
-
-            if had_ignored_dependents {
-                child_reqs.skip_affected = false;
-
-                Box::pin(self.run_task_dependents(task, &child_reqs, state)).await?;
-            }
-
             return Ok(Some(index));
         }
 
@@ -1295,52 +1320,35 @@ impl<'query> ActionGraphBuilder<'query> {
         // Insert and then link edges
         let index = self.insert_node(node);
         let mut deps = RunTaskDependencies::default();
-        let mut dep_indices = unlinked_indices;
-
-        dep_indices.push(index);
 
         if !task.deps.is_empty() {
+            let mut child_reqs = reqs.clone();
             child_reqs.skip_affected = true;
 
-            // Also when they're out of scope for this node, but have been
-            // linked for another node of this task (they were in scope),
-            // as they're linked for all of its nodes, or for none of them
-            if should_run_dependencies || self.linked_dependencies.contains(&task.target) {
-                deps = Box::pin(self.run_task_dependencies(task, &child_reqs, state)).await?;
-            } else {
-                // Cleanup dependencies must always run after the task, even
-                // when its dependencies are not in scope, so they aren't ignored
-                self.ignored_dependencies.insert(
+            if reqs.no_dependencies {
+                // Dependencies that weren't selected are not inserted, but the
+                // ones that are in the graph are still linked when it's built,
+                // regardless of the order they're inserted in. Cleanup
+                // dependencies must always run after the task, so they're
+                // still inserted and linked here
+                self.no_dependencies_tasks.insert(
                     task.target.clone(),
                     task.deps
                         .iter()
                         .filter(|dep| !matches!(dep.type_of, TaskDependencyType::Cleanup))
-                        .map(|dep| dep.target.clone())
+                        .cloned()
                         .collect(),
                 );
 
-                self.unlinked_dependencies
-                    .entry(task.target.clone())
-                    .or_default()
-                    .push(index);
-
                 deps =
-                    Box::pin(self.internal_run_task_dependencies(task, &child_reqs, state, true))
-                        .await?;
+                    Box::pin(self.internal_run_task_dependencies(task, &child_reqs, true)).await?;
+            } else {
+                deps = Box::pin(self.run_task_dependencies(task, &child_reqs)).await?;
             }
         }
 
         self.link_available_edges(index, edges)?;
-        self.link_task_dependencies(&dep_indices, &deps)?;
-
-        // And possibly dependents
-        if should_run_dependents {
-            child_reqs.skip_affected = false;
-
-            Box::pin(self.run_task_dependents(task, &child_reqs, state)).await?;
-        } else {
-            self.ignored_dependents.insert(task.target.clone());
-        }
+        self.link_task_dependencies(&[index], &deps)?;
 
         Ok(Some(index))
     }
@@ -1652,6 +1660,118 @@ impl<'query> ActionGraphBuilder<'query> {
 
     // PRIVATE
 
+    /// Link the dependencies of tasks that were inserted without them (`no_dependencies`)
+    /// to the dependency nodes that are in the graph, as the ordering between
+    /// tasks that do run must still be honored, regardless of the order that
+    /// they were inserted in. When a dependency has multiple nodes (different
+    /// args or env), the ones that match the dependency's config are preferred,
+    /// otherwise all of them are linked. Dependencies without a node in the
+    /// graph are ignored, so that the task doesn't wait on (or hash) them.
+    ///
+    /// Serial ordering (`runDepsInParallel: false`) is only applied when the
+    /// dependencies are inserted, and is not applied here.
+    fn link_present_dependencies(&mut self) {
+        if self.no_dependencies_tasks.is_empty() {
+            return;
+        }
+
+        let mut target_indices = FxHashMap::<Target, Vec<NodeIndex>>::default();
+
+        for (node, index) in &self.nodes {
+            if let ActionNode::RunTask(inner) = node {
+                target_indices
+                    .entry(inner.target.clone())
+                    .or_default()
+                    .push(*index);
+            }
+        }
+
+        for indices in target_indices.values_mut() {
+            indices.sort();
+        }
+
+        let mut no_dependencies_tasks = mem::take(&mut self.no_dependencies_tasks)
+            .into_iter()
+            .collect::<Vec<_>>();
+
+        // Link in a deterministic order, so that the graph's edge order is stable
+        no_dependencies_tasks.sort_by(|a, b| a.0.cmp(&b.0));
+
+        for (target, deps) in no_dependencies_tasks {
+            let Some(owner_indices) = target_indices.get(&target) else {
+                continue;
+            };
+
+            for dep in deps {
+                let Some(dep_indices) = target_indices.get(&dep.target) else {
+                    self.ignored_dependencies
+                        .entry(target.clone())
+                        .or_default()
+                        .insert(dep.target.clone());
+
+                    continue;
+                };
+
+                // The optional type is only a marker within the task
+                // graph, the action graph has always used required
+                let edge_type = if dep.type_of.is_required_type() {
+                    TaskDependencyType::Required
+                } else {
+                    dep.type_of
+                };
+
+                let matching_indices = dep_indices
+                    .iter()
+                    .copied()
+                    .filter(|index| {
+                        matches!(
+                            self.graph.node_weight(*index),
+                            Some(ActionNode::RunTask(inner))
+                                if inner.args == dep.args && inner.env == dep.env
+                        )
+                    })
+                    .collect::<Vec<_>>();
+
+                let dep_indices = if matching_indices.is_empty() {
+                    dep_indices.clone()
+                } else {
+                    matching_indices
+                };
+
+                if matches!(edge_type, TaskDependencyType::Wait) {
+                    self.wait_targets.insert(dep.target.clone());
+                }
+
+                for owner_index in owner_indices {
+                    if dep_indices
+                        .iter()
+                        .any(|dep_index| self.has_edge_of_type(*owner_index, *dep_index, edge_type))
+                    {
+                        continue;
+                    }
+
+                    for dep_index in &dep_indices {
+                        if owner_index == dep_index {
+                            continue;
+                        }
+
+                        // The task graph is acyclic, and conflicting serial
+                        // ordering edges are removed, so this is unexpected
+                        if let Err(error) =
+                            self.link_edges(*owner_index, vec![(*dep_index, edge_type)])
+                        {
+                            warn!(
+                                task_target = target.as_str(),
+                                dependency_target = dep.target.as_str(),
+                                "Unable to link dependency: {error}"
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     fn get_index_from_node(&self, node: &ActionNode) -> Option<NodeIndex> {
         self.nodes.get(node).cloned()
     }
@@ -1940,9 +2060,10 @@ impl<'query> ActionGraphBuilder<'query> {
     /// dependency is being linked in the other direction, which would otherwise
     /// introduce a cycle. A serial ordering edge is a preference, and is skipped
     /// by [`Self::try_link_edge`] when it contradicts a dependency, but it may
-    /// also be linked before the dependency is. This happens when a node is
-    /// revisited once its dependencies are in scope, or when a node is a
-    /// cleanup of a node that is created afterwards.
+    /// also be linked before the dependency is. This happens when a node is a
+    /// cleanup of a node that is created afterwards, or when the dependencies
+    /// of tasks inserted without them (`no_dependencies`) are linked once the graph is
+    /// built.
     ///
     /// While the nodes are connected, the edge that was linked last (of those in
     /// the path) is removed, as that's the one that would have been skipped if
@@ -2043,7 +2164,7 @@ impl<'query> ActionGraphBuilder<'query> {
             && !reqs.skip_affected
         {
             // Short-circuit early if the task is already marked
-            let marked = if reqs.include_relations {
+            let marked = if !self.affected_depth.is_none() {
                 affected.is_project_marked(project)
             } else {
                 affected.is_project_marked_ignoring_relations(project)
@@ -2072,7 +2193,7 @@ impl<'query> ActionGraphBuilder<'query> {
             && !reqs.skip_affected
         {
             // Short-circuit early if the task is already marked
-            let marked = if reqs.include_relations {
+            let marked = if !self.affected_depth.is_none() {
                 affected.is_task_marked(task)
             } else {
                 affected.is_task_marked_ignoring_relations(task)
@@ -2102,12 +2223,16 @@ impl ActionGraphBuilder<'_> {
     pub fn mock_affected(
         &mut self,
         changed_files: FxHashSet<WorkspaceRelativePathBuf>,
+        depth: Depth,
         mut op: impl FnMut(&mut AffectedTracker),
     ) {
         self.set_changed_files(changed_files).unwrap();
         self.set_affected().unwrap();
+        self.affected_depth = depth;
 
         if let Some(affected) = self.affected.as_mut() {
+            affected.set_depth(depth);
+
             op(affected);
         }
     }

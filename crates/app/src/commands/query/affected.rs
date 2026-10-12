@@ -2,7 +2,7 @@ use crate::app_options::AffectedOption;
 use crate::queries::changed_files::*;
 use crate::session::{MoonSession, SessionResult};
 use clap::Args;
-use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
+use moon_affected::{AffectedTracker, Depth};
 use moon_common::is_ci;
 use starbase_utils::json;
 use tracing::instrument;
@@ -15,18 +15,9 @@ pub struct QueryAffectedArgs {
     #[arg(
         long,
         default_value_t,
-        visible_alias = "dependents",
-        help = "Include downstream dependents"
+        help = "Include dependents of affected projects and tasks, up to this depth (none, direct, deep, or a number of hops)"
     )]
-    downstream: DownstreamScope,
-
-    #[arg(
-        long,
-        default_value_t,
-        visible_alias = "dependencies",
-        help = "Include upstream dependencies"
-    )]
-    upstream: UpstreamScope,
+    dependents: Depth,
 }
 
 #[instrument(skip(session))]
@@ -38,7 +29,7 @@ pub async fn affected(session: MoonSession, args: QueryAffectedArgs) -> SessionR
         query_changed_files_for_affected(&vcs, args.by.as_ref()).await?,
     );
     affected_tracker.set_ci_check(is_ci());
-    affected_tracker.set_scopes(args.upstream, args.downstream);
+    affected_tracker.set_depth(args.dependents);
     affected_tracker.track_projects().await?;
     affected_tracker.track_tasks().await?;
 

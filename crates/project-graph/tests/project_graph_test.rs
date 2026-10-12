@@ -1146,7 +1146,10 @@ tasks:
         async fn can_focus_across_a_partition_cycle() {
             let (_sandbox, graph) = build_graph_from_fixture("dev-prod-loop").await;
 
-            let focused = graph.projects.focus_for(&Id::raw("a"), true).unwrap();
+            let focused = graph
+                .projects
+                .focus_for(&Id::raw("a"), Depth::Deep)
+                .unwrap();
 
             let mut ids = map_ids(focused.get_node_keys());
             ids.sort();

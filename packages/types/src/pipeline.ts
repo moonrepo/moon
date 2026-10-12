@@ -117,17 +117,16 @@ export interface TargetState {
 export interface AffectedProjectState {
 	files?: string[];
 	tasks?: string[];
-	upstream?: Id[];
-	downstream?: Id[];
+	dependencies?: Id[];
+	distance: number;
 	other: boolean;
 }
 
 export interface AffectedTaskState {
 	env?: string[];
 	files?: string[];
-	projects?: string[];
-	upstream?: Id[];
-	downstream?: Id[];
+	dependencies?: string[];
+	distance: number;
 	other: boolean;
 }
 

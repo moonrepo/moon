@@ -336,11 +336,11 @@ In v2.3, deps without outputs default to `cacheStrategy: 'ignored'`, so changes 
 invalidate this task. If you expected an upstream lint/test change to bust the cache, this is why.
 See `cache-issues.md` § Dependency cache strategies.
 
-**Dependencies were skipped with `--no-deps`** <sup>v3.0+</sup>:
+**Dependencies were skipped with `--no-dependencies`** <sup>v3.0+</sup>:
 
-`--no-deps` (or `graph.noDeps` in an execution plan) doesn't insert dependency tasks that weren't
-selected themselves, so a task can consume a dependency's stale or missing outputs. Re-run without
-`--no-deps` to confirm.
+`--no-dependencies` (or `graph.noDependencies` in an execution plan) doesn't insert dependency tasks
+that weren't selected themselves, so a task can consume a dependency's stale or missing outputs.
+Re-run without `--no-dependencies` to confirm.
 
 **The output is missing files:**
 

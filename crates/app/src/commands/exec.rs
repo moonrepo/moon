@@ -223,13 +223,6 @@ impl ExecWorkflow {
                 .force_mode(CacheMode::Write);
         }
 
-        // Removed in v3, so only point users to the replacement
-        if self.args.upstream.is_some() {
-            warn!(
-                "--upstream has been removed; dependencies always run, use --no-deps to skip unselected dependencies"
-            );
-        }
-
         // Step 1
         let changed_files = self.load_changed_files().await?;
 
@@ -474,7 +467,7 @@ impl ExecWorkflow {
         // Only track affected if enabled
         let affected_depth = self.get_affected_depth();
         let dependents = self.get_dependents();
-        let no_deps = self.get_no_deps();
+        let no_dependencies = self.get_no_dependencies();
 
         if self.affected {
             action_graph_builder
@@ -497,7 +490,7 @@ impl ExecWorkflow {
                 RunRequirements {
                     ci: self.ci_env,
                     ci_check: self.ci_check,
-                    no_deps,
+                    no_dependencies,
                     dependents,
                     interactive: self.args.interactive,
                     job,
@@ -533,7 +526,7 @@ impl ExecWorkflow {
 
         self.print(format!("Dependents: <property>{dependents}</property>"))?;
 
-        if no_deps {
+        if no_dependencies {
             self.print("Skipping dependencies: <property>yes</property>")?;
         }
 
@@ -685,47 +678,20 @@ impl ExecWorkflow {
     }
 
     fn get_affected_depth(&self) -> Depth {
-        let affected = self.plan.affected.as_ref();
-
-        if let Some(depth) = affected.and_then(|aff| aff.depth) {
-            return depth;
-        }
-
-        if let Some(include_relations) = affected.and_then(|aff| aff.include_relations) {
-            warn!(
-                "The affected.includeRelations execution plan setting is deprecated, use affected.depth instead"
-            );
-
-            return if include_relations {
-                Depth::Deep
-            } else {
-                Depth::NONE
-            };
-        }
-
-        self.args.affected_depth.unwrap_or(Depth::Deep)
+        self.plan
+            .affected
+            .as_ref()
+            .and_then(|aff| aff.depth)
+            .or(self.args.affected_depth)
+            .unwrap_or(Depth::Deep)
     }
 
     fn get_dependents(&self) -> Depth {
-        if self.plan.graph.upstream.is_some() {
-            warn!(
-                "The graph.upstream execution plan setting is deprecated and ignored, as dependencies always run; use graph.noDeps to skip unselected dependencies"
-            );
-        }
-
-        if let Some(depth) = self.plan.graph.dependents {
-            return depth;
-        }
-
-        if let Some(depth) = self.plan.graph.downstream {
-            warn!(
-                "The graph.downstream execution plan setting is deprecated, use graph.dependents instead"
-            );
-
-            return depth;
-        }
-
-        self.args.dependents.unwrap_or(Depth::NONE)
+        self.plan
+            .graph
+            .dependents
+            .or(self.args.dependents)
+            .unwrap_or(Depth::NONE)
     }
 
     fn get_head(&self) -> Option<String> {
@@ -744,8 +710,11 @@ impl ExecWorkflow {
         self.plan.pipeline.job_total.or(self.args.job_total)
     }
 
-    fn get_no_deps(&self) -> bool {
-        self.plan.graph.no_deps.unwrap_or(self.args.no_deps)
+    fn get_no_dependencies(&self) -> bool {
+        self.plan
+            .graph
+            .no_dependencies
+            .unwrap_or(self.args.no_dependencies)
     }
 
     fn get_no_actions(&self) -> bool {

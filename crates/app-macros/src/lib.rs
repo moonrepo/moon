@@ -68,7 +68,6 @@ pub fn with_shared_exec_args(attr: TokenStream, item: TokenStream) -> TokenStrea
         quote! {
             #[arg(
                 long,
-                alias = "downstream",
                 help = "Also run dependents of the selected targets, up to this depth (none, direct, deep, or a number of hops)",
                 help_heading = super::HEADING_GRAPH,
             )]
@@ -80,12 +79,7 @@ pub fn with_shared_exec_args(attr: TokenStream, item: TokenStream) -> TokenStrea
                 help = "Do not run dependency tasks that were not selected themselves",
                 help_heading = super::HEADING_GRAPH,
             )]
-            pub no_deps: bool
-        },
-        // Removed in v3, and only kept to emit a migration message
-        quote! {
-            #[arg(long, alias = "dependencies", hide = true)]
-            pub upstream: Option<String>
+            pub no_dependencies: bool
         },
         // PARALLELISM
         quote! {

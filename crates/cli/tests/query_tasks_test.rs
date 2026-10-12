@@ -47,7 +47,7 @@ mod query_tasks {
         use super::*;
 
         #[test]
-        fn doesnt_include_relations_by_default() {
+        fn doesnt_include_dependencies_or_dependents_by_default() {
             let sandbox = create_task_deps_sandbox();
 
             change_files(&sandbox, ["metadata/test.txt"]);

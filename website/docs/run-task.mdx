@@ -36,12 +36,12 @@ exceptions are `cleanup` and `wait` dependencies, which run after or alongside t
 their [`type`](./config/project#type).
 
 If you're confident that the outputs of the dependencies are up to date, you can skip the
-dependencies that were not selected themselves with the `--no-deps` flag. Be aware that this can
-produce incorrect results when a dependency's outputs are stale.
+dependencies that were not selected themselves with the `--no-dependencies` flag. Be aware that this
+can produce incorrect results when a dependency's outputs are stale.
 [Learn more about dependencies](./concepts/affected#dependencies).
 
 ```shell
-$ moon run app:build --no-deps
+$ moon run app:build --no-dependencies
 ```
 
 ## Running dependents

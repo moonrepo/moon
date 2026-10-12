@@ -242,15 +242,11 @@ pub trait GraphConversions<N: Clone + Display, E: Clone + Display, K: Hash + Eq>
         )
     }
 
-    /// Return the graph focused for the provided node, and only include
-    /// dependents or dependencies.
-    fn to_focused_graph(&self, focus_node: &N, with_dependents: bool) -> DiGraph<NodeIndex, E> {
-        let upstream = FxHashSet::from_iter(self.deep_dependencies_of(focus_node));
-        let downstream = FxHashSet::from_iter(if with_dependents {
-            self.deep_dependents_of(focus_node)
-        } else {
-            vec![]
-        });
+    /// Return the graph focused for the provided node, which includes all of
+    /// its dependencies, and its dependents within the provided depth.
+    fn to_focused_graph(&self, focus_node: &N, dependents: Depth) -> DiGraph<NodeIndex, E> {
+        let dependencies = FxHashSet::from_iter(self.deep_dependencies_of(focus_node));
+        let dependents = FxHashSet::from_iter(self.dependents_within(&[focus_node], dependents));
         let focus_key = self.get_node_key(focus_node);
 
         self.get_graph().filter_map(
@@ -261,9 +257,9 @@ pub trait GraphConversions<N: Clone + Display, E: Clone + Display, K: Hash + Eq>
                 // Self
                 node_key == focus_key ||
                     // Dependencies
-                    upstream.contains(&node_key) ||
+                    dependencies.contains(&node_key) ||
                     // Dependents
-                    downstream.contains(&node_key)
+                    dependents.contains(&node_key)
                 {
                     Some(node.to_owned())
                 } else {
@@ -279,9 +275,18 @@ pub trait GraphConversions<N: Clone + Display, E: Clone + Display, K: Hash + Eq>
 mod tests {
     use super::*;
 
+    #[derive(Clone)]
+    struct TestEdge;
+
+    impl Display for TestEdge {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.write_str("dep")
+        }
+    }
+
     /// Edges point from a dependent to its dependency.
     struct TestGraph {
-        graph: DiGraph<NodeIndex, ()>,
+        graph: DiGraph<NodeIndex, TestEdge>,
         names: Vec<String>,
     }
 
@@ -296,7 +301,7 @@ mod tests {
             let index = |name: &str| NodeIndex::new(names.iter().position(|n| *n == name).unwrap());
 
             for (from, to) in edges {
-                graph.add_edge(index(from), index(to), ());
+                graph.add_edge(index(from), index(to), TestEdge);
             }
 
             Self {
@@ -314,8 +319,8 @@ mod tests {
         }
     }
 
-    impl GraphData<String, (), String> for TestGraph {
-        fn get_graph(&self) -> &DiGraph<NodeIndex, ()> {
+    impl GraphData<String, TestEdge, String> for TestGraph {
+        fn get_graph(&self) -> &DiGraph<NodeIndex, TestEdge> {
             &self.graph
         }
 
@@ -336,11 +341,13 @@ mod tests {
         }
     }
 
-    impl GraphConnections<String, (), String> for TestGraph {
+    impl GraphConnections<String, TestEdge, String> for TestGraph {
         fn get_node_index(&self, node: &String) -> NodeIndex {
             NodeIndex::new(self.names.iter().position(|n| n == node).unwrap())
         }
     }
+
+    impl GraphConversions<String, TestEdge, String> for TestGraph {}
 
     // base <- mid1 <- mid2 <- top <- above
     //                 other <-/
@@ -550,6 +557,56 @@ mod tests {
         assert_eq!(
             graph.dependencies_within(&graph.nodes(&["x"]), Depth::Limit(100)),
             ["y", "z"]
+        );
+    }
+
+    fn focused_names(graph: &TestGraph, node: &str, dependents: Depth) -> Vec<String> {
+        let focused = graph.to_focused_graph(graph.node(node), dependents);
+        let mut names = focused
+            .node_weights()
+            .map(|index| graph.get_node_by_index(index).clone())
+            .collect::<Vec<_>>();
+
+        names.sort();
+        names
+    }
+
+    #[test]
+    fn focused_graph_includes_dependents_within_depth() {
+        let graph = create_graph();
+
+        // Dependencies are always included
+        assert_eq!(focused_names(&graph, "mid1", Depth::NONE), ["base", "mid1"]);
+        assert_eq!(
+            focused_names(&graph, "mid1", Depth::DIRECT),
+            ["base", "mid1", "mid2"]
+        );
+        assert_eq!(
+            focused_names(&graph, "mid1", Depth::Limit(2)),
+            ["base", "mid1", "mid2", "top"]
+        );
+        // `other` is a dependency of a dependent, not of the focused node
+        assert_eq!(
+            focused_names(&graph, "mid1", Depth::Deep),
+            ["above", "base", "mid1", "mid2", "top"]
+        );
+    }
+
+    #[test]
+    fn focused_graph_keeps_edges_between_included_nodes() {
+        let graph = create_graph();
+
+        assert_eq!(
+            graph
+                .to_focused_graph(graph.node("mid1"), Depth::NONE)
+                .edge_count(),
+            1
+        );
+        assert_eq!(
+            graph
+                .to_focused_graph(graph.node("mid1"), Depth::Deep)
+                .edge_count(),
+            4
         );
     }
 }

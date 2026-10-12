@@ -27,7 +27,6 @@ pub struct QueryProjectsArgs {
     #[arg(
         long,
         default_value_t,
-        alias = "upstream",
         help = "Include dependencies of affected projects, up to this depth (none, direct, deep, or a number of hops)",
         help_heading = HEADING_AFFECTED,
         requires = "affected-args",
@@ -37,7 +36,6 @@ pub struct QueryProjectsArgs {
     #[arg(
         long,
         default_value_t,
-        alias = "downstream",
         help = "Include dependents of affected projects, up to this depth (none, direct, deep, or a number of hops)",
         help_heading = HEADING_AFFECTED,
         requires = "affected-args",

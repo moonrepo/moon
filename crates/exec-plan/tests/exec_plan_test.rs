@@ -9,13 +9,11 @@ mod graph_block {
     use super::*;
 
     #[test]
-    fn parses_dependents_and_no_deps() {
-        let plan = parse(r#"{ "graph": { "dependents": "direct", "noDeps": true } }"#);
+    fn parses_dependents_and_no_dependencies() {
+        let plan = parse(r#"{ "graph": { "dependents": "direct", "noDependencies": true } }"#);
 
         assert_eq!(plan.graph.dependents, Some(Depth::DIRECT));
-        assert_eq!(plan.graph.no_deps, Some(true));
-        assert_eq!(plan.graph.downstream, None);
-        assert_eq!(plan.graph.upstream, None);
+        assert_eq!(plan.graph.no_dependencies, Some(true));
     }
 
     #[test]
@@ -26,22 +24,14 @@ mod graph_block {
     }
 
     #[test]
-    fn parses_deprecated_scopes() {
-        let plan = parse(r#"{ "graph": { "downstream": "deep", "upstream": "none" } }"#);
-
-        assert_eq!(plan.graph.dependents, None);
-        assert_eq!(plan.graph.downstream, Some(Depth::Deep));
-        assert_eq!(plan.graph.upstream, Some(Depth::NONE));
-    }
-
-    #[test]
-    fn doesnt_serialize_deprecated_scopes() {
-        let plan = parse(
-            r#"{ "graph": { "dependents": 2, "downstream": "deep", "upstream": "direct" } }"#,
-        );
+    fn serializes_fields() {
+        let plan = parse(r#"{ "graph": { "dependents": 2, "noDependencies": false } }"#);
         let json = serde_json::to_value(&plan.graph).unwrap();
 
-        assert_eq!(json, serde_json::json!({ "dependents": 2, "noDeps": null }));
+        assert_eq!(
+            json,
+            serde_json::json!({ "dependents": 2, "noDependencies": false })
+        );
     }
 
     #[test]
@@ -60,24 +50,13 @@ mod affected_block {
         let affected = plan.affected.unwrap();
 
         assert_eq!(affected.depth, Some(Depth::Deep));
-        assert_eq!(affected.include_relations, None);
     }
 
     #[test]
-    fn parses_deprecated_include_relations() {
-        let plan = parse(r#"{ "affected": { "includeRelations": true } }"#);
-        let affected = plan.affected.unwrap();
-
-        assert_eq!(affected.depth, None);
-        assert_eq!(affected.include_relations, Some(true));
-    }
-
-    #[test]
-    fn doesnt_serialize_deprecated_include_relations() {
-        let plan = parse(r#"{ "affected": { "depth": 0, "includeRelations": true } }"#);
+    fn serializes_depth() {
+        let plan = parse(r#"{ "affected": { "depth": 0 } }"#);
         let json = serde_json::to_value(plan.affected.unwrap()).unwrap();
 
         assert_eq!(json["depth"], "none");
-        assert!(json.get("includeRelations").is_none());
     }
 }

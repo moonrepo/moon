@@ -2322,29 +2322,11 @@ tasks:
         }
 
         #[test]
-        fn supports_downstream_alias() {
+        fn no_dependencies_skips_unselected_dependencies() {
             let sandbox = create_chain_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec")
-                    .arg("a:build")
-                    .arg("--downstream")
-                    .arg("direct");
-            });
-
-            let output = format!("{}{}", assert.stderr(), assert.stdout());
-
-            assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
-
-            assert.success();
-        }
-
-        #[test]
-        fn no_deps_skips_unselected_dependencies() {
-            let sandbox = create_chain_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("c:build").arg("--no-deps");
+                cmd.arg("exec").arg("c:build").arg("--no-dependencies");
             });
 
             let output = format!("{}{}", assert.stderr(), assert.stdout());
@@ -2359,7 +2341,7 @@ tasks:
 
         // https://github.com/moonrepo/moon/issues/2685
         #[test]
-        fn no_deps_keeps_order_between_selected_tasks() {
+        fn no_dependencies_keeps_order_between_selected_tasks() {
             let sandbox = create_chain_sandbox();
 
             // Run with a high concurrency, so that both tasks could
@@ -2368,7 +2350,7 @@ tasks:
                 cmd.arg("exec")
                     .arg("c:build")
                     .arg("b:build")
-                    .arg("--no-deps")
+                    .arg("--no-dependencies")
                     .arg("--concurrency")
                     .arg("4");
             });
@@ -2381,23 +2363,6 @@ tasks:
             assert!(b < c);
             assert!(!stdout.contains("a:build"));
             assert!(predicate::str::contains("Tasks: 2 completed").eval(&stdout));
-
-            assert.success();
-        }
-
-        #[test]
-        fn warns_for_removed_upstream() {
-            let sandbox = create_chain_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("b:build").arg("--upstream").arg("none");
-            });
-
-            let output = format!("{}{}", assert.stderr(), assert.stdout());
-
-            assert!(predicate::str::contains("--upstream has been removed").eval(&output));
-            // Dependencies still run
-            assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
 
             assert.success();
         }
@@ -2576,41 +2541,13 @@ tasks:
             use super::*;
 
             #[test]
-            fn upstream_is_deprecated_and_ignored() {
+            fn no_dependencies() {
                 let sandbox = create_chain_sandbox();
 
                 sandbox.create_file(
                     "plan.json",
                     r#"{
-                    "graph": { "upstream": "none" },
-                    "targets": ["b:build"]
-                }"#,
-                );
-
-                let assert = sandbox.run_bin(|cmd| {
-                    cmd.arg("exec").arg("--plan").arg("plan.json");
-                });
-
-                let output = format!("{}{}", assert.stderr(), assert.stdout());
-
-                assert!(
-                    predicate::str::contains("graph.upstream execution plan setting is deprecated")
-                        .eval(&output)
-                );
-                // Dependencies still run
-                assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
-
-                assert.success();
-            }
-
-            #[test]
-            fn no_deps() {
-                let sandbox = create_chain_sandbox();
-
-                sandbox.create_file(
-                    "plan.json",
-                    r#"{
-                    "graph": { "noDeps": true },
+                    "graph": { "noDependencies": true },
                     "targets": ["c:build"]
                 }"#,
                 );
@@ -2645,15 +2582,12 @@ tasks:
                 let output = format!("{}{}", assert.stderr(), assert.stdout());
 
                 assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
-                assert!(
-                    !predicate::str::contains("execution plan setting is deprecated").eval(&output)
-                );
 
                 assert.success();
             }
 
             #[test]
-            fn no_deps_ignores_dependency_hashes() {
+            fn no_dependencies_ignores_dependency_hashes() {
                 let sandbox = create_pipeline_sandbox();
 
                 sandbox.create_file(
@@ -2677,103 +2611,11 @@ tasks:
                 );
 
                 let assert = sandbox.run_bin(|cmd| {
-                    cmd.arg("exec").arg("--no-deps").arg("b:task");
+                    cmd.arg("exec").arg("--no-dependencies").arg("b:task");
                 });
 
                 let output = assert.output();
 
-                assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
-
-                assert.success();
-            }
-
-            #[test]
-            fn downstream_is_deprecated_but_applied() {
-                let sandbox = create_chain_sandbox();
-
-                sandbox.create_file(
-                    "plan.json",
-                    r#"{
-                    "graph": { "downstream": "direct" },
-                    "targets": ["a:build"]
-                }"#,
-                );
-
-                let assert = sandbox.run_bin(|cmd| {
-                    cmd.arg("exec").arg("--plan").arg("plan.json");
-                });
-
-                let output = format!("{}{}", assert.stderr(), assert.stdout());
-
-                assert!(
-                    predicate::str::contains(
-                        "graph.downstream execution plan setting is deprecated"
-                    )
-                    .eval(&output)
-                );
-                // Applied as `dependents`, so `b:build` runs as well
-                assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
-
-                assert.success();
-            }
-
-            #[test]
-            fn include_relations_is_deprecated_but_applied() {
-                let sandbox = create_chain_sandbox();
-
-                sandbox.create_file(
-                    "plan.json",
-                    r#"{
-                    "affected": { "includeRelations": true },
-                    "targets": [":build"]
-                }"#,
-                );
-
-                change_files(&sandbox, ["a/a.txt"]);
-
-                let assert = sandbox.run_bin(|cmd| {
-                    cmd.arg("exec").arg("--plan").arg("plan.json");
-                });
-
-                let output = format!("{}{}", assert.stderr(), assert.stdout());
-
-                assert!(
-                    predicate::str::contains(
-                        "affected.includeRelations execution plan setting is deprecated"
-                    )
-                    .eval(&output)
-                );
-                assert!(predicate::str::contains("Tasks: 3 completed").eval(&output));
-
-                assert.success();
-            }
-
-            #[test]
-            fn include_relations_false_maps_to_none_depth() {
-                let sandbox = create_chain_sandbox();
-
-                sandbox.create_file(
-                    "plan.json",
-                    r#"{
-                    "affected": { "includeRelations": false },
-                    "targets": [":build"]
-                }"#,
-                );
-
-                change_files(&sandbox, ["a/a.txt"]);
-
-                let assert = sandbox.run_bin(|cmd| {
-                    cmd.arg("exec").arg("--plan").arg("plan.json");
-                });
-
-                let output = format!("{}{}", assert.stderr(), assert.stdout());
-
-                assert!(
-                    predicate::str::contains(
-                        "affected.includeRelations execution plan setting is deprecated"
-                    )
-                    .eval(&output)
-                );
                 assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
 
                 assert.success();

@@ -13,11 +13,6 @@ cacheable!(
         /// affected: `none`, `direct`, `deep`, or a number.
         pub depth: Option<Depth>,
 
-        /// Deprecated: Use `depth` instead. Only parsed for migration,
-        /// and never serialized.
-        #[serde(skip_serializing)]
-        pub include_relations: Option<bool>,
-
         pub source: Option<String>,
         pub status: Vec<moon_vcs::ChangedStatus>,
         pub stdin: Option<bool>,
@@ -32,18 +27,9 @@ cacheable!(
         /// `none`, `direct`, `deep`, or a number.
         pub dependents: Option<Depth>,
 
-        /// Don't run the dependencies of the targets.
-        pub no_deps: Option<bool>,
-
-        /// Deprecated: Use `dependents` instead. Only parsed for migration,
-        /// and never serialized.
-        #[serde(skip_serializing)]
-        pub downstream: Option<Depth>,
-
-        /// Deprecated: Dependencies are always run, unless `noDeps` is enabled.
-        /// Only parsed for migration, and never serialized.
-        #[serde(skip_serializing)]
-        pub upstream: Option<Depth>,
+        /// Don't run the dependencies of the targets that were not
+        /// selected themselves.
+        pub no_dependencies: Option<bool>,
     }
 );
 

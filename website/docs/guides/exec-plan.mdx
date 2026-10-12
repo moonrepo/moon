@@ -110,8 +110,8 @@ Controls which dependency and dependent tasks are inserted into the action graph
 - `dependents` (`"none" | "direct" | "deep" | number`) - Also run the dependents of every selected
   target, up to the depth. Defaults to `none`. Same as `--dependents`.
   <VersionLabel version="3.0.0" />
-- `noDeps` (`boolean`) - Do not insert dependency tasks that were not selected themselves. Defaults
-  to `false`. Same as `--no-deps`. <VersionLabel version="3.0.0" />
+- `noDependencies` (`boolean`) - Do not insert dependency tasks that were not selected themselves.
+  Defaults to `false`. Same as `--no-dependencies`. <VersionLabel version="3.0.0" />
 
 ### `affected`
 
@@ -127,14 +127,6 @@ filtering is disabled and all matched targets run.
   changes. Accepts `local` or `remote`.
 - `status` (`string[]`) - Filter changed files by status. Same as `--status`.
 - `stdin` (`boolean`) - Accept changed files from stdin. Same as `--stdin`.
-
-:::caution
-
-The `affected.includeRelations`, `graph.upstream`, and `graph.downstream` fields have been removed
-in v3, in favor of `affected.depth`, `graph.dependents`, and `graph.noDeps`. The old fields are still
-parsed for one release, and emit a deprecation warning when used.
-
-:::
 
 ## Examples
 
@@ -234,7 +226,7 @@ not selected themselves:
     "source": "remote"
   },
   "graph": {
-    "noDeps": true
+    "noDependencies": true
   },
   "targets": [":deploy"]
 }

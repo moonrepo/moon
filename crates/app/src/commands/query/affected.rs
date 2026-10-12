@@ -15,7 +15,6 @@ pub struct QueryAffectedArgs {
     #[arg(
         long,
         default_value_t,
-        alias = "downstream",
         help = "Include dependents of affected projects and tasks, up to this depth (none, direct, deep, or a number of hops)"
     )]
     dependents: Depth,

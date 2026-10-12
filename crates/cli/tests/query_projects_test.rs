@@ -118,26 +118,6 @@ mod query_projects {
     }
 
     #[test]
-    fn can_include_dependents_for_affected_via_downstream_alias() {
-        let sandbox = create_query_sandbox();
-
-        change_many_files(&sandbox);
-
-        let assert = sandbox.run_bin(|cmd| {
-            cmd.arg("query")
-                .arg("projects")
-                .arg("--affected")
-                .arg("--downstream")
-                .arg("direct");
-        });
-
-        let json: QueryProjectsResult = serde_json::from_str(assert.stdout().trim()).unwrap();
-        let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
-
-        assert_eq!(ids, ["advanced", "basic", "metadata", "no-config", "root"]);
-    }
-
-    #[test]
     fn doesnt_include_dependencies_for_affected_by_default() {
         let sandbox = create_query_sandbox();
 

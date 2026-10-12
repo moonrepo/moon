@@ -2521,7 +2521,7 @@ mod action_graph_builder {
                     .run_task(
                         &task,
                         &RunRequirements {
-                            no_deps: true,
+                            no_dependencies: true,
                             ..RunRequirements::default()
                         },
                     )
@@ -2564,7 +2564,7 @@ mod action_graph_builder {
                     .run_task(
                         &task,
                         &RunRequirements {
-                            no_deps: true,
+                            no_dependencies: true,
                             ..RunRequirements::default()
                         },
                     )
@@ -2597,7 +2597,7 @@ mod action_graph_builder {
                                 .map(|id| TargetLocator::parse(&format!("deps:{id}")).unwrap())
                                 .collect::<Vec<_>>(),
                             RunRequirements {
-                                no_deps: true,
+                                no_dependencies: true,
                                 ..RunRequirements::default()
                             },
                         )
@@ -2628,7 +2628,7 @@ mod action_graph_builder {
                 }
             }
 
-            // moonrepo/moon#2685: `moon ci :deploy --no-deps`, where `c` depends
+            // moonrepo/moon#2685: `moon ci :deploy --no-dependencies`, where `c` depends
             // on `b`, which depends on `a`, and only `b` has changed
             #[tokio::test(flavor = "multi_thread")]
             async fn links_affected_dependencies_when_skipping_dependencies() {
@@ -2655,7 +2655,7 @@ mod action_graph_builder {
                             RunRequirements {
                                 ci: true,
                                 ci_check: true,
-                                no_deps: true,
+                                no_dependencies: true,
                                 ..RunRequirements::default()
                             },
                         )
@@ -2761,7 +2761,10 @@ mod action_graph_builder {
                     Target::parse(id).unwrap()
                 }
 
-                async fn build_graph(ids: &[&str], no_deps: bool) -> (ActionContext, ActionGraph) {
+                async fn build_graph(
+                    ids: &[&str],
+                    no_dependencies: bool,
+                ) -> (ActionContext, ActionGraph) {
                     let sandbox = create_sandbox("dep-scopes");
                     let mut container = ActionGraphContainer::new(sandbox.path());
 
@@ -2769,7 +2772,7 @@ mod action_graph_builder {
                     let mut builder = container.create_builder(wg.clone()).await;
 
                     let reqs = RunRequirements {
-                        no_deps,
+                        no_dependencies,
                         ..RunRequirements::default()
                     };
 
@@ -4226,7 +4229,7 @@ mod action_graph_builder {
                 .run_task(
                     &task,
                     &RunRequirements {
-                        no_deps: true,
+                        no_dependencies: true,
                         dependents: Depth::DIRECT,
                         ..Default::default()
                     },
@@ -6984,7 +6987,7 @@ mod action_graph_builder {
             use super::*;
 
             #[tokio::test(flavor = "multi_thread")]
-            async fn applies_no_deps_from_plan() {
+            async fn applies_no_dependencies_from_plan() {
                 let sandbox = create_sandbox("tasks");
                 let mut container = ActionGraphContainer::new(sandbox.path());
 
@@ -6994,7 +6997,7 @@ mod action_graph_builder {
 
                 let plan = ExecutionPlan {
                     graph: GraphBlock {
-                        no_deps: Some(true),
+                        no_dependencies: Some(true),
                         ..Default::default()
                     },
                     targets: TargetsBlock::Included(vec![
@@ -7007,7 +7010,7 @@ mod action_graph_builder {
                     .run_tasks_with_plan(
                         &plan,
                         RunRequirements {
-                            no_deps: plan.graph.no_deps.unwrap_or_default(),
+                            no_dependencies: plan.graph.no_dependencies.unwrap_or_default(),
                             ..Default::default()
                         },
                     )

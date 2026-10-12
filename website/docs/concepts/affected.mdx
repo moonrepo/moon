@@ -56,11 +56,11 @@ How far this propagation reaches is controlled by the [affected depth](#affected
 Graph traversal is split into 3 independent concepts, all named from the point of view of the
 target: _dependencies_ are what the target needs, and _dependents_ are what needs the target.
 
-| Concept                           | Option             | Controls                                                      |
-| :-------------------------------- | :----------------- | :------------------------------------------------------------ |
-| [Affected depth](#affected-depth) | `--affected-depth` | Which of the selected tasks count as affected.                |
-| [Dependents](#dependents)         | `--dependents`     | Which dependent tasks are added to the selected targets.      |
-| [Dependencies](#dependencies)     | `--no-deps`        | Whether dependency tasks are inserted into the graph and ran. |
+| Concept                           | Option              | Controls                                                      |
+| :-------------------------------- | :------------------ | :------------------------------------------------------------ |
+| [Affected depth](#affected-depth) | `--affected-depth`  | Which of the selected tasks count as affected.                |
+| [Dependents](#dependents)         | `--dependents`      | Which dependent tasks are added to the selected targets.      |
+| [Dependencies](#dependencies)     | `--no-dependencies` | Whether dependency tasks are inserted into the graph and ran. |
 
 Options that accept a depth support the following values:
 
@@ -95,6 +95,11 @@ The `--dependents <DEPTH>` option, supported by [`moon run`](../commands/run),
 [`moon action-graph`](../commands/action-graph), adds the dependents of every selected target as
 primary targets, bounded by the depth. Defaults to `none` for all commands.
 
+The [`moon project-graph`](../commands/project-graph) and
+[`moon task-graph`](../commands/task-graph) commands also support `--dependents <DEPTH>`, which
+includes the dependents of the focused project or task in the graph, bounded by the depth. Defaults
+to `none`.
+
 ```shell
 # Build `lib`, and every task that directly depends on it
 $ moon run lib:build --dependents direct
@@ -109,7 +114,7 @@ The transitive [`deps`](../config/project#deps) of a target are _always_ inserte
 dependencies run after, based on their [`type`](../config/project#type). There is no depth control
 for dependencies.
 
-As an escape hatch, the `--no-deps` flag, supported by [`moon run`](../commands/run),
+As an escape hatch, the `--no-dependencies` flag, supported by [`moon run`](../commands/run),
 [`moon exec`](../commands/exec), [`moon ci`](../commands/ci), and [`moon check`](../commands/check),
 will not insert dependency tasks that were not selected themselves. The ordering between tasks that
 _are_ in the graph is still linked, and `cleanup` dependencies still run after their owner. For
@@ -117,24 +122,24 @@ example, the following runs the affected `deploy` tasks in dependency order, wit
 unchanged dependencies:
 
 ```shell
-$ moon ci :deploy --no-deps
+$ moon ci :deploy --no-dependencies
 ```
 
 :::caution
 
-When a dependency's outputs are stale or missing, `--no-deps` can produce incorrect builds, as the
-dependency will not be ran to update them. Similar to `--only` in Turborepo, or
+When a dependency's outputs are stale or missing, `--no-dependencies` can produce incorrect builds,
+as the dependency will not be ran to update them. Similar to `--only` in Turborepo, or
 `--excludeTaskDependencies` in Nx.
 
 :::
 
 ### Defaults
 
-| Command                                                                                                                      | `--affected` | `--affected-depth` | `--dependents`                                                     | Dependencies             |
-| :--------------------------------------------------------------------------------------------------------------------------- | :----------- | :----------------- | :----------------------------------------------------------------- | :----------------------- |
-| [`run`](../commands/run), [`exec`](../commands/exec), [`check`](../commands/check)                                           | off          | `deep`             | `none`                                                             | full, unless `--no-deps` |
-| [`ci`](../commands/ci)                                                                                                       | on           | `deep`             | `none`                                                             | full, unless `--no-deps` |
-| [`query projects`](../commands/query/projects), [`tasks`](../commands/query/tasks), [`affected`](../commands/query/affected) | off          | n/a                | `none` (`--dependencies` also `none`, except for `query affected`) | n/a                      |
+| Command                                                                                                                      | `--affected` | `--affected-depth` | `--dependents`                                                     | Dependencies                     |
+| :--------------------------------------------------------------------------------------------------------------------------- | :----------- | :----------------- | :----------------------------------------------------------------- | :------------------------------- |
+| [`run`](../commands/run), [`exec`](../commands/exec), [`check`](../commands/check)                                           | off          | `deep`             | `none`                                                             | full, unless `--no-dependencies` |
+| [`ci`](../commands/ci)                                                                                                       | on           | `deep`             | `none`                                                             | full, unless `--no-dependencies` |
+| [`query projects`](../commands/query/projects), [`tasks`](../commands/query/tasks), [`affected`](../commands/query/affected) | off          | n/a                | `none` (`--dependencies` also `none`, except for `query affected`) | n/a                              |
 
 ### Querying
 
@@ -153,15 +158,21 @@ $ moon query affected --dependents deep
 
 In v2, the `--upstream` (`--dependencies`) and `--downstream` (`--dependents`) options controlled
 both how far affected state propagated, and which dependency and dependent tasks were ran. In v3,
-these have been split into the options above:
+these have been split into the options above. The old options and execution plan fields have been
+removed, with no aliases or deprecation period, so they must be migrated as follows:
 
 - `--include-relations` (`-g`) &rarr; `--affected-depth deep`, which is now the default.
-- `--downstream <DEPTH>` &rarr; `--dependents <DEPTH>`. The `--downstream` alias is deprecated, and
-  will be removed in the next release.
+- `--downstream <DEPTH>` &rarr; `--dependents <DEPTH>`.
 - `--upstream deep` &rarr; remove it, as it's now the only behavior. `--upstream none` or
-  `--upstream direct` &rarr; `--no-deps`, if the intent was to not run unchanged dependencies.
+  `--upstream direct` &rarr; `--no-dependencies`, if the intent was to not run unchanged
+  dependencies.
 - For `moon query projects` and `tasks`, `--upstream` &rarr; `--dependencies`, and `--downstream`
-  &rarr; `--dependents`. The old names are deprecated aliases. For `moon query affected`, only
-  `--downstream` &rarr; `--dependents` is supported.
+  &rarr; `--dependents`. For `moon query affected`, only `--downstream` &rarr; `--dependents` is
+  supported.
+- For [execution plans](../guides/exec-plan), `affected.includeRelations` &rarr; `affected.depth`,
+  `graph.downstream` &rarr; `graph.dependents`, and `graph.upstream` &rarr;
+  `graph.noDependencies`. Plans that use the old fields fail to parse.
+- `moon project-graph --dependents` and `moon task-graph --dependents` &rarr;
+  `--dependents deep`.
 - [`moon ci`](../commands/ci) no longer runs the direct dependents of affected tasks by default.
   Pass `--dependents direct` to restore the previous behavior.

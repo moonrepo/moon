@@ -516,7 +516,7 @@ mod action_pipeline {
                 let mocker = WorkspaceMocker::new(sandbox.path()).with_default_projects();
 
                 let reqs = RunRequirements {
-                    no_deps: true,
+                    no_dependencies: true,
                     ..RunRequirements::default()
                 };
                 let mut graph = mocker.create_action_graph().await;

@@ -102,13 +102,14 @@ For a declarative alternative to CLI options, see the [execution plan guide](../
 - `--dependents <DEPTH>` - Also run the dependents of every selected target, up to the depth.
   Supports "none" (default), "direct", "deep", or a number of hops. When `--affected` is active, the
   dependents must also be affected to run.
-- `--no-deps` - Do not insert dependency tasks that were not selected themselves. Tasks in the graph
-  are still ran in dependency order, and `cleanup` dependencies still run after their owner. This is
-  an escape hatch that can produce incorrect builds when a dependency's outputs are stale.
+- `--no-dependencies` - Do not insert dependency tasks that were not selected themselves. Tasks in
+  the graph are still ran in dependency order, and `cleanup` dependencies still run after their
+  owner. This is an escape hatch that can produce incorrect builds when a dependency's outputs are
+  stale.
   <VersionLabel version="3.0.0" />
 
-> Dependencies (via [`deps`](../config/project#deps)) are always ran, unless `--no-deps` is passed.
-> [Learn more about graph depth](../concepts/affected#graph-depth).
+> Dependencies (via [`deps`](../config/project#deps)) are always ran, unless `--no-dependencies` is
+> passed. [Learn more about graph depth](../concepts/affected#graph-depth).
 
 ### Parallelism
 
@@ -117,8 +118,12 @@ For a declarative alternative to CLI options, see the [execution plan guide](../
 
 ## Migrating from v2
 
+The following options have been removed, with no aliases or deprecation period, and must be
+migrated:
+
 - `-g`, `--include-relations` &rarr; `--affected-depth deep`, which is now the default.
-- `--downstream <DEPTH>` &rarr; `--dependents <DEPTH>`. The `--downstream` alias is deprecated.
+- `--downstream <DEPTH>` &rarr; `--dependents <DEPTH>`.
 - `--upstream deep` &rarr; remove it, as it's now the only behavior. `--upstream none` or
-  `--upstream direct` &rarr; `--no-deps`, if the intent was to not run unchanged dependencies.
+  `--upstream direct` &rarr; `--no-dependencies`, if the intent was to not run unchanged
+  dependencies.
 - [`moon ci`](./ci) no longer runs the direct dependents of affected tasks by default.

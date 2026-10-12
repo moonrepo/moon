@@ -55,7 +55,7 @@ macro_rules! insert_node_or_exit {
 pub struct RunRequirements {
     pub ci: bool,                 // Are we in a CI environment
     pub ci_check: bool,           // Check the `runInCI` option
-    pub no_deps: bool,            // Don't insert dependency tasks that weren't selected
+    pub no_dependencies: bool,    // Don't insert dependency tasks that weren't selected
     pub dependents: Depth,        // Add dependent tasks of the selected tasks
     pub interactive: bool,        // Entire pipeline is interactive
     pub job: Option<usize>,       // Current job index
@@ -69,7 +69,7 @@ impl Default for RunRequirements {
         Self {
             ci: is_ci(),
             ci_check: false,
-            no_deps: false,
+            no_dependencies: false,
             dependents: Depth::NONE,
             interactive: false,
             job: None,
@@ -161,10 +161,10 @@ pub struct ActionGraphBuilder<'query> {
     // Target tracking
     //
     // Dependencies (that aren't a cleanup) of tasks that were inserted without
-    // their dependencies (`no_deps`). They're linked to the dependency nodes
+    // their dependencies (`no_dependencies`). They're linked to the dependency nodes
     // that are in the graph when it's built, regardless of the insertion order,
     // and the ones that aren't are ignored.
-    no_deps_tasks: FxHashMap<Target, Vec<TaskDependencyConfig>>,
+    no_dependencies_tasks: FxHashMap<Target, Vec<TaskDependencyConfig>>,
     ignored_dependencies: FxHashMap<Target, FxHashSet<Target>>,
     passthrough_targets: FxHashSet<Target>,
     primary_targets: FxHashSet<Target>,
@@ -204,7 +204,7 @@ impl<'query> ActionGraphBuilder<'query> {
             nodes: FxHashMap::default(),
             options,
             affected_depth: Depth::Deep,
-            no_deps_tasks: FxHashMap::default(),
+            no_dependencies_tasks: FxHashMap::default(),
             ignored_dependencies: FxHashMap::default(),
             passthrough_targets: FxHashSet::default(),
             primary_targets: FxHashSet::default(),
@@ -1304,13 +1304,13 @@ impl<'query> ActionGraphBuilder<'query> {
             let mut child_reqs = reqs.clone();
             child_reqs.skip_affected = true;
 
-            if reqs.no_deps {
+            if reqs.no_dependencies {
                 // Dependencies that weren't selected are not inserted, but the
                 // ones that are in the graph are still linked when it's built,
                 // regardless of the order they're inserted in. Cleanup
                 // dependencies must always run after the task, so they're
                 // still inserted and linked here
-                self.no_deps_tasks.insert(
+                self.no_dependencies_tasks.insert(
                     task.target.clone(),
                     task.deps
                         .iter()
@@ -1639,7 +1639,7 @@ impl<'query> ActionGraphBuilder<'query> {
 
     // PRIVATE
 
-    /// Link the dependencies of tasks that were inserted without them (`no_deps`)
+    /// Link the dependencies of tasks that were inserted without them (`no_dependencies`)
     /// to the dependency nodes that are in the graph, as the ordering between
     /// tasks that do run must still be honored, regardless of the order that
     /// they were inserted in. When a dependency has multiple nodes (different
@@ -1650,7 +1650,7 @@ impl<'query> ActionGraphBuilder<'query> {
     /// Serial ordering (`runDepsInParallel: false`) is only applied when the
     /// dependencies are inserted, and is not applied here.
     fn link_present_dependencies(&mut self) {
-        if self.no_deps_tasks.is_empty() {
+        if self.no_dependencies_tasks.is_empty() {
             return;
         }
 
@@ -1669,14 +1669,14 @@ impl<'query> ActionGraphBuilder<'query> {
             indices.sort();
         }
 
-        let mut no_deps_tasks = mem::take(&mut self.no_deps_tasks)
+        let mut no_dependencies_tasks = mem::take(&mut self.no_dependencies_tasks)
             .into_iter()
             .collect::<Vec<_>>();
 
         // Link in a deterministic order, so that the graph's edge order is stable
-        no_deps_tasks.sort_by(|a, b| a.0.cmp(&b.0));
+        no_dependencies_tasks.sort_by(|a, b| a.0.cmp(&b.0));
 
-        for (target, deps) in no_deps_tasks {
+        for (target, deps) in no_dependencies_tasks {
             let Some(owner_indices) = target_indices.get(&target) else {
                 continue;
             };
@@ -2041,7 +2041,7 @@ impl<'query> ActionGraphBuilder<'query> {
     /// by [`Self::try_link_edge`] when it contradicts a dependency, but it may
     /// also be linked before the dependency is. This happens when a node is a
     /// cleanup of a node that is created afterwards, or when the dependencies
-    /// of tasks inserted without them (`no_deps`) are linked once the graph is
+    /// of tasks inserted without them (`no_dependencies`) are linked once the graph is
     /// built.
     ///
     /// While the nodes are connected, the edge that was linked last (of those in

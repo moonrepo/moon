@@ -1,0 +1,19 @@
+# base <- mid1 <- mid2 <- top <- above
+#                 other <-/
+tasks:
+  base:
+    inputs: ['base.txt']
+  other:
+    inputs: ['other.txt']
+  mid1:
+    deps: ['base']
+    inputs: ['mid1.txt']
+  mid2:
+    deps: ['mid1']
+    inputs: ['mid2.txt']
+  top:
+    deps: ['mid2', 'other']
+    inputs: ['top.txt']
+  above:
+    deps: ['top']
+    inputs: ['above.txt']

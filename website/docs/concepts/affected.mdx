@@ -88,7 +88,8 @@ This option only changes _which_ tasks count as affected. It never adds tasks th
 by the target locators. The "Tracking affected tasks" step will always print why a task is affected,
 including `affected by dependency task <target>` for tasks that were affected through a dependency,
 followed by how many hops away from a directly affected task they are (when more than 1). The same
-distance is available in the `distance` field of [`moon query affected`](../commands/query/affected).
+distance is available in the `distance` field of
+[`moon query affected`](../commands/query/affected).
 
 ### Dependents<VersionLabel version="3.0.0" />
 
@@ -107,7 +108,8 @@ to `none`.
 $ moon run lib:build --dependents direct
 ```
 
-When [`--affected`](../run-task#running-based-on-affected-files-only) is active, the added dependents must also be affected to run.
+When [`--affected`](../run-task#running-based-on-affected-files-only) is active, the added
+dependents must also be affected to run.
 
 When `--query` is passed, it also bounds which dependents are added: dependents in projects that do
 not match the query are not added, and are not traversed through to reach their own dependents.

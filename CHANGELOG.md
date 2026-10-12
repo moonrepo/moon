@@ -9,8 +9,8 @@
     splitting the previous `--upstream` and `--downstream` options into 3 independent concepts.
     [Learn more about graph depth](https://moonrepo.dev/docs/concepts/affected#graph-depth).
     - Added an `--affected-depth <DEPTH>` option (`-d`, `MOON_AFFECTED_DEPTH`), that controls how
-      far affected state propagates from an affected task to its dependents. Defaults to `deep`. This
-      only changes which tasks count as affected, and never adds tasks.
+      far affected state propagates from an affected task to its dependents. Defaults to `deep`.
+      This only changes which tasks count as affected, and never adds tasks.
     - Added a `--dependents <DEPTH>` option, that adds the dependents of every selected target as
       primary targets. Defaults to `none`. It replaces the `--downstream` option, which has been
       removed.

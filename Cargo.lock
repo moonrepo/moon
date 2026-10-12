@@ -5556,6 +5556,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_env_var",
+ "moon_graph_utils",
  "moon_project",
  "moon_target",
  "moon_task",
@@ -6168,6 +6169,7 @@ dependencies = [
  "moon_target",
  "moon_vcs",
  "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -6230,6 +6232,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "starbase_utils",
+ "thiserror 2.0.21",
 ]
 
 [[package]]

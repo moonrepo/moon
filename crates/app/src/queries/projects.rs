@@ -1,8 +1,10 @@
 use super::convert_to_regex;
 use moon_affected::Affected;
+use moon_common::Id;
 use moon_project::Project;
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeSet;
 use std::sync::Arc;
 use tracing::debug;
 
@@ -10,6 +12,11 @@ use tracing::debug;
 pub struct QueryProjectsOptions {
     pub affected: Option<Affected>,
     pub query: Option<String>,
+
+    /// Projects to include when filtering by affected, even though they
+    /// are not affected themselves (for example, dependencies of affected).
+    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
+    pub include: BTreeSet<Id>,
 
     // Filters
     pub alias: Option<String>,
@@ -139,7 +146,9 @@ pub async fn query_projects(
         projects = projects
             .into_iter()
             .filter_map(|project| {
-                if affected.is_project_affected(&project.id) {
+                if affected.is_project_affected(&project.id)
+                    || options.include.contains(&project.id)
+                {
                     Some(project)
                 } else {
                     None

@@ -15,5 +15,8 @@ moon_target = { path = "../target" }
 moon_vcs = { path = "../vcs" }
 serde = { workspace = true }
 
+[dev-dependencies]
+serde_json = { workspace = true }
+
 [lints]
 workspace = true

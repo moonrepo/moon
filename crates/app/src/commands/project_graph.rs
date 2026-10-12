@@ -2,7 +2,7 @@ use crate::commands::graph::run_server;
 use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use moon_common::Id;
-use moon_project_graph::{GraphToDot, GraphToJson};
+use moon_project_graph::{Depth, GraphToDot, GraphToJson};
 use std::sync::Arc;
 use tracing::instrument;
 
@@ -11,8 +11,12 @@ pub struct ProjectGraphArgs {
     #[arg(help = "Project ID to *only* graph")]
     id: Option<Id>,
 
-    #[arg(long, help = "Include direct dependents of the focused project")]
-    dependents: bool,
+    #[arg(
+        long,
+        default_value_t,
+        help = "Include dependents of the focused project, up to this depth (none, direct, deep, or a number of hops)"
+    )]
+    dependents: Depth,
 
     #[arg(
         long,

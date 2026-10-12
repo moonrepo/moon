@@ -81,7 +81,8 @@ For a declarative alternative to CLI options, see the [execution plan guide](../
 
 - `--ignore-ci-checks` - Ignore "run in CI" task checks.
 - `--on-failure <ON>` - When a task fails, either bail the pipeline, or continue executing.
-- `--query <QUERY>` - Filter tasks based on the result of a query.
+- `--query <QUERY>` - Filter tasks based on the result of a query. Also bounds the dependents added
+  by `--dependents` to projects that match the query.
 - `--no-actions` - Run the pipeline without sync and setup related actions.
 
 ### Affected
@@ -90,19 +91,40 @@ For a declarative alternative to CLI options, see the [execution plan guide](../
   "remote".
 - `--base <BASE>` - Base branch, commit, or revision to compare against.
 - `--head <HEAD>` - Current branch, commit, or revision to compare with.
-- `-g`, `--include-relations` - Include graph relations for affected checks, instead of just changed
-  files.
+- `-d`, `--affected-depth <DEPTH>` - How far affected state propagates to dependent tasks. Supports
+  "none", "direct", "deep" (default), or a number of hops. Only changes which tasks count as
+  affected, and never adds tasks.
+  <VersionLabel version="3.0.0" />
 - `--status <STATUS>` - Filter changed files based on a changed status.
 - `--stdin` - Accept changed files from stdin for affected checks.
 
 ### Graph
 
-- `--downstream <DEPTH>`, `--dependents <DEPTH>` - Control the depth of downstream dependents.
-  Supports "none" (default), "direct", "deep".
-- `--upstream <DEPTH>`, `--dependencies <DEPTH>` - Control the depth of upstream dependencies.
-  Supports "none", "direct", "deep" (default).
+- `--dependents <DEPTH>` - Also run the dependents of every selected target, up to the depth.
+  Supports "none" (default), "direct", "deep", or a number of hops. When `--affected` is active, the
+  dependents must also be affected to run.
+- `--no-dependencies` - Do not insert dependency tasks that were not selected themselves. Tasks in
+  the graph are still ran in dependency order, and `cleanup` dependencies still run after their
+  owner. This is an escape hatch that can produce incorrect builds when a dependency's outputs are
+  stale.
+  <VersionLabel version="3.0.0" />
+
+> Dependencies (via [`deps`](../config/project#deps)) are always ran, unless `--no-dependencies` is
+> passed. [Learn more about graph depth](../concepts/affected#graph-depth).
 
 ### Parallelism
 
 - `--job <INDEX>` - Index of the current job (0 based).
 - `--job-total <TOTAL>` - Total amount of jobs to run.
+
+## Migrating from v2
+
+The following options have been removed, with no aliases or deprecation period, and must be
+migrated:
+
+- `-g`, `--include-relations` &rarr; `--affected-depth deep`, which is now the default.
+- `--downstream <DEPTH>` &rarr; `--dependents <DEPTH>`.
+- `--upstream deep` &rarr; remove it, as it's now the only behavior. `--upstream none` or
+  `--upstream direct` &rarr; `--no-dependencies`, if the intent was to not run unchanged
+  dependencies.
+- [`moon ci`](./ci) no longer runs the direct dependents of affected tasks by default.

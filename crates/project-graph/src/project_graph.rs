@@ -423,10 +423,11 @@ impl ProjectGraph {
         Ok(())
     }
 
-    /// Focus the graph for a specific project by ID.
-    pub fn focus_for(&self, id_or_alias: &Id, with_dependents: bool) -> miette::Result<Self> {
+    /// Focus the graph for a specific project by ID, including all of its
+    /// dependencies, and its dependents within the provided depth.
+    pub fn focus_for(&self, id_or_alias: &Id, dependents: Depth) -> miette::Result<Self> {
         let project = self.get(id_or_alias)?;
-        let focused_graph = self.to_focused_graph(&project, with_dependents);
+        let focused_graph = self.to_focused_graph(&project, dependents);
         let (nodes, edges) = focused_graph.into_nodes_edges();
 
         let mut graph = DiGraph::with_capacity(nodes.len(), edges.len());

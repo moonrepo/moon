@@ -88,12 +88,14 @@ function mockReport(): RunReport {
 			},
 		],
 		context: {
+			changedFiles: [],
+			ignoredDependencies: {},
 			initialTargets: [],
+			outputStyle: null,
 			passthroughArgs: [],
 			primaryTargets: [],
 			profile: null,
 			targetStates: {},
-			changedFiles: [],
 		},
 		duration: {
 			secs: 0,

@@ -1,0 +1,7 @@
+tags: ['edge']
+
+tasks:
+  deploy:
+    command: 'deploy'
+    deps: ['a:deploy']
+    inputs: ['src.txt']

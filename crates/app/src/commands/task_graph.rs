@@ -2,7 +2,7 @@ use crate::commands::graph::run_server;
 use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use moon_task::Target;
-use moon_task_graph::{GraphToDot, GraphToJson};
+use moon_task_graph::{Depth, GraphToDot, GraphToJson};
 use std::sync::Arc;
 use tracing::instrument;
 
@@ -11,8 +11,12 @@ pub struct TaskGraphArgs {
     #[arg(help = "Task target to *only* graph")]
     target: Option<Target>,
 
-    #[arg(long, help = "Include direct dependents of the focused target")]
-    dependents: bool,
+    #[arg(
+        long,
+        default_value_t,
+        help = "Include dependents of the focused target, up to this depth (none, direct, deep, or a number of hops)"
+    )]
+    dependents: Depth,
 
     #[arg(
         long,

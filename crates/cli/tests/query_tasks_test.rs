@@ -2,6 +2,7 @@ mod utils;
 
 use moon_app::queries::tasks::QueryTasksResult;
 use moon_common::is_ci;
+use moon_test_utils::MoonSandbox;
 use starbase_utils::json::serde_json;
 use utils::{change_files, create_query_sandbox, create_tasks_sandbox};
 
@@ -12,8 +13,92 @@ fn extract_targets(result: &QueryTasksResult) -> Vec<String> {
     })
 }
 
+fn create_task_deps_sandbox() -> MoonSandbox {
+    let sandbox = create_query_sandbox();
+
+    sandbox.create_file(
+        "metadata/moon.yml",
+        r#"tasks:
+  build:
+    command: 'noop'
+    inputs: ['build.txt']
+  test:
+    command: 'noop'
+    deps: ['build']
+    inputs: ['test.txt']
+"#,
+    );
+
+    sandbox.run_git(|cmd| {
+        cmd.args(["add", "--all", "."]);
+    });
+
+    sandbox.run_git(|cmd| {
+        cmd.args(["commit", "-m", "Task deps"]);
+    });
+
+    sandbox
+}
+
 mod query_tasks {
     use super::*;
+
+    mod graph_depth {
+        use super::*;
+
+        #[test]
+        fn doesnt_include_dependencies_or_dependents_by_default() {
+            let sandbox = create_task_deps_sandbox();
+
+            change_files(&sandbox, ["metadata/test.txt"]);
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("query").arg("tasks").arg("--affected");
+            });
+
+            let json: QueryTasksResult = serde_json::from_str(assert.stdout().trim()).unwrap();
+
+            assert_eq!(extract_targets(&json), ["metadata:test"]);
+        }
+
+        #[test]
+        fn can_include_dependencies() {
+            let sandbox = create_task_deps_sandbox();
+
+            change_files(&sandbox, ["metadata/test.txt"]);
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("query")
+                    .arg("tasks")
+                    .arg("--affected")
+                    .arg("--dependencies")
+                    .arg("direct");
+            });
+
+            let json: QueryTasksResult = serde_json::from_str(assert.stdout().trim()).unwrap();
+
+            assert_eq!(extract_targets(&json), ["metadata:build", "metadata:test"]);
+        }
+
+        #[test]
+        fn can_include_dependents() {
+            let sandbox = create_task_deps_sandbox();
+
+            change_files(&sandbox, ["metadata/build.txt"]);
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("query")
+                    .arg("tasks")
+                    .arg("--affected")
+                    .arg("--dependents")
+                    .arg("direct");
+            });
+
+            let json: QueryTasksResult = serde_json::from_str(assert.stdout().trim()).unwrap();
+
+            assert_eq!(extract_targets(&json), ["metadata:build", "metadata:test"]);
+        }
+    }
 
     #[test]
     fn returns_all_by_default() {

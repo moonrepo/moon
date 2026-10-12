@@ -12,6 +12,7 @@ petgraph = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 starbase_utils = { workspace = true, features = ["json"] }
+thiserror = { workspace = true }
 
 [lints]
 workspace = true

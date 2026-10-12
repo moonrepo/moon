@@ -1,0 +1,10 @@
+tasks:
+  publish:
+    command: 'publish'
+    inputs: ['src.txt']
+
+  # Only affected through its dependency on `publish`
+  deploy:
+    command: 'deploy'
+    deps: ['publish']
+    inputs: ['deploy.txt']

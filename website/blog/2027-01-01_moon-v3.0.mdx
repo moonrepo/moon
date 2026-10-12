@@ -244,6 +244,10 @@ matched against each distinct glob set once. On top of that:
   building the action graph.
 - Relationships are walked once from every affected task and project, instead of once _per_ affected
   task and project, which was quadratic for deep dependency chains.
+- Relationships are only walked in one direction, from affected tasks and projects to their
+  dependents, now that [affected depth](#affected-depth) no longer marks dependencies. Tracking a
+  chain of 1,000 projects went from 826µs to 423µs, and a chain of 1,000 tasks from 3.9ms to
+  3.4ms.
 - Projects are indexed by their source directory, so each changed file only looks up its ancestor
   directories, instead of every project scanning every changed file.
 - Changed files matched by content (the `content` input setting) are read once, instead of once per

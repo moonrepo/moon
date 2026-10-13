@@ -4,7 +4,7 @@ use crate::project_config::{LayerType, StackType};
 use crate::shapes::{FilePath, Input, OneOrMany};
 use crate::task_config::{EnvMap, TaskConfig, TaskDependency, validate_deps};
 use crate::task_options_config::{PartialTaskOptionsConfig, TaskOptionsConfig};
-use crate::{config_enum, config_struct};
+use crate::{config_struct, config_untagged_enum};
 use moon_common::{Id, cacheable};
 use rustc_hash::FxHashMap;
 use schematic::schema::indexmap::IndexMap;
@@ -101,10 +101,9 @@ impl InheritedClauseConfig {
     }
 }
 
-config_enum!(
+config_untagged_enum!(
     /// Patterns in which a condition can be configured as.
     #[derive(Config)]
-    #[serde(untagged)]
     pub enum InheritedConditionConfig {
         /// Condition applies to a single value.
         One(Id),

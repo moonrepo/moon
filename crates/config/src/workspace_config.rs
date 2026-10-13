@@ -1,6 +1,6 @@
 use crate::shapes::{FilePath, GlobPath, PortablePath};
 use crate::workspace::*;
-use crate::{config_enum, config_struct, config_unit_enum};
+use crate::{config_struct, config_unit_enum, config_untagged_enum};
 use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{Config, ConfigEnum, PathSegment, ValidateError, env, validate};
@@ -65,7 +65,7 @@ fn validate_projects<D, C>(
 
 config_unit_enum!(
     /// The project identifier format for glob located projects.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum WorkspaceProjectGlobFormat {
         /// The project directory name.
         #[default]
@@ -93,10 +93,9 @@ config_struct!(
     }
 );
 
-config_enum!(
+config_untagged_enum!(
     /// Configures projects in the workspace.
     #[derive(Config)]
-    #[serde(untagged)]
     pub enum WorkspaceProjects {
         /// Using both glob patterns and file source paths.
         #[setting(nested)]

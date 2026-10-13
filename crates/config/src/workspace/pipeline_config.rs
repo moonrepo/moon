@@ -1,11 +1,10 @@
-use crate::{config_enum, config_struct};
+use crate::{config_struct, config_untagged_enum};
 use moon_common::Id;
 use schematic::{Config, env};
 
-config_enum!(
+config_untagged_enum!(
     /// Toggles the state of actions within the pipeline.
     #[derive(Config)]
-    #[serde(untagged)]
     pub enum PipelineActionSwitch {
         Default,
         Enabled(bool),

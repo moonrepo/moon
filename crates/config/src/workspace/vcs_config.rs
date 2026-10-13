@@ -4,7 +4,7 @@ use schematic::{Config, ConfigEnum};
 
 config_unit_enum!(
     /// The VCS being utilized by the repository.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum VcsClient {
         #[default]
         Git,
@@ -14,7 +14,7 @@ config_unit_enum!(
 config_unit_enum!(
     /// The upstream version control provider, where the repository
     /// source code is stored.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum VcsProvider {
         Bitbucket,
 
@@ -32,7 +32,7 @@ config_unit_enum!(
 config_unit_enum!(
     /// The format to use for generated VCS hook files.
     /// @since 1.29.0
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum VcsHookFormat {
         Bash,
         #[default]

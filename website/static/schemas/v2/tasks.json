@@ -1369,27 +1369,38 @@
       ]
     },
     "TaskOptionEnvFile": {
+      "description": "The pattern in which a task is dependent on a .env file.",
       "anyOf": [
         {
-          "type": "boolean"
+          "description": "Uses an .env file in the project root.",
+          "type": "boolean",
+          "markdownDescription": "Uses an `.env` file in the project root."
         },
         {
-          "type": "string"
+          "description": "An explicit path to an .env file.",
+          "type": "string",
+          "markdownDescription": "An explicit path to an `.env` file."
         },
         {
+          "description": "A list of explicit .env file paths.",
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "markdownDescription": "A list of explicit `.env` file paths."
         }
-      ]
+      ],
+      "markdownDescription": "The pattern in which a task is dependent on a `.env` file."
     },
     "TaskOptionEnvOverride": {
+      "description": "Which task environment variables override system environment variables.",
       "anyOf": [
         {
+          "description": "All variables, or none.",
           "type": "boolean"
         },
         {
+          "description": "Only the listed variables.",
           "type": "array",
           "items": {
             "type": "string"

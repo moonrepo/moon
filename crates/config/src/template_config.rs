@@ -1,5 +1,5 @@
 use crate::shapes::OneOrMany;
-use crate::{config_enum, config_struct};
+use crate::{config_enum, config_struct, config_untagged_enum};
 use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{Config, ValidateError, validate};
@@ -51,9 +51,8 @@ config_struct!(
     }
 );
 
-config_enum!(
+config_untagged_enum!(
     #[derive(Config)]
-    #[serde(untagged)]
     pub enum TemplateVariableEnumValue {
         String(String),
         #[setting(nested)]
@@ -61,9 +60,8 @@ config_enum!(
     }
 );
 
-config_enum!(
+config_untagged_enum!(
     #[derive(Config)]
-    #[serde(untagged)]
     pub enum TemplateVariableEnumDefault {
         String(String),
         #[setting(default)]

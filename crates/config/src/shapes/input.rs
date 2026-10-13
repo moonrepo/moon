@@ -72,7 +72,7 @@ impl FileInput {
 
 config_unit_enum!(
     /// Available formats to resolve the file group into.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum FileGroupInputFormat {
         /// Return the group as-is.
         #[default]

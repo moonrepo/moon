@@ -876,10 +876,20 @@ export interface PartialTaskOptionAffectedFilesConfig {
 	passInputsWhenNoMatch?: boolean | null;
 }
 
+export type PartialTaskOptionAffectedFilesEntry =
+	| boolean
+	| 'args'
+	| 'env'
+	| PartialTaskOptionAffectedFilesConfig;
+
+export type PartialTaskOptionEnvFile = boolean | string | string[];
+
+export type PartialTaskOptionEnvOverride = boolean | string[];
+
 /** Options to control task inheritance, execution, and more. */
 export interface PartialTaskOptionsConfig {
 	/** The pattern in which affected files will be passed to the task. */
-	affectedFiles?: TaskOptionAffectedFilesEntry | null;
+	affectedFiles?: PartialTaskOptionAffectedFilesEntry | null;
 	/**
 	 * Cache the `outputs` of the task for incremental builds.
 	 * Defaults to `true` if outputs are configured for the task.
@@ -901,7 +911,7 @@ export interface PartialTaskOptionsConfig {
 	 * Loads and sets environment variables from the `.env` file(s) when
 	 * running the task.
 	 */
-	envFile?: TaskOptionEnvFile | null;
+	envFile?: PartialTaskOptionEnvFile | null;
 	/**
 	 * Override system environment variables with the task's `env`, instead
 	 * of only setting them when missing. When a list of variable names,
@@ -909,7 +919,7 @@ export interface PartialTaskOptionsConfig {
 	 *
 	 * @since 2.6.0
 	 */
-	envOverride?: TaskOptionEnvOverride | null;
+	envOverride?: PartialTaskOptionEnvOverride | null;
 	/**
 	 * Automatically infer inputs from file groups or environment variables
 	 * that were utilized within `command`, `script`, `args`, and `env`.

@@ -3,7 +3,7 @@ use schematic::{Config, ConfigEnum, env, validate};
 
 config_unit_enum!(
     /// The types of events in which to send notifications.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum NotifierEventType {
         /// Never toast.
         #[default]

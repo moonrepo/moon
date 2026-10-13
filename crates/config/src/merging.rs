@@ -7,7 +7,7 @@ use std::hash::Hash;
 
 config_unit_enum!(
     /// The strategy in which to merge two configuration values.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum MergeStrategy {
         #[default]
         Append,

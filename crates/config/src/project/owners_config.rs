@@ -1,13 +1,12 @@
 use crate::shapes::GlobPath;
-use crate::{config_enum, config_struct};
+use crate::{config_struct, config_untagged_enum};
 use indexmap::IndexMap;
 use rustc_hash::FxHashMap;
 use schematic::{Config, PathSegment, ValidateError};
 
-config_enum!(
+config_untagged_enum!(
     /// A mapping of file paths and file globs to owners.
     #[derive(Config)]
-    #[serde(untagged)]
     pub enum OwnersPaths {
         /// A list of file paths and glob patterns. The owner of these
         /// is the project-level `defaultOwner`.

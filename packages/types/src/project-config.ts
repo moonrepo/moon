@@ -422,6 +422,16 @@ export interface PartialProjectMetadataConfigBase {
 export type PartialProjectMetadataConfig = PartialProjectMetadataConfigBase &
 	PartialProjectMetadataConfigMetadata;
 
+export type PartialTaskOptionAffectedFilesEntry =
+	| boolean
+	| 'args'
+	| 'env'
+	| PartialTaskOptionAffectedFilesConfig;
+
+export type PartialTaskOptionEnvFile = boolean | string | string[];
+
+export type PartialTaskOptionEnvOverride = boolean | string[];
+
 export type PartialProjectToolchainEntry = null | boolean | PartialToolchainPluginConfig;
 
 export type PartialProjectToolchainsConfigPlugins = Record<Id, PartialProjectToolchainEntry>;

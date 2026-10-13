@@ -147,8 +147,10 @@ typealias TaskOperatingSystem = "linux" | "macos" | "windows"
 
 typealias TaskOptionAffectedFilesEntry = Boolean | "args" | "env" | TaskOptionAffectedFilesConfig
 
+/// The pattern in which a task is dependent on a `.env` file.
 typealias TaskOptionEnvFile = Boolean | String | Listing<String>
 
+/// Which task environment variables override system environment variables.
 typealias TaskOptionEnvOverride = Boolean | Listing<String>
 
 /// How a failure of the task affects the action pipeline.

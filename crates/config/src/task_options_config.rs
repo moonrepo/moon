@@ -6,12 +6,12 @@ use schematic::{Config, ConfigEnum, Schema, SchemaBuilder, Schematic, ValidateEr
 use std::env::consts;
 
 fn validate_env_override<C>(
-    value: &TaskOptionEnvOverride,
+    value: &PartialTaskOptionEnvOverride,
     _options: &PartialTaskOptionsConfig,
     _ctx: &C,
     _finalize: bool,
 ) -> Result<(), ValidateError> {
-    if let TaskOptionEnvOverride::Keys(keys) = value {
+    if let PartialTaskOptionEnvOverride::Keys(keys) = value {
         for key in keys {
             if key.is_empty() {
                 return Err(ValidateError::new(
@@ -74,7 +74,6 @@ config_struct!(
         /// A list of glob patterns to filter the affected files list before
         /// passing to the task as arguments or environment variables. Globs
         /// must start with `**` to match against absolute paths.
-        #[serde(default)]
         pub filter: Vec<GlobPath>,
 
         /// When matching affected files, ignore the project boundary and include
@@ -136,6 +135,7 @@ impl TaskOptionCache {
 
 config_untagged_enum!(
     /// The pattern in which a task is dependent on a `.env` file.
+    #[derive(Config)]
     pub enum TaskOptionEnvFile {
         /// Uses an `.env` file in the project root.
         Enabled(bool),
@@ -146,22 +146,9 @@ config_untagged_enum!(
     }
 );
 
-impl Schematic for TaskOptionEnvFile {
-    fn schema_name() -> Option<String> {
-        Some("TaskOptionEnvFile".into())
-    }
-
-    fn build_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.union(UnionType::new_any([
-            schema.infer::<bool>(),
-            schema.infer::<String>(),
-            schema.infer::<Vec<String>>(),
-        ]))
-    }
-}
-
 config_untagged_enum!(
     /// Which task environment variables override system environment variables.
+    #[derive(Config)]
     pub enum TaskOptionEnvOverride {
         /// All variables, or none.
         Enabled(bool),
@@ -169,12 +156,6 @@ config_untagged_enum!(
         Keys(Vec<String>),
     }
 );
-
-impl Default for TaskOptionEnvOverride {
-    fn default() -> Self {
-        Self::Enabled(false)
-    }
-}
 
 impl TaskOptionEnvOverride {
     /// Whether the task's value for the variable should override the system's.
@@ -191,22 +172,9 @@ impl TaskOptionEnvOverride {
     }
 }
 
-impl Schematic for TaskOptionEnvOverride {
-    fn schema_name() -> Option<String> {
-        Some("TaskOptionEnvOverride".into())
-    }
-
-    fn build_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.union(UnionType::new_any([
-            schema.infer::<bool>(),
-            schema.infer::<Vec<String>>(),
-        ]))
-    }
-}
-
-config_enum!(
+config_unit_enum!(
     /// How a failure of the task affects the action pipeline.
-    #[derive(ConfigEnum, Copy)]
+    #[derive(ConfigEnum)]
     pub enum TaskOptionOnFailure {
         /// Allow the task to fail without failing the entire action pipeline.
         Allow,
@@ -238,7 +206,7 @@ generate_switch!(TaskOptionRunInCI, ["always", "affected", "only", "skip"]);
 
 config_unit_enum!(
     /// The style in which task output will be printed to the console.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum TaskOutputStyle {
         #[default]
         Buffer,
@@ -249,9 +217,9 @@ config_unit_enum!(
     }
 );
 
-config_enum!(
+config_unit_enum!(
     /// The operating system in which to only run this task on.
-    #[derive(ConfigEnum, Copy)]
+    #[derive(ConfigEnum)]
     pub enum TaskOperatingSystem {
         Linux,
         #[serde(alias = "mac")]
@@ -276,7 +244,7 @@ impl TaskOperatingSystem {
 config_unit_enum!(
     /// The priority levels a task can be bucketed into when running
     /// in the action pipeline.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum TaskPriority {
         Critical = 0,
         High = 1,
@@ -294,7 +262,7 @@ impl TaskPriority {
 
 config_unit_enum!(
     /// A list of available shells on Unix.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum TaskUnixShell {
         #[default]
         Bash,
@@ -314,7 +282,7 @@ config_unit_enum!(
 
 config_unit_enum!(
     /// A list of available shells on Windows.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum TaskWindowsShell {
         Bash,
         Elvish,
@@ -335,6 +303,7 @@ config_struct!(
     #[derive(Config)]
     pub struct TaskOptionsConfig {
         /// The pattern in which affected files will be passed to the task.
+        #[setting(nested)]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub affected_files: Option<TaskOptionAffectedFilesEntry>,
 
@@ -356,6 +325,7 @@ config_struct!(
 
         /// Loads and sets environment variables from the `.env` file(s) when
         /// running the task.
+        #[setting(nested)]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub env_file: Option<TaskOptionEnvFile>,
 
@@ -363,7 +333,7 @@ config_struct!(
         /// of only setting them when missing. When a list of variable names,
         /// only those variables will be overridden.
         /// @since 2.6.0
-        #[setting(validate = validate_env_override)]
+        #[setting(nested, validate = validate_env_override)]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub env_override: Option<TaskOptionEnvOverride>,
 

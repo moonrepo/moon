@@ -19,7 +19,7 @@ fn path_is_required<D, C>(
 config_unit_enum!(
     /// The API format of the remote service.
     /// @since 1.32.0
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum RemoteApi {
         /// gRPC(S) endpoints.
         #[default]
@@ -47,7 +47,7 @@ config_struct!(
 config_unit_enum!(
     /// Supported blob compression levels for gRPC APIs.
     /// @since 1.31.0
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum RemoteCompression {
         /// No compression.
         #[default]

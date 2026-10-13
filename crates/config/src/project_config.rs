@@ -2,7 +2,7 @@ use crate::project::*;
 use crate::shapes::Input;
 use crate::task_config::{EnvMap, TaskConfig};
 use crate::task_options_config::{PartialTaskOptionsConfig, TaskOptionsConfig};
-use crate::{config_enum, config_struct, config_unit_enum};
+use crate::{config_struct, config_unit_enum, config_untagged_enum};
 use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{Config, ConfigEnum, ValidateError};
@@ -23,7 +23,7 @@ fn validate_channel<D, C>(
 
 config_unit_enum!(
     /// The technology stack of the project, for categorizing.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum StackType {
         Backend,
         Data,
@@ -37,7 +37,7 @@ config_unit_enum!(
 
 config_unit_enum!(
     /// The layer within the technology stack, for categorizing.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum LayerType {
         Application,
         Automation,
@@ -83,10 +83,9 @@ config_struct!(
     }
 );
 
-config_enum!(
+config_untagged_enum!(
     /// Expanded information about a project dependency.
     #[derive(Config)]
-    #[serde(untagged)]
     pub enum ProjectDependsOn {
         /// A project referenced by identifier.
         String(Id),

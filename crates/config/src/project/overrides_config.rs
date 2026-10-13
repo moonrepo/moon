@@ -2,16 +2,15 @@ use crate::merging::MergeStrategy;
 use crate::merging::merge_partials;
 use crate::shapes::OneOrMany;
 use crate::toolchains_config::ToolchainPluginConfig;
-use crate::{config_enum, config_struct};
+use crate::{config_struct, config_untagged_enum};
 use moon_common::{Id, IdExt};
 use rustc_hash::FxHashMap;
 use schematic::Config;
 use version_spec::UnresolvedVersionSpec;
 
-config_enum!(
+config_untagged_enum!(
     /// Variants a project-level toolchain can be configured.
     #[derive(Config)]
-    #[serde(untagged)]
     pub enum ProjectToolchainEntry {
         Disabled, // null
         Enabled(bool),

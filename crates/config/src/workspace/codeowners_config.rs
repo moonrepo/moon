@@ -4,7 +4,7 @@ use schematic::{Config, ConfigEnum};
 
 config_unit_enum!(
     /// How to order ownership rules within the generated file.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum CodeownersOrderBy {
         /// By file source path.
         #[default]

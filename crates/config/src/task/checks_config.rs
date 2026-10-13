@@ -1,7 +1,7 @@
 use crate::{config_enum, config_struct, config_unit_enum, generate_switch};
 use deserialize_untagged_verbose_error::DeserializeUntaggedVerboseError;
 use schematic::schema::{StringType, UnionType};
-use schematic::{Config, ParseError, Schema, SchemaBuilder, Schematic, ValidateError};
+use schematic::{Config, ConfigEnum, ParseError, Schema, SchemaBuilder, Schematic, ValidateError};
 use serde::{Deserialize, Serialize, Serializer};
 
 fn check_script(script: &str) -> Result<(), String> {
@@ -81,6 +81,7 @@ config_struct!(
 
 config_unit_enum!(
     /// The type of task check.
+    #[derive(ConfigEnum, Default)]
     pub enum TaskCheckType {
         Condition,
         #[default]

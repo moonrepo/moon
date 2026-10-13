@@ -4,7 +4,7 @@ import "../../../../../../website/static/pkl/v2/WorkspaceProjectsConfig.pkl"
 
 codeowners {
 	globalPaths = new Mapping {
-		["*"] = List("@admins")
+		["*"] = new Listing { "@admins" }
 	}
 	orderBy = "project-id"
 	requiredApprovals = 1
@@ -13,7 +13,9 @@ codeowners {
 
 constraints {
 	enforceLayerRelationships = false
-	tagRelationships = Map("a", List("b", "c"))
+	tagRelationships = new Mapping {
+		["a"] = new Listing { "b"; "c" }
+	}
 }
 
 docker {
@@ -22,7 +24,7 @@ docker {
 		installToolchainDependencies = false
 	}
 	scaffold {
-		configsPhaseGlobs = List("*.js")
+		configsPhaseGlobs = new Listing { "*.js" }
 	}
 }
 
@@ -34,8 +36,8 @@ generator {
 }
 
 hasher {
-	ignorePatterns = List("*.map")
-	ignoreMissingPatterns = Set(".env")
+	ignorePatterns = new Listing { "*.map" }
+	ignoreMissingPatterns = new Listing { ".env" }
 	optimization = "performance"
 	walkStrategy = "vcs"
 	warnOnMissingInputs = true
@@ -46,7 +48,7 @@ notifier {
 }
 
 projects = new WorkspaceProjectsConfig {
-	globs = List("apps/*", "packages/*")
+	globs = new Listing { "apps/*"; "packages/*" }
 	sources = new Mapping {
 		["root"] = "."
 	}
@@ -64,7 +66,10 @@ telemetry = false
 vcs {
 	defaultBranch = "main"
 	hooks = new Mapping {
-		["pre-commit"] = List("moon check --all --affected", "moon run :pre-commit")
+		["pre-commit"] = new Listing {
+			"moon check --all --affected"
+			"moon run :pre-commit"
+		}
 	}
 	client = "git"
 	provider = "gitlab"

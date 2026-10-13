@@ -8,10 +8,12 @@ tasks:
   affected-env:
     options:
       affectedFiles:
+        filter: []
         pass: env
   not-affected:
     options:
       affectedFiles:
+        filter: []
         pass: false
 
   env-file:

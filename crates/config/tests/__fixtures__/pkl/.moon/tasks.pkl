@@ -26,7 +26,7 @@ implicitDeps = new Listing {
 	"project:task-c"
 	new TaskDependencyConfig {
 		target = "project:task-d"
-		args = List("--foo", "--bar")
+		args = new Listing { "--foo"; "--bar" }
 		env {
 			["KEY"] = "value"
 		}
@@ -58,7 +58,7 @@ taskOptions {
 	mergeOutputs = null
 	mutex = "lock"
 	onFailure = "allow"
-	os = List("linux", "macos")
+	os = new Listing { "linux"; "macos" }
 	outputStyle = "stream"
 	persistent = true
 	retryCount = 3
@@ -88,11 +88,11 @@ tasks {
 	}
 
 	["test"] {
-		inputs = _sharedInputs + List("tests/**/*")
+		inputs = (_sharedInputs + List("tests/**/*")).toListing()
 	}
 
 	["lint"] {
-		inputs = List("**/*.graphql") + _sharedInputs
+		inputs = (List("**/*.graphql") + _sharedInputs).toListing()
 	}
 
 	for (_os in List("linux", "macos", "windows")) {
@@ -104,7 +104,7 @@ tasks {
 					else if (_os == "macos") "x86_64-apple-darwin"
 					else "i686-pc-windows-msvc",
 				"--verbose"
-			)
+			).toListing()
 			options {
 				os = _os
 			}

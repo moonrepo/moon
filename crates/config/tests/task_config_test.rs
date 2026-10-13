@@ -1333,8 +1333,8 @@ options:
         mod affected_files {
             use super::*;
             use moon_config::{
-                TaskOptionAffectedFilesConfig, TaskOptionAffectedFilesEntry,
-                TaskOptionAffectedFilesPattern,
+                GlobPath, PortablePath, TaskOptionAffectedFilesConfig,
+                TaskOptionAffectedFilesEntry, TaskOptionAffectedFilesPattern,
             };
 
             #[test]
@@ -1361,6 +1361,7 @@ options:
                     r"
 options:
   affectedFiles:
+    filter: []
     pass: true
 ",
                     load_config_from_code,
@@ -1402,6 +1403,7 @@ options:
                     r"
 options:
   affectedFiles:
+    filter: []
     pass: false
 ",
                     load_config_from_code,
@@ -1443,6 +1445,7 @@ options:
                     r"
 options:
   affectedFiles:
+    filter: []
     pass: args
 ",
                     load_config_from_code,
@@ -1484,6 +1487,7 @@ options:
                     r"
 options:
   affectedFiles:
+    filter: []
     pass: env
 ",
                     load_config_from_code,
@@ -1507,6 +1511,7 @@ options:
                     r"
 options:
   affectedFiles:
+    filter: ['**/*.ts']
     pass: args
     passInputsWhenNoMatch: true
 ",
@@ -1517,13 +1522,35 @@ options:
                     config.options.affected_files,
                     Some(TaskOptionAffectedFilesEntry::Object(
                         TaskOptionAffectedFilesConfig {
-                            filter: vec![],
+                            filter: vec![GlobPath::parse("**/*.ts").unwrap()],
                             ignore_project_boundary: None,
                             pass: TaskOptionAffectedFilesPattern::Args,
                             pass_inputs_when_no_match: Some(true),
                             pass_dot_when_no_results: None,
                         }
                     ))
+                );
+            }
+
+            // The object form is deserialized directly, and not through
+            // a partial, so its non-optional fields are required
+            #[test]
+            fn errors_on_object_without_filter() {
+                let error = load_config_from_code(
+                    r"
+options:
+  affectedFiles:
+    pass: args
+",
+                )
+                .unwrap_err();
+
+                assert!(
+                    error
+                        .downcast::<schematic::ConfigError>()
+                        .unwrap()
+                        .to_full_string()
+                        .contains("missing field `filter`")
                 );
             }
 

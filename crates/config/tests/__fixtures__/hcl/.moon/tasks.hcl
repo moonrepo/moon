@@ -45,6 +45,7 @@ implicitInputs = [
 
 taskOptions {
 	affectedFiles = {
+		filter = []
 		pass = "args"
 		passInputsWhenNoMatch = true
 	}

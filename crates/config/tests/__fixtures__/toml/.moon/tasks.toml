@@ -41,6 +41,7 @@ unixShell = "zsh"
 windowsShell = "pwsh"
 
 [taskOptions.affectedFiles]
+filter = []
 pass = "args"
 passInputsWhenNoMatch = true
 

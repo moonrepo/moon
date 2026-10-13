@@ -14,7 +14,7 @@ export interface CacheCasConfig {
 	 *
 	 * @env MOON_CACHE_CAS_MAX_SIZE
 	 */
-	maxSize: string | null;
+	maxSize?: string | null;
 	/**
 	 * Verify hash on every read. When enabled, reads are slower
 	 * but detect on-disk corruption.
@@ -22,7 +22,7 @@ export interface CacheCasConfig {
 	 *
 	 * @env MOON_CACHE_CAS_VERIFY_INTEGRITY
 	 */
-	verifyIntegrity: boolean;
+	verifyIntegrity?: boolean;
 }
 
 /** Configures aspects of the caching engine and layer. */
@@ -31,7 +31,7 @@ export interface CacheConfig {
 	 * Configures aspects of the content-addressable storage (CAS) cache.
 	 * @since 2.3.0
 	 */
-	cas: CacheCasConfig;
+	cas?: CacheCasConfig;
 	/**
 	 * Whether to use a shared worktree cache. When enabled, the cache is
 	 * shared between all VCS worktrees on the same machine. When disabled,
@@ -44,7 +44,7 @@ export interface CacheConfig {
 	 *
 	 * @env MOON_CACHE_SHARED_WORKTREE_CACHE
 	 */
-	unstable_sharedWorktreeCache: boolean;
+	sharedWorktreeCache?: boolean;
 }
 
 /** How to order ownership rules within the generated file. */
@@ -63,7 +63,7 @@ export interface CodeownersConfig {
 	 * @default 'file-source'
 	 * @type {'file-source' | 'project-id'}
 	 */
-	orderBy: CodeownersOrderBy;
+	orderBy?: CodeownersOrderBy;
 	/**
 	 * `bitbucket-legacy` and GitLab only. The number of approvals required
 	 * for the request to be satisfied. This will be applied to all paths.
@@ -181,11 +181,11 @@ export interface DockerConfig {
 	 * Configures aspects of the `Dockerfile` generation process.
 	 * @since 2.0.0
 	 */
-	file: DockerFileConfig;
+	file?: DockerFileConfig;
 	/** Configures aspects of the Docker pruning process. */
-	prune: DockerPruneConfig;
+	prune?: DockerPruneConfig;
 	/** Configures aspects of the Docker scaffolding process. */
-	scaffold: DockerScaffoldConfig;
+	scaffold?: DockerScaffoldConfig;
 }
 
 /** Configures experiments across the entire moon workspace. */
@@ -227,14 +227,14 @@ export interface HasherConfig {
 	 * @default 'accuracy'
 	 * @type {'accuracy' | 'performance'}
 	 */
-	optimization: HasherOptimization;
+	optimization?: HasherOptimization;
 	/**
 	 * The strategy to use when walking the file system.
 	 *
 	 * @default 'vcs'
 	 * @type {'glob' | 'vcs'}
 	 */
-	walkStrategy: HasherWalkStrategy;
+	walkStrategy?: HasherWalkStrategy;
 	/**
 	 * Logs a warning when a task has configured an explicit file path
 	 * input, and that file does not exist when hashing.
@@ -303,7 +303,7 @@ export interface PipelineConfig {
 	 * when changes to lockfiles and manifests are detected.
 	 * @since 1.34.0
 	 */
-	installDependencies: PipelineActionSwitch;
+	installDependencies?: PipelineActionSwitch;
 	/**
 	 * A threshold in milliseconds in which to force kill running child
 	 * processes after the pipeline receives an external signal. A value
@@ -328,7 +328,7 @@ export interface PipelineConfig {
 	 * of a running task.
 	 * @since 1.34.0
 	 */
-	syncProjects: PipelineActionSwitch;
+	syncProjects?: PipelineActionSwitch;
 	/**
 	 * Run the `SyncWorkspace` action before all actions in the pipeline.
 	 * @since 1.34.0
@@ -350,14 +350,14 @@ export interface WorkspaceProjectsConfig {
 	 * @default 'dir-name'
 	 * @type {'dir-name' | 'source-path'}
 	 */
-	globFormat: WorkspaceProjectGlobFormat;
+	globFormat?: WorkspaceProjectGlobFormat;
 	/**
 	 * A list of glob patterns in which to locate project directories.
 	 * Can be suffixed with a `moon.*` config file to only find distinct projects.
 	 */
-	globs: string[];
+	globs?: string[];
 	/** A map of project identifiers to relative file paths to each project directory. */
-	sources: Record<Id, string>;
+	sources?: Record<Id, string>;
 }
 
 export type WorkspaceProjects = WorkspaceProjectsConfig | string[] | Record<Id, string>;
@@ -402,7 +402,7 @@ export interface RemoteCacheConfig {
 	 * @env MOON_REMOTE_CACHE_COMPRESSION
 	 * @type {'none' | 'zstd'}
 	 */
-	compression: RemoteCompression;
+	compression?: RemoteCompression;
 	/**
 	 * Unique instance name for blobs. Will be used as a folder name.
 	 *
@@ -428,15 +428,6 @@ export interface RemoteCacheConfig {
 	 * @env MOON_REMOTE_CACHE_RETRY_COUNT
 	 */
 	retryCount?: number;
-	/**
-	 * When downloading blobs, verify the digests/hashes in the response
-	 * match the associated blob contents. This will reduce performance
-	 * but ensure partial or corrupted blobs won't cause failures.
-	 * @since 1.36.0
-	 *
-	 * @env MOON_REMOTE_CACHE_VERIFY_INTEGRITY
-	 */
-	verifyIntegrity?: boolean;
 }
 
 /**
@@ -520,14 +511,14 @@ export interface RemoteConfig {
 	 * @env MOON_REMOTE_API
 	 * @type {'grpc' | 'http'}
 	 */
-	api: RemoteApi;
+	api?: RemoteApi;
 	/**
 	 * Connect to the host using basic HTTP authentication.
 	 * @since 1.32.0
 	 */
 	auth?: RemoteAuthConfig | null;
 	/** Configures the action cache (AC) and content-addressable cache (CAS). */
-	cache: RemoteCacheConfig;
+	cache?: RemoteCacheConfig;
 	/**
 	 * The remote host to connect and send requests to.
 	 * Supports gRPC protocols.
@@ -557,7 +548,7 @@ export type VcsHookFormat = 'bash' | 'native';
  * The upstream version control provider, where the repository
  * source code is stored.
  */
-export type VcsProvider = 'bitbucket' | 'bitbucket-legacy' | 'github' | 'gitlab' | 'other';
+export type VcsProvider = 'bitbucket' | 'github' | 'gitlab' | 'other';
 
 /** Configures the version control system (VCS). */
 export interface VcsConfig {
@@ -567,7 +558,7 @@ export interface VcsConfig {
 	 * @default 'git'
 	 * @type {'git'}
 	 */
-	client: VcsClient;
+	client?: VcsClient;
 	/**
 	 * The default branch / base.
 	 *
@@ -581,7 +572,7 @@ export interface VcsConfig {
 	 * @default 'native'
 	 * @type {'bash' | 'native'}
 	 */
-	hookFormat: VcsHookFormat;
+	hookFormat?: VcsHookFormat;
 	/**
 	 * A map of hooks to a list of commands to run when the hook is triggered.
 	 * @since 1.9.0
@@ -593,9 +584,9 @@ export interface VcsConfig {
 	 * @since 1.8.0
 	 *
 	 * @default 'github'
-	 * @type {'bitbucket' | 'bitbucket-legacy' | 'github' | 'gitlab' | 'other'}
+	 * @type {'bitbucket' | 'github' | 'gitlab' | 'other'}
 	 */
-	provider: VcsProvider;
+	provider?: VcsProvider;
 	/** List of remote's in which to compare branches against. */
 	remoteCandidates?: string[];
 	/**
@@ -627,6 +618,14 @@ export interface WorkspaceConfig {
 	codeowners: CodeownersConfig;
 	/** Configures boundaries and constraints between projects. */
 	constraints: ConstraintsConfig;
+	/**
+	 * Enables a daemon that will process heavy tasks in the background,
+	 * greatly increasing performance of the main thread/executable.
+	 * @since 2.2.0
+	 *
+	 * @env MOON_DAEMON
+	 */
+	daemon?: boolean;
 	/**
 	 * The default/main project within the workspace. When a task is
 	 * ran without a project, the default will be used.
@@ -672,14 +671,6 @@ export interface WorkspaceConfig {
 	 * @env MOON_TELEMETRY
 	 */
 	telemetry?: boolean;
-	/**
-	 * Enables a daemon that will process heavy tasks in the background,
-	 * greatly increasing performance of the main thread/executable.
-	 * @since 2.2.0
-	 *
-	 * @env MOON_DAEMON
-	 */
-	unstable_daemon: boolean;
 	/**
 	 * Configures the version control system (VCS). Also known as
 	 * source code management (SCM).
@@ -729,7 +720,7 @@ export interface PartialCacheConfig {
 	 *
 	 * @env MOON_CACHE_SHARED_WORKTREE_CACHE
 	 */
-	unstable_sharedWorktreeCache?: boolean | null;
+	sharedWorktreeCache?: boolean | null;
 }
 
 /** Configures code ownership rules for generating a `CODEOWNERS` file. */
@@ -1084,15 +1075,6 @@ export interface PartialRemoteCacheConfig {
 	 * @env MOON_REMOTE_CACHE_RETRY_COUNT
 	 */
 	retryCount?: number | null;
-	/**
-	 * When downloading blobs, verify the digests/hashes in the response
-	 * match the associated blob contents. This will reduce performance
-	 * but ensure partial or corrupted blobs won't cause failures.
-	 * @since 1.36.0
-	 *
-	 * @env MOON_REMOTE_CACHE_VERIFY_INTEGRITY
-	 */
-	verifyIntegrity?: boolean | null;
 }
 
 /**
@@ -1263,6 +1245,14 @@ export interface PartialWorkspaceConfig {
 	/** Configures boundaries and constraints between projects. */
 	constraints?: PartialConstraintsConfig | null;
 	/**
+	 * Enables a daemon that will process heavy tasks in the background,
+	 * greatly increasing performance of the main thread/executable.
+	 * @since 2.2.0
+	 *
+	 * @env MOON_DAEMON
+	 */
+	daemon?: boolean | null;
+	/**
 	 * The default/main project within the workspace. When a task is
 	 * ran without a project, the default will be used.
 	 * @since 2.0.0
@@ -1307,14 +1297,6 @@ export interface PartialWorkspaceConfig {
 	 * @env MOON_TELEMETRY
 	 */
 	telemetry?: boolean | null;
-	/**
-	 * Enables a daemon that will process heavy tasks in the background,
-	 * greatly increasing performance of the main thread/executable.
-	 * @since 2.2.0
-	 *
-	 * @env MOON_DAEMON
-	 */
-	unstable_daemon?: boolean | null;
 	/**
 	 * Configures the version control system (VCS). Also known as
 	 * source code management (SCM).

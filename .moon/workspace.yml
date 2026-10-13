@@ -63,4 +63,4 @@ remote:
   #   cert: 'crates/remote/tests/__fixtures__/certs-local/client.pem'
   #   domain: 'localhost'
 
-unstable_daemon: true
+daemon: true

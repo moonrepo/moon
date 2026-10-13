@@ -237,7 +237,7 @@ export interface ProjectWorkspaceConfig {
  * Docs: https://moonrepo.dev/docs/config/project
  */
 export interface ProjectConfig {
-	$schema: string;
+	$schema?: string;
 	/** Other projects that this project depends on. */
 	deps?: ProjectDependsOn[];
 	/** Other projects that this project depends on. */
@@ -246,7 +246,7 @@ export interface ProjectConfig {
 	 * Configures Docker integration for this project.
 	 * @since 1.27.0
 	 */
-	docker: ProjectDockerConfig;
+	docker?: ProjectDockerConfig;
 	/**
 	 * A map of environment variables that will be inherited by
 	 * all tasks within the project.
@@ -269,20 +269,20 @@ export interface ProjectConfig {
 	 * @default 'unknown'
 	 * @type {'bash' | 'batch' | 'cplusplus' | 'csharp' | 'dotnet' | 'go' | 'java' | 'javascript' | 'kotlin' | 'php' | 'python' | 'ruby' | 'rust' | 'swift' | 'typescript' | 'unknown' | string}
 	 */
-	language: LanguageType;
+	language?: LanguageType;
 	/**
 	 * The layer within the technology stack, for categorizing.
 	 *
 	 * @default 'unknown'
 	 * @type {'application' | 'automation' | 'configuration' | 'library' | 'scaffolding' | 'tool' | 'unknown'}
 	 */
-	layer: LayerType;
+	layer?: LayerType;
 	/**
 	 * Defines ownership of source code within the current project, by mapping
 	 * file paths and globs to owners. An owner is either a user, team, or group.
 	 * @since 1.8.0
 	 */
-	owners: OwnersConfig;
+	owners?: OwnersConfig;
 	/** Expanded information about the project. */
 	project?: ProjectMetadataConfig | null;
 	/**
@@ -292,7 +292,7 @@ export interface ProjectConfig {
 	 * @default 'unknown'
 	 * @type {'backend' | 'data' | 'frontend' | 'infrastructure' | 'systems' | 'unknown'}
 	 */
-	stack: StackType;
+	stack?: StackType;
 	/**
 	 * A list of tags that this project belongs to, for categorizing,
 	 * boundary enforcement, and task inheritance.
@@ -302,16 +302,16 @@ export interface ProjectConfig {
 	 * Shared task options for all tasks. Can be overriden per task.
 	 * @since 2.4.0
 	 */
-	taskOptions: TaskOptionsConfig | null;
+	taskOptions?: TaskOptionsConfig | null;
 	/**
 	 * A map of identifiers to task objects. Tasks represent the work-unit
 	 * of a project, and can be ran in the action pipeline.
 	 */
 	tasks?: Record<Id, TaskConfig>;
 	/** Overrides top-level toolchain settings, scoped to this project. */
-	toolchains: ProjectToolchainsConfig;
+	toolchains?: ProjectToolchainsConfig;
 	/** Overrides top-level workspace settings, scoped to this project. */
-	workspace: ProjectWorkspaceConfig;
+	workspace?: ProjectWorkspaceConfig;
 }
 
 /** A project referenced by identifier, with additional parameters. */

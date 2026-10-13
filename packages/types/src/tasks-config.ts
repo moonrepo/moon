@@ -103,7 +103,7 @@ export type TaskDependencyCacheStrategy = 'hash' | 'ignored' | 'outputs';
 /** A task referenced by target, with additional parameters to pass through. */
 export interface TaskDependencyConfig {
 	/** Additional arguments to pass to this dependency when it's ran. */
-	args: string[];
+	args?: string[];
 	/**
 	 * Controls how this dependency invalidates the current task's cache.
 	 * When omitted, defaults to `hash` if the dependency declares outputs,
@@ -112,7 +112,7 @@ export interface TaskDependencyConfig {
 	 */
 	cacheStrategy?: TaskDependencyCacheStrategy | null;
 	/** A map of environment variables specific to this dependency. */
-	env: Record<string, string | null>;
+	env?: Record<string, string | null>;
 	/**
 	 * Marks the dependency as optional when being inherited from the top-level.
 	 * @since 1.20.0
@@ -558,7 +558,7 @@ export interface TaskConfig {
 	 * Arguments to pass to the command when it's ran. Can be
 	 * defined as a string, or a list of individual arguments.
 	 */
-	args: TaskArgs;
+	args?: TaskArgs;
 	/**
 	 * Checks are shell scripts that run before the task is executed,
 	 * and are categorized into three types: conditions, requirements,
@@ -572,7 +572,7 @@ export interface TaskConfig {
 	 * Supports the command (executable) with or without arguments.
 	 * Can be defined as a string, or a list of individual arguments.
 	 */
-	command: TaskArgs;
+	command?: TaskArgs;
 	/**
 	 * Other tasks that this task depends on, and must run to completion
 	 * before this task is ran. Can depend on sibling tasks, or tasks in
@@ -609,7 +609,7 @@ export interface TaskConfig {
 	 */
 	inputs?: Input[] | null;
 	/** Options to control task inheritance, execution, and more. */
-	options: TaskOptionsConfig;
+	options?: TaskOptionsConfig;
 	/**
 	 * A list of outputs that will be created when the task has successfully ran.
 	 * An output can be a literal file path, or a glob pattern.

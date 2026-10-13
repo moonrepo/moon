@@ -1,4 +1,4 @@
-use crate::patterns::{merge_iter, merge_plugin_partials};
+use crate::merging::{merge_iter, merge_partials};
 use crate::toolchain::*;
 use crate::{config_enum, config_struct};
 use miette::IntoDiagnostic;
@@ -102,7 +102,7 @@ config_struct!(
 
         /// Configures and integrates toolchains into the system using
         /// a unique identifier.
-        #[setting(flatten, nested, merge = merge_plugin_partials)]
+        #[setting(flatten, nested, merge = merge_partials)]
         pub plugins: FxHashMap<Id, ToolchainPluginConfig>,
     }
 );

@@ -36,6 +36,11 @@
         }
       ]
     },
+    "daemon": {
+      "title": "daemon",
+      "description": "Enables a daemon that will process heavy tasks in the background, greatly increasing performance of the main thread/executable. @since 2.2.0",
+      "type": "boolean"
+    },
     "defaultProject": {
       "title": "defaultProject",
       "description": "The default/main project within the workspace. When a task is ran without a project, the default will be used. @since 2.0.0",
@@ -147,11 +152,6 @@
       "default": true,
       "type": "boolean"
     },
-    "unstable_daemon": {
-      "title": "unstable_daemon",
-      "description": "Enables a daemon that will process heavy tasks in the background, greatly increasing performance of the main thread/executable. @since 2.2.0",
-      "type": "boolean"
-    },
     "vcs": {
       "title": "vcs",
       "description": "Configures the version control system (VCS). Also known as source code management (SCM).",
@@ -217,8 +217,8 @@
           ],
           "markdownDescription": "Configures aspects of the content-addressable storage (CAS) cache. @since 2.3.0"
         },
-        "unstable_sharedWorktreeCache": {
-          "title": "unstable_sharedWorktreeCache",
+        "sharedWorktreeCache": {
+          "title": "sharedWorktreeCache",
           "description": "Whether to use a shared worktree cache. When enabled, the cache is shared between all VCS worktrees on the same machine. When disabled, each worktree has its own cache.  Only blobs and manifests will be shared, as they are portable. Hashes, locks, states, and more will not be, as they are worktree-specific.  @since 2.5.0",
           "type": "boolean",
           "markdownDescription": "Whether to use a shared worktree cache. When enabled, the cache is shared between all VCS worktrees on the same machine. When disabled, each worktree has its own cache.  Only blobs and manifests will be shared, as they are portable. Hashes, locks, states, and more will not be, as they are worktree-specific.  @since 2.5.0"
@@ -768,11 +768,6 @@
           "description": "The maximum number of times to retry a request that failed with a transient error (connection failure, timeout, 5xx, 429, etc), using exponential backoff. Only applies to HTTP APIs. @since 2.6.0",
           "default": 3,
           "type": "number"
-        },
-        "verifyIntegrity": {
-          "title": "verifyIntegrity",
-          "description": "When downloading blobs, verify the digests/hashes in the response match the associated blob contents. This will reduce performance but ensure partial or corrupted blobs won't cause failures. @since 1.36.0",
-          "type": "boolean"
         }
       },
       "additionalProperties": false,
@@ -1012,7 +1007,7 @@
     "VcsProvider": {
       "description": "The upstream version control provider, where the repository source code is stored.",
       "type": "string",
-      "enum": ["bitbucket", "bitbucket-legacy", "github", "gitlab", "other"]
+      "enum": ["bitbucket", "github", "gitlab", "other"]
     },
     "WorkspaceProjectGlobFormat": {
       "description": "The project identifier format for glob located projects.",

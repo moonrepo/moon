@@ -203,9 +203,11 @@ config_struct!(
     #[derive(Config)]
     pub struct TaskDependencyConfig {
         /// Additional arguments to pass to this dependency when it's ran.
+        #[serde(default)]
         pub args: Vec<String>,
 
         /// A map of environment variables specific to this dependency.
+        #[serde(default)]
         pub env: EnvMap,
 
         /// The target of the depended on task.
@@ -284,14 +286,15 @@ impl TaskDependency {
 config_struct!(
     /// Configures a task to be ran within the action pipeline.
     #[derive(Config)]
+    #[serde(default)]
     pub struct TaskConfig {
         /// Extends settings from a sibling task by identifier.
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub extends: Option<Id>,
 
         /// A human-readable description about the task.
         /// @since 1.22.0
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
 
         /// The command line to execute when the task is ran.
@@ -310,19 +313,19 @@ config_struct!(
         /// and fingerprints. Depending on the result of the script and the
         /// type of check, the task may be skipped, will fail, or continue.
         /// @since 2.4.0
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub checks: Option<Vec<TaskCheck>>,
 
         /// Other tasks that this task depends on, and must run to completion
         /// before this task is ran. Can depend on sibling tasks, or tasks in
         /// other projects, using targets.
         #[setting(nested, validate = validate_deps)]
-        #[serde(default, alias = "dependsOn", skip_serializing_if = "Option::is_none")]
+        #[serde(alias = "dependsOn", skip_serializing_if = "Option::is_none")]
         pub deps: Option<Vec<TaskDependency>>,
 
         /// A map of environment variables that will be set in the child
         /// process when the task is ran.
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub env: Option<EnvMap>,
 
         /// Internal only. Inputs defined through task inheritance.
@@ -337,12 +340,12 @@ config_struct!(
         /// When not provided, all files within the project are considered inputs.
         /// When an empty list, no files are considered. Otherwise, an
         /// explicit list of inputs are considered.
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub inputs: Option<Vec<Input>>,
 
         /// A list of outputs that will be created when the task has successfully ran.
         /// An output can be a literal file path, or a glob pattern.
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub outputs: Option<Vec<Output>>,
 
         /// Options to control task inheritance, execution, and more.
@@ -350,30 +353,30 @@ config_struct!(
         pub options: TaskOptionsConfig,
 
         /// The preset to apply for the task. Will inherit default options.
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub preset: Option<TaskPreset>,
 
         /// A script to run within a shell. A script is anything from a single command,
         /// to multiple commands, or shell specific syntax. Does not support
         /// arguments, merging, or inheritance. This overrides `command` and `args`.
         /// @since 1.27.0
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub script: Option<String>,
 
         /// A list of tags to categorize this task with. Tags are inherited and can
         /// be used for querying and filtering tasks.
         /// @since 2.3.0
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub tags: Option<Vec<Id>>,
 
         /// A toolchain, or list of toolchains, in which the task will inherit
         /// functionality from.
-        #[serde(default, alias = "toolchain", skip_serializing_if = "Option::is_none")]
+        #[serde(alias = "toolchain", skip_serializing_if = "Option::is_none")]
         pub toolchains: Option<OneOrMany<Id>>,
 
         /// The type of task, primarily used for categorical reasons. When not provided,
         /// will be automatically determined based on configured outputs.
-        #[serde(default, rename = "type", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
         pub type_of: Option<TaskType>,
     }
 );

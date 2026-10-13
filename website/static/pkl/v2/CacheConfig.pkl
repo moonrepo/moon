@@ -17,4 +17,4 @@ cas: CacheCasConfig?
 /// Hashes, locks, states, and more will not be, as they are worktree-specific.
 ///
 /// @since 2.5.0
-unstable_sharedWorktreeCache: Boolean?
+sharedWorktreeCache: Boolean?

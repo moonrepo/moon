@@ -9,7 +9,7 @@ import type { Id } from './common';
  * Docs: https://moonrepo.dev/docs/config/template#frontmatter
  */
 export interface TemplateFrontmatterConfig {
-	$schema: string;
+	$schema?: string;
 	/** Force overwrite a file at the destination if there is a conflict. */
 	force?: boolean;
 	/** Skip writing this file to the destination. */
@@ -39,13 +39,13 @@ export interface TemplateVariableArraySetting {
 	/** The default value of the variable if none was provided. */
 	default: unknown[];
 	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
-	internal: boolean;
+	internal?: boolean;
 	/** The order in which variables should be prompted for. */
-	order: number | null;
+	order?: number | null;
 	/** Prompt the user for a value when the generator is running. */
 	prompt: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
-	required: boolean | null;
+	required?: boolean | null;
 	type: 'array';
 }
 
@@ -56,13 +56,13 @@ export interface TemplateVariableBoolSetting {
 	/** The default value of the variable if none was provided. */
 	default: boolean;
 	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
-	internal: boolean;
+	internal?: boolean;
 	/** The order in which variables should be prompted for. */
-	order: number | null;
+	order?: number | null;
 	/** Prompt the user for a value when the generator is running. */
 	prompt: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
-	required: boolean | null;
+	required?: boolean | null;
 	type: 'boolean';
 }
 
@@ -103,13 +103,13 @@ export interface TemplateVariableNumberSetting {
 	/** The default value of the variable if none was provided. */
 	default: number;
 	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
-	internal: boolean;
+	internal?: boolean;
 	/** The order in which variables should be prompted for. */
-	order: number | null;
+	order?: number | null;
 	/** Prompt the user for a value when the generator is running. */
 	prompt: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
-	required: boolean | null;
+	required?: boolean | null;
 	type: 'number';
 }
 
@@ -120,13 +120,13 @@ export interface TemplateVariableObjectSetting {
 	/** The default value of the variable if none was provided. */
 	default: Record<string, unknown>;
 	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
-	internal: boolean;
+	internal?: boolean;
 	/** The order in which variables should be prompted for. */
-	order: number | null;
+	order?: number | null;
 	/** Prompt the user for a value when the generator is running. */
 	prompt: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
-	required: boolean | null;
+	required?: boolean | null;
 	type: 'object';
 }
 
@@ -137,13 +137,13 @@ export interface TemplateVariableStringSetting {
 	/** The default value of the variable if none was provided. */
 	default: string;
 	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
-	internal: boolean;
+	internal?: boolean;
 	/** The order in which variables should be prompted for. */
-	order: number | null;
+	order?: number | null;
 	/** Prompt the user for a value when the generator is running. */
 	prompt: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
-	required: boolean | null;
+	required?: boolean | null;
 	type: 'string';
 }
 
@@ -160,7 +160,7 @@ export type TemplateVariable =
  * Docs: https://moonrepo.dev/docs/config/template
  */
 export interface TemplateConfig {
-	$schema: string;
+	$schema?: string;
 	/** A description on what the template scaffolds. */
 	description: string;
 	/**

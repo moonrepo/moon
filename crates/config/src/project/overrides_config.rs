@@ -1,5 +1,5 @@
 use crate::merging::MergeStrategy;
-use crate::patterns::merge_plugin_partials;
+use crate::merging::merge_partials;
 use crate::shapes::OneOrMany;
 use crate::toolchains_config::ToolchainPluginConfig;
 use crate::{config_enum, config_struct};
@@ -49,7 +49,7 @@ config_struct!(
         pub default: Option<OneOrMany<Id>>,
 
         /// Overrides workspace-level toolchains by their identifier.
-        #[setting(flatten, nested, merge = merge_plugin_partials)]
+        #[setting(flatten, nested, merge = merge_partials)]
         pub plugins: FxHashMap<Id, ProjectToolchainEntry>,
     }
 );

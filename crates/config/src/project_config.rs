@@ -54,28 +54,29 @@ config_struct!(
     /// Expanded information about the project.
     #[derive(Config)]
     #[config(allow_unknown_fields)]
+    #[serde(default)]
     pub struct ProjectMetadataConfig {
         /// A human-readable title of the project.
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub title: Option<String>,
 
         /// A description on what the project does and why it exists.
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
 
         /// The owner of the project. Can be an individual, team, or
         /// organization. The format is unspecified.
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub owner: Option<String>,
 
         /// The individual maintainers of the project. The format is unspecified.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub maintainers: Vec<String>,
 
         /// The Slack, Discord, IRC, etc, channel to discuss the project.
         /// Must start with a `#`.
         #[setting(validate = validate_channel)]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub channel: Option<String>,
 
         /// Custom metadata fields.
@@ -102,13 +103,14 @@ config_struct!(
     /// Configures information and tasks for a project.
     /// Docs: https://moonrepo.dev/docs/config/project
     #[derive(Config)]
+    #[serde(default)]
     pub struct ProjectConfig {
         #[serde(rename = "$schema")]
         pub schema: String,
 
         /// Other projects that this project depends on.
         #[setting(nested)]
-        #[serde(default, alias = "deps", skip_serializing_if = "Vec::is_empty")]
+        #[serde(alias = "deps", skip_serializing_if = "Vec::is_empty")]
         pub depends_on: Vec<ProjectDependsOn>,
 
         /// Configures Docker integration for this project.
@@ -118,18 +120,18 @@ config_struct!(
 
         /// A map of environment variables that will be inherited by
         /// all tasks within the project.
-        #[serde(default, skip_serializing_if = "EnvMap::is_empty")]
+        #[serde(skip_serializing_if = "EnvMap::is_empty")]
         pub env: EnvMap,
 
         /// A map of group identifiers to a list of file paths, globs, and
         /// environment variables, that can be referenced from tasks.
-        #[serde(default, skip_serializing_if = "FxHashMap::is_empty")]
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
         pub file_groups: FxHashMap<Id, Vec<Input>>,
 
         /// Overrides the identifier within the project graph, as defined in
         /// the workspace `projects` setting.
         /// @since 1.18.0
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub id: Option<Id>,
 
         /// The primary programming language of the project.
@@ -146,7 +148,7 @@ config_struct!(
 
         /// Expanded information about the project.
         #[setting(nested)]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub project: Option<ProjectMetadataConfig>,
 
         /// The technology stack of the project, for categorizing.
@@ -155,13 +157,13 @@ config_struct!(
 
         /// A list of tags that this project belongs to, for categorizing,
         /// boundary enforcement, and task inheritance.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub tags: Vec<Id>,
 
         /// A map of identifiers to task objects. Tasks represent the work-unit
         /// of a project, and can be ran in the action pipeline.
         #[setting(nested)]
-        #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+        #[serde(skip_serializing_if = "BTreeMap::is_empty")]
         pub tasks: BTreeMap<Id, TaskConfig>,
 
         /// Shared task options for all tasks. Can be overriden per task.

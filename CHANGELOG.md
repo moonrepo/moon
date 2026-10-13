@@ -121,6 +121,10 @@
 - **Cache**
   - The `cache.unstable_sharedWorktreeCache` setting no longer requires the `casOutputsCache`
     experiment, as task outputs are now always stored in the local content-addressable store.
+- **Configuration**
+  - Stabilized the `cache.unstable_sharedWorktreeCache` setting in `.moon/workspace.config`. Use
+    `cache.sharedWorktreeCache` instead.
+  - Stabilized the `unstable_daemon` setting in `.moon/workspace.config`. Use `daemon` instead.
 - **Hasher**
   - Improved the performance of file hashing.
     - File hashes are now memoized for the lifetime of the process, and reused while the file's size

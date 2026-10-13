@@ -1,4 +1,4 @@
-use crate::patterns::{merge_iter, merge_tasks_partials};
+use crate::merging::{merge_iter, merge_partials};
 use crate::project::LanguageType;
 use crate::project_config::{LayerType, StackType};
 use crate::shapes::{FilePath, Input, OneOrMany};
@@ -282,7 +282,8 @@ config_struct!(
     #[derive(Config)]
     #[serde(default)]
     pub struct InheritedTasksConfig {
-        #[setting(default = "../cache/schemas/tasks.json", rename = "$schema")]
+        #[setting(default = "../cache/schemas/tasks.json")]
+        #[serde(rename = "$schema")]
         pub schema: String,
 
         /// Extends one or many tasks configuration files.
@@ -326,7 +327,7 @@ config_struct!(
 
         /// A map of identifiers to task objects. Tasks represent the work-unit
         /// of a project, and can be ran in the action pipeline.
-        #[setting(nested, merge = merge_tasks_partials)]
+        #[setting(nested, merge = merge_partials)]
         #[serde(skip_serializing_if = "BTreeMap::is_empty")]
         pub tasks: BTreeMap<Id, TaskConfig>,
 

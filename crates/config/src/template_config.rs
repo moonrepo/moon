@@ -16,11 +16,11 @@ macro_rules! var_setting {
                 pub default: $ty,
 
                 /// Marks the variable as internal, and won't be overwritten via CLI arguments.
-                #[serde(skip_serializing_if = "is_false")]
+                #[serde(default, skip_serializing_if = "is_false")]
                 pub internal: bool,
 
                 /// The order in which variables should be prompted for.
-                #[serde(skip_serializing_if = "Option::is_none")]
+                #[serde(default, skip_serializing_if = "Option::is_none")]
                 pub order: Option<usize>,
 
                 /// Prompt the user for a value when the generator is running.
@@ -28,7 +28,7 @@ macro_rules! var_setting {
                 pub prompt: Option<String>,
 
                 /// Marks the variable as required, and will not accept an empty value.
-                #[serde(skip_serializing_if = "Option::is_none")]
+                #[serde(default, skip_serializing_if = "Option::is_none")]
                 pub required: Option<bool>,
             }
         );
@@ -270,7 +270,7 @@ config_struct!(
     /// Docs: https://moonrepo.dev/docs/config/template
     #[derive(Config)]
     pub struct TemplateConfig {
-        #[serde(rename = "$schema")]
+        #[serde(default, rename = "$schema")]
         pub schema: String,
 
         /// A description on what the template scaffolds.

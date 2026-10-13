@@ -10,7 +10,7 @@ use std::io::Read;
 use std::process::{Command, Stdio};
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 fn pump(
     mut reader: impl Read + Send + 'static,
@@ -82,10 +82,25 @@ tasks:
     let stdout_thread = pump(child.stdout.take().expect("stdout"), Arc::clone(&output));
     let stderr_thread = pump(child.stderr.take().expect("stderr"), Arc::clone(&output));
 
-    // Piped stdout is block-buffered, so don't wait to see the task line.
-    // Eight seconds is long enough for a tiny workspace to start `sleep`,
-    // and short enough that the 30s command is still running.
-    std::thread::sleep(Duration::from_secs(8));
+    // Wait until the task line is printed, so the signal lands while the
+    // 30s command is running, not during startup on a slow runner.
+    let deadline = Instant::now() + Duration::from_secs(60);
+
+    while !output.lock().is_ok_and(|buf| buf.contains("app:wait")) {
+        if Instant::now() > deadline {
+            let _ = child.kill();
+
+            panic!(
+                "task app:wait did not start within 60s:\n{}",
+                output.lock().map(|buf| buf.clone()).unwrap_or_default()
+            );
+        }
+
+        std::thread::sleep(Duration::from_millis(100));
+    }
+
+    // Give the task a moment to spawn `sleep` after its line is printed.
+    std::thread::sleep(Duration::from_secs(1));
 
     let killed = Command::new("kill")
         .args([signal, &pid.to_string()])

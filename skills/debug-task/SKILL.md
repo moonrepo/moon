@@ -8,7 +8,7 @@ description: >-
   by --affected, and task inheritance not applying to a project. Activate on any mention of "moon
   run" or "moon task" combined with a problem — errors, stale cache, missing outputs, wrong results,
   "nothing to do", or unexpected behavior. Also use for task options (persistent, runInCI,
-  allowFailure, expectFailure, envOverride, affectedFiles, mutex, timeout, outputStyle,
+  onFailure, allowFailure, expectFailure, envOverride, affectedFiles, mutex, timeout, outputStyle,
   cacheLifetime), task checks, cleanup and wait dependencies, and project-level taskOptions. Not for
   creating new tasks, setting up workspaces, configuring toolchains, or learning moon concepts.
 license: MIT
@@ -76,7 +76,7 @@ moon task <project>:<task> --json
   _after_ the task, even when it fails), or `wait` (the task only waits for it to _start_). The
   human-readable `moon task` output labels the non-required ones, like `db:stop (cleanup)`.
 - `options` — check `persistent`, `runInCI`, `cache`, `affectedFiles`, `mutex`, `timeout`,
-  `retryCount`, `allowFailure`, `expectFailure`, `envOverride`, and `os`.
+  `retryCount`, `onFailure` (`allowFailure` and `expectFailure` before v3), `envOverride`, and `os`.
 - `env` — in v2.5+, environment variables can also be inherited from a **workspace-level `env`** in
   `.moon/tasks/**/*` (merged into the project's `env`, project wins), and the project can change the
   merge behavior via `workspace.mergeStrategies.env`. A variable with a surprising value may come
@@ -117,11 +117,12 @@ moon task <project>:<task> --json
 - `runInCI: 'skip'` — task is skipped in CI but relationships remain valid.
 - `os` set to a platform the user isn't on — the task is rewritten to a passing no-op at build time
   (`moon task --json` shows `command: noop` with cleared args/outputs).
-- `allowFailure: true` — the failure is still recorded and displayed, but the pipeline continues and
-  moon exits successfully, so it's easy to miss.
-- `expectFailure: true` <sup>v2.6+</sup> — the task passes when its command fails, and fails with
-  "was expected to fail, but it passed" once the underlying problem is fixed (remove the setting).
-  It's never cached, and exit codes 126/127 or a signal don't count as the expected failure.
+- `onFailure: allow` (`allowFailure: true` before v3) — the failure is still recorded and displayed,
+  but the pipeline continues and moon exits successfully, so it's easy to miss.
+- `onFailure: expect` (`expectFailure: true` in v2.6) — the task passes when its command fails, and
+  fails with "was expected to fail, but it passed" once the underlying problem is fixed (remove the
+  setting). It's never cached, and exit codes 126/127 or a signal don't count as the expected
+  failure.
 - A `condition` check present <sup>v2.4+</sup> — the task will **skip** whenever all conditions
   pass. A task that "never runs" may have a condition that always passes.
 - A `fingerprint` check present <sup>v2.4+</sup> — its script output is hashed, so volatile output
@@ -218,8 +219,8 @@ Use this table to jump to the right reference:
 | Env var set that the config doesn't mention <sup>v2.6+</sup>                       | A toolchain activated its environment (like `JAVA_HOME`)                                                                                                                                                                                                                                                                     | `MOON_DEBUG_PROCESS_ENV=true moon run <target> --log debug`                                      | `references/environment-debug.md` |
 | Task is slow                                                                       | Dep chain bottleneck, no parallelism                                                                                                                                                                                                                                                                                         | `moon action-graph <target> --dot`                                                               | `references/decision-tree.md`     |
 | Task does nothing (no-op)                                                          | Command is `noop`/`nop`/`no-op`                                                                                                                                                                                                                                                                                              | `moon task <target> --json`                                                                      | `references/config-mistakes.md`   |
-| Task "fails silently"                                                              | `allowFailure: true` — the task is still marked failed, but the pipeline continues and the exit code ignores it                                                                                                                                                                                                              | Check `options.allowFailure`                                                                     | `references/config-mistakes.md`   |
-| Task fails: "…was expected to fail, but it passed" <sup>v2.6+</sup>                | `options.expectFailure` is set and the command now succeeds, so the known failure was fixed (`task_runner::unexpected_pass`). Exit codes `126`/`127`, signals, and timeouts are not the expected failure (`task_runner::unexpected_failure`)                                                                                 | Remove `options.expectFailure` (or fix the command if it exited `126`/`127`)                     | `references/config-mistakes.md`   |
+| Task "fails silently"                                                              | `onFailure: allow` (`allowFailure: true` before v3) — the task is still marked failed, but the pipeline continues and the exit code ignores it                                                                                                                                                                               | Check `options.onFailure`                                                                        | `references/config-mistakes.md`   |
+| Task fails: "…was expected to fail, but it passed" <sup>v2.6+</sup>                | `options.onFailure` is `expect` (`expectFailure` in v2.6) and the command now succeeds, so the known failure was fixed (`task_runner::unexpected_pass`). Exit codes `126`/`127`, signals, and timeouts are not the expected failure (`task_runner::unexpected_failure`)                                                      | Remove `options.onFailure` (or fix the command if it exited `126`/`127`)                         | `references/config-mistakes.md`   |
 | Task skipped locally                                                               | `runInCI: 'only'` set                                                                                                                                                                                                                                                                                                        | Check `options.runInCI`                                                                          | `references/config-mistakes.md`   |
 | Task skipped in CI                                                                 | `runInCI: false` or `'skip'`                                                                                                                                                                                                                                                                                                 | Check `options.runInCI`                                                                          | `references/config-mistakes.md`   |
 | Mutex contention / hang                                                            | Tasks share the same `mutex`; a persistent or `wait` task holding it never releases it                                                                                                                                                                                                                                       | Check `options.mutex`                                                                            | `references/config-mistakes.md`   |
@@ -268,7 +269,7 @@ These are the issues that come up most often. For details and fixes, see
 - **`--affected` vs `--force` confusion** — `--affected` restricts which tasks run; `--force`
   bypasses the cache **and** skips affected checks, so `--force` overrides `--affected` (tasks run
   even when not affected).
-- **`allowFailure: true` hiding errors** — the failure is still recorded and displayed, but the
+- **`onFailure: allow` hiding errors** — the failure is still recorded and displayed, but the
   pipeline continues and moon exits successfully; check stderr at
   `.moon/cache/states/<project>/<task>/stderr.log`.
 - **`mutex` contention** — shared mutex serializes tasks; a persistent (or `wait`) task holding a
@@ -324,9 +325,9 @@ These are the issues that come up most often. For details and fixes, see
 Each reference file covers a specific problem domain in depth. Load them only when the diagnostic
 flow points you there — don't load everything upfront.
 
-| Reference                         | When to load                                                                                                                                                                                                                 |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `references/decision-tree.md`     | When the symptom doesn't match the quick table above, or you need a systematic walk-through of all possibilities.                                                                                                            |
-| `references/cache-issues.md`      | When the problem is clearly cache-related: unexpected hits, unexpected misses, outputs not restoring.                                                                                                                        |
-| `references/config-mistakes.md`   | When the task config is wrong: command vs script, inheritance bugs, presets, persistent tasks, dependency types (`cleanup`/`wait`), affectedFiles, mutex, timeout, retries, runInCI variants, allowFailure, os, outputStyle. |
-| `references/environment-debug.md` | When you need to go deeper with env vars, log levels, trace profiles, or inspection tools.                                                                                                                                   |
+| Reference                         | When to load                                                                                                                                                                                                              |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `references/decision-tree.md`     | When the symptom doesn't match the quick table above, or you need a systematic walk-through of all possibilities.                                                                                                         |
+| `references/cache-issues.md`      | When the problem is clearly cache-related: unexpected hits, unexpected misses, outputs not restoring.                                                                                                                     |
+| `references/config-mistakes.md`   | When the task config is wrong: command vs script, inheritance bugs, presets, persistent tasks, dependency types (`cleanup`/`wait`), affectedFiles, mutex, timeout, retries, runInCI variants, onFailure, os, outputStyle. |
+| `references/environment-debug.md` | When you need to go deeper with env vars, log levels, trace profiles, or inspection tools.                                                                                                                                |

@@ -12,7 +12,7 @@ use moon_console::ui::{
 };
 use moon_process::Command;
 use moon_project::Project;
-use moon_task::{Target, Task};
+use moon_task::{Target, Task, TaskOptionOnFailure};
 use moon_task_runner::command_builder::CommandBuilder;
 use starbase_utils::json;
 use tracing::instrument;
@@ -62,7 +62,10 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> SessionResult {
     let inherited = workspace_graph.projects.get_inherited_tasks(&project)?;
     let mut modes = vec![];
 
-    if task.options.expect_failure {
+    if task.options.on_failure == Some(TaskOptionOnFailure::Allow) {
+        modes.push("allow failure");
+    }
+    if task.options.on_failure == Some(TaskOptionOnFailure::Expect) {
         modes.push("expect failure");
     }
     if task.is_internal() {

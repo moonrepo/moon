@@ -2,6 +2,7 @@ use moon_action::{Action, ActionStatus, RunTaskNode};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::color;
+use moon_config::TaskOptionOnFailure;
 use moon_daemon_client::DaemonClient;
 use moon_task_runner::TaskRunner;
 use moon_workspace_graph::WorkspaceGraph;
@@ -23,8 +24,8 @@ pub async fn run_task(
 
     // Must be set before running the task in case it fails and
     // and error is bubbled up the stack
-    action.allow_failure = task.options.allow_failure;
-    action.expect_failure = task.options.expect_failure;
+    action.allow_failure = task.options.on_failure == Some(TaskOptionOnFailure::Allow);
+    action.expect_failure = task.options.on_failure == Some(TaskOptionOnFailure::Expect);
 
     let result = TaskRunner::new(&app_context, &project, &task, daemon_client)?
         .run(&action_context, &action.node)

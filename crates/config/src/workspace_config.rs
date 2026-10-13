@@ -116,9 +116,10 @@ config_struct!(
     /// Configures all aspects of the moon workspace.
     /// Docs: https://moonrepo.dev/docs/config/workspace
     #[derive(Config)]
+    #[serde(default)]
     pub struct WorkspaceConfig {
         #[setting(default = "./cache/schemas/workspace.json")]
-        #[serde(default, rename = "$schema")]
+        #[serde(rename = "$schema")]
         pub schema: String,
 
         /// Configures aspects of the caching engine and layer.

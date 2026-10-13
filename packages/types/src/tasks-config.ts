@@ -317,6 +317,9 @@ export type TaskOptionEnvOverride = boolean | string[];
 /** The strategy in which to merge two configuration values. */
 export type MergeStrategy = 'append' | 'prepend' | 'preserve' | 'replace';
 
+/** How a failure of the task affects the action pipeline. */
+export type TaskOptionOnFailure = 'allow' | 'expect';
+
 /** The operating system in which to only run this task on. */
 export type TaskOperatingSystem = 'linux' | 'macos' | 'windows';
 
@@ -358,11 +361,6 @@ export interface TaskOptionsConfig {
 	/** The pattern in which affected files will be passed to the task. */
 	affectedFiles?: TaskOptionAffectedFilesEntry | null;
 	/**
-	 * Allow the task to fail without failing the entire action pipeline.
-	 * @since 1.13.0
-	 */
-	allowFailure?: boolean | null;
-	/**
 	 * Cache the `outputs` of the task for incremental builds.
 	 * Defaults to `true` if outputs are configured for the task.
 	 */
@@ -390,13 +388,6 @@ export interface TaskOptionsConfig {
 	 * @since 2.6.0
 	 */
 	envOverride?: TaskOptionEnvOverride | null;
-	/**
-	 * Expect the task to fail, and fail the entire action pipeline if it
-	 * passes. Useful for checks that are known to be broken, which should
-	 * be re-enabled once fixed. The task is never cached.
-	 * @since 2.6.0
-	 */
-	expectFailure?: boolean | null;
 	/**
 	 * Automatically infer inputs from file groups or environment variables
 	 * that were utilized within `command`, `script`, `args`, and `env`.
@@ -480,6 +471,15 @@ export interface TaskOptionsConfig {
 	 * @since 1.24.0
 	 */
 	mutex?: string | null;
+	/**
+	 * How a failure of the task affects the action pipeline. When `allow`,
+	 * the task can fail without failing the pipeline. When `expect`, the
+	 * task must fail, and fails the pipeline if it passes, which is useful
+	 * for checks that are known to be broken, and should be re-enabled once
+	 * fixed. An expected failure is never cached.
+	 * @since 3.0.0
+	 */
+	onFailure?: TaskOptionOnFailure | null;
 	/** The operating system in which to only run this task on. */
 	os?: TaskOperatingSystem | TaskOperatingSystem[] | null;
 	/**
@@ -860,11 +860,6 @@ export interface PartialTaskOptionsConfig {
 	/** The pattern in which affected files will be passed to the task. */
 	affectedFiles?: TaskOptionAffectedFilesEntry | null;
 	/**
-	 * Allow the task to fail without failing the entire action pipeline.
-	 * @since 1.13.0
-	 */
-	allowFailure?: boolean | null;
-	/**
 	 * Cache the `outputs` of the task for incremental builds.
 	 * Defaults to `true` if outputs are configured for the task.
 	 */
@@ -892,13 +887,6 @@ export interface PartialTaskOptionsConfig {
 	 * @since 2.6.0
 	 */
 	envOverride?: TaskOptionEnvOverride | null;
-	/**
-	 * Expect the task to fail, and fail the entire action pipeline if it
-	 * passes. Useful for checks that are known to be broken, which should
-	 * be re-enabled once fixed. The task is never cached.
-	 * @since 2.6.0
-	 */
-	expectFailure?: boolean | null;
 	/**
 	 * Automatically infer inputs from file groups or environment variables
 	 * that were utilized within `command`, `script`, `args`, and `env`.
@@ -982,6 +970,15 @@ export interface PartialTaskOptionsConfig {
 	 * @since 1.24.0
 	 */
 	mutex?: string | null;
+	/**
+	 * How a failure of the task affects the action pipeline. When `allow`,
+	 * the task can fail without failing the pipeline. When `expect`, the
+	 * task must fail, and fails the pipeline if it passes, which is useful
+	 * for checks that are known to be broken, and should be re-enabled once
+	 * fixed. An expected failure is never cached.
+	 * @since 3.0.0
+	 */
+	onFailure?: TaskOptionOnFailure | null;
 	/** The operating system in which to only run this task on. */
 	os?: TaskOperatingSystem | TaskOperatingSystem[] | null;
 	/**

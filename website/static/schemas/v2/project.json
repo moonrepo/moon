@@ -1642,6 +1642,11 @@
         }
       ]
     },
+    "TaskOptionOnFailure": {
+      "description": "How a failure of the task affects the action pipeline.",
+      "type": "string",
+      "enum": ["allow", "expect"]
+    },
     "TaskOptionsConfig": {
       "description": "Options to control task inheritance, execution, and more.",
       "type": "object",
@@ -1652,18 +1657,6 @@
           "anyOf": [
             {
               "$ref": "#/definitions/TaskOptionAffectedFilesEntry"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "allowFailure": {
-          "title": "allowFailure",
-          "description": "Allow the task to fail without failing the entire action pipeline. @since 1.13.0",
-          "anyOf": [
-            {
-              "type": "boolean"
             },
             {
               "type": "null"
@@ -1740,19 +1733,6 @@
             }
           ],
           "markdownDescription": "Override system environment variables with the task's `env`, instead of only setting them when missing. When a list of variable names, only those variables will be overridden. @since 2.6.0"
-        },
-        "expectFailure": {
-          "title": "expectFailure",
-          "description": "Expect the task to fail, and fail the entire action pipeline if it passes. Useful for checks that are known to be broken, which should be re-enabled once fixed. The task is never cached. @since 2.6.0",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Expect the task to fail, and fail the entire action pipeline if it passes. Useful for checks that are known to be broken, which should be re-enabled once fixed. The task is never cached. @since 2.6.0"
         },
         "inferInputs": {
           "title": "inferInputs",
@@ -1928,6 +1908,19 @@
               "type": "null"
             }
           ]
+        },
+        "onFailure": {
+          "title": "onFailure",
+          "description": "How a failure of the task affects the action pipeline. When allow, the task can fail without failing the pipeline. When expect, the task must fail, and fails the pipeline if it passes, which is useful for checks that are known to be broken, and should be re-enabled once fixed. An expected failure is never cached. @since 3.0.0",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskOptionOnFailure"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "How a failure of the task affects the action pipeline. When `allow`, the task can fail without failing the pipeline. When `expect`, the task must fail, and fails the pipeline if it passes, which is useful for checks that are known to be broken, and should be re-enabled once fixed. An expected failure is never cached. @since 3.0.0"
         },
         "os": {
           "title": "os",

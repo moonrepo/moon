@@ -7,7 +7,7 @@ use moon_config::{
 use moon_project::Project;
 use moon_task::{
     Target, TargetDependencyScope as TargetDepScope, TargetProjectScope, TargetTaskScope, Task,
-    TaskOptionRunInCI, TaskOptions,
+    TaskOptionOnFailure, TaskOptionRunInCI, TaskOptions,
 };
 use rustc_hash::FxHashMap;
 use std::mem;
@@ -240,7 +240,7 @@ impl TaskDepsBuilder<'_> {
         let is_cleanup = matches!(dep_config.type_of, TaskDependencyType::Cleanup);
 
         // Do not depend on tasks that can fail
-        if !is_cleanup && dep_task_options.allow_failure {
+        if !is_cleanup && dep_task_options.on_failure == Some(TaskOptionOnFailure::Allow) {
             return Err(TasksBuilderError::AllowFailureDepRequirement {
                 dep: dep_task_target.to_owned(),
                 task: self.task.target.to_owned(),

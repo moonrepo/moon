@@ -7,7 +7,7 @@ use moon_config::{
     ProjectInput, TaskArgs, TaskCheck, TaskCheckConditionConfig, TaskCheckFingerprint,
     TaskCheckFingerprintConfig, TaskCheckRequirementConfig, TaskConfig, TaskDependency,
     TaskDependencyCacheStrategy, TaskDependencyConfig, TaskDependencyType, TaskOptionCache,
-    TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle, TaskType,
+    TaskOptionOnFailure, TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
 use schematic::{ConfigLoader as BaseLoader, RegexSetting};
@@ -1266,12 +1266,30 @@ checks:
         }
 
         #[test]
+        #[should_panic(expected = "unknown field `allowFailure`")]
+        fn errors_on_removed_allow_failure() {
+            test_parse_config("options:\n  allowFailure: true", load_config_from_code);
+        }
+
+        #[test]
+        #[should_panic(expected = "unknown field `expectFailure`")]
+        fn errors_on_removed_expect_failure() {
+            test_parse_config("options:\n  expectFailure: true", load_config_from_code);
+        }
+
+        #[test]
+        #[should_panic(expected = "unknown variant `fail`, expected `allow` or `expect`")]
+        fn errors_on_invalid_on_failure() {
+            test_parse_config("options:\n  onFailure: fail", load_config_from_code);
+        }
+
+        #[test]
         fn can_set_options() {
             let config = test_parse_config(
                 r"
 options:
   cache: false
-  expectFailure: true
+  onFailure: expect
   runDepsInParallel: false
   mergeDeps: replace
   mergeTags: replace
@@ -1282,7 +1300,7 @@ options:
             let opts = config.options;
 
             assert_eq!(opts.cache, Some(TaskOptionCache::Enabled(false)));
-            assert_eq!(opts.expect_failure, Some(true));
+            assert_eq!(opts.on_failure, Some(TaskOptionOnFailure::Expect));
             assert_eq!(opts.run_deps_in_parallel, Some(false));
             assert_eq!(opts.merge_deps, Some(MergeStrategy::Replace));
             assert_eq!(opts.merge_tags, Some(MergeStrategy::Replace));

@@ -901,7 +901,7 @@ Cleanup dependencies:
   terminated, after [`pipeline.killProcessThreshold`](./workspace#killprocessthreshold).
 - Still run when the dependencies of this task are not, like with `--no-dependencies`.
 - Fail the pipeline when they fail, like any other task, unless they
-  [allow failure](#allowfailure).
+  [allow failure](#onfailure).
 - Run their own dependencies like any other task, as soon as possible, and not after this task. When
   a failure aborts the pipeline before they have completed, the cleanup is not able to run, so
   cleanups should be self-contained.
@@ -1426,31 +1426,6 @@ The following additional parameters are supported:
 - `passInputsWhenNoMatch` (`boolean`) - When no affected files are found, will pass all configured
   [`inputs`](#inputs) as relative file paths instead. Defaults to `false`.
 
-#### `allowFailure`<VersionLabel version="1.13.0" />
-
-<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#allowFailure" />
-
-Allows a task to fail without failing the entire pipeline. When enabled, the following changes
-occur:
-
-- Other tasks _cannot_ depend on this task, as we can't ensure it's side-effect free, unless it's a
-  [`cleanup`](#type) dependency, which runs after them.
-- For [`moon run`](../commands/run), the process will not bail early and will run to completion.
-- For [`moon ci`](../commands/ci), the process will not exit with a non-zero exit code, if the only
-  failing tasks are allowed to fail.
-
-```yaml title="moon.yml" {5}
-tasks:
-  lint:
-    command: 'eslint'
-    options:
-      allowFailure: true
-```
-
-> If the task is known to be broken and should be fixed, like during a migration, use
-> [`expectFailure`](#expectfailure) instead, which fails the pipeline once the task passes, so that
-> the setting can be removed.
-
 #### `cache`
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#cache" />
@@ -1605,40 +1580,6 @@ To still prefer the system value for a specific variable, fallback to it with su
 
 :::
 
-#### `expectFailure`<VersionLabel version="2.6.0" />
-
-<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#expectFailure" />
-
-Expects the task to fail, and fails the entire pipeline if it passes instead. This is useful for
-checks that are known to be broken, for example, after enabling a stricter compiler or lint rule
-during a migration. Once the failure has been fixed, the task fails with an error asking to remove
-this setting, so that future regressions are caught. When enabled, the following changes occur:
-
-- The task only satisfies the expectation when its command exits with a non-zero exit code, except
-  for `126` (command not executable), `127` (command not found), and `129`-`192` (killed by a
-  signal). A task that times out, or is killed by a signal, also fails as normal.
-- When the task fails as expected, it's treated as successful, so other tasks _can_ depend on it.
-- When the task passes, it's not retried with [`retryCount`](#retrycount), nor when it fails as
-  expected.
-- The task is never cached, and always runs its command, so that a fix is never hidden by a cached
-  result.
-
-```yaml title="moon.yml" {5}
-tasks:
-  typecheck:
-    command: 'tsc --build'
-    options:
-      expectFailure: true
-```
-
-:::info
-
-This setting cannot be combined with [`allowFailure`](#allowfailure), as a task that unexpectedly
-passes would be allowed to fail, nor with [`persistent`](#persistent), as a persistent task never
-exits.
-
-:::
-
 #### `inferInputs`<VersionLabel version="1.31.0" />
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#inferInputs" />
@@ -1778,6 +1719,62 @@ tasks:
     options:
       mutex: 'virtual_resource_name'
 ```
+
+#### `onFailure`<VersionLabel version="3.0.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#onFailure" />
+
+Controls how a failure of the task affects the entire pipeline. When not defined, a failing task
+fails the pipeline. Supports the following values:
+
+- `allow` - Allows the task to fail without failing the pipeline.
+- `expect` - Expects the task to fail, and fails the pipeline if it passes instead.
+
+When `allow`, the following changes occur:
+
+- Other tasks _cannot_ depend on this task, as we can't ensure it's side-effect free, unless it's a
+  [`cleanup`](#type) dependency, which runs after them.
+- For [`moon run`](../commands/run), the process will not bail early and will run to completion.
+- For [`moon ci`](../commands/ci), the process will not exit with a non-zero exit code, if the only
+  failing tasks are allowed to fail.
+
+```yaml title="moon.yml" {5}
+tasks:
+  lint:
+    command: 'eslint'
+    options:
+      onFailure: 'allow'
+```
+
+If the task is known to be broken and should be fixed, like during a migration, use `expect`
+instead, which fails the pipeline once the task passes, so that the setting can be removed. This is
+useful for checks that are known to be broken, for example, after enabling a stricter compiler or
+lint rule. Once the failure has been fixed, the task fails with an error asking to remove this
+setting, so that future regressions are caught. When `expect`, the following changes occur:
+
+- The task only satisfies the expectation when its command exits with a non-zero exit code, except
+  for `126` (command not executable), `127` (command not found), and `129`-`192` (killed by a
+  signal). A task that times out, or is killed by a signal, also fails as normal.
+- When the task fails as expected, it's treated as successful, so other tasks _can_ depend on it.
+- When the task passes, it's not retried with [`retryCount`](#retrycount), nor when it fails as
+  expected.
+- The task is never cached, and always runs its command, so that a fix is never hidden by a cached
+  result.
+
+```yaml title="moon.yml" {5}
+tasks:
+  typecheck:
+    command: 'tsc --build'
+    options:
+      onFailure: 'expect'
+```
+
+:::info
+
+An expected failure cannot be combined with [`persistent`](#persistent), as a persistent task never
+exits.
+
+:::
 
 #### `os`<VersionLabel version="1.28.0" />
 

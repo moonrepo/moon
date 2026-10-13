@@ -39,6 +39,12 @@
 - **Configuration**
   - Removed the `remote.cache.verifyIntegrity` setting. Use `cache.cas.verifyIntegrity` instead.
   - Removed the `bitbucket-legacy` provider for the `vcs.provider` setting. Use `bitbucket` instead.
+  - Replaced the `allowFailure` and `expectFailure` task options with a single `onFailure` option,
+    that accepts `allow` or `expect`. Use `onFailure: allow` instead of `allowFailure: true`, and
+    `onFailure: expect` instead of `expectFailure: true`. The old options have been removed, and
+    fail validation. A task's `onFailure` overrides an inherited value, instead of conflicting with
+    it. The task options in `moon task --json` and the `@moonrepo/types` types have been updated to
+    match.
 - **Execution plans**
   - Replaced the `affected.includeRelations` field with `affected.depth`, the `graph.downstream`
     field with `graph.dependents`, and the `graph.upstream` field with the new

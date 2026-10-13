@@ -10,8 +10,8 @@ use moon_config::{
     EnvMap, InheritedTasksConfig, Input, MergeStrategy, ProjectConfig, ProjectDependencyConfig,
     ProjectInput, ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
     TaskDependencyConfig, TaskDependencyType, TaskOptionAffectedFilesEntry, TaskOptionCache,
-    TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskPriority, TaskType,
-    ToolchainsConfig, is_glob_like, merge,
+    TaskOptionOnFailure, TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle, TaskPreset,
+    TaskPriority, TaskType, ToolchainsConfig, is_glob_like, merge,
 };
 use moon_config_loader::ConfigLoader;
 use moon_env_var::contains_env_var;
@@ -338,24 +338,13 @@ impl<'proj> TasksBuilder<'proj> {
         task.options = self.build_task_options(id, preset, &mut state)?;
 
         // Validated after options from all layers have been merged
-        if task.options.expect_failure {
-            if task.options.allow_failure {
-                return Err(TasksBuilderError::ExpectFailureConflict {
-                    task: target,
-                    option: "options.allowFailure",
-                    reason: "a task that unexpectedly passes would be allowed to fail",
-                }
-                .into());
+        if task.options.on_failure == Some(TaskOptionOnFailure::Expect) && task.options.persistent {
+            return Err(TasksBuilderError::ExpectFailureConflict {
+                task: target,
+                option: "options.persistent",
+                reason: "a persistent task never exits",
             }
-
-            if task.options.persistent {
-                return Err(TasksBuilderError::ExpectFailureConflict {
-                    task: target,
-                    option: "options.persistent",
-                    reason: "a persistent task never exits",
-                }
-                .into());
-            }
+            .into());
         }
         task.env = self.inherit_project_env(&target)?;
         state.root_level = is_root_level_source(self.project_source);
@@ -711,10 +700,6 @@ impl<'proj> TasksBuilder<'proj> {
                 options.affected_files = Some(option);
             }
 
-            if let Some(allow_failure) = &config.allow_failure {
-                options.allow_failure = *allow_failure;
-            }
-
             if let Some(cache) = &config.cache {
                 options.cache = cache.to_owned();
             }
@@ -733,10 +718,6 @@ impl<'proj> TasksBuilder<'proj> {
 
             if let Some(env_override) = &config.env_override {
                 options.env_override = env_override.to_owned();
-            }
-
-            if let Some(expect_failure) = &config.expect_failure {
-                options.expect_failure = *expect_failure;
             }
 
             if let Some(infer_inputs) = &config.infer_inputs {
@@ -796,6 +777,10 @@ impl<'proj> TasksBuilder<'proj> {
 
             if let Some(mutex) = &config.mutex {
                 options.mutex = Some(mutex.to_owned());
+            }
+
+            if let Some(on_failure) = &config.on_failure {
+                options.on_failure = Some(*on_failure);
             }
 
             if let Some(os) = &config.os {
@@ -865,7 +850,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         // An expected failure always runs, so that a fix is never hidden
         // by a cached result
-        if options.expect_failure {
+        if options.on_failure == Some(TaskOptionOnFailure::Expect) {
             options.cache = TaskOptionCache::Enabled(false);
         }
 

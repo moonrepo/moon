@@ -291,13 +291,11 @@ pub fn load_tasks_config_in_format(format: &str) {
                         pass_dot_when_no_results: None,
                     }
                 )),
-                allow_failure: Some(true),
                 cache: Some(TaskOptionCache::Enabled(false)),
                 cache_key: None,
                 cache_lifetime: None,
                 env_file: Some(TaskOptionEnvFile::File(FilePath(".env".into()))),
                 env_override: None,
-                expect_failure: None,
                 infer_inputs: None,
                 interactive: Some(false),
                 internal: Some(true),
@@ -311,6 +309,7 @@ pub fn load_tasks_config_in_format(format: &str) {
                 merge_tags: None,
                 merge_toolchains: None,
                 mutex: Some("lock".into()),
+                on_failure: Some(TaskOptionOnFailure::Allow),
                 os: Some(OneOrMany::Many(vec![
                     TaskOperatingSystem::Linux,
                     TaskOperatingSystem::Macos

@@ -205,6 +205,18 @@ impl Schematic for TaskOptionEnvOverride {
 }
 
 config_enum!(
+    /// How a failure of the task affects the action pipeline.
+    #[derive(ConfigEnum, Copy)]
+    pub enum TaskOptionOnFailure {
+        /// Allow the task to fail without failing the entire action pipeline.
+        Allow,
+        /// Expect the task to fail, and fail the entire action pipeline if it
+        /// passes. The task is never cached.
+        Expect,
+    }
+);
+
+config_enum!(
     /// The pattern in which to run the task automatically in CI.
     #[serde(expecting = "expected `always`, `affected`, `only`, `skip`, or a boolean")]
     pub enum TaskOptionRunInCI {
@@ -327,11 +339,6 @@ config_struct!(
         #[serde(skip_serializing_if = "Option::is_none")]
         pub affected_files: Option<TaskOptionAffectedFilesEntry>,
 
-        /// Allow the task to fail without failing the entire action pipeline.
-        /// @since 1.13.0
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub allow_failure: Option<bool>,
-
         /// Cache the `outputs` of the task for incremental builds.
         /// Defaults to `true` if outputs are configured for the task.
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -360,13 +367,6 @@ config_struct!(
         #[setting(validate = validate_env_override)]
         #[serde(skip_serializing_if = "Option::is_none")]
         pub env_override: Option<TaskOptionEnvOverride>,
-
-        /// Expect the task to fail, and fail the entire action pipeline if it
-        /// passes. Useful for checks that are known to be broken, which should
-        /// be re-enabled once fixed. The task is never cached.
-        /// @since 2.6.0
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub expect_failure: Option<bool>,
 
         /// Automatically infer inputs from file groups or environment variables
         /// that were utilized within `command`, `script`, `args`, and `env`.
@@ -433,6 +433,15 @@ config_struct!(
         /// @since 1.24.0
         #[serde(skip_serializing_if = "Option::is_none")]
         pub mutex: Option<String>,
+
+        /// How a failure of the task affects the action pipeline. When `allow`,
+        /// the task can fail without failing the pipeline. When `expect`, the
+        /// task must fail, and fails the pipeline if it passes, which is useful
+        /// for checks that are known to be broken, and should be re-enabled once
+        /// fixed. An expected failure is never cached.
+        /// @since 3.0.0
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub on_failure: Option<TaskOptionOnFailure>,
 
         /// The operating system in which to only run this task on.
         #[serde(skip_serializing_if = "Option::is_none")]

@@ -6,7 +6,7 @@ use moon_config::TaskOutputStyle;
 use moon_console::TaskReportItem;
 use moon_process::{Command, Output, ProcessRegistry, SignalType, format_command_line};
 use moon_project::Project;
-use moon_task::{Task, TaskExpectedFailure};
+use moon_task::{Task, TaskExpectedFailure, TaskOptionOnFailure};
 use std::time::Duration;
 use tokio::sync::broadcast::{Receiver, error::TryRecvError};
 use tokio::task::{self, JoinHandle};
@@ -175,7 +175,7 @@ impl<'task> TaskExecutor<'task> {
 
                         // Only a normal exit can satisfy the expectation (not a
                         // signal), and not when processes are being terminated
-                        if self.task.options.expect_failure {
+                        if self.task.options.on_failure == Some(TaskOptionOnFailure::Expect) {
                             let expected = output.code().map(TaskExpectedFailure::from_exit_code);
 
                             is_unexpected_pass = expected == Some(TaskExpectedFailure::Passed);

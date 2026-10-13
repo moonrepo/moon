@@ -8,6 +8,7 @@ import type {
 	TaskDependencyType,
 	TaskOperatingSystem,
 	TaskOptionAffectedFilesConfig,
+	TaskOptionOnFailure,
 	TaskOutputStyle,
 	TaskPreset,
 	TaskPriority,
@@ -24,13 +25,11 @@ export interface InheritedTasks {
 /** Options are omitted when they're the default value. */
 export interface TaskOptions {
 	affectedFiles?: TaskOptionAffectedFilesConfig | boolean | 'args' | 'env' | null;
-	allowFailure?: boolean;
 	cache?: boolean | 'local' | 'remote';
 	cacheKey?: string | null;
 	cacheLifetime?: string | null;
 	envFiles?: string[] | null;
 	envOverride?: boolean | string[];
-	expectFailure?: boolean;
 	inferInputs?: boolean;
 	internal?: boolean;
 	interactive?: boolean;
@@ -43,6 +42,7 @@ export interface TaskOptions {
 	mergeTags?: MergeStrategy;
 	mergeToolchains?: MergeStrategy;
 	mutex?: string | null;
+	onFailure?: TaskOptionOnFailure | null;
 	os?: TaskOperatingSystem[] | null;
 	outputStyle?: TaskOutputStyle | null;
 	persistent?: boolean;

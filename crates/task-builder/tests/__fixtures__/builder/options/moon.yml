@@ -34,11 +34,11 @@ tasks:
 
   expect-failure:
     options:
-      expectFailure: true
+      onFailure: expect
   expect-failure-cache:
     options:
       cache: true
-      expectFailure: true
+      onFailure: expect
 
   interactive:
     options:

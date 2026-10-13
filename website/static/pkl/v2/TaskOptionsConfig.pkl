@@ -8,6 +8,7 @@ import "TaskOperatingSystem.pkl"
 import "TaskOptionAffectedFilesEntry.pkl"
 import "TaskOptionEnvFile.pkl"
 import "TaskOptionEnvOverride.pkl"
+import "TaskOptionOnFailure.pkl"
 import "TaskOutputStyle.pkl"
 import "TaskPriority.pkl"
 import "TaskUnixShell.pkl"
@@ -15,10 +16,6 @@ import "TaskWindowsShell.pkl"
 
 /// The pattern in which affected files will be passed to the task.
 affectedFiles: TaskOptionAffectedFilesEntry.TaskOptionAffectedFilesEntry?
-
-/// Allow the task to fail without failing the entire action pipeline.
-/// @since 1.13.0
-allowFailure: Boolean?
 
 /// Cache the `outputs` of the task for incremental builds.
 /// Defaults to `true` if outputs are configured for the task.
@@ -42,12 +39,6 @@ envFile: TaskOptionEnvFile.TaskOptionEnvFile?
 /// only those variables will be overridden.
 /// @since 2.6.0
 envOverride: TaskOptionEnvOverride.TaskOptionEnvOverride?
-
-/// Expect the task to fail, and fail the entire action pipeline if it
-/// passes. Useful for checks that are known to be broken, which should
-/// be re-enabled once fixed. The task is never cached.
-/// @since 2.6.0
-expectFailure: Boolean?
 
 /// Automatically infer inputs from file groups or environment variables
 /// that were utilized within `command`, `script`, `args`, and `env`.
@@ -100,6 +91,14 @@ mergeToolchains: MergeStrategy.MergeStrategy?
 /// tasks using the same resource from running concurrently.
 /// @since 1.24.0
 mutex: String?
+
+/// How a failure of the task affects the action pipeline. When `allow`,
+/// the task can fail without failing the pipeline. When `expect`, the
+/// task must fail, and fails the pipeline if it passes, which is useful
+/// for checks that are known to be broken, and should be re-enabled once
+/// fixed. An expected failure is never cached.
+/// @since 3.0.0
+onFailure: TaskOptionOnFailure.TaskOptionOnFailure?
 
 /// The operating system in which to only run this task on.
 os: (TaskOperatingSystem.TaskOperatingSystem | Listing<TaskOperatingSystem.TaskOperatingSystem> | List<TaskOperatingSystem.TaskOperatingSystem> | Set<TaskOperatingSystem.TaskOperatingSystem>)?

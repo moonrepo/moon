@@ -36,6 +36,9 @@
     affected task, and the `upstream` and `downstream` fields of an affected project, with a single
     `dependencies` field, the affected dependencies that it was reached through. The
     `@moonrepo/types` types have been updated to match.
+- **Configuration**
+  - Removed the `remote.cache.verifyIntegrity` setting. Use `cache.cas.verifyIntegrity` instead.
+  - Removed the `bitbucket-legacy` provider for the `vcs.provider` setting. Use `bitbucket` instead.
 - **Execution plans**
   - Replaced the `affected.includeRelations` field with `affected.depth`, the `graph.downstream`
     field with `graph.dependents`, and the `graph.upstream` field with the new

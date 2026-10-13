@@ -12,6 +12,7 @@ fn default_templates<C>(_ctx: &C) -> DefaultValueResult<Vec<TemplateLocator>> {
 config_struct!(
     /// Configures the generator for scaffolding from templates.
     #[derive(Config)]
+    #[serde(default)]
     pub struct GeneratorConfig {
         /// The list of file paths, relative from the workspace root,
         /// in which to locate templates.
@@ -19,7 +20,7 @@ config_struct!(
             validate = validate::not_empty,
             default = default_templates
         )]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub templates: Vec<TemplateLocator>,
     }
 );

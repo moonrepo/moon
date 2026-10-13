@@ -33,14 +33,15 @@ config_struct!(
     /// Configures basic HTTP authentication.
     /// @since 1.32.0
     #[derive(Config)]
+    #[serde(default)]
     pub struct RemoteAuthConfig {
         /// A map of HTTP headers to inject into every request.
-        #[serde(default, skip_serializing_if = "FxHashMap::is_empty")]
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
         pub headers: FxHashMap<String, String>,
 
         /// The name of an environment variable to use as a bearer token.
         #[setting(env = "MOON_REMOTE_AUTH_TOKEN")]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub token: Option<String>,
     }
 );
@@ -69,6 +70,7 @@ config_struct!(
     /// @since 1.30.0
     #[derive(Config)]
     #[config(env_prefix = "MOON_REMOTE_CACHE_")]
+    #[serde(default)]
     pub struct RemoteCacheConfig {
         /// The compression format to use when uploading/downloading blobs.
         /// @since 1.31.0
@@ -82,7 +84,7 @@ config_struct!(
         /// blobs. Blobs will only be uploaded in CI environments.
         /// @since 1.40.0
         #[setting(parse_env = env::parse_bool)]
-        #[serde(default, skip_serializing_if = "is_false")]
+        #[serde(skip_serializing_if = "is_false")]
         pub local_read_only: bool,
 
         /// The maximum number of times to retry a request that failed with
@@ -91,14 +93,6 @@ config_struct!(
         /// @since 2.6.0
         #[setting(default = 3)]
         pub retry_count: u8,
-
-        /// When downloading blobs, verify the digests/hashes in the response
-        /// match the associated blob contents. This will reduce performance
-        /// but ensure partial or corrupted blobs won't cause failures.
-        /// @since 1.36.0
-        #[setting(parse_env = env::parse_bool)]
-        #[serde(default, skip_serializing_if = "is_false")]
-        pub verify_integrity: bool,
     }
 );
 
@@ -162,6 +156,7 @@ config_struct!(
     /// Configures the remote service, powered by the Bazel Remote Execution API.
     /// @since 1.30.0
     #[derive(Config)]
+    #[serde(default)]
     pub struct RemoteConfig {
         /// The API format of the remote service.
         /// @since 1.32.0
@@ -171,7 +166,7 @@ config_struct!(
         /// Connect to the host using basic HTTP authentication.
         /// @since 1.32.0
         #[setting(nested)]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub auth: Option<RemoteAuthConfig>,
 
         /// Configures the action cache (AC) and content-addressable cache (CAS).
@@ -181,18 +176,18 @@ config_struct!(
         /// The remote host to connect and send requests to.
         /// Supports gRPC protocols.
         #[setting(env = "MOON_REMOTE_HOST")]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub host: Option<String>,
 
         /// Connect to the host using server and client authentication with mTLS.
         /// This takes precedence over normal TLS.
         #[setting(nested)]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub mtls: Option<RemoteMtlsConfig>,
 
         /// Connect to the host using server-only authentication with TLS.
         #[setting(nested)]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub tls: Option<RemoteTlsConfig>,
     }
 );

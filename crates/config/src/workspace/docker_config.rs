@@ -48,6 +48,7 @@ config_struct!(
 config_struct!(
     /// Configures aspects of the Docker pruning process.
     #[derive(Config)]
+    #[serde(default)]
     pub struct DockerPruneConfig {
         /// Automatically delete vendor directories (package manager
         /// dependencies, build targets, etc) while pruning. This is
@@ -67,19 +68,20 @@ config_struct!(
     /// When configured at the workspace-level, applies to all projects,
     /// but can be overridden at the project-level.
     #[derive(Config)]
+    #[serde(default)]
     pub struct DockerScaffoldConfig {
         /// List of glob patterns in which to include/exclude files in
         /// the "configs" skeleton. Applies to both project and
         /// workspace level scaffolding.
         /// @since 2.0.0
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub configs_phase_globs: Vec<GlobPath>,
 
         /// List of glob patterns in which to include/exclude files in
         /// the "sources" skeleton. Applies to both project and
         /// workspace level scaffolding.
         /// @since 2.0.0
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub sources_phase_globs: Vec<GlobPath>,
     }
 );
@@ -87,6 +89,7 @@ config_struct!(
 config_struct!(
     /// Configures our Docker integration.
     #[derive(Config)]
+    #[serde(default)]
     pub struct DockerConfig {
         /// Configures aspects of the `Dockerfile` generation process.
         /// @since 2.0.0

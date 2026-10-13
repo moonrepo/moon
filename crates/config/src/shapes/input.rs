@@ -220,7 +220,7 @@ config_struct!(
     /// An external project input.
     #[derive(Config)]
     pub struct ProjectInput {
-        // This is not an `Id` as we need to support `^` scopes!
+        // Note: This is not an `Id` as we need to support `^` scopes!
         /// The external project identifier.
         pub project: String,
 

@@ -6,6 +6,7 @@ use schematic::Config;
 config_struct!(
     /// Configures boundaries and constraints between projects.
     #[derive(Config)]
+    #[serde(default)]
     pub struct ConstraintsConfig {
         /// Enforces relationships between projects based on each project's
         /// `layer` setting.
@@ -14,7 +15,7 @@ config_struct!(
 
         /// Enforces relationships between projects based on each project's
         /// `tags` setting. Requires a mapping of tags, to acceptable tags.
-        #[serde(default, skip_serializing_if = "FxHashMap::is_empty")]
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
         pub tag_relationships: FxHashMap<Id, Vec<Id>>,
     }
 );

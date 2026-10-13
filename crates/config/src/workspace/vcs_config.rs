@@ -18,8 +18,6 @@ config_unit_enum!(
     pub enum VcsProvider {
         Bitbucket,
 
-        BitbucketLegacy,
-
         #[default]
         #[serde(rename = "github")]
         GitHub,
@@ -45,6 +43,7 @@ config_unit_enum!(
 config_struct!(
     /// Configures the version control system (VCS).
     #[derive(Config)]
+    #[serde(default)]
     pub struct VcsConfig {
         /// The VCS client being utilized by the repository.
         pub client: VcsClient,
@@ -55,7 +54,7 @@ config_struct!(
 
         /// A map of hooks to a list of commands to run when the hook is triggered.
         /// @since 1.9.0
-        #[serde(default, skip_serializing_if = "FxHashMap::is_empty")]
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
         pub hooks: FxHashMap<String, Vec<String>>,
 
         /// The format to use for generated VCS hook files.
@@ -69,13 +68,13 @@ config_struct!(
 
         /// List of remote's in which to compare branches against.
         #[setting(default = vec!["origin".into(), "upstream".into()])]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub remote_candidates: Vec<String>,
 
         /// Automatically generate hooks and scripts during a sync operation,
         /// based on the `hooks` setting.
         /// @since 1.9.0
-        #[serde(default, skip_serializing_if = "is_false")]
+        #[serde(skip_serializing_if = "is_false")]
         pub sync: bool,
     }
 );

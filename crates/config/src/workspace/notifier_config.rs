@@ -26,15 +26,16 @@ config_unit_enum!(
 config_struct!(
     /// Configures how and where notifications are sent.
     #[derive(Config)]
+    #[serde(default)]
     pub struct NotifierConfig {
         /// Display an OS notification for certain action pipeline events.
         /// @since 1.38.0
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub terminal_notifications: Option<NotifierEventType>,
 
         /// A secure URL in which to send webhooks to.
         #[setting(env = "MOON_WEBHOOK_URL", validate = validate::url_secure)]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub webhook_url: Option<String>,
 
         /// Whether webhook requests require acknowledgment (2xx response).
@@ -42,7 +43,7 @@ config_struct!(
         /// main process.
         /// @since 1.38.0
         #[setting(env = "MOON_WEBHOOK_ACKNOWLEDGE", parse_env = env::parse_bool)]
-        #[serde(default, skip_serializing_if = "is_false")]
+        #[serde(skip_serializing_if = "is_false")]
         pub webhook_acknowledge: bool,
     }
 );

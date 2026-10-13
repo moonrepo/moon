@@ -131,6 +131,9 @@
   - Stabilized the `cache.unstable_sharedWorktreeCache` setting in `.moon/workspace.config`. Use
     `cache.sharedWorktreeCache` instead.
   - Stabilized the `unstable_daemon` setting in `.moon/workspace.config`. Use `daemon` instead.
+- **Daemon**
+  - The daemon has been stabilized and is now enabled by default. If you run into any issues, simply
+    set `daemon = false` in your `.moon/workspace.config`.
 - **Hasher**
   - Improved the performance of file hashing.
     - File hashes are now memoized for the lifetime of the process, and reused while the file's size

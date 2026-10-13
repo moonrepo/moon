@@ -39,6 +39,7 @@
     "daemon": {
       "title": "daemon",
       "description": "Enables a daemon that will process heavy tasks in the background, greatly increasing performance of the main thread/executable. @since 2.2.0",
+      "default": true,
       "type": "boolean"
     },
     "defaultProject": {

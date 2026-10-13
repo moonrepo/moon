@@ -26,7 +26,7 @@ config_struct!(
     #[derive(Config)]
     pub struct TaskCheckConditionConfig {
         /// The shell script to execute.
-        #[setting(validate = validate_script)]
+        #[setting(required, validate = validate_script)]
         pub script: String,
     }
 );
@@ -36,7 +36,7 @@ config_struct!(
     #[derive(Config)]
     pub struct TaskCheckRequirementConfig {
         /// The shell script to execute.
-        #[setting(validate = validate_script)]
+        #[setting(required,validate = validate_script)]
         pub script: String,
     }
 );
@@ -70,7 +70,7 @@ config_struct!(
     #[derive(Config)]
     pub struct TaskCheckFingerprintConfig {
         /// The shell script to execute.
-        #[setting(validate = validate_script)]
+        #[setting(required, validate = validate_script)]
         pub script: String,
 
         /// The content hashing strategy.

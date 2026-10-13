@@ -21,6 +21,7 @@ config_struct!(
     #[derive(Config)]
     pub struct FileInput {
         /// The literal file path.
+        #[setting(required)]
         pub file: FilePath,
 
         /// Regex pattern to match the file's contents against
@@ -94,6 +95,7 @@ config_struct!(
     #[derive(Config)]
     pub struct FileGroupInput {
         /// The file group identifier.
+        #[setting(required)]
         pub group: Id,
 
         /// Format to resolve the file group into.
@@ -134,6 +136,7 @@ config_struct!(
     #[derive(Config)]
     pub struct GlobInput {
         /// The glob pattern.
+        #[setting(required)]
         pub glob: GlobPath,
 
         /// Cache the glob walking result for increased performance.
@@ -172,6 +175,7 @@ config_struct!(
     #[derive(Config)]
     pub struct ManifestDepsInput {
         /// The toolchain identifier.
+        #[setting(required)]
         pub manifest: Id,
 
         /// List of dependencies to compare against when
@@ -217,6 +221,7 @@ config_struct!(
     pub struct ProjectInput {
         // Note: This is not an `Id` as we need to support `^` scopes!
         /// The external project identifier.
+        #[setting(required)]
         pub project: String,
 
         /// A list of globs, relative from the project's root,

@@ -14,7 +14,7 @@ config_struct!(
         pub args: Vec<String>,
 
         /// Name of the binary, with optional version separated by `@`.
-        #[setting(validate = validate::not_empty)]
+        #[setting(required, validate = validate::not_empty)]
         pub bin: String,
 
         /// Force install the binary if it already exists.

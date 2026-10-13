@@ -14,6 +14,7 @@ config_struct!(
     #[derive(Config)]
     pub struct FileOutput {
         /// The literal file path.
+        #[setting(required)]
         pub file: FilePath,
 
         /// Mark the file as optional instead of failing with
@@ -52,6 +53,7 @@ config_struct!(
     #[derive(Config)]
     pub struct GlobOutput {
         /// The glob pattern.
+        #[setting(required)]
         pub glob: GlobPath,
 
         /// Mark the file as optional instead of failing with

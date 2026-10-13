@@ -272,7 +272,7 @@ config_struct!(
         pub schema: String,
 
         /// A description on what the template scaffolds.
-        #[setting(validate = validate::not_empty)]
+        #[setting(required, validate = validate::not_empty)]
         pub description: String,
 
         /// A pre-populated destination to scaffold to, relative from the
@@ -288,7 +288,7 @@ config_struct!(
         pub id: Option<Id>,
 
         /// A human-readable title for the template.
-        #[setting(validate = validate::not_empty)]
+        #[setting(required, validate = validate::not_empty)]
         pub title: String,
 
         /// A map of variables that'll be interpolated within each template file.

@@ -646,10 +646,11 @@ export interface WorkspaceConfig {
 	 * Enables a daemon that will process heavy tasks in the background,
 	 * greatly increasing performance of the main thread/executable.
 	 *
+	 * @default true
 	 * @env MOON_DAEMON
 	 * @since 2.2.0
 	 */
-	daemon: boolean;
+	daemon?: boolean;
 	/**
 	 * The default/main project within the workspace. When a task is
 	 * ran without a project, the default will be used.
@@ -1297,6 +1298,7 @@ export interface PartialWorkspaceConfig {
 	 * Enables a daemon that will process heavy tasks in the background,
 	 * greatly increasing performance of the main thread/executable.
 	 *
+	 * @default true
 	 * @env MOON_DAEMON
 	 * @since 2.2.0
 	 */

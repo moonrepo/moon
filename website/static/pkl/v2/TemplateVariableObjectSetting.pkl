@@ -4,10 +4,10 @@
 module TemplateVariableObjectSetting
 
 /// The default value of the variable if none was provided.
-default: (*Mapping<String, Any> | Map<String, Any>)? = defaultValue
+default: Mapping<String, Any>? = defaultValue
 
 /// An alias of `default`.
-hidden defaultValue: (*Mapping<String, Any> | Map<String, Any>)?
+hidden defaultValue: Mapping<String, Any>?
 
 /// Marks the variable as internal, and won't be overwritten via CLI arguments.
 internal: Boolean?

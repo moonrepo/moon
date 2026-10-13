@@ -8,7 +8,7 @@ import "DockerPruneConfig.pkl"
 import "DockerScaffoldConfig.pkl"
 
 /// Configures aspects of the `Dockerfile` generation process.
-/// @since 2.0.0
+@Since { version = "2.0.0" }
 file: DockerFileConfig?
 
 /// Configures aspects of the Docker pruning process.

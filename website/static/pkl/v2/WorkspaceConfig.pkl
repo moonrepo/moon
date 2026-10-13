@@ -9,25 +9,22 @@ import "CodeownersConfig.pkl"
 import "ConstraintsConfig.pkl"
 import "DockerConfig.pkl"
 import "ExperimentsConfig.pkl"
-import "ExtendsFrom.pkl"
 import "GeneratorConfig.pkl"
 import "HasherConfig.pkl"
-import "Id.pkl"
 import "NotifierConfig.pkl"
 import "PipelineConfig.pkl"
-import "Range.pkl"
 import "RemoteConfig.pkl"
 import "VcsConfig.pkl"
-import "WorkspaceProjects.pkl"
+import "WorkspaceProjectsConfig.pkl"
 
 $schema: String?
 
 /// Configures aspects of the caching engine and layer.
-/// @since 2.3.0
+@Since { version = "2.3.0" }
 cache: CacheConfig?
 
 /// Configures code ownership rules for generating a `CODEOWNERS` file.
-/// @since 1.8.0
+@Since { version = "1.8.0" }
 codeowners: CodeownersConfig?
 
 /// Configures boundaries and constraints between projects.
@@ -35,26 +32,26 @@ constraints: ConstraintsConfig?
 
 /// Enables a daemon that will process heavy tasks in the background,
 /// greatly increasing performance of the main thread/executable.
-/// @since 2.2.0
+@Since { version = "2.2.0" }
 daemon: Boolean?
 
 /// The default/main project within the workspace. When a task is
 /// ran without a project, the default will be used.
-/// @since 2.0.0
-defaultProject: Id.Id?
+@Since { version = "2.0.0" }
+defaultProject: Id?
 
 /// Configures Docker integration for the workspace.
-/// @since 1.27.0
+@Since { version = "1.27.0" }
 docker: DockerConfig?
 
 /// Configures experiments across the entire moon workspace.
-/// @since 1.11.0
+@Since { version = "1.11.0" }
 experiments: ExperimentsConfig?
 
 /// Extends one or many workspace configuration file.
 /// Supports a relative file path or a secure URL.
-/// @since 1.12.0
-`extends`: ExtendsFrom.ExtendsFrom?
+@Since { version = "1.12.0" }
+`extends`: ExtendsFrom?
 
 /// Configures the generator for scaffolding from templates.
 generator: GeneratorConfig?
@@ -71,7 +68,7 @@ pipeline: PipelineConfig?
 /// Configures all projects within the workspace to create a project graph.
 /// Accepts a list of globs, a mapping of projects to relative file paths,
 /// or both values.
-projects: WorkspaceProjects.WorkspaceProjects?
+projects: WorkspaceProjects?
 
 /// Configures aspects of the remote service.
 remote: RemoteConfig?
@@ -84,4 +81,13 @@ telemetry: Boolean?
 vcs: VcsConfig?
 
 /// Requires a specific version of the `moon` binary.
-versionConstraint: Range.Range?
+versionConstraint: Range?
+
+typealias ExtendsFrom = String | Listing<String>
+
+typealias Id = String
+
+typealias Range = String
+
+/// Configures projects in the workspace.
+typealias WorkspaceProjects = WorkspaceProjectsConfig | Listing<String> | *Mapping<Id, String>

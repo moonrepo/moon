@@ -44,17 +44,17 @@ export interface ToolchainPluginConfigBase {
 	/**
 	 * Inherit aliases (name derived from a manifest) for all
 	 * projects associated with this toolchain.
-	 * @since 2.1.0
 	 *
 	 * @default true
+	 * @since 2.1.0
 	 */
 	inheritAliases?: boolean;
 	/**
 	 * Run the `InstallDependencies` actions for each running task
 	 * when changes to lockfiles and manifests are detected.
-	 * @since 2.1.0
 	 *
 	 * @default true
+	 * @since 2.1.0
 	 */
 	installDependencies?: boolean;
 	/** Location of the WASM plugin to use. */
@@ -84,6 +84,7 @@ export interface ToolchainsConfigBase {
 	/**
 	 * Extends one or many toolchain configuration files.
 	 * Supports a relative file path or a secure URL.
+	 *
 	 * @since 1.12.0
 	 */
 	extends?: ExtendsFrom | null;
@@ -131,17 +132,17 @@ export interface PartialToolchainPluginConfigBase {
 	/**
 	 * Inherit aliases (name derived from a manifest) for all
 	 * projects associated with this toolchain.
-	 * @since 2.1.0
 	 *
 	 * @default true
+	 * @since 2.1.0
 	 */
 	inheritAliases?: boolean | null;
 	/**
 	 * Run the `InstallDependencies` actions for each running task
 	 * when changes to lockfiles and manifests are detected.
-	 * @since 2.1.0
 	 *
 	 * @default true
+	 * @since 2.1.0
 	 */
 	installDependencies?: boolean | null;
 	/** Location of the WASM plugin to use. */
@@ -172,6 +173,7 @@ export interface PartialToolchainsConfigBase {
 	/**
 	 * Extends one or many toolchain configuration files.
 	 * Supports a relative file path or a secure URL.
+	 *
 	 * @since 1.12.0
 	 */
 	extends?: ExtendsFrom | null;

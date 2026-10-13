@@ -45,6 +45,8 @@ pub struct ActionPipeline {
     // State
     actions: Vec<Action>,
     duration: Option<Duration>,
+    /// The signal that stopped this run, when one was received.
+    received_signal: Option<SignalType>,
     status: ActionPipelineStatus,
 
     // Data
@@ -95,6 +97,7 @@ impl ActionPipeline {
             duration: None,
             emitter: Arc::new(EventEmitter::default()),
             quiet: false,
+            received_signal: None,
             report_name: "runReport.json".into(),
             status: ActionPipelineStatus::Pending,
             summary: None,
@@ -102,14 +105,21 @@ impl ActionPipeline {
         }
     }
 
-    pub async fn run(self, action_graph: ActionGraph) -> miette::Result<Vec<Action>> {
+    pub async fn run(mut self, action_graph: ActionGraph) -> miette::Result<Vec<Action>> {
         self.run_with_context(action_graph, ActionContext::default())
             .await
     }
 
+    /// Exit code for a pipeline stopped by a signal: 128 plus the signal
+    /// number. `SIGINT` is 130 and `SIGTERM` is 143. Same formula as a
+    /// prompt that is interrupted.
+    pub fn signal_exit_code(&self) -> Option<u8> {
+        self.received_signal.map(exit_code_for_signal)
+    }
+
     #[instrument(name = "run_pipeline", skip_all)]
     pub async fn run_with_context(
-        mut self,
+        &mut self,
         action_graph: ActionGraph,
         action_context: ActionContext,
     ) -> miette::Result<Vec<Action>> {
@@ -323,13 +333,14 @@ impl ActionPipeline {
         // The dispatcher may be waiting on the abort to be handled
         abort_state.handle(false, None, None);
 
-        // Capture and handle any signals
-        if cancel_token.is_cancelled() && self.status == ActionPipelineStatus::Pending {
-            self.status = match signal_handle.await.into_diagnostic()? {
-                SignalType::Interrupt => ActionPipelineStatus::Interrupted,
-                SignalType::Terminate => ActionPipelineStatus::Terminated,
-                _ => ActionPipelineStatus::Aborted,
-            };
+        // Capture and handle any signals. Only the signal monitor cancels the
+        // token, and it returns the signal right after, so this doesn't block.
+        // The status may already be set by a running task, so always replace it
+        if cancel_token.is_cancelled() {
+            let signal = signal_handle.await.into_diagnostic()?;
+
+            self.received_signal = Some(signal);
+            self.status = status_for_signal(signal);
         } else {
             signal_handle.abort();
         }
@@ -887,4 +898,51 @@ async fn exhaust_job_handles<T: 'static>(set: &mut JoinSet<T>, job_context: &Job
     set.detach_all();
 
     job_context.is_aborted_or_cancelled()
+}
+
+/// `128 + signal`. `SIGINT` is 130, `SIGTERM` is 143.
+pub(crate) fn exit_code_for_signal(signal: SignalType) -> u8 {
+    (128 + signal.get_code()) as u8
+}
+
+fn status_for_signal(signal: SignalType) -> ActionPipelineStatus {
+    match signal {
+        SignalType::Interrupt => ActionPipelineStatus::Interrupted,
+        SignalType::Terminate => ActionPipelineStatus::Terminated,
+        _ => ActionPipelineStatus::Aborted,
+    }
+}
+
+#[cfg(test)]
+mod signal_exit_tests {
+    use super::{exit_code_for_signal, status_for_signal};
+    use moon_action::ActionPipelineStatus;
+    use moon_process::SignalType;
+
+    #[test]
+    fn interrupt_exits_130_and_is_interrupted() {
+        assert_eq!(exit_code_for_signal(SignalType::Interrupt), 130);
+        assert_eq!(
+            status_for_signal(SignalType::Interrupt),
+            ActionPipelineStatus::Interrupted
+        );
+    }
+
+    #[test]
+    fn terminate_exits_143_and_is_terminated() {
+        assert_eq!(exit_code_for_signal(SignalType::Terminate), 143);
+        assert_eq!(
+            status_for_signal(SignalType::Terminate),
+            ActionPipelineStatus::Terminated
+        );
+    }
+
+    #[test]
+    fn other_signals_use_128_plus_the_signal_number() {
+        assert_eq!(exit_code_for_signal(SignalType::Quit), 131);
+        assert_eq!(
+            status_for_signal(SignalType::Quit),
+            ActionPipelineStatus::Aborted
+        );
+    }
 }

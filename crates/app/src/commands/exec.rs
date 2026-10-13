@@ -297,7 +297,8 @@ impl ExecWorkflow {
                 .is_some_and(|target| target.is_fully_qualified());
 
         let mut any_failed = false;
-        let mut exit_code = None;
+        // Set when the pipeline was stopped by a signal (130 / 143).
+        let mut exit_code = self.session.exit_code.get();
 
         for result in &results {
             if !result.has_failed() || result.allow_failure {

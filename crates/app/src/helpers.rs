@@ -111,6 +111,13 @@ pub async fn run_action_pipeline(
         .run_with_context(action_graph, action_context)
         .await?;
 
+    // A signal stops the run. Exit with 128 plus the signal number so a
+    // wrapper cannot treat the interrupt as success. This wins over a task
+    // exit code, which is the child's status, not moon's.
+    if let Some(code) = pipeline.signal_exit_code() {
+        session.exit_code.set(code);
+    }
+
     Ok(results)
 }
 

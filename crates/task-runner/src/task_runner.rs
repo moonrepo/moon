@@ -16,9 +16,7 @@ use moon_daemon_client::DaemonClient;
 use moon_hash::{ContentHash, ContentHasher};
 use moon_process::ProcessError;
 use moon_project::Project;
-use moon_task::{
-    Task, TaskCheck, TaskCheckFingerprint, TaskCheckType, TaskExpectedFailure, TaskOptionOnFailure,
-};
+use moon_task::{Task, TaskCheck, TaskCheckFingerprint, TaskCheckType, TaskExpectedFailure};
 use moon_task_hasher::*;
 use moon_time::{is_stale, now_millis};
 use starbase_utils::fs;
@@ -630,7 +628,7 @@ impl<'task> TaskRunner<'task> {
 
             // Explain why the failure was not the expected one, unless it
             // was, but processes were being terminated
-            if self.task.options.on_failure == Some(TaskOptionOnFailure::Expect)
+            if self.task.options.is_failure_expected()
                 && let Some(outcome) = code.map(TaskExpectedFailure::from_exit_code)
                 && !outcome.is_expected()
             {

@@ -89,6 +89,23 @@ mod task_options {
             options
         );
     }
+
+    #[test]
+    fn checks_on_failure() {
+        for (on_failure, allowed, expected) in [
+            (None, false, false),
+            (Some(TaskOptionOnFailure::Allow), true, false),
+            (Some(TaskOptionOnFailure::Expect), false, true),
+        ] {
+            let options = TaskOptions {
+                on_failure,
+                ..Default::default()
+            };
+
+            assert_eq!(options.is_failure_allowed(), allowed);
+            assert_eq!(options.is_failure_expected(), expected);
+        }
+    }
 }
 
 mod task_expected_failure {

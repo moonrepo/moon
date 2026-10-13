@@ -144,6 +144,18 @@ cacheable!(
     }
 );
 
+impl TaskOptions {
+    /// Whether the task can fail without failing the action pipeline.
+    pub fn is_failure_allowed(&self) -> bool {
+        matches!(self.on_failure, Some(TaskOptionOnFailure::Allow))
+    }
+
+    /// Whether the task must fail, and fails the action pipeline if it passes.
+    pub fn is_failure_expected(&self) -> bool {
+        matches!(self.on_failure, Some(TaskOptionOnFailure::Expect))
+    }
+}
+
 impl Default for TaskOptions {
     fn default() -> Self {
         TaskOptions {

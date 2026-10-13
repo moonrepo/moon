@@ -74,6 +74,7 @@ config_struct!(
         /// A list of glob patterns to filter the affected files list before
         /// passing to the task as arguments or environment variables. Globs
         /// must start with `**` to match against absolute paths.
+        #[serde(default)]
         pub filter: Vec<GlobPath>,
 
         /// When matching affected files, ignore the project boundary and include

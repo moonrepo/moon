@@ -10,8 +10,8 @@ use moon_config::{
     EnvMap, InheritedTasksConfig, Input, MergeStrategy, ProjectConfig, ProjectDependencyConfig,
     ProjectInput, ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
     TaskDependencyConfig, TaskDependencyType, TaskOptionAffectedFilesEntry, TaskOptionCache,
-    TaskOptionOnFailure, TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle, TaskPreset,
-    TaskPriority, TaskType, ToolchainsConfig, is_glob_like, merge,
+    TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskPriority, TaskType,
+    ToolchainsConfig, is_glob_like, merge,
 };
 use moon_config_loader::ConfigLoader;
 use moon_env_var::contains_env_var;
@@ -338,7 +338,7 @@ impl<'proj> TasksBuilder<'proj> {
         task.options = self.build_task_options(id, preset, &mut state)?;
 
         // Validated after options from all layers have been merged
-        if task.options.on_failure == Some(TaskOptionOnFailure::Expect) && task.options.persistent {
+        if task.options.is_failure_expected() && task.options.persistent {
             return Err(TasksBuilderError::ExpectFailureConflict {
                 task: target,
                 option: "options.persistent",
@@ -850,7 +850,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         // An expected failure always runs, so that a fix is never hidden
         // by a cached result
-        if options.on_failure == Some(TaskOptionOnFailure::Expect) {
+        if options.is_failure_expected() {
             options.cache = TaskOptionCache::Enabled(false);
         }
 

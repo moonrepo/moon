@@ -1532,25 +1532,27 @@ options:
                 );
             }
 
-            // The object form is deserialized directly, and not through
-            // a partial, so its non-optional fields are required
             #[test]
-            fn errors_on_object_without_filter() {
-                let error = load_config_from_code(
+            fn defaults_filter_when_omitted() {
+                let config = test_parse_config(
                     r"
 options:
   affectedFiles:
     pass: args
 ",
-                )
-                .unwrap_err();
+                    load_config_from_code,
+                );
 
-                assert!(
-                    error
-                        .downcast::<schematic::ConfigError>()
-                        .unwrap()
-                        .to_full_string()
-                        .contains("missing field `filter`")
+                assert_eq!(
+                    config.options.affected_files,
+                    Some(TaskOptionAffectedFilesEntry::Object(
+                        TaskOptionAffectedFilesConfig {
+                            filter: vec![],
+                            pass: TaskOptionAffectedFilesPattern::Args,
+                            pass_dot_when_no_results: None,
+                            ..Default::default()
+                        }
+                    ))
                 );
             }
 

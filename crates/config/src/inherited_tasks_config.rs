@@ -135,41 +135,40 @@ config_struct!(
     /// for inheritance to occur. If no conditions are defined, then tasks will
     /// be inherited by all projects.
     #[derive(Config)]
-    #[serde(default)]
     pub struct InheritedByConfig {
         /// The order in which this configuration is inherited by a project.
         /// Lower is inherited first, while higher is last.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub order: Option<u16>,
 
         /// Condition that matches against literal files within a project.
         /// If multiple values are provided, at least 1 file needs to exist.
-        #[serde(alias = "file", skip_serializing_if = "Option::is_none")]
+        #[serde(default, alias = "file", skip_serializing_if = "Option::is_none")]
         pub files: Option<OneOrMany<FilePath>>,
 
         /// Condition that matches against a project's `language`.
         /// If multiple values are provided, it matches using an OR operator.
-        #[serde(alias = "language", skip_serializing_if = "Option::is_none")]
+        #[serde(default, alias = "language", skip_serializing_if = "Option::is_none")]
         pub languages: Option<OneOrMany<LanguageType>>,
 
         /// Condition that matches against a project's `layer`.
         /// If multiple values are provided, it matches using an OR operator.
-        #[serde(alias = "layer", skip_serializing_if = "Option::is_none")]
+        #[serde(default, alias = "layer", skip_serializing_if = "Option::is_none")]
         pub layers: Option<OneOrMany<LayerType>>,
 
         /// Condition that matches against a project's `stack`.
         /// If multiple values are provided, it matches using an OR operator.
-        #[serde(alias = "stack", skip_serializing_if = "Option::is_none")]
+        #[serde(default, alias = "stack", skip_serializing_if = "Option::is_none")]
         pub stacks: Option<OneOrMany<StackType>>,
 
         /// Condition that matches against a tag within the project.
         #[setting(nested)]
-        #[serde(alias = "tag", skip_serializing_if = "Option::is_none")]
+        #[serde(default, alias = "tag", skip_serializing_if = "Option::is_none")]
         pub tags: Option<InheritedConditionConfig>,
 
         /// Condition that matches against a toolchain detected for a project.
         #[setting(nested)]
-        #[serde(alias = "toolchain", skip_serializing_if = "Option::is_none")]
+        #[serde(default, alias = "toolchain", skip_serializing_if = "Option::is_none")]
         pub toolchains: Option<InheritedConditionConfig>,
     }
 );
@@ -280,7 +279,6 @@ config_struct!(
     /// matching projects.
     /// Docs: https://moonrepo.dev/docs/config/tasks
     #[derive(Config)]
-    #[serde(default)]
     pub struct InheritedTasksConfig {
         #[setting(default = "../cache/schemas/tasks.json")]
         #[serde(rename = "$schema")]
@@ -290,51 +288,46 @@ config_struct!(
         /// Supports a relative file path or a secure URL.
         /// @since 1.12.0
         #[setting(extend, validate = validate::extends_from)]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub extends: Option<schematic::ExtendsFrom>,
 
         /// A map of environment variables that will be inherited by all
         /// matching projects, and merged into their `env` setting.
         /// @since 2.5.0
         #[setting(merge = merge_iter)]
-        #[serde(skip_serializing_if = "EnvMap::is_empty")]
         pub env: EnvMap,
 
         /// A map of group identifiers to a list of file paths, globs, and
         /// environment variables, that can be referenced from tasks.
         #[setting(merge = merge_iter)]
-        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
         pub file_groups: FxHashMap<Id, Vec<Input>>,
 
         /// Task dependencies (`deps`) that will be automatically injected into every
         /// task that inherits this configuration.
         #[setting(nested, merge = merge::append_vec, validate = validate_deps)]
-        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub implicit_deps: Vec<TaskDependency>,
 
         /// Task inputs (`inputs`) that will be automatically injected into every
         /// task that inherits this configuration.
         #[setting(merge = merge::append_vec)]
-        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub implicit_inputs: Vec<Input>,
 
         /// A map of conditions that define which projects will inherit these
         /// tasks and configuration. If not defined, will be inherited by all projects.
         /// @since 2.0.0
         #[setting(nested)]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub inherited_by: Option<InheritedByConfig>,
 
         /// A map of identifiers to task objects. Tasks represent the work-unit
         /// of a project, and can be ran in the action pipeline.
         #[setting(nested, merge = merge_partials)]
-        #[serde(skip_serializing_if = "BTreeMap::is_empty")]
         pub tasks: BTreeMap<Id, TaskConfig>,
 
         /// Default task options for all inherited tasks.
         /// @since 1.20.0
         #[setting(nested)]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub task_options: Option<TaskOptionsConfig>,
     }
 );

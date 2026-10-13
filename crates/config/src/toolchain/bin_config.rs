@@ -1,6 +1,6 @@
 // NOTE: This is used by toolchain plugins, and not moon directly!
 
-use crate::{config_enum, config_struct, is_false};
+use crate::{config_enum, config_struct};
 use schematic::{Config, validate};
 
 config_struct!(
@@ -10,7 +10,7 @@ config_struct!(
         /// Additional arguments to pass to the install command, like
         /// feature flags. Support is dependent on the toolchain.
         /// @since 2.6.0
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(default)]
         pub args: Vec<String>,
 
         /// Name of the binary, with optional version separated by `@`.
@@ -18,11 +18,11 @@ config_struct!(
         pub bin: String,
 
         /// Force install the binary if it already exists.
-        #[serde(default, skip_serializing_if = "is_false")]
+        #[serde(default)]
         pub force: bool,
 
         /// Only install the binary locally, and not within CI.
-        #[serde(default, skip_serializing_if = "is_false")]
+        #[serde(default)]
         pub local: bool,
 
         /// For supported tools, a custom name to use.

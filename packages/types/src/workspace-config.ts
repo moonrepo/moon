@@ -22,7 +22,7 @@ export interface CacheCasConfig {
 	 *
 	 * @env MOON_CACHE_CAS_VERIFY_INTEGRITY
 	 */
-	verifyIntegrity?: boolean;
+	verifyIntegrity: boolean;
 }
 
 /** Configures aspects of the caching engine and layer. */
@@ -31,7 +31,7 @@ export interface CacheConfig {
 	 * Configures aspects of the content-addressable storage (CAS) cache.
 	 * @since 2.3.0
 	 */
-	cas?: CacheCasConfig;
+	cas: CacheCasConfig;
 	/**
 	 * Whether to use a shared worktree cache. When enabled, the cache is
 	 * shared between all VCS worktrees on the same machine. When disabled,
@@ -44,7 +44,7 @@ export interface CacheConfig {
 	 *
 	 * @env MOON_CACHE_SHARED_WORKTREE_CACHE
 	 */
-	sharedWorktreeCache?: boolean;
+	sharedWorktreeCache: boolean;
 }
 
 /** How to order ownership rules within the generated file. */
@@ -56,14 +56,14 @@ export interface CodeownersConfig {
 	 * A map of global file paths and glob patterns to a list of owners.
 	 * Can be relative from the workspace root, or a wildcard match for any depth.
 	 */
-	globalPaths?: Record<string, string[]>;
+	globalPaths: Record<string, string[]>;
 	/**
 	 * How to order ownership rules within the generated file.
 	 *
 	 * @default 'file-source'
 	 * @type {'file-source' | 'project-id'}
 	 */
-	orderBy?: CodeownersOrderBy;
+	orderBy: CodeownersOrderBy;
 	/**
 	 * `bitbucket-legacy` and GitLab only. The number of approvals required
 	 * for the request to be satisfied. This will be applied to all paths.
@@ -74,7 +74,7 @@ export interface CodeownersConfig {
 	 * Automatically generate a `CODEOWNERS` file during a sync operation,
 	 * after aggregating all ownership rules from each project in the workspace.
 	 */
-	sync?: boolean;
+	sync: boolean;
 }
 
 /** Configures boundaries and constraints between projects. */
@@ -90,7 +90,7 @@ export interface ConstraintsConfig {
 	 * Enforces relationships between projects based on each project's
 	 * `tags` setting. Requires a mapping of tags, to acceptable tags.
 	 */
-	tagRelationships?: Record<Id, Id[]>;
+	tagRelationships: Record<Id, Id[]>;
 }
 
 /**
@@ -165,14 +165,14 @@ export interface DockerScaffoldConfig {
 	 * workspace level scaffolding.
 	 * @since 2.0.0
 	 */
-	configsPhaseGlobs?: string[];
+	configsPhaseGlobs: string[];
 	/**
 	 * List of glob patterns in which to include/exclude files in
 	 * the "sources" skeleton. Applies to both project and
 	 * workspace level scaffolding.
 	 * @since 2.0.0
 	 */
-	sourcesPhaseGlobs?: string[];
+	sourcesPhaseGlobs: string[];
 }
 
 /** Configures our Docker integration. */
@@ -181,11 +181,11 @@ export interface DockerConfig {
 	 * Configures aspects of the `Dockerfile` generation process.
 	 * @since 2.0.0
 	 */
-	file?: DockerFileConfig;
+	file: DockerFileConfig;
 	/** Configures aspects of the Docker pruning process. */
-	prune?: DockerPruneConfig;
+	prune: DockerPruneConfig;
 	/** Configures aspects of the Docker scaffolding process. */
-	scaffold?: DockerScaffoldConfig;
+	scaffold: DockerScaffoldConfig;
 }
 
 /** Configures experiments across the entire moon workspace. */
@@ -220,21 +220,21 @@ export interface HasherConfig {
 	 * so prefixing with `**` is recommended.
 	 * @since 1.10.0
 	 */
-	ignorePatterns?: string[];
+	ignorePatterns: string[];
 	/**
 	 * The optimization to use when hashing.
 	 *
 	 * @default 'accuracy'
 	 * @type {'accuracy' | 'performance'}
 	 */
-	optimization?: HasherOptimization;
+	optimization: HasherOptimization;
 	/**
 	 * The strategy to use when walking the file system.
 	 *
 	 * @default 'vcs'
 	 * @type {'glob' | 'vcs'}
 	 */
-	walkStrategy?: HasherWalkStrategy;
+	walkStrategy: HasherWalkStrategy;
 	/**
 	 * Logs a warning when a task has configured an explicit file path
 	 * input, and that file does not exist when hashing.
@@ -264,7 +264,7 @@ export interface NotifierConfig {
 	 *
 	 * @env MOON_WEBHOOK_ACKNOWLEDGE
 	 */
-	webhookAcknowledge?: boolean;
+	webhookAcknowledge: boolean;
 	/**
 	 * A secure URL in which to send webhooks to.
 	 *
@@ -303,7 +303,7 @@ export interface PipelineConfig {
 	 * when changes to lockfiles and manifests are detected.
 	 * @since 1.34.0
 	 */
-	installDependencies?: PipelineActionSwitch;
+	installDependencies: PipelineActionSwitch;
 	/**
 	 * A threshold in milliseconds in which to force kill running child
 	 * processes after the pipeline receives an external signal. A value
@@ -314,7 +314,7 @@ export interface PipelineConfig {
 	 */
 	killProcessThreshold?: number;
 	/** Logs the task's command and arguments when running the task. */
-	logRunningCommand?: boolean;
+	logRunningCommand: boolean;
 	/**
 	 * When creating `SyncProject` actions, recursively create a `SyncProject`
 	 * action for each project dependency, and link them as a relationship.
@@ -328,7 +328,7 @@ export interface PipelineConfig {
 	 * of a running task.
 	 * @since 1.34.0
 	 */
-	syncProjects?: PipelineActionSwitch;
+	syncProjects: PipelineActionSwitch;
 	/**
 	 * Run the `SyncWorkspace` action before all actions in the pipeline.
 	 * @since 1.34.0
@@ -350,14 +350,14 @@ export interface WorkspaceProjectsConfig {
 	 * @default 'dir-name'
 	 * @type {'dir-name' | 'source-path'}
 	 */
-	globFormat?: WorkspaceProjectGlobFormat;
+	globFormat: WorkspaceProjectGlobFormat;
 	/**
 	 * A list of glob patterns in which to locate project directories.
 	 * Can be suffixed with a `moon.*` config file to only find distinct projects.
 	 */
-	globs?: string[];
+	globs: string[];
 	/** A map of project identifiers to relative file paths to each project directory. */
-	sources?: Record<Id, string>;
+	sources: Record<Id, string>;
 }
 
 export type WorkspaceProjects = WorkspaceProjectsConfig | string[] | Record<Id, string>;
@@ -374,7 +374,7 @@ export type RemoteApi = 'grpc' | 'http';
  */
 export interface RemoteAuthConfig {
 	/** A map of HTTP headers to inject into every request. */
-	headers?: Record<string, string>;
+	headers: Record<string, string>;
 	/**
 	 * The name of an environment variable to use as a bearer token.
 	 *
@@ -402,7 +402,7 @@ export interface RemoteCacheConfig {
 	 * @env MOON_REMOTE_CACHE_COMPRESSION
 	 * @type {'none' | 'zstd'}
 	 */
-	compression?: RemoteCompression;
+	compression: RemoteCompression;
 	/**
 	 * Unique instance name for blobs. Will be used as a folder name.
 	 *
@@ -417,7 +417,7 @@ export interface RemoteCacheConfig {
 	 *
 	 * @env MOON_REMOTE_CACHE_LOCAL_READ_ONLY
 	 */
-	localReadOnly?: boolean;
+	localReadOnly: boolean;
 	/**
 	 * The maximum number of times to retry a request that failed with
 	 * a transient error (connection failure, timeout, 5xx, 429, etc),
@@ -441,7 +441,7 @@ export interface RemoteMtlsConfig {
 	 *
 	 * @env MOON_REMOTE_MTLS_HTTP
 	 */
-	assumeHttp2?: boolean;
+	assumeHttp2: boolean;
 	/**
 	 * A file path, relative from the workspace root, to the
 	 * certificate authority PEM encoded X509 certificate.
@@ -482,7 +482,7 @@ export interface RemoteTlsConfig {
 	 *
 	 * @env MOON_REMOTE_TLS_HTTP2
 	 */
-	assumeHttp2?: boolean;
+	assumeHttp2: boolean;
 	/**
 	 * A file path, relative from the workspace root, to the
 	 * certificate authority PEM encoded X509 certificate.
@@ -511,14 +511,14 @@ export interface RemoteConfig {
 	 * @env MOON_REMOTE_API
 	 * @type {'grpc' | 'http'}
 	 */
-	api?: RemoteApi;
+	api: RemoteApi;
 	/**
 	 * Connect to the host using basic HTTP authentication.
 	 * @since 1.32.0
 	 */
 	auth?: RemoteAuthConfig | null;
 	/** Configures the action cache (AC) and content-addressable cache (CAS). */
-	cache?: RemoteCacheConfig;
+	cache: RemoteCacheConfig;
 	/**
 	 * The remote host to connect and send requests to.
 	 * Supports gRPC protocols.
@@ -558,7 +558,7 @@ export interface VcsConfig {
 	 * @default 'git'
 	 * @type {'git'}
 	 */
-	client?: VcsClient;
+	client: VcsClient;
 	/**
 	 * The default branch / base.
 	 *
@@ -572,12 +572,12 @@ export interface VcsConfig {
 	 * @default 'native'
 	 * @type {'bash' | 'native'}
 	 */
-	hookFormat?: VcsHookFormat;
+	hookFormat: VcsHookFormat;
 	/**
 	 * A map of hooks to a list of commands to run when the hook is triggered.
 	 * @since 1.9.0
 	 */
-	hooks?: Record<string, string[]>;
+	hooks: Record<string, string[]>;
 	/**
 	 * The upstream version control provider, where the repository
 	 * source code is stored.
@@ -586,7 +586,7 @@ export interface VcsConfig {
 	 * @default 'github'
 	 * @type {'bitbucket' | 'github' | 'gitlab' | 'other'}
 	 */
-	provider?: VcsProvider;
+	provider: VcsProvider;
 	/** List of remote's in which to compare branches against. */
 	remoteCandidates?: string[];
 	/**
@@ -594,7 +594,7 @@ export interface VcsConfig {
 	 * based on the `hooks` setting.
 	 * @since 1.9.0
 	 */
-	sync?: boolean;
+	sync: boolean;
 }
 
 export type Range = string;
@@ -625,7 +625,7 @@ export interface WorkspaceConfig {
 	 *
 	 * @env MOON_DAEMON
 	 */
-	daemon?: boolean;
+	daemon: boolean;
 	/**
 	 * The default/main project within the workspace. When a task is
 	 * ran without a project, the default will be used.

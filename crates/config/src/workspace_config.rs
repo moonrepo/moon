@@ -79,7 +79,6 @@ config_unit_enum!(
 config_struct!(
     /// Configures projects in the workspace, using both globs and explicit source paths.
     #[derive(Config)]
-    #[serde(default)]
     pub struct WorkspaceProjectsConfig {
         /// A list of glob patterns in which to locate project directories.
         /// Can be suffixed with a `moon.*` config file to only find distinct projects.
@@ -116,7 +115,6 @@ config_struct!(
     /// Configures all aspects of the moon workspace.
     /// Docs: https://moonrepo.dev/docs/config/workspace
     #[derive(Config)]
-    #[serde(default)]
     pub struct WorkspaceConfig {
         #[setting(default = "./cache/schemas/workspace.json")]
         #[serde(rename = "$schema")]
@@ -140,7 +138,6 @@ config_struct!(
         /// greatly increasing performance of the main thread/executable.
         /// @since 2.2.0
         #[setting(env = "MOON_DAEMON", parse_env = env::parse_bool)]
-        #[serde(default)]
         pub daemon: bool,
 
         /// The default/main project within the workspace. When a task is

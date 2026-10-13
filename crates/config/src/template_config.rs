@@ -1,5 +1,5 @@
 use crate::shapes::OneOrMany;
-use crate::{config_enum, config_struct, is_false};
+use crate::{config_enum, config_struct};
 use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{Config, ValidateError, validate};
@@ -16,7 +16,6 @@ macro_rules! var_setting {
                 pub default: $ty,
 
                 /// Marks the variable as internal, and won't be overwritten via CLI arguments.
-                #[serde(default, skip_serializing_if = "is_false")]
                 pub internal: bool,
 
                 /// The order in which variables should be prompted for.
@@ -24,7 +23,7 @@ macro_rules! var_setting {
                 pub order: Option<usize>,
 
                 /// Prompt the user for a value when the generator is running.
-                #[serde(skip_serializing_if = "Option::is_none")]
+                #[serde(default, skip_serializing_if = "Option::is_none")]
                 pub prompt: Option<String>,
 
                 /// Marks the variable as required, and will not accept an empty value.
@@ -131,7 +130,6 @@ config_struct!(
         pub default: TemplateVariableEnumDefault,
 
         /// Marks the variable as internal, and won't be overwritten via CLI arguments.
-        #[serde(default, skip_serializing_if = "is_false")]
         pub internal: bool,
 
         /// Allows multiple values to be selected.
@@ -270,7 +268,7 @@ config_struct!(
     /// Docs: https://moonrepo.dev/docs/config/template
     #[derive(Config)]
     pub struct TemplateConfig {
-        #[serde(default, rename = "$schema")]
+        #[serde(rename = "$schema")]
         pub schema: String,
 
         /// A description on what the template scaffolds.
@@ -283,7 +281,6 @@ config_struct!(
         pub destination: Option<String>,
 
         /// Extends one or many other templates.
-        #[serde(default, skip_serializing_if = "OneOrMany::is_empty")]
         pub extends: OneOrMany<Id>,
 
         /// Overrides the identifier of the template, instead of using the folder name.
@@ -297,7 +294,6 @@ config_struct!(
         /// A map of variables that'll be interpolated within each template file.
         /// Variables can also be populated by passing command line arguments.
         #[setting(nested)]
-        #[serde(default, skip_serializing_if = "FxHashMap::is_empty")]
         pub variables: FxHashMap<String, TemplateVariable>,
     }
 );

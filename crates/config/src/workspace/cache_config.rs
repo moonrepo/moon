@@ -4,13 +4,13 @@ use schematic::{Config, env};
 config_struct!(
     /// Configures aspects of the content-addressable storage (CAS) cache.
     #[derive(Config)]
-    #[serde(default)]
     pub struct CacheCasConfig {
         /// Maximum total size of the local cache, for example "10gb" or
         /// "512mib". When exceeded, the least recently used cached task outputs
         /// are evicted. Unlimited when unset.
         /// @since 2.4.0
         #[setting(env = "MOON_CACHE_CAS_MAX_SIZE")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub max_size: Option<String>,
 
         /// Verify hash on every read. When enabled, reads are slower
@@ -24,7 +24,6 @@ config_struct!(
 config_struct!(
     /// Configures aspects of the caching engine and layer.
     #[derive(Config)]
-    #[serde(default)]
     pub struct CacheConfig {
         /// Configures aspects of the content-addressable storage (CAS) cache.
         /// @since 2.3.0

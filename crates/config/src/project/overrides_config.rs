@@ -88,7 +88,6 @@ config_struct!(
     #[derive(Config)]
     pub struct ProjectWorkspaceInheritedTasksConfig {
         /// Excludes inheriting tasks by their identifier.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub exclude: Vec<Id>,
 
         /// Only inherits tasks with the provided identifiers,
@@ -99,7 +98,6 @@ config_struct!(
 
         /// Renames inherited tasks by mapping their existing
         /// identifier to a new identifier, scoped to this project.
-        #[serde(default, skip_serializing_if = "FxHashMap::is_empty")]
         pub rename: FxHashMap<Id, Id>,
     }
 );

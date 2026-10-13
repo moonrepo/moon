@@ -103,7 +103,7 @@ export type TaskDependencyCacheStrategy = 'hash' | 'ignored' | 'outputs';
 /** A task referenced by target, with additional parameters to pass through. */
 export interface TaskDependencyConfig {
 	/** Additional arguments to pass to this dependency when it's ran. */
-	args?: string[];
+	args: string[];
 	/**
 	 * Controls how this dependency invalidates the current task's cache.
 	 * When omitted, defaults to `hash` if the dependency declares outputs,
@@ -112,7 +112,7 @@ export interface TaskDependencyConfig {
 	 */
 	cacheStrategy?: TaskDependencyCacheStrategy | null;
 	/** A map of environment variables specific to this dependency. */
-	env?: Record<string, string | null>;
+	env: Record<string, string | null>;
 	/**
 	 * Marks the dependency as optional when being inherited from the top-level.
 	 * @since 1.20.0
@@ -132,7 +132,7 @@ export interface TaskDependencyConfig {
 	 * @default 'required'
 	 * @type {'cleanup' | 'required' | 'wait' | 'optional'}
 	 */
-	type?: TaskDependencyType;
+	type: TaskDependencyType;
 }
 
 export type TaskDependency = string | TaskDependencyConfig;
@@ -286,7 +286,7 @@ export interface TaskOptionAffectedFilesConfig {
 	 * passing to the task as arguments or environment variables. Globs
 	 * must start with `**` to match against absolute paths.
 	 */
-	filter?: string[];
+	filter: string[];
 	/**
 	 * When matching affected files, ignore the project boundary and include
 	 * workspace relative files. Otherwise, only files within the project are matched.
@@ -558,7 +558,7 @@ export interface TaskConfig {
 	 * Arguments to pass to the command when it's ran. Can be
 	 * defined as a string, or a list of individual arguments.
 	 */
-	args?: TaskArgs;
+	args: TaskArgs;
 	/**
 	 * Checks are shell scripts that run before the task is executed,
 	 * and are categorized into three types: conditions, requirements,
@@ -572,7 +572,7 @@ export interface TaskConfig {
 	 * Supports the command (executable) with or without arguments.
 	 * Can be defined as a string, or a list of individual arguments.
 	 */
-	command?: TaskArgs;
+	command: TaskArgs;
 	/**
 	 * Other tasks that this task depends on, and must run to completion
 	 * before this task is ran. Can depend on sibling tasks, or tasks in
@@ -609,7 +609,7 @@ export interface TaskConfig {
 	 */
 	inputs?: Input[] | null;
 	/** Options to control task inheritance, execution, and more. */
-	options?: TaskOptionsConfig;
+	options: TaskOptionsConfig;
 	/**
 	 * A list of outputs that will be created when the task has successfully ran.
 	 * An output can be a literal file path, or a glob pattern.
@@ -662,7 +662,7 @@ export interface InheritedTasksConfig {
 	 * matching projects, and merged into their `env` setting.
 	 * @since 2.5.0
 	 */
-	env?: Record<string, string | null>;
+	env: Record<string, string | null>;
 	/**
 	 * Extends one or many tasks configuration files.
 	 * Supports a relative file path or a secure URL.
@@ -673,17 +673,17 @@ export interface InheritedTasksConfig {
 	 * A map of group identifiers to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
 	 */
-	fileGroups?: Record<Id, Input[]>;
+	fileGroups: Record<Id, Input[]>;
 	/**
 	 * Task dependencies (`deps`) that will be automatically injected into every
 	 * task that inherits this configuration.
 	 */
-	implicitDeps?: TaskDependency[];
+	implicitDeps: TaskDependency[];
 	/**
 	 * Task inputs (`inputs`) that will be automatically injected into every
 	 * task that inherits this configuration.
 	 */
-	implicitInputs?: Input[];
+	implicitInputs: Input[];
 	/**
 	 * A map of conditions that define which projects will inherit these
 	 * tasks and configuration. If not defined, will be inherited by all projects.
@@ -699,7 +699,7 @@ export interface InheritedTasksConfig {
 	 * A map of identifiers to task objects. Tasks represent the work-unit
 	 * of a project, and can be ran in the action pipeline.
 	 */
-	tasks?: Record<Id, TaskConfig>;
+	tasks: Record<Id, TaskConfig>;
 }
 
 /** A task referenced by target, with additional parameters to pass through. */

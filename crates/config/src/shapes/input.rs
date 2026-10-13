@@ -137,7 +137,7 @@ config_struct!(
         pub glob: GlobPath,
 
         /// Cache the glob walking result for increased performance.
-        #[serde(default = "default_true", skip_serializing_if = "is_false")]
+        #[serde(default = "default_true")]
         #[setting(default = true)]
         pub cache: bool,
     }
@@ -176,12 +176,7 @@ config_struct!(
 
         /// List of dependencies to compare against when
         /// determining affected status.
-        #[serde(
-            default,
-            alias = "dep",
-            alias = "dependencies",
-            skip_serializing_if = "Vec::is_empty"
-        )]
+        #[serde(default, alias = "dep", alias = "dependencies")]
         pub deps: Vec<String>,
     }
 );
@@ -226,7 +221,7 @@ config_struct!(
 
         /// A list of globs, relative from the project's root,
         /// in which to determine affected status.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(default)]
         pub filter: Vec<String>,
 
         /// A file group identifier within the project in which

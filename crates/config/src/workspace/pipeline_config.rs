@@ -1,4 +1,4 @@
-use crate::{config_enum, config_struct, is_false};
+use crate::{config_enum, config_struct};
 use moon_common::Id;
 use schematic::{Config, env};
 
@@ -40,7 +40,6 @@ impl From<bool> for PipelineActionSwitch {
 config_struct!(
     /// Configures aspects of the action pipeline.
     #[derive(Config)]
-    #[serde(default)]
     pub struct PipelineConfig {
         /// Automatically clean the cache after every task run.
         /// @since 1.24.0
@@ -68,7 +67,6 @@ config_struct!(
         pub kill_process_threshold: u32,
 
         /// Logs the task's command and arguments when running the task.
-        #[serde(skip_serializing_if = "is_false")]
         pub log_running_command: bool,
 
         /// Run the `SyncProject` actions in the pipeline for each owning project

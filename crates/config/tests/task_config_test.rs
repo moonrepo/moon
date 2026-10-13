@@ -424,7 +424,7 @@ deps:
         }
 
         #[test]
-        fn serializes_default_type_by_omitting_it() {
+        fn serializes_default_type() {
             let dep = parse_first_dep(
                 r"
 deps:
@@ -434,7 +434,7 @@ deps:
 
             assert_eq!(
                 serde_json::to_string(&dep).unwrap(),
-                r#"{"args":[],"env":{},"target":"project:task"}"#
+                r#"{"args":[],"env":{},"target":"project:task","type":"required"}"#
             );
         }
 

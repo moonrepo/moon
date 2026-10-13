@@ -37,7 +37,7 @@ config_struct!(
     #[config(allow_unknown_fields)]
     pub struct ExtensionsConfig {
         #[setting(default = "./cache/schemas/extensions.json")]
-        #[serde(default, rename = "$schema")]
+        #[serde(rename = "$schema")]
         pub schema: String,
 
         /// Extends one or many extensions configuration files.

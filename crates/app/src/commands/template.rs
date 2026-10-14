@@ -222,12 +222,12 @@ fn create_default_context(session: &MoonSession, template: &Template) -> Templat
 
     for (name, var) in &template.config.variables {
         match var {
-            TemplateVariable::Array(cfg) => context.insert(name, &cfg.default),
-            TemplateVariable::Boolean(cfg) => context.insert(name, &cfg.default),
-            TemplateVariable::Enum(cfg) => context.insert(name, &cfg.default),
-            TemplateVariable::Number(cfg) => context.insert(name, &cfg.default),
-            TemplateVariable::Object(cfg) => context.insert(name, &cfg.default),
-            TemplateVariable::String(cfg) => context.insert(name, &cfg.default),
+            TemplateVariable::Array(cfg) => context.insert(name.to_owned(), &cfg.default),
+            TemplateVariable::Boolean(cfg) => context.insert(name.to_owned(), &cfg.default),
+            TemplateVariable::Enum(cfg) => context.insert(name.to_owned(), &cfg.default),
+            TemplateVariable::Number(cfg) => context.insert(name.to_owned(), &cfg.default),
+            TemplateVariable::Object(cfg) => context.insert(name.to_owned(), &cfg.default),
+            TemplateVariable::String(cfg) => context.insert(name.to_owned(), &cfg.default),
         };
     }
 

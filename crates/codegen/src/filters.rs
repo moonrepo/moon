@@ -1,90 +1,69 @@
-// HashMap is required for Tera
-#![allow(clippy::disallowed_types)]
-
 use convert_case::{Case, Casing};
 use moon_common::path::{PathExt, RelativePathBuf};
-use starbase_utils::json::{JsonValue as Value, serde_json::to_value};
-use std::collections::HashMap;
 use std::path::PathBuf;
-use tera::{Error, Result, try_get_value};
+use tera::{Error, Kwargs, State, TeraResult};
 
 // STRINGS
 
-fn to_case(case_fn: &str, case_type: Case, value: &Value) -> Result<Value> {
-    let s = try_get_value!(case_fn, "value", String, value);
-
-    Ok(to_value(s.to_case(case_type)).unwrap())
+pub fn camel_case(value: &str, _: Kwargs, _: &State) -> String {
+    value.to_case(Case::Camel)
 }
 
-pub fn camel_case(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
-    to_case("camel_case", Case::Camel, value)
+pub fn kebab_case(value: &str, _: Kwargs, _: &State) -> String {
+    value.to_case(Case::Kebab)
 }
 
-pub fn kebab_case(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
-    to_case("kebab_case", Case::Kebab, value)
+pub fn upper_kebab_case(value: &str, _: Kwargs, _: &State) -> String {
+    value.to_case(Case::UpperKebab)
 }
 
-pub fn upper_kebab_case(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
-    to_case("upper_kebab_case", Case::UpperKebab, value)
+pub fn pascal_case(value: &str, _: Kwargs, _: &State) -> String {
+    value.to_case(Case::Pascal)
 }
 
-pub fn pascal_case(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
-    to_case("pascal_case", Case::Pascal, value)
+pub fn snake_case(value: &str, _: Kwargs, _: &State) -> String {
+    value.to_case(Case::Snake)
 }
 
-pub fn snake_case(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
-    to_case("snake_case", Case::Snake, value)
+pub fn upper_snake_case(value: &str, _: Kwargs, _: &State) -> String {
+    value.to_case(Case::UpperSnake)
 }
 
-pub fn upper_snake_case(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
-    to_case("upper_snake_case", Case::UpperSnake, value)
+pub fn lower_case(value: &str, _: Kwargs, _: &State) -> String {
+    value.to_lowercase()
 }
 
-pub fn lower_case(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
-    let s = try_get_value!("lower_case", "value", String, value);
-
-    Ok(to_value(s.to_lowercase()).unwrap())
-}
-
-pub fn upper_case(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
-    let s = try_get_value!("upper_case", "value", String, value);
-
-    Ok(to_value(s.to_uppercase()).unwrap())
+pub fn upper_case(value: &str, _: Kwargs, _: &State) -> String {
+    value.to_uppercase()
 }
 
 // PATHS
 
-pub fn path_join(value: &Value, args: &HashMap<String, Value>) -> Result<Value> {
-    let base = try_get_value!("path_join", "value", PathBuf, value);
-
-    let part = match args.get("part") {
-        Some(val) => try_get_value!("path_join", "part", RelativePathBuf, val),
-        None => return Err(Error::msg("Expected a `part` for `path_join`.")),
+pub fn path_join(value: &str, args: Kwargs, _: &State) -> TeraResult<String> {
+    let Some(part) = args.get::<&str>("part")? else {
+        return Err(Error::message("Expected a `part` for `path_join`."));
     };
 
-    Ok(to_value(part.normalize().to_logical_path(base)).unwrap())
+    Ok(RelativePathBuf::from(part)
+        .normalize()
+        .to_logical_path(value)
+        .to_string_lossy()
+        .into_owned())
 }
 
-pub fn path_relative(value: &Value, args: &HashMap<String, Value>) -> Result<Value> {
-    let base = try_get_value!("path_relative", "value", PathBuf, value);
+pub fn path_relative(value: &str, args: Kwargs, _: &State) -> TeraResult<String> {
+    let base = PathBuf::from(value);
+    let to = args.get::<&str>("to")?;
+    let from = args.get::<&str>("from")?;
 
-    if args.get("to").is_none() && args.get("from").is_none() {
-        return Err(Error::msg("Expected a `to` or `from` for `path_relative`."));
+    if to.is_none() && from.is_none() {
+        return Err(Error::message(
+            "Expected a `to` or `from` for `path_relative`.",
+        ));
     }
 
-    let rel_to = match args.get("to") {
-        Some(val) => try_get_value!("path_relative", "to", PathBuf, val)
-            .relative_to(&base)
-            .ok(),
-        None => None,
-    };
-
-    let rel_from = match args.get("from") {
-        Some(val) => base
-            .relative_to(try_get_value!("path_relative", "from", PathBuf, val))
-            .ok(),
-        None => None,
-    };
+    let rel_to = to.and_then(|to| PathBuf::from(to).relative_to(&base).ok());
+    let rel_from = from.and_then(|from| base.relative_to(from).ok());
 
     let mut rel = rel_to
         .unwrap_or_else(|| rel_from.unwrap_or(RelativePathBuf::from(".")))
@@ -94,5 +73,5 @@ pub fn path_relative(value: &Value, args: &HashMap<String, Value>) -> Result<Val
         rel = RelativePathBuf::from(".");
     }
 
-    Ok(to_value(rel).unwrap())
+    Ok(rel.into_string())
 }

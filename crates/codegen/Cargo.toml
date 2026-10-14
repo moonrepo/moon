@@ -24,6 +24,7 @@ serde = { workspace = true }
 starbase_archive = { workspace = true }
 starbase_utils = { workspace = true, features = ["editor-config", "glob", "json", "net", "yaml"] }
 tera = { workspace = true }
+tera-contrib = { version = "0.3.0", features = ["json"] }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }

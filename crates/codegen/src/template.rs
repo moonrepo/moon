@@ -2,7 +2,6 @@ use crate::asset_file::AssetFile;
 use crate::codegen_error::CodegenError;
 use crate::template_file::{FileState, MergeType, TemplateFile};
 use crate::{filters, funcs};
-use miette::IntoDiagnostic;
 use moon_common::Id;
 use moon_common::path::{RelativePathBuf, to_virtual_string};
 use moon_config::{TemplateConfig, schematic::helpers::strip_bom};
@@ -30,6 +29,11 @@ pub struct Template {
     pub id: Id,
     pub root: PathBuf,
     pub templates: Vec<Template>, // Extending
+
+    /// Raw sources of all templates registered with the engine,
+    /// including those inherited from extended templates.
+    #[serde(skip)]
+    sources: BTreeMap<String, String>,
 }
 
 impl Template {
@@ -47,6 +51,7 @@ impl Template {
         engine.register_filter("upper_snake_case", filters::upper_snake_case);
         engine.register_filter("path_join", filters::path_join);
         engine.register_filter("path_relative", filters::path_relative);
+        engine.register_filter("json_encode", tera_contrib::json::json_encode);
         engine.register_function("variables", funcs::variables);
 
         let config = ConfigLoader::default().load_template_config(&root)?;
@@ -59,6 +64,7 @@ impl Template {
             files: BTreeMap::new(),
             root,
             templates: vec![],
+            sources: BTreeMap::new(),
         })
     }
 
@@ -88,7 +94,11 @@ impl Template {
         for template in &mut self.templates {
             template.load_files(dest, context)?;
 
-            self.engine.extend(&template.engine).into_diagnostic()?;
+            // Extended templates are registered with our engine so that they
+            // can be included, but they do not overwrite existing templates
+            for (name, content) in mem::take(&mut template.sources) {
+                self.sources.entry(name).or_insert(content);
+            }
 
             assets.extend(mem::take(&mut template.assets));
             files.extend(mem::take(&mut template.files));
@@ -159,12 +169,7 @@ impl Template {
 
             // Add partial templates to Tera, but skip including them as a file
             if name.as_str().contains("partial") {
-                self.engine
-                    .add_raw_template(name.as_str(), content)
-                    .map_err(|error| CodegenError::LoadTemplateFileFailed {
-                        path: source_path.clone(),
-                        error: Box::new(error),
-                    })?;
+                self.sources.insert(name.to_string(), content.to_owned());
 
                 debug!(
                     template = self.id.as_str(),
@@ -188,16 +193,21 @@ impl Template {
             if file.raw {
                 file.content = content.to_owned();
             } else {
-                self.engine
-                    .add_raw_template(file.name.as_str(), content)
-                    .map_err(|error| CodegenError::LoadTemplateFileFailed {
-                        path: file.source_path.clone(),
-                        error: Box::new(error),
-                    })?;
+                self.sources
+                    .insert(file.name.to_string(), content.to_owned());
             }
 
             files.push(file);
         }
+
+        // Templates must be added in a single batch, as Tera validates
+        // that includes and parents exist when templates are added
+        self.engine
+            .add_raw_templates(&self.sources)
+            .map_err(|error| CodegenError::LoadTemplateFilesFailed {
+                path: self.root.clone(),
+                error: Box::new(error),
+            })?;
 
         // Do a second pass and render the content
         for mut file in files {
@@ -225,7 +235,7 @@ impl Template {
     /// to interpolate a path ourselves. Instead, let's use Tera and its
     /// template rendering to handle this.
     pub fn interpolate_path(
-        &mut self,
+        &self,
         path: &Path,
         context: &Context,
     ) -> miette::Result<RelativePathBuf> {
@@ -248,7 +258,7 @@ impl Template {
 
                     if context.contains_key(var) {
                         return format!(
-                            "{{{{ {var} | as_str {} }}}}",
+                            "{{{{ {var} | str {} }}}}",
                             caps.get(2)
                                 .map(|f| format!("| {}", f.as_str()))
                                 .unwrap_or_default()
@@ -261,12 +271,13 @@ impl Template {
             .to_string();
 
         // Render the path to interpolate the values
-        let path = self.engine.render_str(&name, context).map_err(|error| {
-            CodegenError::InterpolateTemplateFileFailed {
+        let path = self
+            .engine
+            .render_str(&name, context, false)
+            .map_err(|error| CodegenError::InterpolateTemplateFileFailed {
                 path: name.to_owned(),
                 error: Box::new(error),
-            }
-        })?;
+            })?;
 
         Ok(RelativePathBuf::from(path))
     }

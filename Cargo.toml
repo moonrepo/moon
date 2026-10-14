@@ -89,7 +89,7 @@ starbase_utils = { version = "0.14.7", default-features = false, features = [
   "glob-cache",
   "miette",
 ] }
-tera = { version = "1.20.1", features = ["preserve_order"] }
+tera = { version = "2.4.0", features = ["fast", "preserve_order"] }
 thiserror = "2.0.21"
 tokio = { version = "1.53.2", default-features = false, features = [
   "macros",

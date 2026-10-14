@@ -1,7 +1,6 @@
 use super::portable_path::{FilePath, GlobPath, PortablePath, is_glob_like};
 use super::*;
 use crate::{config_struct, generate_io_file_methods, generate_io_glob_methods, patterns};
-use deserialize_untagged_verbose_error::DeserializeUntaggedVerboseError;
 use moon_common::path::{
     RelativeFrom, WorkspaceRelativePathBuf, expand_to_workspace_relative, standardize_separators,
 };
@@ -89,7 +88,7 @@ impl GlobOutput {
 
 /// The different patterns a task output can be defined as.
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
-#[serde(try_from = "OutputShape")]
+#[serde(try_from = "PartialOutputShape")]
 pub enum Output {
     File(FileOutput),
     Glob(GlobOutput),
@@ -204,22 +203,27 @@ impl Serialize for Output {
     }
 }
 
-#[derive(DeserializeUntaggedVerboseError)]
+// Only the partial is used, which schematic deserializes by attempting
+// each variant in order, and reports every error when none match
+#[allow(dead_code)]
+#[derive(Config)]
+#[serde(untagged)]
 enum OutputShape {
     String(String),
-    // From most complex to least
+    #[setting(nested)]
     File(FileOutput),
+    #[setting(nested)]
     Glob(GlobOutput),
 }
 
-impl TryFrom<OutputShape> for Output {
+impl TryFrom<PartialOutputShape> for Output {
     type Error = ParseError;
 
-    fn try_from(base: OutputShape) -> Result<Self, Self::Error> {
-        match base {
-            OutputShape::String(output) => Self::parse(output),
-            OutputShape::File(output) => Ok(Self::File(output)),
-            OutputShape::Glob(output) => Ok(Self::Glob(output)),
-        }
+    fn try_from(base: PartialOutputShape) -> Result<Self, Self::Error> {
+        Ok(match base {
+            PartialOutputShape::String(output) => Self::parse(output)?,
+            PartialOutputShape::File(output) => Self::File(finalize_partial(output)?),
+            PartialOutputShape::Glob(output) => Self::Glob(finalize_partial(output)?),
+        })
     }
 }

@@ -815,7 +815,7 @@ inputs:
         }
 
         #[test]
-        #[should_panic(expected = "Failed to deserialize the untagged enum InputShape")]
+        #[should_panic(expected = "failed to parse as any variant of PartialInputShape")]
         fn errors_for_invalid_type() {
             test_parse_config(
                 r"
@@ -827,7 +827,7 @@ inputs:
         }
 
         #[test]
-        #[should_panic(expected = "Failed to deserialize the untagged enum InputShape")]
+        #[should_panic(expected = "failed to parse as any variant of PartialInputShape")]
         fn errors_for_invalid_object_field() {
             test_parse_config(
                 r"
@@ -884,7 +884,7 @@ outputs:
         }
 
         #[test]
-        #[should_panic(expected = "Failed to deserialize the untagged enum OutputShape")]
+        #[should_panic(expected = "failed to parse as any variant of PartialOutputShape")]
         fn errors_for_invalid_type() {
             test_parse_config(
                 r"
@@ -896,7 +896,7 @@ outputs:
         }
 
         #[test]
-        #[should_panic(expected = "Failed to deserialize the untagged enum OutputShape")]
+        #[should_panic(expected = "failed to parse as any variant of PartialOutputShape")]
         fn errors_for_invalid_object_field() {
             test_parse_config(
                 r"
@@ -1215,7 +1215,7 @@ checks:
         }
 
         #[test]
-        #[should_panic(expected = "Failed to deserialize the untagged enum TaskCheckShape")]
+        #[should_panic(expected = "failed to parse as any variant of PartialTaskCheckShape")]
         fn errors_on_invalid_check_type() {
             test_parse_config(
                 r"
@@ -1372,7 +1372,7 @@ options:
                     Some(TaskOptionAffectedFilesEntry::Object(
                         TaskOptionAffectedFilesConfig {
                             pass: TaskOptionAffectedFilesPattern::Enabled(true),
-                            pass_dot_when_no_results: None,
+                            pass_dot_when_no_results: Some(true),
                             ..Default::default()
                         }
                     ))
@@ -1414,7 +1414,7 @@ options:
                     Some(TaskOptionAffectedFilesEntry::Object(
                         TaskOptionAffectedFilesConfig {
                             pass: TaskOptionAffectedFilesPattern::Enabled(false),
-                            pass_dot_when_no_results: None,
+                            pass_dot_when_no_results: Some(true),
                             ..Default::default()
                         }
                     ))
@@ -1456,7 +1456,7 @@ options:
                     Some(TaskOptionAffectedFilesEntry::Object(
                         TaskOptionAffectedFilesConfig {
                             pass: TaskOptionAffectedFilesPattern::Args,
-                            pass_dot_when_no_results: None,
+                            pass_dot_when_no_results: Some(true),
                             ..Default::default()
                         }
                     ))
@@ -1498,7 +1498,7 @@ options:
                     Some(TaskOptionAffectedFilesEntry::Object(
                         TaskOptionAffectedFilesConfig {
                             pass: TaskOptionAffectedFilesPattern::Env,
-                            pass_dot_when_no_results: None,
+                            pass_dot_when_no_results: Some(true),
                             ..Default::default()
                         }
                     ))
@@ -1526,7 +1526,7 @@ options:
                             ignore_project_boundary: None,
                             pass: TaskOptionAffectedFilesPattern::Args,
                             pass_inputs_when_no_match: Some(true),
-                            pass_dot_when_no_results: None,
+                            pass_dot_when_no_results: Some(true),
                         }
                     ))
                 );
@@ -1549,7 +1549,7 @@ options:
                         TaskOptionAffectedFilesConfig {
                             filter: vec![],
                             pass: TaskOptionAffectedFilesPattern::Args,
-                            pass_dot_when_no_results: None,
+                            pass_dot_when_no_results: Some(true),
                             ..Default::default()
                         }
                     ))
@@ -1558,7 +1558,7 @@ options:
 
             #[test]
             #[should_panic(
-                expected = "Failed to deserialize the untagged enum TaskOptionAffectedFilesEntry"
+                expected = "failed to parse as any variant of PartialTaskOptionAffectedFilesEntry"
             )]
             fn errors_on_invalid_variant() {
                 test_parse_config(
@@ -1691,7 +1691,7 @@ options:
             }
 
             #[test]
-            #[should_panic(expected = "Failed to deserialize the untagged enum TaskOptionEnvFile")]
+            #[should_panic(expected = "failed to parse as any variant of PartialTaskOptionEnvFile")]
             fn errors_on_glob() {
                 test_parse_config(
                     r"

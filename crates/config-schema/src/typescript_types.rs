@@ -73,6 +73,10 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
                 "TaskCheckRequirementConfig".into(),
                 "TaskCheckFingerprintConfig".into(),
                 "TaskCheckConditionConfig".into(),
+                // Partials of the tagged check variants are generated, but unused
+                "PartialTaskCheckRequirementConfig".into(),
+                "PartialTaskCheckFingerprintConfig".into(),
+                "PartialTaskCheckConditionConfig".into(),
                 "TaggedTaskCheck".into(),
                 "TaskCheck".into(),
                 "TaskPriority".into(),
@@ -132,6 +136,10 @@ fn generate_tasks(out_dir: &Path) -> miette::Result<()> {
                 "LanguageType".into(),
                 "LayerType".into(),
                 "StackType".into(),
+                // Partials of the tagged check variants are generated, but unused
+                "PartialTaskCheckRequirementConfig".into(),
+                "PartialTaskCheckFingerprintConfig".into(),
+                "PartialTaskCheckConditionConfig".into(),
             ],
             external_types: HashMap::from_iter([
                 ("./common".into(), vec!["Id".into(), "ExtendsFrom".into()]),

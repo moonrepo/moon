@@ -1,5 +1,5 @@
+use crate::shapes::finalize_partial;
 use crate::{config_enum, config_struct, config_unit_enum, generate_switch};
-use deserialize_untagged_verbose_error::DeserializeUntaggedVerboseError;
 use schematic::schema::{StringType, UnionType};
 use schematic::{Config, ConfigEnum, ParseError, Schema, SchemaBuilder, Schematic, ValidateError};
 use serde::{Deserialize, Serialize, Serializer};
@@ -74,6 +74,7 @@ config_struct!(
         pub script: String,
 
         /// The content hashing strategy.
+        // Marks the setting as optional in schemas
         #[serde(default)]
         pub hash: TaskCheckFingerprint,
     }
@@ -91,7 +92,7 @@ config_unit_enum!(
 );
 
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
-#[serde(try_from = "TaskCheckShape")]
+#[serde(try_from = "PartialTaskCheckShape")]
 pub enum TaskCheck {
     Condition(TaskCheckConditionConfig),
     Requirement(TaskCheckRequirementConfig),
@@ -151,26 +152,34 @@ impl Schematic for TaskCheck {
 #[derive(Config, Serialize, Deserialize)]
 #[serde(tag = "check", rename_all = "kebab-case")]
 enum TaggedTaskCheck {
+    #[setting(nested)]
     Condition(TaskCheckConditionConfig),
+    #[setting(nested)]
     Requirement(TaskCheckRequirementConfig),
+    #[setting(nested)]
     Fingerprint(TaskCheckFingerprintConfig),
 }
 
-#[derive(DeserializeUntaggedVerboseError)]
+// Only the partial is used, which schematic deserializes by attempting
+// each variant in order, and reports every error when none match
+#[allow(dead_code)]
+#[derive(Config)]
+#[serde(untagged)]
 enum TaskCheckShape {
     String(String),
+    #[setting(nested)]
     Tagged(TaggedTaskCheck),
 }
 
-impl TryFrom<TaskCheckShape> for TaskCheck {
+impl TryFrom<PartialTaskCheckShape> for TaskCheck {
     type Error = ParseError;
 
-    fn try_from(shape: TaskCheckShape) -> Result<Self, Self::Error> {
+    fn try_from(shape: PartialTaskCheckShape) -> Result<Self, Self::Error> {
         match shape {
-            TaskCheckShape::String(script) => check_script(&script)
+            PartialTaskCheckShape::String(script) => check_script(&script)
                 .map(|_| Self::Requirement(TaskCheckRequirementConfig { script }))
                 .map_err(ParseError::new),
-            TaskCheckShape::Tagged(tagged) => match tagged {
+            PartialTaskCheckShape::Tagged(tagged) => match finalize_partial(tagged)? {
                 TaggedTaskCheck::Requirement(config) => Ok(Self::Requirement(config)),
                 TaggedTaskCheck::Condition(config) => Ok(Self::Condition(config)),
                 TaggedTaskCheck::Fingerprint(config) => Ok(Self::Fingerprint(config)),

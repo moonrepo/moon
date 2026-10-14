@@ -1,8 +1,8 @@
 use moon_config::test_utils::stub_file_input;
 use moon_config::{
     Input, MergeStrategy, TaskOperatingSystem, TaskOptionAffectedFilesPattern, TaskOptionCache,
-    TaskOptionEnvOverride, TaskOptionRunInCI, TaskOutputStyle, TaskPriority, TaskUnixShell,
-    TaskWindowsShell,
+    TaskOptionEnvOverride, TaskOptionOnFailure, TaskOptionRunInCI, TaskOutputStyle, TaskPriority,
+    TaskUnixShell, TaskWindowsShell,
 };
 use moon_task::{TaskExpectedFailure, TaskOptionAffectedFiles, TaskOptions};
 
@@ -45,13 +45,11 @@ mod task_options {
                 pass_inputs_when_no_match: true,
                 pass_dot_when_no_results: true,
             }),
-            allow_failure: true,
             cache: TaskOptionCache::Enabled(false),
             cache_key: Some("key".into()),
             cache_lifetime: Some("1 day".into()),
             env_files: Some(vec![Input::File(stub_file_input(".env"))]),
             env_override: TaskOptionEnvOverride::Enabled(true),
-            expect_failure: true,
             infer_inputs: true,
             internal: true,
             interactive: true,
@@ -64,6 +62,7 @@ mod task_options {
             merge_tags: MergeStrategy::Replace,
             merge_toolchains: MergeStrategy::Replace,
             mutex: Some("lock".into()),
+            on_failure: Some(TaskOptionOnFailure::Expect),
             os: Some(vec![TaskOperatingSystem::Linux]),
             output_style: Some(TaskOutputStyle::Stream),
             persistent: true,
@@ -82,12 +81,30 @@ mod task_options {
 
         let json = serde_json::to_value(&options).unwrap();
 
-        assert_eq!(json.as_object().unwrap().len(), 33);
+        assert_eq!(json.as_object().unwrap().len(), 32);
         assert_eq!(json["affectedFiles"].as_object().unwrap().len(), 5);
+        assert_eq!(json["onFailure"], "expect");
         assert_eq!(
             serde_json::from_value::<TaskOptions>(json).unwrap(),
             options
         );
+    }
+
+    #[test]
+    fn checks_on_failure() {
+        for (on_failure, allowed, expected) in [
+            (None, false, false),
+            (Some(TaskOptionOnFailure::Allow), true, false),
+            (Some(TaskOptionOnFailure::Expect), false, true),
+        ] {
+            let options = TaskOptions {
+                on_failure,
+                ..Default::default()
+            };
+
+            assert_eq!(options.is_failure_allowed(), allowed);
+            assert_eq!(options.is_failure_expected(), expected);
+        }
     }
 }
 

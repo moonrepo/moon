@@ -104,6 +104,15 @@
     affected task, and the `upstream` and `downstream` fields of an affected project, with a single
     `dependencies` field, the affected dependencies that it was reached through. The
     `@moonrepo/types` types have been updated to match.
+- **Configuration**
+  - Removed the `remote.cache.verifyIntegrity` setting. Use `cache.cas.verifyIntegrity` instead.
+  - Removed the `bitbucket-legacy` provider for the `vcs.provider` setting. Use `bitbucket` instead.
+  - Replaced the `allowFailure` and `expectFailure` task options with a single `onFailure` option,
+    that accepts `allow` or `expect`. Use `onFailure: allow` instead of `allowFailure: true`, and
+    `onFailure: expect` instead of `expectFailure: true`. The old options have been removed, and
+    fail validation. A task's `onFailure` overrides an inherited value, instead of conflicting with
+    it. The task options in `moon task --json` and the `@moonrepo/types` types have been updated to
+    match.
 - **Execution plans**
   - Replaced the `affected.includeRelations` field with `affected.depth`, the `graph.downstream`
     field with `graph.dependents`, and the `graph.upstream` field with the new
@@ -186,6 +195,13 @@
 - **Cache**
   - The `cache.unstable_sharedWorktreeCache` setting no longer requires the `casOutputsCache`
     experiment, as task outputs are now always stored in the local content-addressable store.
+- **Configuration**
+  - Stabilized the `cache.unstable_sharedWorktreeCache` setting in `.moon/workspace.config`. Use
+    `cache.sharedWorktreeCache` instead.
+  - Stabilized the `unstable_daemon` setting in `.moon/workspace.config`. Use `daemon` instead.
+- **Daemon**
+  - The daemon has been stabilized and is now enabled by default. If you run into any issues, simply
+    set `daemon = false` in your `.moon/workspace.config`.
 - **Hasher**
   - Improved the performance of file hashing.
     - File hashes are now memoized for the lifetime of the process, and reused while the file's size

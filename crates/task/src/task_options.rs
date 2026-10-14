@@ -1,8 +1,8 @@
 use moon_common::cacheable;
 use moon_config::{
     Input, MergeStrategy, TaskOperatingSystem, TaskOptionAffectedFilesPattern, TaskOptionCache,
-    TaskOptionEnvOverride, TaskOptionRunInCI, TaskOutputStyle, TaskPriority, TaskUnixShell,
-    TaskWindowsShell, is_default, is_false, is_true,
+    TaskOptionEnvOverride, TaskOptionOnFailure, TaskOptionRunInCI, TaskOutputStyle, TaskPriority,
+    TaskUnixShell, TaskWindowsShell, is_default, is_false, is_true,
 };
 use std::fmt;
 
@@ -49,9 +49,6 @@ cacheable!(
         #[serde(skip_serializing_if = "Option::is_none")]
         pub affected_files: Option<TaskOptionAffectedFiles>,
 
-        #[serde(skip_serializing_if = "is_false")]
-        pub allow_failure: bool,
-
         #[serde(skip_serializing_if = "is_cache_enabled")]
         pub cache: TaskOptionCache,
 
@@ -66,9 +63,6 @@ cacheable!(
 
         #[serde(skip_serializing_if = "is_default")]
         pub env_override: TaskOptionEnvOverride,
-
-        #[serde(skip_serializing_if = "is_false")]
-        pub expect_failure: bool,
 
         #[serde(skip_serializing_if = "is_false")]
         pub infer_inputs: bool,
@@ -105,6 +99,9 @@ cacheable!(
 
         #[serde(skip_serializing_if = "Option::is_none")]
         pub mutex: Option<String>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub on_failure: Option<TaskOptionOnFailure>,
 
         #[serde(skip_serializing_if = "Option::is_none")]
         pub os: Option<Vec<TaskOperatingSystem>>,
@@ -147,17 +144,27 @@ cacheable!(
     }
 );
 
+impl TaskOptions {
+    /// Whether the task can fail without failing the action pipeline.
+    pub fn is_failure_allowed(&self) -> bool {
+        matches!(self.on_failure, Some(TaskOptionOnFailure::Allow))
+    }
+
+    /// Whether the task must fail, and fails the action pipeline if it passes.
+    pub fn is_failure_expected(&self) -> bool {
+        matches!(self.on_failure, Some(TaskOptionOnFailure::Expect))
+    }
+}
+
 impl Default for TaskOptions {
     fn default() -> Self {
         TaskOptions {
             affected_files: None,
-            allow_failure: false,
             cache: TaskOptionCache::Enabled(true),
             cache_key: None,
             cache_lifetime: None,
             env_files: None,
             env_override: TaskOptionEnvOverride::default(),
-            expect_failure: false,
             infer_inputs: false,
             internal: false,
             interactive: false,
@@ -170,6 +177,7 @@ impl Default for TaskOptions {
             merge_tags: MergeStrategy::Append,
             merge_toolchains: MergeStrategy::Append,
             mutex: None,
+            on_failure: None,
             os: None,
             output_style: None,
             persistent: false,
@@ -187,7 +195,7 @@ impl Default for TaskOptions {
     }
 }
 
-/// How the exit code of a task with `expectFailure` relates to that expectation.
+/// How the exit code of a task with `onFailure: expect` relates to that expectation.
 /// Only a normal failure satisfies it, as commands that could not run, or were
 /// killed by a signal, are not the failure that was expected.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

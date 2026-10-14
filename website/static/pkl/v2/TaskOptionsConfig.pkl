@@ -8,13 +8,9 @@ import "TaskOptionAffectedFilesConfig.pkl"
 /// The pattern in which affected files will be passed to the task.
 affectedFiles: TaskOptionAffectedFilesEntry?
 
-/// Allow the task to fail without failing the entire action pipeline.
-@Since { version = "1.13.0" }
-allowFailure: Boolean?
-
 /// Cache the `outputs` of the task for incremental builds.
 /// Defaults to `true` if outputs are configured for the task.
-cache: (Boolean | "local" | "remote")?
+cache: TaskOptionCache?
 
 /// A custom key to include in the cache hashing process. Can be
 /// used to invalidate local and remote caches.
@@ -34,12 +30,6 @@ envFile: TaskOptionEnvFile?
 /// only those variables will be overridden.
 @Since { version = "2.6.0" }
 envOverride: TaskOptionEnvOverride?
-
-/// Expect the task to fail, and fail the entire action pipeline if it
-/// passes. Useful for checks that are known to be broken, which should
-/// be re-enabled once fixed. The task is never cached.
-@Since { version = "2.6.0" }
-expectFailure: Boolean?
 
 /// Automatically infer inputs from file groups or environment variables
 /// that were utilized within `command`, `script`, `args`, and `env`.
@@ -93,6 +83,14 @@ mergeToolchains: MergeStrategy?
 @Since { version = "1.24.0" }
 mutex: String?
 
+/// How a failure of the task affects the action pipeline. When `allow`,
+/// the task can fail without failing the pipeline. When `expect`, the
+/// task must fail, and fails the pipeline if it passes, which is useful
+/// for checks that are known to be broken, and should be re-enabled once
+/// fixed. An expected failure is never cached.
+@Since { version = "3.0.0" }
+onFailure: TaskOptionOnFailure?
+
 /// The operating system in which to only run this task on.
 os: (TaskOperatingSystem | Listing<TaskOperatingSystem>)?
 
@@ -121,7 +119,7 @@ runFromWorkspaceRoot: Boolean?
 
 /// Whether to run the task in CI or not, when executing `moon ci`,
 /// `moon check`, or `moon run`.
-runInCI: (Boolean | "always" | "affected" | "only" | "skip")?
+runInCI: TaskOptionRunInCI?
 
 /// Runs the task automatically when executing `moon sync`.
 runInSyncPhase: Boolean?
@@ -147,11 +145,25 @@ typealias MergeStrategy = *"append" | "prepend" | "preserve" | "replace"
 /// The operating system in which to only run this task on.
 typealias TaskOperatingSystem = "linux" | "macos" | "windows"
 
-typealias TaskOptionAffectedFilesEntry = Boolean | "args" | "env" | TaskOptionAffectedFilesConfig
+typealias TaskOptionAffectedFilesEntry = TaskOptionAffectedFilesPattern | TaskOptionAffectedFilesConfig
 
+/// The pattern in which affected files will be passed to the affected task.
+typealias TaskOptionAffectedFilesPattern = "args" | "env" | *Boolean
+
+/// The environment in which to apply task caching.
+typealias TaskOptionCache = "local" | "remote" | *Boolean
+
+/// The pattern in which a task is dependent on a `.env` file.
 typealias TaskOptionEnvFile = Boolean | String | Listing<String>
 
+/// Which task environment variables override system environment variables.
 typealias TaskOptionEnvOverride = Boolean | Listing<String>
+
+/// How a failure of the task affects the action pipeline.
+typealias TaskOptionOnFailure = "allow" | "expect"
+
+/// The pattern in which to run the task automatically in CI.
+typealias TaskOptionRunInCI = "always" | "affected" | "only" | "skip" | *Boolean
 
 /// The style in which task output will be printed to the console.
 typealias TaskOutputStyle = *"buffer" | "buffer-only-failure" | "hash" | "none" | "stream"

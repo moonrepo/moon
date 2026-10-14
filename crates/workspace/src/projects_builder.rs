@@ -493,7 +493,7 @@ impl WorkspaceProjectsBuilder {
                             // Only copy fields needed for task deps resolution,
                             // which must include every field read by `TaskDepsBuilder`
                             TaskOptions {
-                                allow_failure: task.options.allow_failure,
+                                on_failure: task.options.on_failure,
                                 interactive: task.options.interactive,
                                 run_in_ci: task.options.run_in_ci.clone(),
                                 persistent: task.options.persistent,

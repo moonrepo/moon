@@ -10,12 +10,9 @@ config_struct!(
         /// are evicted. Unlimited when unset.
         /// @since 2.4.0
         #[setting(env = "MOON_CACHE_CAS_MAX_SIZE")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub max_size: Option<String>,
 
-        // /// Byte threshold above which to use memory-mapped I/O for hashing.
-        // /// Files below this size are read into a stack buffer.
-        // #[setting(default = 4_194_304)]
-        // pub mmap_threshold: u64,
         /// Verify hash on every read. When enabled, reads are slower
         /// but detect on-disk corruption.
         /// @since 2.3.0
@@ -45,7 +42,6 @@ config_struct!(
             env = "MOON_CACHE_SHARED_WORKTREE_CACHE",
             parse_env = env::parse_bool,
         )]
-        #[serde(rename = "unstable_sharedWorktreeCache")]
         pub shared_worktree_cache: bool,
     }
 );

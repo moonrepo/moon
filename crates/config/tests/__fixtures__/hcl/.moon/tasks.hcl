@@ -45,10 +45,10 @@ implicitInputs = [
 
 taskOptions {
 	affectedFiles = {
+		filter = []
 		pass = "args"
 		passInputsWhenNoMatch = true
 	}
-	allowFailure = true
 	cache = false
 	envFile = ".env"
 	interactive = false
@@ -59,6 +59,7 @@ taskOptions {
 	mergeInputs = "preserve"
 	mergeOutputs = null
 	mutex = "lock"
+	onFailure = "allow"
 	os = ["linux", "macos"]
 	outputStyle = "stream"
 	persistent = true

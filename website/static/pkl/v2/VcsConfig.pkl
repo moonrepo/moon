@@ -39,4 +39,4 @@ typealias VcsHookFormat = "bash" | *"native"
 
 /// The upstream version control provider, where the repository
 /// source code is stored.
-typealias VcsProvider = "bitbucket" | "bitbucket-legacy" | *"github" | "gitlab" | "other"
+typealias VcsProvider = "bitbucket" | *"github" | "gitlab" | "other"

@@ -4,6 +4,7 @@ tasks:
     toolchain: node
     options:
       affectedFiles:
+        filter: []
         pass: true
         passInputsWhenNoMatch: true
     inputs:

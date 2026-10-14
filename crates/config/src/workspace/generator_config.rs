@@ -19,7 +19,6 @@ config_struct!(
             validate = validate::not_empty,
             default = default_templates
         )]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub templates: Vec<TemplateLocator>,
     }
 );

@@ -1,10 +1,10 @@
-use crate::{config_struct, config_unit_enum, is_false};
+use crate::{config_struct, config_unit_enum};
 use indexmap::IndexMap;
 use schematic::{Config, ConfigEnum};
 
 config_unit_enum!(
     /// How to order ownership rules within the generated file.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum CodeownersOrderBy {
         /// By file source path.
         #[default]
@@ -20,7 +20,6 @@ config_struct!(
     pub struct CodeownersConfig {
         /// A map of global file paths and glob patterns to a list of owners.
         /// Can be relative from the workspace root, or a wildcard match for any depth.
-        #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
         pub global_paths: IndexMap<String, Vec<String>>,
 
         /// How to order ownership rules within the generated file.
@@ -34,7 +33,6 @@ config_struct!(
 
         /// Automatically generate a `CODEOWNERS` file during a sync operation,
         /// after aggregating all ownership rules from each project in the workspace.
-        #[serde(default, skip_serializing_if = "is_false")]
         pub sync: bool,
     }
 );

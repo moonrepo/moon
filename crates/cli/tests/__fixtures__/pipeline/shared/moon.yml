@@ -13,17 +13,17 @@ tasks:
   willFailButAllowed:
     command: 'exit 1'
     options:
-      allowFailure: true
+      onFailure: allow
 
   expectFailure:
     command: 'exit 1'
     options:
-      expectFailure: true
+      onFailure: expect
 
   expectFailureButPasses:
     command: 'exit 0'
     options:
-      expectFailure: true
+      onFailure: expect
 
   dependsOnExpectFailure:
     command: 'exit 0'

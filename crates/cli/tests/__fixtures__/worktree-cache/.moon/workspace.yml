@@ -1,4 +1,4 @@
 projects:
   app: 'app'
 cache:
-  unstable_sharedWorktreeCache: true
+  sharedWorktreeCache: true

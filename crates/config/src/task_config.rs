@@ -1,7 +1,7 @@
 use crate::shapes::{Input, OneOrMany, Output};
 use crate::task::TaskCheck;
 use crate::task_options_config::{PartialTaskOptionsConfig, TaskOptionsConfig};
-use crate::{config_enum, config_struct, config_unit_enum};
+use crate::{config_struct, config_unit_enum, config_untagged_enum};
 use indexmap::IndexMap;
 use moon_common::Id;
 use moon_target::{Target, TargetProjectScope};
@@ -90,9 +90,9 @@ pub(crate) fn validate_deps<D, C>(
     Ok(())
 }
 
-config_enum!(
+config_unit_enum!(
     /// Preset options to inherit.
-    #[derive(ConfigEnum, Copy)]
+    #[derive(ConfigEnum)]
     pub enum TaskPreset {
         Utility,
         Server,
@@ -107,7 +107,7 @@ impl TaskPreset {
 
 config_unit_enum!(
     /// The type of task.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum TaskType {
         Build,
         Run,
@@ -116,10 +116,9 @@ config_unit_enum!(
     }
 );
 
-config_enum!(
+config_untagged_enum!(
     /// Configures a command and its arguments to execute.
     #[derive(Config)]
-    #[serde(untagged)]
     pub enum TaskArgs {
         /// No value defined; no operation.
         #[setting(default, null)]
@@ -133,7 +132,7 @@ config_enum!(
 
 config_unit_enum!(
     /// The task-to-task relationship of the dependency.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum TaskDependencyType {
         /// The dependency runs *after* the task has ran its command, even when
         /// the task fails. It does not run when the task did not run its
@@ -172,12 +171,12 @@ impl TaskDependencyType {
     }
 }
 
-config_enum!(
+config_unit_enum!(
     /// Controls how a task dependency invalidates the current task's cache entry.
     /// When omitted, the effective strategy is `Hash` if the dependency declares
     /// outputs, or `Ignored` otherwise.
     /// @since 2.3.0
-    #[derive(Copy, ConfigEnum)]
+    #[derive(ConfigEnum)]
     pub enum TaskDependencyCacheStrategy {
         /// Use the dependency task's hash to invalidate the current task's cache.
         /// Selected as the resolved default when the dependency declares outputs —
@@ -230,11 +229,7 @@ config_struct!(
         /// When `wait`, runs before the task, but the task only waits for the
         /// dependency to have started running, not to have completed.
         /// @since 2.6.0
-        #[serde(
-            default,
-            rename = "type",
-            skip_serializing_if = "TaskDependencyType::is_required"
-        )]
+        #[serde(rename = "type")]
         pub type_of: TaskDependencyType,
     }
 );
@@ -258,10 +253,9 @@ impl TaskDependencyConfig {
     }
 }
 
-config_enum!(
+config_untagged_enum!(
     /// Configures another task that this task depends on.
     #[derive(Config)]
-    #[serde(untagged)]
     pub enum TaskDependency {
         /// A task referenced by target.
         Target(Target),

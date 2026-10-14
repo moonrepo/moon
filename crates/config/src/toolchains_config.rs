@@ -1,6 +1,6 @@
-use crate::patterns::{merge_iter, merge_plugin_partials};
+use crate::merging::{merge_iter, merge_partials};
 use crate::toolchain::*;
-use crate::{config_enum, config_struct};
+use crate::{config_struct, config_untagged_enum};
 use miette::IntoDiagnostic;
 use moon_common::{Id, IdExt};
 use rustc_hash::FxHashMap;
@@ -11,10 +11,9 @@ use std::env;
 use version_spec::UnresolvedVersionSpec;
 use warpgate_api::PluginLocator;
 
-config_enum!(
+config_untagged_enum!(
     /// The strategy in which to inherit a version from `.prototools`.
     #[derive(Schematic)]
-    #[serde(untagged)]
     pub enum ToolchainPluginVersionFrom {
         Enabled(bool),
         Id(String),
@@ -102,7 +101,7 @@ config_struct!(
 
         /// Configures and integrates toolchains into the system using
         /// a unique identifier.
-        #[setting(flatten, nested, merge = merge_plugin_partials)]
+        #[setting(flatten, nested, merge = merge_partials)]
         pub plugins: FxHashMap<Id, ToolchainPluginConfig>,
     }
 );

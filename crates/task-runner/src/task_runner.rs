@@ -623,7 +623,7 @@ impl<'task> TaskRunner<'task> {
 
             // Explain why the failure was not the expected one, unless it
             // was, but processes were being terminated
-            if self.task.options.expect_failure
+            if self.task.options.is_failure_expected()
                 && let Some(outcome) = code.map(TaskExpectedFailure::from_exit_code)
                 && !outcome.is_expected()
             {

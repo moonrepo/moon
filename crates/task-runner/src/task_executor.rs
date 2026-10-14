@@ -175,7 +175,7 @@ impl<'task> TaskExecutor<'task> {
 
                         // Only a normal exit can satisfy the expectation (not a
                         // signal), and not when processes are being terminated
-                        if self.task.options.expect_failure {
+                        if self.task.options.is_failure_expected() {
                             let expected = output.code().map(TaskExpectedFailure::from_exit_code);
 
                             is_unexpected_pass = expected == Some(TaskExpectedFailure::Passed);

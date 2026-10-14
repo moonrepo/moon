@@ -1,9 +1,9 @@
-use crate::{config_struct, config_unit_enum, is_false};
+use crate::{config_struct, config_unit_enum};
 use schematic::{Config, ConfigEnum, env, validate};
 
 config_unit_enum!(
     /// The types of events in which to send notifications.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum NotifierEventType {
         /// Never toast.
         #[default]
@@ -42,7 +42,6 @@ config_struct!(
         /// main process.
         /// @since 1.38.0
         #[setting(env = "MOON_WEBHOOK_ACKNOWLEDGE", parse_env = env::parse_bool)]
-        #[serde(default, skip_serializing_if = "is_false")]
         pub webhook_acknowledge: bool,
     }
 );

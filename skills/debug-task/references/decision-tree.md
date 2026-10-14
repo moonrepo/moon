@@ -254,9 +254,9 @@ override variables the task already configures (but **do** override the same var
 the shell, and beat `options.envFile` values), and when a task has multiple toolchains, the
 **first** one wins. If the wrong tool or variable wins, check the order of the task's `toolchains`.
 
-**Check 6: Is `timeout` or `allowFailure` involved?**
+**Check 6: Is `timeout` or `onFailure` involved?**
 
-Check `options.timeout` and `options.allowFailure` in the JSON output. If `allowFailure: true`, the
+Check `options.timeout` and `options.onFailure` in the JSON output. If `onFailure` is `allow`, the
 task is still marked as failed, but the pipeline continues and moon's exit code ignores it (a "Task
 … has failed, but is marked to allow failures, continuing pipeline" warning is logged) — check
 stderr at `.moon/cache/states/<project>/<task>/stderr.log`. See `config-mistakes.md` for details on

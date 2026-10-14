@@ -16,4 +16,4 @@ cas: CacheCasConfig?
 /// Only blobs and manifests will be shared, as they are portable.
 /// Hashes, locks, states, and more will not be, as they are worktree-specific.
 @Since { version = "2.5.0" }
-unstable_sharedWorktreeCache: Boolean?
+sharedWorktreeCache: Boolean?

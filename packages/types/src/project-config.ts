@@ -115,11 +115,11 @@ export interface OwnersConfig {
 	 * `bitbucket-legacy` only. A map of custom groups (prefixed with `@@@`),
 	 * to a list of user and normal groups.
 	 */
-	customGroups?: Record<string, string[]>;
+	customGroups: Record<string, string[]>;
 	/** The default owner for `paths`. */
 	defaultOwner?: string | null;
 	/** GitLab only. Marks the code owners section as optional. */
-	optional?: boolean;
+	optional: boolean;
 	/**
 	 * A list or map of file paths and glob patterns to owners.
 	 * When a list, the `defaultOwner` is the owner, and each item is a path.
@@ -146,7 +146,7 @@ export interface ProjectMetadataConfigBase {
 	/** A description on what the project does and why it exists. */
 	description?: string | null;
 	/** The individual maintainers of the project. The format is unspecified. */
-	maintainers?: string[];
+	maintainers: string[];
 	/**
 	 * The owner of the project. Can be an individual, team, or
 	 * organization. The format is unspecified.
@@ -191,7 +191,7 @@ export type ProjectToolchainsConfig = ProjectToolchainsConfigBase & ProjectToolc
 /** Controls how workspace-level tasks are inherited. */
 export interface ProjectWorkspaceInheritedTasksConfig {
 	/** Excludes inheriting tasks by their identifier. */
-	exclude?: Id[];
+	exclude: Id[];
 	/**
 	 * Only inherits tasks with the provided identifiers,
 	 * and ignores the rest. When not defined, inherits
@@ -202,7 +202,7 @@ export interface ProjectWorkspaceInheritedTasksConfig {
 	 * Renames inherited tasks by mapping their existing
 	 * identifier to a new identifier, scoped to this project.
 	 */
-	rename?: Record<Id, Id>;
+	rename: Record<Id, Id>;
 }
 
 /**
@@ -250,7 +250,7 @@ export interface ProjectConfig {
 	/** Other projects that this project depends on. */
 	deps?: ProjectDependsOn[];
 	/** Other projects that this project depends on. */
-	dependsOn?: ProjectDependsOn[];
+	dependsOn: ProjectDependsOn[];
 	/**
 	 * Configures Docker integration for this project.
 	 *
@@ -261,12 +261,12 @@ export interface ProjectConfig {
 	 * A map of environment variables that will be inherited by
 	 * all tasks within the project.
 	 */
-	env?: Record<string, string | null>;
+	env: Record<string, string | null>;
 	/**
 	 * A map of group identifiers to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
 	 */
-	fileGroups?: Record<Id, Input[]>;
+	fileGroups: Record<Id, Input[]>;
 	/**
 	 * Overrides the identifier within the project graph, as defined in
 	 * the workspace `projects` setting.
@@ -309,18 +309,18 @@ export interface ProjectConfig {
 	 * A list of tags that this project belongs to, for categorizing,
 	 * boundary enforcement, and task inheritance.
 	 */
-	tags?: Id[];
+	tags: Id[];
 	/**
 	 * Shared task options for all tasks. Can be overriden per task.
 	 *
 	 * @since 2.4.0
 	 */
-	taskOptions: TaskOptionsConfig | null;
+	taskOptions?: TaskOptionsConfig | null;
 	/**
 	 * A map of identifiers to task objects. Tasks represent the work-unit
 	 * of a project, and can be ran in the action pipeline.
 	 */
-	tasks?: Record<Id, TaskConfig>;
+	tasks: Record<Id, TaskConfig>;
 	/** Overrides top-level toolchain settings, scoped to this project. */
 	toolchains: ProjectToolchainsConfig;
 	/** Overrides top-level workspace settings, scoped to this project. */

@@ -801,7 +801,6 @@ vcs:
         fn parses_providers() {
             for (value, expected) in [
                 ("bitbucket", VcsProvider::Bitbucket),
-                ("bitbucket-legacy", VcsProvider::BitbucketLegacy),
                 ("github", VcsProvider::GitHub),
                 ("gitlab", VcsProvider::GitLab),
                 ("other", VcsProvider::Other),

@@ -1,13 +1,12 @@
 use crate::shapes::GlobPath;
-use crate::{config_enum, config_struct, is_false};
+use crate::{config_struct, config_untagged_enum};
 use indexmap::IndexMap;
 use rustc_hash::FxHashMap;
 use schematic::{Config, PathSegment, ValidateError};
 
-config_enum!(
+config_untagged_enum!(
     /// A mapping of file paths and file globs to owners.
     #[derive(Config)]
-    #[serde(untagged)]
     pub enum OwnersPaths {
         /// A list of file paths and glob patterns. The owner of these
         /// is the project-level `defaultOwner`.
@@ -64,7 +63,6 @@ config_struct!(
     pub struct OwnersConfig {
         /// `bitbucket-legacy` only. A map of custom groups (prefixed with `@@@`),
         /// to a list of user and normal groups.
-        #[serde(default, skip_serializing_if = "FxHashMap::is_empty")]
         pub custom_groups: FxHashMap<String, Vec<String>>,
 
         /// The default owner for `paths`.
@@ -72,7 +70,6 @@ config_struct!(
         pub default_owner: Option<String>,
 
         /// GitLab only. Marks the code owners section as optional.
-        #[serde(default, skip_serializing_if = "is_false")]
         pub optional: bool,
 
         /// A list or map of file paths and glob patterns to owners.

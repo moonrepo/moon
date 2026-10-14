@@ -23,8 +23,8 @@ pub async fn run_task(
 
     // Must be set before running the task in case it fails and
     // and error is bubbled up the stack
-    action.allow_failure = task.options.allow_failure;
-    action.expect_failure = task.options.expect_failure;
+    action.allow_failure = task.options.is_failure_allowed();
+    action.expect_failure = task.options.is_failure_expected();
 
     let result = TaskRunner::new(&app_context, &project, &task, daemon_client)?
         .run(&action_context, &action.node)

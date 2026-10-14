@@ -4,7 +4,6 @@ use crate::{
     DependencyScope, config_struct, config_unit_enum, generate_io_file_methods,
     generate_io_glob_methods, patterns,
 };
-use deserialize_untagged_verbose_error::DeserializeUntaggedVerboseError;
 use moon_common::Id;
 use moon_common::path::{
     RelativeFrom, WorkspaceRelativePathBuf, expand_to_workspace_relative, standardize_separators,
@@ -21,6 +20,7 @@ config_struct!(
     #[derive(Config)]
     pub struct FileInput {
         /// The literal file path.
+        #[setting(required)]
         pub file: FilePath,
 
         /// Regex pattern to match the file's contents against
@@ -71,7 +71,7 @@ impl FileInput {
 
 config_unit_enum!(
     /// Available formats to resolve the file group into.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum FileGroupInputFormat {
         /// Return the group as-is.
         #[default]
@@ -94,9 +94,11 @@ config_struct!(
     #[derive(Config)]
     pub struct FileGroupInput {
         /// The file group identifier.
+        #[setting(required)]
         pub group: Id,
 
         /// Format to resolve the file group into.
+        // Marks the setting as optional in schemas
         #[serde(default, alias = "as")]
         pub format: FileGroupInputFormat,
     }
@@ -134,10 +136,10 @@ config_struct!(
     #[derive(Config)]
     pub struct GlobInput {
         /// The glob pattern.
+        #[setting(required)]
         pub glob: GlobPath,
 
         /// Cache the glob walking result for increased performance.
-        #[serde(default = "default_true", skip_serializing_if = "is_false")]
         #[setting(default = true)]
         pub cache: bool,
     }
@@ -172,16 +174,13 @@ config_struct!(
     #[derive(Config)]
     pub struct ManifestDepsInput {
         /// The toolchain identifier.
+        #[setting(required)]
         pub manifest: Id,
 
         /// List of dependencies to compare against when
         /// determining affected status.
-        #[serde(
-            default,
-            alias = "dep",
-            alias = "dependencies",
-            skip_serializing_if = "Vec::is_empty"
-        )]
+        // Marks the setting as optional in schemas
+        #[serde(default, alias = "dep", alias = "dependencies")]
         pub deps: Vec<String>,
     }
 );
@@ -220,13 +219,15 @@ config_struct!(
     /// An external project input.
     #[derive(Config)]
     pub struct ProjectInput {
-        // This is not an `Id` as we need to support `^` scopes!
+        // Note: This is not an `Id` as we need to support `^` scopes!
         /// The external project identifier.
+        #[setting(required)]
         pub project: String,
 
         /// A list of globs, relative from the project's root,
         /// in which to determine affected status.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        // Marks the setting as optional in schemas
+        #[serde(default)]
         pub filter: Vec<String>,
 
         /// A file group identifier within the project in which
@@ -287,7 +288,7 @@ impl ProjectInput {
 
 /// The different patterns a task input can be defined as.
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
-#[serde(try_from = "InputShape")]
+#[serde(try_from = "PartialInputShape")]
 pub enum Input {
     EnvVar(String),
     EnvVarGlob(String),
@@ -413,26 +414,36 @@ impl Serialize for Input {
     }
 }
 
-#[derive(DeserializeUntaggedVerboseError)]
+// Only the partial is used, which schematic deserializes by attempting
+// each variant in order, and reports every error when none match. Partial
+// fields are all optional, so a variant matches any object without unknown
+// fields, and required fields are only checked when finalized. Because of
+// this, `FileGroup` must come before `Project`, as both have a `group` field.
+#[allow(dead_code)]
+#[derive(Config)]
+#[serde(untagged)]
 enum InputShape {
     String(String),
-    // From most complex to least
-    Project(ProjectInput),
+    #[setting(nested)]
     FileGroup(FileGroupInput),
+    #[setting(nested)]
+    Project(ProjectInput),
+    #[setting(nested)]
     File(FileInput),
+    #[setting(nested)]
     Glob(GlobInput),
 }
 
-impl TryFrom<InputShape> for Input {
+impl TryFrom<PartialInputShape> for Input {
     type Error = ParseError;
 
-    fn try_from(base: InputShape) -> Result<Self, Self::Error> {
-        match base {
-            InputShape::String(input) => Self::parse(input),
-            InputShape::File(input) => Ok(Self::File(input)),
-            InputShape::FileGroup(input) => Ok(Self::FileGroup(input)),
-            InputShape::Glob(input) => Ok(Self::Glob(input)),
-            InputShape::Project(input) => Ok(Self::Project(input)),
-        }
+    fn try_from(base: PartialInputShape) -> Result<Self, Self::Error> {
+        Ok(match base {
+            PartialInputShape::String(input) => Self::parse(input)?,
+            PartialInputShape::File(input) => Self::File(finalize_partial(input)?),
+            PartialInputShape::FileGroup(input) => Self::FileGroup(finalize_partial(input)?),
+            PartialInputShape::Glob(input) => Self::Glob(finalize_partial(input)?),
+            PartialInputShape::Project(input) => Self::Project(finalize_partial(input)?),
+        })
     }
 }

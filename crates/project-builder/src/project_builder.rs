@@ -3,7 +3,7 @@ use moon_common::{Id, IdExt, color, path::WorkspaceRelativePath};
 use moon_config::{
     DependencySource, EnvMap, InheritFor, InheritedTasks, InheritedTasksManager, Input,
     LanguageType, MergeStrategy, ProjectConfig, ProjectDependencyConfig, ProjectDependsOn,
-    TaskConfig, ToolchainsConfig, merge_index_map, merge_vec,
+    TaskConfig, ToolchainsConfig, merge,
 };
 use moon_config_loader::ConfigLoader;
 use moon_file_group::FileGroup;
@@ -157,7 +157,7 @@ impl<'app> ProjectBuilder<'app> {
         let mut env = EnvMap::default();
 
         for (index, next_env) in chain.into_iter().enumerate() {
-            env = merge_index_map(env, next_env, strategy, index);
+            env = merge(env, next_env, strategy, index, true);
         }
 
         local.env = env;
@@ -434,7 +434,7 @@ impl<'app> ProjectBuilder<'app> {
             let mut inputs = vec![];
 
             for (index, next_inputs) in chain.into_iter().enumerate() {
-                inputs = merge_vec(inputs, next_inputs, strategy, index, false);
+                inputs = merge(inputs, next_inputs, strategy, index, false);
             }
 
             let mut group = FileGroup::new(&id)?;

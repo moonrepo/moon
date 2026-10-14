@@ -22,12 +22,6 @@ localReadOnly: Boolean?
 @Since { version = "2.6.0" }
 retryCount: UInt8?
 
-/// When downloading blobs, verify the digests/hashes in the response
-/// match the associated blob contents. This will reduce performance
-/// but ensure partial or corrupted blobs won't cause failures.
-@Since { version = "1.36.0" }
-verifyIntegrity: Boolean?
-
 /// Supported blob compression levels for gRPC APIs.
 @Since { version = "1.31.0" }
 typealias RemoteCompression = *"none" | "zstd"

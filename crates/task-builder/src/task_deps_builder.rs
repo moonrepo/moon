@@ -240,7 +240,7 @@ impl TaskDepsBuilder<'_> {
         let is_cleanup = matches!(dep_config.type_of, TaskDependencyType::Cleanup);
 
         // Do not depend on tasks that can fail
-        if !is_cleanup && dep_task_options.allow_failure {
+        if !is_cleanup && dep_task_options.is_failure_allowed() {
             return Err(TasksBuilderError::AllowFailureDepRequirement {
                 dep: dep_task_target.to_owned(),
                 task: self.task.target.to_owned(),

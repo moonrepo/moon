@@ -60,34 +60,23 @@ impl CodeownersGenerator {
             .or(root_config.required_approvals)
             .unwrap_or(0);
 
-        match &self.provider {
-            VcsProvider::BitbucketLegacy => {
-                if required_approvals > 0
-                    && let Some(default_owner) = &config.default_owner
-                {
-                    self.write(format!("Check({default_owner} >= {required_approvals})"))?;
-                }
+        if self.provider == VcsProvider::GitLab {
+            let mut header = format!("[{id}]");
+
+            if config.optional {
+                header = format!("^{header}")
             }
 
-            VcsProvider::GitLab => {
-                let mut header = format!("[{id}]");
-
-                if config.optional {
-                    header = format!("^{header}")
-                }
-
-                if required_approvals > 0 {
-                    header = format!("{header}[{required_approvals}]");
-                }
-
-                if matches!(config.paths, OwnersPaths::List(_)) {
-                    header = format!("{header} {}", config.default_owner.as_ref().unwrap());
-                }
-
-                self.write(header)?;
+            if required_approvals > 0 {
+                header = format!("{header}[{required_approvals}]");
             }
-            _ => {}
-        };
+
+            if matches!(config.paths, OwnersPaths::List(_)) {
+                header = format!("{header} {}", config.default_owner.as_ref().unwrap());
+            }
+
+            self.write(header)?;
+        }
 
         // Render the owner entries
         let root = PathBuf::from("/").join(source);

@@ -1,5 +1,6 @@
 ---
 source: crates/cli/tests/init_test.rs
+assertion_line: 95
 expression: content
 ---
 # Configures all projects within the workspace to create a project graph.
@@ -16,5 +17,5 @@ vcs:
   # The upstream version control provider, where the repository
   # source code is stored.
   # @since 1.8.0
-  # @values "bitbucket" | "bitbucket-legacy" | "github" | "gitlab" | "other"
+  # @values "bitbucket" | "github" | "gitlab" | "other"
   provider: "github"

@@ -3,13 +3,13 @@
 /// Condition applies using logical operator clauses.
 module InheritedClauseConfig
 
-import "Id.pkl"
-
 /// Require all values to match, using an AND operator.
-and: (Id.Id | Listing<Id.Id> | List<Id.Id> | Set<Id.Id>)?
+and: (Id | Listing<Id>)?
 
 /// Require no values to match, using a NOT operator.
-not: (Id.Id | Listing<Id.Id> | List<Id.Id> | Set<Id.Id>)?
+not: (Id | Listing<Id>)?
 
 /// Require any values to match, using an OR operator.
-or: (Id.Id | Listing<Id.Id> | List<Id.Id> | Set<Id.Id>)?
+or: (Id | Listing<Id>)?
+
+typealias Id = String

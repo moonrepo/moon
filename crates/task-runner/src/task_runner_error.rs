@@ -22,16 +22,17 @@ pub enum TaskRunnerError {
     #[error(
         "Task {} was expected to fail, but it passed.\nIf the failure has been fixed, remove the {} setting.",
         .target.style(Style::Label),
-        "options.expectFailure".style(Style::Property),
+        "options.onFailure".style(Style::Property),
     )]
     UnexpectedPass { target: Target },
 
     #[diagnostic(code(task_runner::unexpected_failure))]
     #[error(
-        "Task {} was expected to fail, but it {}, which does not satisfy {}.\nOnly a failure of the command itself is expected, not a command that could not run, or was killed by a signal.",
+        "Task {} was expected to fail, but it {}, which is not an expected failure.\nWhen {} is set to {}, only a failure of the command itself is expected, not a command that could not run, or was killed by a signal.",
         .target.style(Style::Label),
         .outcome,
-        "options.expectFailure".style(Style::Property),
+        "options.onFailure".style(Style::Property),
+        "expect".style(Style::Symbol),
     )]
     UnexpectedFailure {
         target: Target,

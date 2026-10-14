@@ -8,11 +8,11 @@ module DockerScaffoldConfig
 /// List of glob patterns in which to include/exclude files in
 /// the "configs" skeleton. Applies to both project and
 /// workspace level scaffolding.
-/// @since 2.0.0
-configsPhaseGlobs: (*Listing<String> | List<String> | Set<String>)?
+@Since { version = "2.0.0" }
+configsPhaseGlobs: Listing<String>?
 
 /// List of glob patterns in which to include/exclude files in
 /// the "sources" skeleton. Applies to both project and
 /// workspace level scaffolding.
-/// @since 2.0.0
-sourcesPhaseGlobs: (*Listing<String> | List<String> | Set<String>)?
+@Since { version = "2.0.0" }
+sourcesPhaseGlobs: Listing<String>?

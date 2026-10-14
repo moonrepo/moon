@@ -11,7 +11,7 @@ use moon_config::{
     ProjectInput, ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
     TaskDependencyConfig, TaskDependencyType, TaskOptionAffectedFilesEntry, TaskOptionCache,
     TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskPriority, TaskType,
-    ToolchainsConfig, is_glob_like, merge_index_map, merge_vec,
+    ToolchainsConfig, is_glob_like, merge,
 };
 use moon_config_loader::ConfigLoader;
 use moon_env_var::contains_env_var;
@@ -338,24 +338,13 @@ impl<'proj> TasksBuilder<'proj> {
         task.options = self.build_task_options(id, preset, &mut state)?;
 
         // Validated after options from all layers have been merged
-        if task.options.expect_failure {
-            if task.options.allow_failure {
-                return Err(TasksBuilderError::ExpectFailureConflict {
-                    task: target,
-                    option: "options.allowFailure",
-                    reason: "a task that unexpectedly passes would be allowed to fail",
-                }
-                .into());
+        if task.options.is_failure_expected() && task.options.persistent {
+            return Err(TasksBuilderError::ExpectFailureConflict {
+                task: target,
+                option: "options.persistent",
+                reason: "a persistent task never exits",
             }
-
-            if task.options.persistent {
-                return Err(TasksBuilderError::ExpectFailureConflict {
-                    task: target,
-                    option: "options.persistent",
-                    reason: "a persistent task never exits",
-                }
-                .into());
-            }
+            .into());
         }
         task.env = self.inherit_project_env(&target)?;
         state.root_level = is_root_level_source(self.project_source);
@@ -368,11 +357,11 @@ impl<'proj> TasksBuilder<'proj> {
         // Aggregate all values that that are inherited from the project,
         // and should be set on the task first, so that merge strategies can be applied.
         for (index, args) in args_sets.into_iter().enumerate() {
-            task.args = merge_vec(task.args, args, task.options.merge_args, index, false);
+            task.args = merge(task.args, args, task.options.merge_args, index, false);
         }
 
         for (index, env) in env_sets.into_iter().enumerate() {
-            task.env = merge_index_map(task.env, env, task.options.merge_env, index);
+            task.env = merge(task.env, env, task.options.merge_env, index, true);
         }
 
         // Finally build the task itself, while applying our complex merge logic!
@@ -388,7 +377,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(checks) = &config.checks {
-                task.checks = merge_vec(
+                task.checks = merge(
                     task.checks,
                     checks.to_owned(),
                     task.options.merge_checks,
@@ -404,7 +393,7 @@ impl<'proj> TasksBuilder<'proj> {
                     .map(|dep| dep.into_config())
                     .collect::<Vec<_>>();
 
-                task.deps = merge_vec(
+                task.deps = merge(
                     task.deps,
                     if link.inherited {
                         self.apply_filters_to_deps(deps)
@@ -418,7 +407,13 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(env) = &config.env {
-                task.env = merge_index_map(task.env, env.to_owned(), task.options.merge_env, index);
+                task.env = merge(
+                    task.env,
+                    env.to_owned(),
+                    task.options.merge_env,
+                    index,
+                    true,
+                );
             }
 
             // Inherit global inputs as normal inputs, but do not consider them a configured input
@@ -437,7 +432,7 @@ impl<'proj> TasksBuilder<'proj> {
                     configured_inputs += inputs.len();
                 }
 
-                task.inputs = merge_vec(
+                task.inputs = merge(
                     task.inputs,
                     inputs.to_owned(),
                     task.options.merge_inputs,
@@ -447,7 +442,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(outputs) = &config.outputs {
-                task.outputs = merge_vec(
+                task.outputs = merge(
                     task.outputs,
                     outputs.to_owned(),
                     task.options.merge_outputs,
@@ -457,7 +452,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(tags) = &config.tags {
-                task.tags = merge_vec(
+                task.tags = merge(
                     task.tags,
                     tags.to_owned(),
                     task.options.merge_tags,
@@ -467,7 +462,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(toolchains) = &config.toolchains {
-                task.toolchains = merge_vec(
+                task.toolchains = merge(
                     task.toolchains,
                     toolchains.to_owned_list(),
                     task.options.merge_toolchains,
@@ -573,11 +568,11 @@ impl<'proj> TasksBuilder<'proj> {
                 })
                 .collect();
 
-            task.deps = merge_vec(task.deps, global_deps, MergeStrategy::Append, 1000, true);
+            task.deps = merge(task.deps, global_deps, MergeStrategy::Append, 1000, true);
         }
 
         if !global_inputs.is_empty() {
-            task.inputs = merge_vec(
+            task.inputs = merge(
                 task.inputs,
                 global_inputs,
                 MergeStrategy::Append,
@@ -705,10 +700,6 @@ impl<'proj> TasksBuilder<'proj> {
                 options.affected_files = Some(option);
             }
 
-            if let Some(allow_failure) = &config.allow_failure {
-                options.allow_failure = *allow_failure;
-            }
-
             if let Some(cache) = &config.cache {
                 options.cache = cache.to_owned();
             }
@@ -727,10 +718,6 @@ impl<'proj> TasksBuilder<'proj> {
 
             if let Some(env_override) = &config.env_override {
                 options.env_override = env_override.to_owned();
-            }
-
-            if let Some(expect_failure) = &config.expect_failure {
-                options.expect_failure = *expect_failure;
             }
 
             if let Some(infer_inputs) = &config.infer_inputs {
@@ -790,6 +777,10 @@ impl<'proj> TasksBuilder<'proj> {
 
             if let Some(mutex) = &config.mutex {
                 options.mutex = Some(mutex.to_owned());
+            }
+
+            if let Some(on_failure) = &config.on_failure {
+                options.on_failure = Some(*on_failure);
             }
 
             if let Some(os) = &config.os {
@@ -859,7 +850,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         // An expected failure always runs, so that a fix is never hidden
         // by a cached result
-        if options.expect_failure {
+        if options.is_failure_expected() {
             options.cache = TaskOptionCache::Enabled(false);
         }
 

@@ -49,10 +49,10 @@ pub enum CodegenError {
 
     #[diagnostic(code(codegen::template_file::load_failed))]
     #[error(
-        "Failed to load template file {}.",
+        "Failed to load template files from {}.",
         .path.style(Style::Path),
     )]
-    LoadTemplateFileFailed {
+    LoadTemplateFilesFailed {
         path: PathBuf,
         #[source]
         error: Box<tera::Error>,

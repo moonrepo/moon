@@ -197,7 +197,7 @@ mod template {
 
         #[test]
         fn path_segments() {
-            let mut template = create_template();
+            let template = create_template();
             let context = create_context();
 
             assert_eq!(
@@ -222,7 +222,7 @@ mod template {
 
         #[test]
         fn var_casing() {
-            let mut template = create_template();
+            let template = create_template();
             let mut context = create_context();
             context.insert("camelCase", "camelCase");
             context.insert("PascalCase", "PascalCase");
@@ -250,7 +250,7 @@ mod template {
 
         #[test]
         fn multiple_vars() {
-            let mut template = create_template();
+            let template = create_template();
             let context = create_context();
 
             assert_eq!(
@@ -269,7 +269,7 @@ mod template {
 
         #[test]
         fn ignores_unknown_vars() {
-            let mut template = create_template();
+            let template = create_template();
             let context = create_context();
 
             assert_eq!(
@@ -282,7 +282,7 @@ mod template {
 
         #[test]
         fn removes_exts() {
-            let mut template = create_template();
+            let template = create_template();
             let context = create_context();
 
             assert_eq!(
@@ -301,7 +301,7 @@ mod template {
 
         #[test]
         fn supports_filters() {
-            let mut template = create_template();
+            let template = create_template();
             let context = create_context();
 
             assert_eq!(

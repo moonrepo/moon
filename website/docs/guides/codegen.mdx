@@ -204,6 +204,13 @@ but we also provide the following custom filters:
 {{ some_path | path_relative(to = other_path) }}
 ```
 
+- Data - `json_encode`
+
+```twig
+{{ some_object | json_encode }}
+{{ some_object | json_encode(pretty = true) }}
+```
+
 #### Functions
 
 The following functions are available within a template:

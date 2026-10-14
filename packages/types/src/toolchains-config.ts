@@ -20,6 +20,7 @@ export interface MoonConfig {
 	manifestUrl?: string;
 }
 
+/** Represents a resolved version or alias. */
 export type VersionSpec = string;
 
 /** Configures how moon integrates with proto. */
@@ -31,10 +32,13 @@ export interface ProtoConfig {
 	version?: VersionSpec;
 }
 
+/** Strategies and protocols for locating plugins. */
 export type PluginLocator = string;
 
+/** Represents an unresolved version or alias that must be resolved to a fully-qualified version. */
 export type UnresolvedVersionSpec = string;
 
+/** The strategy in which to inherit a version from `.prototools`. */
 export type ToolchainPluginVersionFrom = boolean | string;
 
 export type ToolchainPluginConfigConfig = Record<string, unknown>;

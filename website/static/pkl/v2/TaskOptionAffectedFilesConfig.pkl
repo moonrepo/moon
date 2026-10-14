@@ -13,7 +13,7 @@ filter: Listing<String>?
 ignoreProjectBoundary: Boolean?
 
 /// The pattern in which affected files will be passed to the affected task.
-pass: (Boolean | "args" | "env")?
+pass: TaskOptionAffectedFilesPattern?
 
 /// When there are no affected files after matching and filtering,
 /// use `.` instead of an empty value.
@@ -22,3 +22,6 @@ passDotWhenNoResults: Boolean?
 /// When there are no affected files after matching, use the
 /// task's inputs instead.
 passInputsWhenNoMatch: Boolean?
+
+/// The pattern in which affected files will be passed to the affected task.
+typealias TaskOptionAffectedFilesPattern = "args" | "env" | *Boolean

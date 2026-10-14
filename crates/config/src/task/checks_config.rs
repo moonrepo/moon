@@ -1,6 +1,6 @@
 use crate::shapes::finalize_partial;
 use crate::{config_enum, config_struct, config_unit_enum, generate_switch};
-use schematic::schema::{StringType, UnionType};
+use schematic::schema::UnionType;
 use schematic::{Config, ConfigEnum, ParseError, Schema, SchemaBuilder, Schematic, ValidateError};
 use serde::{Deserialize, Serialize, Serializer};
 
@@ -43,7 +43,7 @@ config_struct!(
 
 config_enum!(
     /// The fingerprinting strategy for hashing a task check.
-    #[serde(expecting = "expected `exit-code`, `stderr`, `stdout`, or a boolean")]
+    #[derive(Config)]
     pub enum TaskCheckFingerprint {
         /// Only hash the exit code.
         ExitCode,
@@ -52,18 +52,13 @@ config_enum!(
         /// Only hash stdout.
         Stdout,
         /// Whether to hash all script output.
+        #[setting(default = true)]
         #[serde(untagged)]
         Enabled(bool),
     }
 );
 
-generate_switch!(TaskCheckFingerprint, ["exit-code", "stderr", "stdout"]);
-
-impl Default for TaskCheckFingerprint {
-    fn default() -> Self {
-        Self::Enabled(true)
-    }
-}
+generate_switch!(TaskCheckFingerprint);
 
 config_struct!(
     /// Task check configuration for fingerprinting.
@@ -74,7 +69,6 @@ config_struct!(
         pub script: String,
 
         /// The content hashing strategy.
-        // Marks the setting as optional in schemas
         #[serde(default)]
         pub hash: TaskCheckFingerprint,
     }

@@ -50,6 +50,7 @@ export interface ProjectDependencyConfig {
 	via?: string | null;
 }
 
+/** Expanded information about a project dependency. */
 export type ProjectDependsOn = Id | ProjectDependencyConfig;
 
 /**
@@ -102,6 +103,7 @@ export type LayerType =
 	| 'tool'
 	| 'unknown';
 
+/** A mapping of file paths and file globs to owners. */
 export type OwnersPaths = string[] | Record<string, string[]>;
 
 /**
@@ -160,6 +162,19 @@ export type ProjectMetadataConfig = ProjectMetadataConfigBase & ProjectMetadataC
 /** The technology stack of the project, for categorizing. */
 export type StackType = 'backend' | 'data' | 'frontend' | 'infrastructure' | 'systems' | 'unknown';
 
+/** The fingerprinting strategy for hashing a task check. */
+export type TaskCheckFingerprint = 'exit-code' | 'stderr' | 'stdout' | boolean;
+
+/** The pattern in which affected files will be passed to the affected task. */
+export type TaskOptionAffectedFilesPattern = 'args' | 'env' | boolean;
+
+/** The environment in which to apply task caching. */
+export type TaskOptionCache = 'local' | 'remote' | boolean;
+
+/** The pattern in which to run the task automatically in CI. */
+export type TaskOptionRunInCI = 'always' | 'affected' | 'only' | 'skip' | boolean;
+
+/** Variants a project-level toolchain can be configured. */
 export type ProjectToolchainEntry = null | boolean | ToolchainPluginConfig;
 
 export type ProjectToolchainsConfigPlugins = Record<Id, ProjectToolchainEntry>;
@@ -344,6 +359,7 @@ export interface PartialProjectDependencyConfig {
 	via?: string | null;
 }
 
+/** Expanded information about a project dependency. */
 export type PartialProjectDependsOn = Id | PartialProjectDependencyConfig;
 
 /**
@@ -366,6 +382,7 @@ export interface PartialProjectDockerConfig {
 	scaffold?: PartialDockerScaffoldConfig | null;
 }
 
+/** A mapping of file paths and file globs to owners. */
 export type PartialOwnersPaths = string[] | Record<string, string[]>;
 
 /**
@@ -422,6 +439,7 @@ export interface PartialProjectMetadataConfigBase {
 export type PartialProjectMetadataConfig = PartialProjectMetadataConfigBase &
 	PartialProjectMetadataConfigMetadata;
 
+/** Variants a project-level toolchain can be configured. */
 export type PartialProjectToolchainEntry = null | boolean | PartialToolchainPluginConfig;
 
 export type PartialProjectToolchainsConfigPlugins = Record<Id, PartialProjectToolchainEntry>;

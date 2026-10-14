@@ -1124,6 +1124,28 @@
       },
       "additionalProperties": false
     },
+    "TaskCheckFingerprint": {
+      "description": "The fingerprinting strategy for hashing a task check.",
+      "default": true,
+      "anyOf": [
+        {
+          "description": "Only hash the exit code.",
+          "const": "exit-code"
+        },
+        {
+          "description": "Only hash stderr.",
+          "const": "stderr"
+        },
+        {
+          "description": "Only hash stdout.",
+          "const": "stdout"
+        },
+        {
+          "description": "Whether to hash all script output.",
+          "type": "boolean"
+        }
+      ]
+    },
     "TaskCheckFingerprintConfig": {
       "description": "Task check configuration for fingerprinting.",
       "type": "object",
@@ -1135,13 +1157,10 @@
         "hash": {
           "title": "hash",
           "description": "The content hashing strategy.",
-          "anyOf": [
+          "default": true,
+          "allOf": [
             {
-              "type": "boolean"
-            },
-            {
-              "type": "string",
-              "enum": ["exit-code", "stderr", "stdout"]
+              "$ref": "#/definitions/TaskCheckFingerprint"
             }
           ]
         },
@@ -1556,13 +1575,10 @@
         "pass": {
           "title": "pass",
           "description": "The pattern in which affected files will be passed to the affected task.",
-          "anyOf": [
+          "default": true,
+          "allOf": [
             {
-              "type": "boolean"
-            },
-            {
-              "type": "string",
-              "enum": ["args", "env"]
+              "$ref": "#/definitions/TaskOptionAffectedFilesPattern"
             }
           ]
         },
@@ -1596,20 +1612,49 @@
       "additionalProperties": false
     },
     "TaskOptionAffectedFilesEntry": {
+      "default": true,
       "anyOf": [
         {
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "string",
-              "enum": ["args", "env"]
-            }
-          ]
+          "$ref": "#/definitions/TaskOptionAffectedFilesPattern"
         },
         {
           "$ref": "#/definitions/TaskOptionAffectedFilesConfig"
+        }
+      ]
+    },
+    "TaskOptionAffectedFilesPattern": {
+      "description": "The pattern in which affected files will be passed to the affected task.",
+      "default": true,
+      "anyOf": [
+        {
+          "description": "Passed as command line arguments.",
+          "const": "args"
+        },
+        {
+          "description": "Passed as environment variables.",
+          "const": "env"
+        },
+        {
+          "description": "Passed as command line arguments and environment variables.",
+          "type": "boolean"
+        }
+      ]
+    },
+    "TaskOptionCache": {
+      "description": "The environment in which to apply task caching.",
+      "default": true,
+      "anyOf": [
+        {
+          "description": "Only cache locally.",
+          "const": "local"
+        },
+        {
+          "description": "Only cache remotely.",
+          "const": "remote"
+        },
+        {
+          "description": "Cache both locally and remotely.",
+          "type": "boolean"
         }
       ]
     },
@@ -1658,6 +1703,32 @@
       "type": "string",
       "enum": ["allow", "expect"]
     },
+    "TaskOptionRunInCI": {
+      "description": "The pattern in which to run the task automatically in CI.",
+      "default": true,
+      "anyOf": [
+        {
+          "description": "Always run, regardless of affected status.",
+          "const": "always"
+        },
+        {
+          "description": "Only run if affected by changed files.",
+          "const": "affected"
+        },
+        {
+          "description": "Only run in CI and not locally if affected by changed files.",
+          "const": "only"
+        },
+        {
+          "description": "Skip running in CI but run locally and allow task relationships to be valid.",
+          "const": "skip"
+        },
+        {
+          "description": "Either affected, or don't run at all.",
+          "type": "boolean"
+        }
+      ]
+    },
     "TaskOptionsConfig": {
       "description": "Options to control task inheritance, execution, and more.",
       "type": "object",
@@ -1665,6 +1736,7 @@
         "affectedFiles": {
           "title": "affectedFiles",
           "description": "The pattern in which affected files will be passed to the task.",
+          "default": true,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskOptionAffectedFilesEntry"
@@ -1677,17 +1749,10 @@
         "cache": {
           "title": "cache",
           "description": "Cache the outputs of the task for incremental builds. Defaults to true if outputs are configured for the task.",
+          "default": true,
           "anyOf": [
             {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string",
-                  "enum": ["local", "remote"]
-                }
-              ]
+              "$ref": "#/definitions/TaskOptionCache"
             },
             {
               "type": "null"
@@ -2034,17 +2099,10 @@
         "runInCI": {
           "title": "runInCI",
           "description": "Whether to run the task in CI or not, when executing moon ci, moon check, or moon run.",
+          "default": true,
           "anyOf": [
             {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string",
-                  "enum": ["always", "affected", "only", "skip"]
-                }
-              ]
+              "$ref": "#/definitions/TaskOptionRunInCI"
             },
             {
               "type": "null"

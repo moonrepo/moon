@@ -10,7 +10,7 @@ affectedFiles: TaskOptionAffectedFilesEntry?
 
 /// Cache the `outputs` of the task for incremental builds.
 /// Defaults to `true` if outputs are configured for the task.
-cache: (Boolean | "local" | "remote")?
+cache: TaskOptionCache?
 
 /// A custom key to include in the cache hashing process. Can be
 /// used to invalidate local and remote caches.
@@ -119,7 +119,7 @@ runFromWorkspaceRoot: Boolean?
 
 /// Whether to run the task in CI or not, when executing `moon ci`,
 /// `moon check`, or `moon run`.
-runInCI: (Boolean | "always" | "affected" | "only" | "skip")?
+runInCI: TaskOptionRunInCI?
 
 /// Runs the task automatically when executing `moon sync`.
 runInSyncPhase: Boolean?
@@ -145,7 +145,13 @@ typealias MergeStrategy = *"append" | "prepend" | "preserve" | "replace"
 /// The operating system in which to only run this task on.
 typealias TaskOperatingSystem = "linux" | "macos" | "windows"
 
-typealias TaskOptionAffectedFilesEntry = Boolean | "args" | "env" | TaskOptionAffectedFilesConfig
+typealias TaskOptionAffectedFilesEntry = TaskOptionAffectedFilesPattern | TaskOptionAffectedFilesConfig
+
+/// The pattern in which affected files will be passed to the affected task.
+typealias TaskOptionAffectedFilesPattern = "args" | "env" | *Boolean
+
+/// The environment in which to apply task caching.
+typealias TaskOptionCache = "local" | "remote" | *Boolean
 
 /// The pattern in which a task is dependent on a `.env` file.
 typealias TaskOptionEnvFile = Boolean | String | Listing<String>
@@ -155,6 +161,9 @@ typealias TaskOptionEnvOverride = Boolean | Listing<String>
 
 /// How a failure of the task affects the action pipeline.
 typealias TaskOptionOnFailure = "allow" | "expect"
+
+/// The pattern in which to run the task automatically in CI.
+typealias TaskOptionRunInCI = "always" | "affected" | "only" | "skip" | *Boolean
 
 /// The style in which task output will be printed to the console.
 typealias TaskOutputStyle = *"buffer" | "buffer-only-failure" | "hash" | "none" | "stream"

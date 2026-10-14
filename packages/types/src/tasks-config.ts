@@ -138,6 +138,7 @@ export interface TaskDependencyConfig {
 	type: TaskDependencyType;
 }
 
+/** Configures another task that this task depends on. */
 export type TaskDependency = string | TaskDependencyConfig;
 
 /** Condition applies using logical operator clauses. */
@@ -150,6 +151,7 @@ export interface InheritedClauseConfig {
 	or?: Id | Id[] | null;
 }
 
+/** Patterns in which a condition can be configured as. */
 export type InheritedConditionConfig = Id | Id[] | InheritedClauseConfig;
 
 /**
@@ -226,6 +228,7 @@ export interface InheritedByConfig {
 	toolchains?: InheritedConditionConfig | null;
 }
 
+/** Configures a command and its arguments to execute. */
 export type TaskArgs = null | string | string[];
 
 /** Task check configuration for conditions. */
@@ -242,11 +245,18 @@ export interface TaskCheckRequirementConfig {
 	script: string;
 }
 
+/** The fingerprinting strategy for hashing a task check. */
+export type TaskCheckFingerprint = 'exit-code' | 'stderr' | 'stdout' | boolean;
+
 /** Task check configuration for fingerprinting. */
 export interface TaskCheckFingerprintConfig {
 	check: 'fingerprint';
-	/** The content hashing strategy. */
-	hash?: boolean | 'exit-code' | 'stderr' | 'stdout';
+	/**
+	 * The content hashing strategy.
+	 *
+	 * @default true
+	 */
+	hash?: TaskCheckFingerprint;
 	/** The shell script to execute. */
 	script: string;
 }
@@ -282,6 +292,9 @@ export interface GlobOutput {
 
 export type Output = string | FileOutput | GlobOutput;
 
+/** The pattern in which affected files will be passed to the affected task. */
+export type TaskOptionAffectedFilesPattern = 'args' | 'env' | boolean;
+
 /** Expanded information about affected files handling. */
 export interface TaskOptionAffectedFilesConfig {
 	/**
@@ -295,8 +308,12 @@ export interface TaskOptionAffectedFilesConfig {
 	 * workspace relative files. Otherwise, only files within the project are matched.
 	 */
 	ignoreProjectBoundary?: boolean | null;
-	/** The pattern in which affected files will be passed to the affected task. */
-	pass: boolean | 'args' | 'env';
+	/**
+	 * The pattern in which affected files will be passed to the affected task.
+	 *
+	 * @default true
+	 */
+	pass: TaskOptionAffectedFilesPattern;
 	/**
 	 * When there are no affected files after matching and filtering,
 	 * use `.` instead of an empty value.
@@ -311,10 +328,17 @@ export interface TaskOptionAffectedFilesConfig {
 	passInputsWhenNoMatch?: boolean | null;
 }
 
-export type TaskOptionAffectedFilesEntry = boolean | 'args' | 'env' | TaskOptionAffectedFilesConfig;
+export type TaskOptionAffectedFilesEntry =
+	| TaskOptionAffectedFilesPattern
+	| TaskOptionAffectedFilesConfig;
 
+/** The environment in which to apply task caching. */
+export type TaskOptionCache = 'local' | 'remote' | boolean;
+
+/** The pattern in which a task is dependent on a `.env` file. */
 export type TaskOptionEnvFile = boolean | string | string[];
 
+/** Which task environment variables override system environment variables. */
 export type TaskOptionEnvOverride = boolean | string[];
 
 /** The strategy in which to merge two configuration values. */
@@ -334,6 +358,9 @@ export type TaskOutputStyle = 'buffer' | 'buffer-only-failure' | 'hash' | 'none'
  * in the action pipeline.
  */
 export type TaskPriority = 'critical' | 'high' | 'normal' | 'low';
+
+/** The pattern in which to run the task automatically in CI. */
+export type TaskOptionRunInCI = 'always' | 'affected' | 'only' | 'skip' | boolean;
 
 /** A list of available shells on Unix. */
 export type TaskUnixShell =
@@ -361,13 +388,19 @@ export type TaskWindowsShell =
 
 /** Options to control task inheritance, execution, and more. */
 export interface TaskOptionsConfig {
-	/** The pattern in which affected files will be passed to the task. */
+	/**
+	 * The pattern in which affected files will be passed to the task.
+	 *
+	 * @default true
+	 */
 	affectedFiles?: TaskOptionAffectedFilesEntry | null;
 	/**
 	 * Cache the `outputs` of the task for incremental builds.
 	 * Defaults to `true` if outputs are configured for the task.
+	 *
+	 * @default true
 	 */
-	cache?: boolean | 'local' | 'remote' | null;
+	cache?: TaskOptionCache | null;
 	/**
 	 * A custom key to include in the cache hashing process. Can be
 	 * used to invalidate local and remote caches.
@@ -530,8 +563,10 @@ export interface TaskOptionsConfig {
 	/**
 	 * Whether to run the task in CI or not, when executing `moon ci`,
 	 * `moon check`, or `moon run`.
+	 *
+	 * @default true
 	 */
-	runInCI?: boolean | 'always' | 'affected' | 'only' | 'skip' | null;
+	runInCI?: TaskOptionRunInCI | null;
 	/** Runs the task automatically when executing `moon sync`. */
 	runInSyncPhase?: boolean | null;
 	/**
@@ -757,6 +792,7 @@ export interface PartialTaskDependencyConfig {
 	type?: TaskDependencyType | null;
 }
 
+/** Configures another task that this task depends on. */
 export type PartialTaskDependency = string | PartialTaskDependencyConfig;
 
 /** Condition applies using logical operator clauses. */
@@ -769,6 +805,7 @@ export interface PartialInheritedClauseConfig {
 	or?: Id | Id[] | null;
 }
 
+/** Patterns in which a condition can be configured as. */
 export type PartialInheritedConditionConfig = Id | Id[] | PartialInheritedClauseConfig;
 
 /**
@@ -845,6 +882,7 @@ export interface PartialInheritedByConfig {
 	toolchains?: PartialInheritedConditionConfig | null;
 }
 
+/** Configures a command and its arguments to execute. */
 export type PartialTaskArgs = null | string | string[];
 
 /** Expanded information about affected files handling. */
@@ -860,8 +898,12 @@ export interface PartialTaskOptionAffectedFilesConfig {
 	 * workspace relative files. Otherwise, only files within the project are matched.
 	 */
 	ignoreProjectBoundary?: boolean | null;
-	/** The pattern in which affected files will be passed to the affected task. */
-	pass?: boolean | 'args' | 'env' | null;
+	/**
+	 * The pattern in which affected files will be passed to the affected task.
+	 *
+	 * @default true
+	 */
+	pass?: TaskOptionAffectedFilesPattern | null;
 	/**
 	 * When there are no affected files after matching and filtering,
 	 * use `.` instead of an empty value.
@@ -877,24 +919,30 @@ export interface PartialTaskOptionAffectedFilesConfig {
 }
 
 export type PartialTaskOptionAffectedFilesEntry =
-	| boolean
-	| 'args'
-	| 'env'
+	| TaskOptionAffectedFilesPattern
 	| PartialTaskOptionAffectedFilesConfig;
 
+/** The pattern in which a task is dependent on a `.env` file. */
 export type PartialTaskOptionEnvFile = boolean | string | string[];
 
+/** Which task environment variables override system environment variables. */
 export type PartialTaskOptionEnvOverride = boolean | string[];
 
 /** Options to control task inheritance, execution, and more. */
 export interface PartialTaskOptionsConfig {
-	/** The pattern in which affected files will be passed to the task. */
+	/**
+	 * The pattern in which affected files will be passed to the task.
+	 *
+	 * @default true
+	 */
 	affectedFiles?: PartialTaskOptionAffectedFilesEntry | null;
 	/**
 	 * Cache the `outputs` of the task for incremental builds.
 	 * Defaults to `true` if outputs are configured for the task.
+	 *
+	 * @default true
 	 */
-	cache?: boolean | 'local' | 'remote' | null;
+	cache?: TaskOptionCache | null;
 	/**
 	 * A custom key to include in the cache hashing process. Can be
 	 * used to invalidate local and remote caches.
@@ -1057,8 +1105,10 @@ export interface PartialTaskOptionsConfig {
 	/**
 	 * Whether to run the task in CI or not, when executing `moon ci`,
 	 * `moon check`, or `moon run`.
+	 *
+	 * @default true
 	 */
-	runInCI?: boolean | 'always' | 'affected' | 'only' | 'skip' | null;
+	runInCI?: TaskOptionRunInCI | null;
 	/** Runs the task automatically when executing `moon sync`. */
 	runInSyncPhase?: boolean | null;
 	/**

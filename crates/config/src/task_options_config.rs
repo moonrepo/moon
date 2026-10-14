@@ -1,8 +1,7 @@
 use crate::merging::MergeStrategy;
 use crate::shapes::{FilePath, GlobPath, OneOrMany};
 use crate::{config_enum, config_struct, config_unit_enum, config_untagged_enum, generate_switch};
-use schematic::schema::{StringType, UnionType};
-use schematic::{Config, ConfigEnum, Schema, SchemaBuilder, Schematic, ValidateError};
+use schematic::{Config, ConfigEnum, ValidateError};
 use std::env::consts;
 
 fn validate_env_override<C>(
@@ -47,7 +46,7 @@ fn validate_interactive<C>(
 
 config_enum!(
     /// The pattern in which affected files will be passed to the affected task.
-    #[serde(expecting = "expected `args`, `env`, or a boolean")]
+    #[derive(Config)]
     pub enum TaskOptionAffectedFilesPattern {
         /// Passed as command line arguments.
         Args,
@@ -55,17 +54,12 @@ config_enum!(
         Env,
         /// Passed as command line arguments and environment variables.
         #[serde(untagged)]
+        #[setting(default = true)]
         Enabled(bool),
     }
 );
 
-generate_switch!(TaskOptionAffectedFilesPattern, ["args", "env"]);
-
-impl Default for TaskOptionAffectedFilesPattern {
-    fn default() -> Self {
-        Self::Enabled(true)
-    }
-}
+generate_switch!(TaskOptionAffectedFilesPattern);
 
 config_struct!(
     /// Expanded information about affected files handling.
@@ -109,19 +103,20 @@ config_untagged_enum!(
 
 config_enum!(
     /// The environment in which to apply task caching.
-    #[serde(expecting = "expected `local`, `remote`, or a boolean")]
+    #[derive(Config)]
     pub enum TaskOptionCache {
         /// Only cache locally.
         Local,
         /// Only cache remotely.
         Remote,
         /// Cache both locally and remotely.
+        #[setting(default = true)]
         #[serde(untagged)]
         Enabled(bool),
     }
 );
 
-generate_switch!(TaskOptionCache, ["local", "remote"]);
+generate_switch!(TaskOptionCache);
 
 impl TaskOptionCache {
     pub fn is_local_enabled(&self) -> bool {
@@ -186,7 +181,7 @@ config_unit_enum!(
 
 config_enum!(
     /// The pattern in which to run the task automatically in CI.
-    #[serde(expecting = "expected `always`, `affected`, `only`, `skip`, or a boolean")]
+    #[derive(Config)]
     pub enum TaskOptionRunInCI {
         /// Always run, regardless of affected status.
         Always,
@@ -197,12 +192,13 @@ config_enum!(
         /// Skip running in CI but run locally and allow task relationships to be valid.
         Skip,
         /// Either affected, or don't run at all.
+        #[setting(default = true)]
         #[serde(untagged)]
         Enabled(bool),
     }
 );
 
-generate_switch!(TaskOptionRunInCI, ["always", "affected", "only", "skip"]);
+generate_switch!(TaskOptionRunInCI);
 
 config_unit_enum!(
     /// The style in which task output will be printed to the console.

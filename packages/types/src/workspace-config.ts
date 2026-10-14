@@ -282,6 +282,7 @@ export interface NotifierConfig {
 	webhookUrl?: string | null;
 }
 
+/** Toggles the state of actions within the pipeline. */
 export type PipelineActionSwitch = null | boolean | Id[];
 
 /** Configures aspects of the action pipeline. */
@@ -371,6 +372,7 @@ export interface WorkspaceProjectsConfig {
 	sources: Record<Id, string>;
 }
 
+/** Configures projects in the workspace. */
 export type WorkspaceProjects = WorkspaceProjectsConfig | string[] | Record<Id, string>;
 
 /**
@@ -972,6 +974,7 @@ export interface PartialNotifierConfig {
 	webhookUrl?: string | null;
 }
 
+/** Toggles the state of actions within the pipeline. */
 export type PartialPipelineActionSwitch = null | boolean | Id[];
 
 /** Configures aspects of the action pipeline. */
@@ -1057,6 +1060,7 @@ export interface PartialWorkspaceProjectsConfig {
 	sources?: Record<Id, string> | null;
 }
 
+/** Configures projects in the workspace. */
 export type PartialWorkspaceProjects =
 	| PartialWorkspaceProjectsConfig
 	| string[]

@@ -12,6 +12,22 @@
 - Fixed an issue where the task hasher logged "only files can be hashed" warnings for directories
   (or symlinks to directories) that match `hasher.ignorePatterns`.
 
+#### 🧰 Toolchains
+
+- **Python**
+  - Fixed missing project dependencies for versioned requirements using `workspace = true` in the
+    project's `[tool.uv.sources]` with uv.
+  - Prevented self-dependency cycles from optional requirements.
+- **Rust**
+  - Fixed `docker prune` failing with "unknown variant `custom-build`" when a crate has a build
+    script, example, bench, or other unsupported target kind.
+  - Fixed `docker scaffold` leaving an empty `src/main.rs` in library crates, which failed builds
+    with "`main` function not found". Only the crate's existing lib and bin targets (including
+    `src/bin`) are now stubbed.
+- **TypeScript**
+  - Fixed `pruneProjectReferences` removing references from the root `tsconfig.json` when a
+    root-level project uses it as its project config.
+
 ## 2.6.1
 
 #### 🐞 Fixes

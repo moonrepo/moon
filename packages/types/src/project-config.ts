@@ -162,18 +162,6 @@ export type ProjectMetadataConfig = ProjectMetadataConfigBase & ProjectMetadataC
 /** The technology stack of the project, for categorizing. */
 export type StackType = 'backend' | 'data' | 'frontend' | 'infrastructure' | 'systems' | 'unknown';
 
-/** The fingerprinting strategy for hashing a task check. */
-export type TaskCheckFingerprint = 'exit-code' | 'stderr' | 'stdout' | boolean;
-
-/** The pattern in which affected files will be passed to the affected task. */
-export type TaskOptionAffectedFilesPattern = 'args' | 'env' | boolean;
-
-/** The environment in which to apply task caching. */
-export type TaskOptionCache = 'local' | 'remote' | boolean;
-
-/** The pattern in which to run the task automatically in CI. */
-export type TaskOptionRunInCI = 'always' | 'affected' | 'only' | 'skip' | boolean;
-
 /** Variants a project-level toolchain can be configured. */
 export type ProjectToolchainEntry = null | boolean | ToolchainPluginConfig;
 

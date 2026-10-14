@@ -206,13 +206,13 @@ pub fn load_task_config_in_format(format: &str) {
                 Some("development".to_owned())
             )])),
             inputs: Some(vec![
-                Input::EnvVar("ENV".into()),
-                Input::EnvVarGlob("ENV_*".into()),
+                Input::parse("ENV").unwrap(),
+                Input::parse("ENV_*").unwrap(),
                 Input::File(stub_file_input("file.txt")),
                 Input::Glob(stub_glob_input("file.*")),
                 Input::File(stub_file_input("/file.txt")),
                 Input::Glob(stub_glob_input("/file.*")),
-                Input::TokenFunc("@dirs(name)".into())
+                Input::parse("@dirs(name)").unwrap()
             ]),
             outputs: Some(vec![
                 Output::TokenVar("$workspaceRoot".into()),
@@ -274,8 +274,8 @@ pub fn load_tasks_config_in_format(format: &str) {
                 }),
             ],
             implicit_inputs: vec![
-                Input::EnvVar("ENV".into()),
-                Input::EnvVarGlob("ENV_*".into()),
+                Input::parse("ENV").unwrap(),
+                Input::parse("ENV_*").unwrap(),
                 Input::File(stub_file_input("file.txt")),
                 Input::Glob(stub_glob_input("file.*")),
                 Input::File(stub_file_input("/file.txt")),

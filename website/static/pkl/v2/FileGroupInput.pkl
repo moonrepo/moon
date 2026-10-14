@@ -4,10 +4,13 @@
 module FileGroupInput
 
 /// Format to resolve the file group into.
-format: FileGroupInputFormat
+format: FileGroupInputFormat? = `as`
+
+/// An alias of `format`.
+hidden `as`: FileGroupInputFormat?
 
 /// The file group identifier.
-group: Id
+group: Id?
 
 /// Available formats to resolve the file group into.
 typealias FileGroupInputFormat = *"static" | "dirs" | "envs" | "files" | "globs" | "root"

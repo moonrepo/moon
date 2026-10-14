@@ -531,7 +531,7 @@ implicitInputs:
             assert_eq!(
                 config.implicit_inputs,
                 vec![
-                    Input::EnvVar("FOO_BAR".into()),
+                    Input::String(InputString::EnvVar("FOO_BAR".into())),
                     Input::File(stub_file_input("file/path")),
                 ]
             );

@@ -94,7 +94,8 @@ type: TaskType?
 
 typealias Id = String
 
-typealias Input = String | FileInput | FileGroupInput | GlobInput | ProjectInput
+/// The different patterns a task input can be defined as.
+typealias Input = String | FileGroupInput | ProjectInput | FileInput | GlobInput
 
 typealias Output = String | FileOutput | GlobOutput
 

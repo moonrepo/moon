@@ -5,7 +5,7 @@ module ProjectInput
 
 /// A list of globs, relative from the project's root,
 /// in which to determine affected status.
-filter: Listing<String>
+filter: Listing<String>?
 
 /// A file group identifier within the project in which
 /// to determine affected status.
@@ -15,6 +15,6 @@ group: Id? = fileGroup
 hidden fileGroup: Id?
 
 /// The external project identifier.
-project: String
+project: String?
 
 typealias Id = String

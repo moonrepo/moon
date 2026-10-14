@@ -298,7 +298,7 @@ config_struct!(
 
         /// A map of group identifiers to a list of file paths, globs, and
         /// environment variables, that can be referenced from tasks.
-        #[setting(merge = merge_iter)]
+        #[setting(nested = Input, merge = merge_iter)]
         pub file_groups: FxHashMap<Id, Vec<Input>>,
 
         /// Task dependencies (`deps`) that will be automatically injected into every
@@ -308,7 +308,7 @@ config_struct!(
 
         /// Task inputs (`inputs`) that will be automatically injected into every
         /// task that inherits this configuration.
-        #[setting(merge = merge::append_vec)]
+        #[setting(nested = Input, merge = merge::append_vec)]
         pub implicit_inputs: Vec<Input>,
 
         /// A map of conditions that define which projects will inherit these

@@ -331,6 +331,7 @@ config_struct!(
         /// When not provided, all files within the project are considered inputs.
         /// When an empty list, no files are considered. Otherwise, an
         /// explicit list of inputs are considered.
+        #[setting(nested = Input)]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub inputs: Option<Vec<Input>>,
 

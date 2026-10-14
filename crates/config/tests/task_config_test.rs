@@ -731,8 +731,8 @@ inputs:
             assert_eq!(
                 config.inputs.unwrap(),
                 vec![
-                    Input::EnvVar("FOO_BAR".into()),
-                    Input::EnvVarGlob("FOO_*".into()),
+                    Input::parse("FOO_BAR").unwrap(),
+                    Input::parse("FOO_*").unwrap(),
                     Input::File(stub_file_input("file/path")),
                 ]
             );

@@ -78,7 +78,8 @@ workspace: ProjectWorkspaceConfig?
 
 typealias Id = String
 
-typealias Input = String | FileInput | FileGroupInput | GlobInput | ProjectInput
+/// The different patterns a task input can be defined as.
+typealias Input = String | FileGroupInput | ProjectInput | FileInput | GlobInput
 
 /// Supported programming languages that each project can be written in.
 typealias LanguageType = "bash" | "batch" | "cplusplus" | "csharp" | "dotnet" | "go" | "java" | "javascript" | "kotlin" | "php" | "python" | "ruby" | "rust" | "swift" | "typescript" | *"unknown" | String

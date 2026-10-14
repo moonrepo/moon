@@ -8,6 +8,50 @@ import type { LanguageType, LayerType, StackType } from './project-config';
 /** The task-to-task relationship of the dependency. */
 export type TaskDependencyType = 'cleanup' | 'required' | 'wait' | 'optional';
 
+/** Available formats to resolve the file group into. */
+export type FileGroupInputFormat = 'static' | 'dirs' | 'envs' | 'files' | 'globs' | 'root';
+
+/** A file group input. */
+export interface FileGroupInput {
+	/**
+	 * Format to resolve the file group into.
+	 *
+	 * @default 'static'
+	 * @type {'static' | 'dirs' | 'envs' | 'files' | 'globs' | 'root'}
+	 */
+	as?: FileGroupInputFormat;
+	/**
+	 * Format to resolve the file group into.
+	 *
+	 * @default 'static'
+	 * @type {'static' | 'dirs' | 'envs' | 'files' | 'globs' | 'root'}
+	 */
+	format?: FileGroupInputFormat;
+	/** The file group identifier. */
+	group: Id;
+}
+
+/** An external project input. */
+export interface ProjectInput {
+	/**
+	 * A list of globs, relative from the project's root,
+	 * in which to determine affected status.
+	 */
+	filter?: string[];
+	/**
+	 * A file group identifier within the project in which
+	 * to determine affected status.
+	 */
+	fileGroup?: Id | null;
+	/**
+	 * A file group identifier within the project in which
+	 * to determine affected status.
+	 */
+	group?: Id | null;
+	/** The external project identifier. */
+	project: string;
+}
+
 /** A file path input. */
 export interface FileInput {
 	/**
@@ -34,29 +78,6 @@ export interface FileInput {
 	optional?: boolean | null;
 }
 
-/** Available formats to resolve the file group into. */
-export type FileGroupInputFormat = 'static' | 'dirs' | 'envs' | 'files' | 'globs' | 'root';
-
-/** A file group input. */
-export interface FileGroupInput {
-	/**
-	 * Format to resolve the file group into.
-	 *
-	 * @default 'static'
-	 * @type {'static' | 'dirs' | 'envs' | 'files' | 'globs' | 'root'}
-	 */
-	as?: FileGroupInputFormat;
-	/**
-	 * Format to resolve the file group into.
-	 *
-	 * @default 'static'
-	 * @type {'static' | 'dirs' | 'envs' | 'files' | 'globs' | 'root'}
-	 */
-	format?: FileGroupInputFormat;
-	/** The file group identifier. */
-	group: Id;
-}
-
 /** A glob pattern input. */
 export interface GlobInput {
 	/**
@@ -69,28 +90,8 @@ export interface GlobInput {
 	glob: string;
 }
 
-/** An external project input. */
-export interface ProjectInput {
-	/**
-	 * A list of globs, relative from the project's root,
-	 * in which to determine affected status.
-	 */
-	filter?: string[];
-	/**
-	 * A file group identifier within the project in which
-	 * to determine affected status.
-	 */
-	fileGroup?: Id | null;
-	/**
-	 * A file group identifier within the project in which
-	 * to determine affected status.
-	 */
-	group?: Id | null;
-	/** The external project identifier. */
-	project: string;
-}
-
-export type Input = string | FileInput | FileGroupInput | GlobInput | ProjectInput;
+/** The different patterns a task input can be defined as. */
+export type Input = string | FileGroupInput | ProjectInput | FileInput | GlobInput;
 
 /**
  * Controls how a task dependency invalidates the current task's cache entry.
@@ -756,6 +757,91 @@ export interface InheritedTasksConfig {
 	tasks: Record<Id, TaskConfig>;
 }
 
+/** A file group input. */
+export interface PartialFileGroupInput {
+	/**
+	 * Format to resolve the file group into.
+	 *
+	 * @default 'static'
+	 */
+	as?: FileGroupInputFormat | null;
+	/**
+	 * Format to resolve the file group into.
+	 *
+	 * @default 'static'
+	 */
+	format?: FileGroupInputFormat | null;
+	/** The file group identifier. */
+	group?: Id | null;
+}
+
+/** An external project input. */
+export interface PartialProjectInput {
+	/**
+	 * A list of globs, relative from the project's root,
+	 * in which to determine affected status.
+	 */
+	filter?: string[] | null;
+	/**
+	 * A file group identifier within the project in which
+	 * to determine affected status.
+	 */
+	fileGroup?: Id | null;
+	/**
+	 * A file group identifier within the project in which
+	 * to determine affected status.
+	 */
+	group?: Id | null;
+	/** The external project identifier. */
+	project?: string | null;
+}
+
+/** A file path input. */
+export interface PartialFileInput {
+	/**
+	 * Regex pattern to match the file's contents against
+	 * when determining affected status.
+	 */
+	match?: string | null;
+	/**
+	 * Regex pattern to match the file's contents against
+	 * when determining affected status.
+	 */
+	matches?: string | null;
+	/**
+	 * Regex pattern to match the file's contents against
+	 * when determining affected status.
+	 */
+	content?: string | null;
+	/** The literal file path. */
+	file?: string | null;
+	/**
+	 * Mark the file as optional instead of logging a warning
+	 * when hashing a task.
+	 */
+	optional?: boolean | null;
+}
+
+/** A glob pattern input. */
+export interface PartialGlobInput {
+	/**
+	 * Cache the glob walking result for increased performance.
+	 *
+	 * @default true
+	 */
+	cache?: boolean | null;
+	/** The glob pattern. */
+	glob?: string | null;
+}
+
+/** The different patterns a task input can be defined as. */
+export type PartialInput =
+	| string
+	| PartialFileGroupInput
+	| PartialProjectInput
+	| PartialFileInput
+	| PartialGlobInput;
+
 /** A task referenced by target, with additional parameters to pass through. */
 export interface PartialTaskDependencyConfig {
 	/** Additional arguments to pass to this dependency when it's ran. */
@@ -1191,7 +1277,7 @@ export interface PartialTaskConfig {
 	 * When an empty list, no files are considered. Otherwise, an
 	 * explicit list of inputs are considered.
 	 */
-	inputs?: Input[] | null;
+	inputs?: PartialInput[] | null;
 	/** Options to control task inheritance, execution, and more. */
 	options?: PartialTaskOptionsConfig | null;
 	/**
@@ -1261,7 +1347,7 @@ export interface PartialInheritedTasksConfig {
 	 * A map of group identifiers to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
 	 */
-	fileGroups?: Record<Id, Input[]> | null;
+	fileGroups?: Record<Id, PartialInput[]> | null;
 	/**
 	 * Task dependencies (`deps`) that will be automatically injected into every
 	 * task that inherits this configuration.
@@ -1271,7 +1357,7 @@ export interface PartialInheritedTasksConfig {
 	 * Task inputs (`inputs`) that will be automatically injected into every
 	 * task that inherits this configuration.
 	 */
-	implicitInputs?: Input[] | null;
+	implicitInputs?: PartialInput[] | null;
 	/**
 	 * A map of conditions that define which projects will inherit these
 	 * tasks and configuration. If not defined, will be inherited by all projects.

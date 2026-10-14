@@ -1,18 +1,14 @@
 use super::portable_path::{FilePath, GlobPath, PortablePath, is_glob_like};
 use super::*;
 use crate::{
-    DependencyScope, config_struct, config_unit_enum, generate_io_file_methods,
+    DependencyScope, config_enum, config_struct, config_unit_enum, generate_io_file_methods,
     generate_io_glob_methods, patterns,
 };
 use moon_common::Id;
 use moon_common::path::{
     RelativeFrom, WorkspaceRelativePathBuf, expand_to_workspace_relative, standardize_separators,
 };
-use schematic::{
-    Config, ConfigEnum, ParseError, RegexSetting, Schema, SchemaBuilder, Schematic,
-    schema::UnionType,
-};
-use serde::{Deserialize, Serialize, Serializer};
+use schematic::{Config, ConfigEnum, ParseError, RegexSetting, Schema, SchemaBuilder, Schematic};
 use std::str::FromStr;
 
 config_struct!(
@@ -286,22 +282,97 @@ impl ProjectInput {
     }
 }
 
-/// The different patterns a task input can be defined as.
-#[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
-#[serde(try_from = "PartialInputShape")]
-pub enum Input {
-    EnvVar(String),
-    EnvVarGlob(String),
-    File(FileInput),
-    FileGroup(FileGroupInput),
-    Glob(GlobInput),
-    Project(ProjectInput),
-    // Old
-    TokenFunc(String),
-    TokenVar(String),
-    // New
-    // ManifestDeps(ManifestDepsInput),
+config_enum!(
+    /// The string form of an input type.
+    #[derive(Default)]
+    #[serde(try_from = "String", into = "String")]
+    pub enum InputString {
+        #[default]
+        None,
+        EnvVar(String),
+        EnvVarGlob(String),
+        // Old
+        TokenFunc(String),
+        TokenVar(String),
+    }
+);
+
+impl InputString {
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::None => unreachable!(),
+            Self::EnvVar(value)
+            | Self::EnvVarGlob(value)
+            | Self::TokenFunc(value)
+            | Self::TokenVar(value) => value,
+        }
+    }
 }
+
+impl FromStr for InputString {
+    type Err = ParseError;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        // Token function
+        if value.starts_with('@') && patterns::TOKEN_FUNC_DISTINCT.is_match(value) {
+            return Ok(Self::TokenFunc(value.to_owned()));
+        }
+
+        // Token/environment variable
+        if let Some(var) = value.strip_prefix('$') {
+            if patterns::ENV_VAR_DISTINCT.is_match(value) {
+                return Ok(Self::EnvVar(var.to_owned()));
+            } else if patterns::ENV_VAR_GLOB_DISTINCT.is_match(value) {
+                return Ok(Self::EnvVarGlob(var.to_owned()));
+            } else if patterns::TOKEN_VAR_DISTINCT.is_match(value) {
+                return Ok(Self::TokenVar(value.to_owned()));
+            }
+        }
+
+        Err(ParseError::new("invalid input string"))
+    }
+}
+
+impl TryFrom<String> for InputString {
+    type Error = ParseError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Self::from_str(&value)
+    }
+}
+
+impl Into<String> for InputString {
+    fn into(self) -> String {
+        match self {
+            Self::None => unreachable!(),
+            Self::EnvVar(value) | Self::EnvVarGlob(value) => format!("${value}"),
+            Self::TokenFunc(value) | Self::TokenVar(value) => value,
+        }
+    }
+}
+
+impl Schematic for InputString {
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.string_default()
+    }
+}
+
+config_enum!(
+    /// The different patterns a task input can be defined as.
+    #[derive(Config)]
+    #[serde(untagged)]
+    pub enum Input {
+        String(InputString),
+        #[setting(nested)]
+        FileGroup(FileGroupInput),
+        #[setting(nested)]
+        Project(ProjectInput),
+        #[setting(nested)]
+        File(FileInput),
+        #[setting(nested)]
+        Glob(GlobInput),
+    }
+);
 
 impl Input {
     pub fn create_uri(value: &str) -> Result<Uri, ParseError> {
@@ -326,10 +397,7 @@ impl Input {
 
     pub fn as_str(&self) -> &str {
         match self {
-            Self::EnvVar(value)
-            | Self::EnvVarGlob(value)
-            | Self::TokenFunc(value)
-            | Self::TokenVar(value) => value,
+            Self::String(value) => value.as_str(),
             Self::File(value) => value.file.as_str(),
             Self::FileGroup(value) => value.group.as_str(),
             Self::Glob(value) => value.glob.as_str(),
@@ -338,7 +406,10 @@ impl Input {
     }
 
     pub fn is_glob(&self) -> bool {
-        matches!(self, Self::EnvVarGlob(_) | Self::Glob(_))
+        matches!(
+            self,
+            Self::String(InputString::EnvVarGlob(_)) | Self::Glob(_)
+        )
     }
 }
 
@@ -346,20 +417,9 @@ impl FromStr for Input {
     type Err = ParseError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        // Token function
-        if value.starts_with('@') && patterns::TOKEN_FUNC_DISTINCT.is_match(value) {
-            return Ok(Self::TokenFunc(value.to_owned()));
-        }
-
-        // Token/environment variable
-        if let Some(var) = value.strip_prefix('$') {
-            if patterns::ENV_VAR_DISTINCT.is_match(value) {
-                return Ok(Self::EnvVar(var.to_owned()));
-            } else if patterns::ENV_VAR_GLOB_DISTINCT.is_match(value) {
-                return Ok(Self::EnvVarGlob(var.to_owned()));
-            } else if patterns::TOKEN_VAR_DISTINCT.is_match(value) {
-                return Ok(Self::TokenVar(value.to_owned()));
-            }
+        // String formats
+        if let Ok(inner) = InputString::from_str(value) {
+            return Ok(Self::String(inner));
         }
 
         // URI formats
@@ -376,74 +436,5 @@ impl FromStr for Input {
                 "input protocol `{other}://` is not supported"
             ))),
         }
-    }
-}
-
-impl Schematic for Input {
-    fn schema_name() -> Option<String> {
-        Some("Input".into())
-    }
-
-    fn build_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.union(UnionType::new_any([
-            schema.infer::<String>(),
-            schema.infer::<FileInput>(),
-            schema.infer::<FileGroupInput>(),
-            schema.infer::<GlobInput>(),
-            schema.infer::<ProjectInput>(),
-        ]))
-    }
-}
-
-impl Serialize for Input {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match self {
-            Input::EnvVar(var) | Input::EnvVarGlob(var) => {
-                serializer.serialize_str(format!("${var}").as_str())
-            }
-            Input::TokenFunc(token) | Input::TokenVar(token) => serializer.serialize_str(token),
-            Input::File(input) => FileInput::serialize(input, serializer),
-            Input::FileGroup(input) => FileGroupInput::serialize(input, serializer),
-            // Input::ManifestDeps(input) => ManifestDepsInput::serialize(input, serializer),
-            Input::Glob(input) => GlobInput::serialize(input, serializer),
-            Input::Project(input) => ProjectInput::serialize(input, serializer),
-        }
-    }
-}
-
-// Only the partial is used, which schematic deserializes by attempting
-// each variant in order, and reports every error when none match. Partial
-// fields are all optional, so a variant matches any object without unknown
-// fields, and required fields are only checked when finalized. Because of
-// this, `FileGroup` must come before `Project`, as both have a `group` field.
-#[allow(dead_code)]
-#[derive(Config)]
-#[serde(untagged)]
-enum InputShape {
-    String(String),
-    #[setting(nested)]
-    FileGroup(FileGroupInput),
-    #[setting(nested)]
-    Project(ProjectInput),
-    #[setting(nested)]
-    File(FileInput),
-    #[setting(nested)]
-    Glob(GlobInput),
-}
-
-impl TryFrom<PartialInputShape> for Input {
-    type Error = ParseError;
-
-    fn try_from(base: PartialInputShape) -> Result<Self, Self::Error> {
-        Ok(match base {
-            PartialInputShape::String(input) => Self::parse(input)?,
-            PartialInputShape::File(input) => Self::File(finalize_partial(input)?),
-            PartialInputShape::FileGroup(input) => Self::FileGroup(finalize_partial(input)?),
-            PartialInputShape::Glob(input) => Self::Glob(finalize_partial(input)?),
-            PartialInputShape::Project(input) => Self::Project(finalize_partial(input)?),
-        })
     }
 }

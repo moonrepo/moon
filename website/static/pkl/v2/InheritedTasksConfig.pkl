@@ -55,7 +55,8 @@ typealias ExtendsFrom = String | Listing<String>
 
 typealias Id = String
 
-typealias Input = String | FileInput | FileGroupInput | GlobInput | ProjectInput
+/// The different patterns a task input can be defined as.
+typealias Input = String | FileGroupInput | ProjectInput | FileInput | GlobInput
 
 /// Configures another task that this task depends on.
 typealias TaskDependency = String | TaskDependencyConfig

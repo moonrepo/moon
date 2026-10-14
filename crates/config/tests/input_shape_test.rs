@@ -1,7 +1,7 @@
 use moon_common::Id;
 use moon_config::{
-    FileGroupInput, FileGroupInputFormat, GlobInput, GlobPath, Input, ManifestDepsInput,
-    ProjectInput, Uri, test_utils::*,
+    FileGroupInput, FileGroupInputFormat, GlobInput, GlobPath, Input, InputString,
+    ManifestDepsInput, ProjectInput, Uri, test_utils::*,
 };
 use schematic::RegexSetting;
 
@@ -21,18 +21,21 @@ mod input_shape {
 
         #[test]
         fn env_vars() {
-            assert_eq!(Input::parse("$VAR").unwrap(), Input::EnvVar("VAR".into()));
+            assert_eq!(
+                Input::parse("$VAR").unwrap(),
+                Input::String(InputString::EnvVar("VAR".into()))
+            );
             assert_eq!(
                 Input::parse("$VAR_*").unwrap(),
-                Input::EnvVarGlob("VAR_*".into())
+                Input::String(InputString::EnvVar("VAR_*".into()))
             );
             assert_eq!(
                 Input::parse("$VAR_*_SUFFIX").unwrap(),
-                Input::EnvVarGlob("VAR_*_SUFFIX".into())
+                Input::String(InputString::EnvVar("VAR_*_SUFFIX".into()))
             );
             assert_eq!(
                 Input::parse("$*_SUFFIX").unwrap(),
-                Input::EnvVarGlob("*_SUFFIX".into())
+                Input::String(InputString::EnvVar("*_SUFFIX".into()))
             );
         }
 
@@ -40,23 +43,23 @@ mod input_shape {
         fn token_funcs() {
             assert_eq!(
                 Input::parse("@group(name)").unwrap(),
-                Input::TokenFunc("@group(name)".into())
+                Input::String(InputString::TokenFunc("@group(name)".into()))
             );
             assert_eq!(
                 Input::parse("@dirs(name)").unwrap(),
-                Input::TokenFunc("@dirs(name)".into())
+                Input::String(InputString::TokenFunc("@dirs(name)".into()))
             );
             assert_eq!(
                 Input::parse("@files(name)").unwrap(),
-                Input::TokenFunc("@files(name)".into())
+                Input::String(InputString::TokenFunc("@files(name)".into()))
             );
             assert_eq!(
                 Input::parse("@globs(name)").unwrap(),
-                Input::TokenFunc("@globs(name)".into())
+                Input::String(InputString::TokenFunc("@globs(name)".into()))
             );
             assert_eq!(
                 Input::parse("@root(name)").unwrap(),
-                Input::TokenFunc("@root(name)".into())
+                Input::String(InputString::TokenFunc("@root(name)".into()))
             );
         }
 
@@ -64,11 +67,11 @@ mod input_shape {
         fn token_vars() {
             assert_eq!(
                 Input::parse("$workspaceRoot").unwrap(),
-                Input::TokenVar("$workspaceRoot".into())
+                Input::String(InputString::TokenVar("$workspaceRoot".into()))
             );
             assert_eq!(
                 Input::parse("$projectLayer").unwrap(),
-                Input::TokenVar("$projectLayer".into())
+                Input::String(InputString::TokenVar("$projectLayer".into()))
             );
         }
 

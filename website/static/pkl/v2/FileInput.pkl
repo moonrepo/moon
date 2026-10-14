@@ -14,7 +14,7 @@ hidden match: String?
 hidden matches: String?
 
 /// The literal file path.
-file: String
+file: String?
 
 /// Mark the file as optional instead of logging a warning
 /// when hashing a task.

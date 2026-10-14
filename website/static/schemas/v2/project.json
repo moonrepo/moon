@@ -476,21 +476,22 @@
       "type": "string"
     },
     "Input": {
+      "description": "The different patterns a task input can be defined as.",
       "anyOf": [
         {
           "type": "string"
         },
         {
-          "$ref": "#/definitions/FileInput"
-        },
-        {
           "$ref": "#/definitions/FileGroupInput"
         },
         {
-          "$ref": "#/definitions/GlobInput"
+          "$ref": "#/definitions/ProjectInput"
         },
         {
-          "$ref": "#/definitions/ProjectInput"
+          "$ref": "#/definitions/FileInput"
+        },
+        {
+          "$ref": "#/definitions/GlobInput"
         }
       ]
     },

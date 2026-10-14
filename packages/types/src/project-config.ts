@@ -382,6 +382,91 @@ export interface PartialProjectDockerConfig {
 	scaffold?: PartialDockerScaffoldConfig | null;
 }
 
+/** A file group input. */
+export interface PartialFileGroupInput {
+	/**
+	 * Format to resolve the file group into.
+	 *
+	 * @default 'static'
+	 */
+	as?: FileGroupInputFormat | null;
+	/**
+	 * Format to resolve the file group into.
+	 *
+	 * @default 'static'
+	 */
+	format?: FileGroupInputFormat | null;
+	/** The file group identifier. */
+	group?: Id | null;
+}
+
+/** An external project input. */
+export interface PartialProjectInput {
+	/**
+	 * A list of globs, relative from the project's root,
+	 * in which to determine affected status.
+	 */
+	filter?: string[] | null;
+	/**
+	 * A file group identifier within the project in which
+	 * to determine affected status.
+	 */
+	fileGroup?: Id | null;
+	/**
+	 * A file group identifier within the project in which
+	 * to determine affected status.
+	 */
+	group?: Id | null;
+	/** The external project identifier. */
+	project?: string | null;
+}
+
+/** A file path input. */
+export interface PartialFileInput {
+	/**
+	 * Regex pattern to match the file's contents against
+	 * when determining affected status.
+	 */
+	match?: string | null;
+	/**
+	 * Regex pattern to match the file's contents against
+	 * when determining affected status.
+	 */
+	matches?: string | null;
+	/**
+	 * Regex pattern to match the file's contents against
+	 * when determining affected status.
+	 */
+	content?: string | null;
+	/** The literal file path. */
+	file?: string | null;
+	/**
+	 * Mark the file as optional instead of logging a warning
+	 * when hashing a task.
+	 */
+	optional?: boolean | null;
+}
+
+/** A glob pattern input. */
+export interface PartialGlobInput {
+	/**
+	 * Cache the glob walking result for increased performance.
+	 *
+	 * @default true
+	 */
+	cache?: boolean | null;
+	/** The glob pattern. */
+	glob?: string | null;
+}
+
+/** The different patterns a task input can be defined as. */
+export type PartialInput =
+	| string
+	| PartialFileGroupInput
+	| PartialProjectInput
+	| PartialFileInput
+	| PartialGlobInput;
+
 /** A mapping of file paths and file globs to owners. */
 export type PartialOwnersPaths = string[] | Record<string, string[]>;
 
@@ -544,7 +629,7 @@ export interface PartialProjectConfig {
 	 * A map of group identifiers to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
 	 */
-	fileGroups?: Record<Id, Input[]> | null;
+	fileGroups?: Record<Id, PartialInput[]> | null;
 	/**
 	 * Overrides the identifier within the project graph, as defined in
 	 * the workspace `projects` setting.

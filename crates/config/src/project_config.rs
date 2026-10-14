@@ -120,6 +120,7 @@ config_struct!(
 
         /// A map of group identifiers to a list of file paths, globs, and
         /// environment variables, that can be referenced from tasks.
+        #[setting(nested = Input)]
         pub file_groups: FxHashMap<Id, Vec<Input>>,
 
         /// Overrides the identifier within the project graph, as defined in

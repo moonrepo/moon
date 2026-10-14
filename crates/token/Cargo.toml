@@ -24,7 +24,7 @@ pest = { workspace = true }
 pest_derive = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-tera = { version = "2.1.0", features = ["fast"] }
+tera = { workspace = true }
 
 [dev-dependencies]
 starbase_sandbox = { workspace = true }

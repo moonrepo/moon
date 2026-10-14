@@ -104,6 +104,21 @@
     affected task, and the `upstream` and `downstream` fields of an affected project, with a single
     `dependencies` field, the affected dependencies that it was reached through. The
     `@moonrepo/types` types have been updated to match.
+- **Code generation**
+  - Updated the template engine, [Tera](https://keats.github.io/tera/), to v2, which includes
+    breaking syntax changes for template files.
+    [View the Tera migration guide](https://github.com/Keats/tera/blob/master/MIGRATION.md).
+    - Macros have been replaced with components. A `{% macro %}` must be rewritten as a
+      `{% component %}`, which no longer needs an `{% import %}`, and is called like
+      `{{ <name arg="value" /> }}`.
+    - Array items must be accessed with brackets, like `list[0]`, instead of `list.0`.
+    - Some built-in filters and functions have been renamed, like `as_str` to `str`, or removed,
+      like `date`, `now`, `slugify`, `get_env`, `map`, and `filter`. The `json_encode` filter is
+      still available.
+    - Includes, parent templates, filters, and functions must now exist when a template is loaded,
+      instead of when it's rendered.
+    - Objects are now rendered as maps, like `{"key": "value"}`, instead of `[object]`, and strings
+      within arrays are now quoted.
 - **Configuration**
   - Removed the `remote.cache.verifyIntegrity` setting. Use `cache.cas.verifyIntegrity` instead.
   - Removed the `bitbucket-legacy` provider for the `vcs.provider` setting. Use `bitbucket` instead.

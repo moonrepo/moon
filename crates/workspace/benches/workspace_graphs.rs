@@ -1,9 +1,13 @@
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 use moon_bench_utils::{create_chained_workspace, create_simple_workspace, handle_unwrap};
-use moon_common::{is_ci, is_local};
+use moon_common::{Id, is_ci, is_local};
+use moon_graph_utils::Depth;
+use moon_task::Target;
 use moon_test_utils::WorkspaceMocker;
 use moon_workspace::WorkspaceBuilder;
 use starbase_sandbox::Sandbox;
+use std::hint::black_box;
+use std::sync::Arc;
 use tokio::runtime::Runtime;
 
 fn id(max: u16, label: &str) -> BenchmarkId {
@@ -72,6 +76,47 @@ fn do_expand_all(c: &mut Criterion, max: u16) {
     group.finish();
 }
 
+// Build the chained graphs once, and then focus them for the deepest
+// project and task, whose deep dependencies are the entire chain,
+// as `moon project-graph <id>` and `moon task-graph <target>` do
+fn do_focus_chained(c: &mut Criterion, max: u16) {
+    let sandbox = create_chained_workspace(max);
+    let mut group = c.benchmark_group("WorkspaceBuilder");
+    let mocker = WorkspaceMocker::new(sandbox.path()).load_default_configs();
+
+    let workspace_graph = Arc::new(Runtime::new().unwrap().block_on(async {
+        let mut builder = WorkspaceBuilder::new(mocker.mock_workspace_builder_context())
+            .await
+            .unwrap();
+
+        handle_unwrap(builder.load_graphs().await);
+
+        builder.build().await.unwrap()
+    }));
+
+    let project_id = Id::raw(format!("p{max}"));
+    let target = Target::parse(&format!("p{max}:build")).unwrap();
+
+    group.bench_function(id(max, "focus_chained"), |b| {
+        b.iter(|| {
+            black_box(
+                workspace_graph
+                    .tasks
+                    .focus_for(&target, Depth::Deep)
+                    .unwrap(),
+            );
+            black_box(
+                workspace_graph
+                    .projects
+                    .focus_for(&project_id, Depth::Deep)
+                    .unwrap(),
+            );
+        })
+    });
+
+    group.finish();
+}
+
 fn limit_100(c: &mut Criterion) {
     do_limit(c, 100);
 }
@@ -95,6 +140,10 @@ fn chained_limit_1000(c: &mut Criterion) {
     do_chained_limit(c, 1000);
 }
 
+fn focus_chained_1000(c: &mut Criterion) {
+    do_focus_chained(c, 1000);
+}
+
 fn chained_limit_5000(c: &mut Criterion) {
     // Too slow for CI!
     if should_run(5000) {
@@ -109,6 +158,7 @@ criterion_group!(
     limit_5000,
     chained_limit_1000,
     chained_limit_5000,
+    focus_chained_1000,
     expand_all_1000
 );
 criterion_main!(benches);

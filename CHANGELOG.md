@@ -209,6 +209,9 @@
   - Improved `moon query projects` performance for the `taskTag`, `taskToolchain`, and `taskType`
     fields, by reading each project's unexpanded tasks, instead of expanding every task in the
     workspace to match the query.
+  - Improved `moon project-graph` and `moon task-graph` performance when focused on a project or
+    task, by walking the graph by node index with a breadth-first traversal, instead of scanning
+    every node for each visited one.
   - The graph's cache now stores a single hash manifest, instead of also storing an unused one when
     plugins discovered new input files.
   - The graph's cache file is now less than half the size, as data that's only used while building

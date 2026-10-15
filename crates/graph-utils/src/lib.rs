@@ -1,12 +1,16 @@
 mod depth;
 mod graph_context;
+mod graph_cycle;
 mod graph_formats;
 mod graph_traits;
+mod parallel;
 
 pub use depth::*;
 pub use graph_context::*;
+pub use graph_cycle::*;
 pub use graph_formats::*;
 pub use graph_traits::*;
+pub use parallel::*;
 pub use petgraph::Direction;
 
 use serde::de::{self, Visitor};

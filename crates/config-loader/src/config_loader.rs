@@ -13,6 +13,21 @@ use schematic::{Config, ConfigLoader as Loader};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
+/// The project config file located within a project root.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub enum ProjectConfigFile {
+    /// Not located, so every supported file name will be probed when loading.
+    #[default]
+    Unresolved,
+
+    /// The project root does not exist.
+    MissingRoot,
+
+    /// The project root exists, with the config file of the
+    /// highest extension precedence that it contains, if any.
+    Located(Option<PathBuf>),
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct ConfigLoader {
     pub dir: PathBuf, // .moon
@@ -65,14 +80,20 @@ impl ConfigLoader {
         &self,
         project_root: P,
     ) -> miette::Result<Loader<ProjectConfig>> {
-        let project_root = project_root.as_ref();
+        self.create_project_loader_with_files(self.get_project_files(project_root.as_ref()))
+    }
+
+    fn create_project_loader_with_files(
+        &self,
+        files: Vec<PathBuf>,
+    ) -> miette::Result<Loader<ProjectConfig>> {
         let mut loader = Loader::<ProjectConfig>::new();
 
         loader.set_help(color::muted_light(
             "https://moonrepo.dev/docs/config/project",
         ));
 
-        self.prepare_loader(&mut loader, self.get_project_files(project_root))?;
+        self.prepare_loader(&mut loader, files)?;
 
         Ok(loader)
     }
@@ -199,6 +220,19 @@ impl ConfigLoader {
 
         let result = self
             .create_project_loader(project_root)?
+            .set_root(workspace_root)
+            .load()?;
+
+        Ok(result.config)
+    }
+
+    pub fn load_project_config_from_file<P: AsRef<Path>>(
+        &self,
+        workspace_root: P,
+        file: Option<&Path>,
+    ) -> miette::Result<ProjectConfig> {
+        let result = self
+            .create_project_loader_with_files(file.map(Path::to_path_buf).into_iter().collect())?
             .set_root(workspace_root)
             .load()?;
 
@@ -346,6 +380,29 @@ impl ConfigLoader {
             .into_iter()
             .map(|name| project_root.join(name))
             .collect()
+    }
+
+    /// Locate the config file within the project root, by probing each supported
+    /// file name in extension precedence order, and stopping at the first that
+    /// exists. When none exist, also check whether the project root exists.
+    ///
+    /// Probing (instead of reading the directory) is cheaper for the common
+    /// case of a `moon.yml` file, and resolves file names the same way as the
+    /// file system (for example, case-insensitively on macOS and Windows).
+    pub fn locate_project_file(&self, project_root: &Path) -> ProjectConfigFile {
+        for name in self.get_project_file_names() {
+            let file = project_root.join(name);
+
+            if file.exists() {
+                return ProjectConfigFile::Located(Some(file));
+            }
+        }
+
+        if project_root.exists() {
+            ProjectConfigFile::Located(None)
+        } else {
+            ProjectConfigFile::MissingRoot
+        }
     }
 
     pub fn get_tasks_files(&self, tasks_dir: &Path) -> miette::Result<Vec<PathBuf>> {

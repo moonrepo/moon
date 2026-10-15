@@ -35,7 +35,6 @@ moon_toolchain_plugin = { path = "../toolchain-plugin" }
 moon_vcs = { path = "../vcs" }
 moon_workspace_graph = { path = "../workspace-graph" }
 proto_core = { workspace = true }
-daggy = { workspace = true }
 miette = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }

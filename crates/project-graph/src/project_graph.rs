@@ -191,10 +191,31 @@ impl ProjectGraph {
         &self,
         ids_or_aliases: &[T],
     ) -> miette::Result<Vec<Arc<Project>>> {
+        let mut results = Vec::with_capacity(ids_or_aliases.len());
+        results.resize_with(ids_or_aliases.len(), || None);
+
+        // Already expanded projects are returned directly, so that repeated
+        // calls (like by affected tracking) don't spawn threads for cache hits
+        let mut pending = vec![];
+
+        for (position, id) in ids_or_aliases.iter().enumerate() {
+            match self.get_expanded(id.as_ref()) {
+                Some(project) => results[position] = Some(Ok(project)),
+                None => pending.push(position),
+            }
+        }
+
         // Expanding a project never reads other projects,
         // so there's no need to order the work
-        map_in_parallel(ids_or_aliases, |id| self.internal_get(id.as_ref()))
+        for (position, result) in pending.iter().zip(map_in_parallel(&pending, |position| {
+            self.internal_get(ids_or_aliases[*position].as_ref())
+        })) {
+            results[*position] = Some(result);
+        }
+
+        results
             .into_iter()
+            .map(|result| result.expect("Every project is expanded!"))
             .collect()
     }
 
@@ -510,24 +531,26 @@ impl ProjectGraph {
             .unwrap_or_else(|| index.index().to_string())
     }
 
-    fn internal_get(&self, id_or_alias: &str) -> miette::Result<Arc<Project>> {
-        // Already expanded projects are the hot path for graph traversals,
-        // so read them without locking the bucket or allocating an ID
-        if let Some(project) = self
-            .projects
+    /// Return the project if it has already been expanded. This is the hot
+    /// path for graph traversals, so it first reads without locking the bucket
+    /// or allocating an ID, and only resolves aliases when that misses.
+    fn get_expanded(&self, id_or_alias: &str) -> Option<Arc<Project>> {
+        self.projects
             .read_sync(id_or_alias, |_, project| Arc::clone(project))
-        {
+            .or_else(|| {
+                let id = self.resolve_id(id_or_alias);
+
+                self.projects
+                    .read_sync(&id, |_, project| Arc::clone(project))
+            })
+    }
+
+    fn internal_get(&self, id_or_alias: &str) -> miette::Result<Arc<Project>> {
+        if let Some(project) = self.get_expanded(id_or_alias) {
             return Ok(project);
         }
 
         let id = self.resolve_id(id_or_alias);
-
-        if let Some(project) = self
-            .projects
-            .read_sync(&id, |_, project| Arc::clone(project))
-        {
-            return Ok(project);
-        }
 
         // Expand outside of the map's bucket lock, so that threads expanding
         // different projects in the same bucket don't block each other

@@ -160,30 +160,39 @@ impl TaskGraph {
     /// the error of the first failing target (in the provided order) is returned,
     /// regardless of which thread failed first.
     fn internal_get_many(&self, targets: &[&Target]) -> miette::Result<Vec<Arc<Task>>> {
-        if !should_run_in_parallel(targets.len()) {
-            return targets
-                .iter()
-                .map(|target| self.internal_get(target))
-                .collect();
-        }
-
-        let ranks = self.dependency_first_ranks();
-        let mut order = (0..targets.len()).collect::<Vec<_>>();
-
-        order.sort_by_cached_key(|position| {
-            self.nodes
-                .get(targets[*position])
-                .and_then(|node| ranks.get(node.index.index()).copied())
-                .unwrap_or(usize::MAX)
-        });
-
         let mut results = Vec::with_capacity(targets.len());
         results.resize_with(targets.len(), || None);
 
-        for (position, result) in order.iter().zip(map_in_parallel(&order, |position| {
-            self.internal_get(targets[*position])
-        })) {
-            results[*position] = Some(result);
+        // Already expanded tasks are returned directly, so that repeated
+        // calls (like by affected tracking) don't spawn threads for cache hits
+        let mut pending = vec![];
+
+        for (position, target) in targets.iter().enumerate() {
+            match self.get_expanded(target) {
+                Some(task) => results[position] = Some(Ok(task)),
+                None => pending.push(position),
+            }
+        }
+
+        if should_run_in_parallel(pending.len()) {
+            let ranks = self.dependency_first_ranks();
+
+            pending.sort_by_cached_key(|position| {
+                self.nodes
+                    .get(targets[*position])
+                    .and_then(|node| ranks.get(node.index.index()).copied())
+                    .unwrap_or(usize::MAX)
+            });
+
+            for (position, result) in pending.iter().zip(map_in_parallel(&pending, |position| {
+                self.internal_get(targets[*position])
+            })) {
+                results[*position] = Some(result);
+            }
+        } else {
+            for position in pending {
+                results[position] = Some(self.internal_get(targets[position]));
+            }
         }
 
         results
@@ -209,14 +218,17 @@ impl TaskGraph {
         ranks
     }
 
-    fn internal_get(&self, target: &Target) -> miette::Result<Arc<Task>> {
-        // Already expanded tasks are the hot path for graph traversals,
-        // so read them without locking the bucket or cloning the target
-        if let Some(task) = self
-            .tasks
+    /// Return the task if it has already been expanded. This is the hot path
+    /// for graph traversals, so it reads without locking the bucket or cloning
+    /// the target.
+    fn get_expanded(&self, target: &Target) -> Option<Arc<Task>> {
+        self.tasks
             .read_sync(target, |_, once| once.get().cloned())
             .flatten()
-        {
+    }
+
+    fn internal_get(&self, target: &Target) -> miette::Result<Arc<Task>> {
+        if let Some(task) = self.get_expanded(target) {
             return Ok(task);
         }
 

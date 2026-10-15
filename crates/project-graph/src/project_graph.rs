@@ -15,7 +15,7 @@ use scc::hash_map::Entry;
 use std::collections::VecDeque;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use tracing::{debug, instrument};
 
 /// The internal graph partition that a dependency scope belongs to. Each
@@ -128,6 +128,10 @@ pub struct ProjectGraph {
     /// Map of project nodes by ID.
     pub nodes: FxHashMap<Id, ProjectNode>,
 
+    /// Every project ID sorted, derived once, as `get_all` is called
+    /// repeatedly (like by affected tracking) and must be deterministic.
+    sorted_ids: OnceLock<Vec<Id>>,
+
     /// Cache of file path lookups, mapped by starting path to project ID (as a string).
     fs_cache: Arc<scc::HashMap<PathBuf, Arc<String>>>,
 
@@ -176,10 +180,13 @@ impl ProjectGraph {
     /// expanded in parallel when there are enough of them.
     #[instrument(name = "get_all_projects", skip(self))]
     pub fn get_all(&self) -> miette::Result<Vec<Arc<Project>>> {
-        let mut ids = self.nodes.keys().collect::<Vec<_>>();
-        ids.sort();
+        let ids = self.sorted_ids.get_or_init(|| {
+            let mut ids = self.nodes.keys().cloned().collect::<Vec<_>>();
+            ids.sort();
+            ids
+        });
 
-        self.get_many(&ids)
+        self.get_many(ids)
     }
 
     /// Return many projects from the graph by ID or alias, in the order provided.

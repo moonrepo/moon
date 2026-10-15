@@ -198,7 +198,10 @@ mod load_project_config_from_file {
         sandbox.create_file("project/moon.yml", "language: [unclosed");
 
         let loader = create_loader(sandbox.path());
-        let file = sandbox.path().join("project/moon.yml");
+
+        // Join the segments separately, so that the path uses the platform
+        // separator, like the path that probing produces
+        let file = sandbox.path().join("project").join("moon.yml");
 
         let error = loader
             .load_project_config_from_file(sandbox.path(), Some(&file))

@@ -10,7 +10,7 @@ use petgraph::algo::toposort;
 use petgraph::graph::{DiGraph, NodeIndex};
 use rustc_hash::FxHashMap;
 use scc::hash_map::Entry;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use tracing::{debug, instrument};
 
 #[derive(Clone, Debug, Default)]
@@ -33,6 +33,10 @@ pub struct TaskGraph {
 
     /// Map of task nodes by target.
     pub nodes: FxHashMap<Target, TaskNode>,
+
+    /// Every target sorted, derived once, as `get_all` is called
+    /// repeatedly (like by affected tracking) and must be deterministic.
+    sorted_targets: OnceLock<Vec<Target>>,
 
     /// Project graph, required for expansion.
     project_graph: Arc<ProjectGraph>,
@@ -76,10 +80,13 @@ impl TaskGraph {
     /// expanded in parallel when there are enough of them.
     #[instrument(name = "get_all_tasks", skip(self))]
     pub fn get_all(&self) -> miette::Result<Vec<Arc<Task>>> {
-        let mut targets = self.nodes.keys().collect::<Vec<_>>();
-        targets.sort();
+        let targets = self.sorted_targets.get_or_init(|| {
+            let mut targets = self.nodes.keys().cloned().collect::<Vec<_>>();
+            targets.sort();
+            targets
+        });
 
-        self.internal_get_many(&targets)
+        self.internal_get_many(&targets.iter().collect::<Vec<_>>())
     }
 
     /// Return all unexpanded tasks from the graph.
@@ -148,6 +155,7 @@ impl TaskGraph {
             graph: dag,
             nodes: tasks,
             project_graph: self.project_graph.clone(),
+            sorted_targets: OnceLock::new(),
             tasks: self.tasks.clone(),
         })
     }

@@ -47,6 +47,31 @@ fn do_build(c: &mut Criterion, max: u16, label: &str, sandbox: Sandbox) {
     group.finish();
 }
 
+// Build the graphs and then expand every project and task,
+// as `moon ci`, `moon check`, and `moon query` do
+fn do_expand_all(c: &mut Criterion, max: u16) {
+    let sandbox = create_simple_workspace(max);
+    let mut group = c.benchmark_group("WorkspaceBuilder");
+    let mocker = WorkspaceMocker::new(sandbox.path()).load_default_configs();
+
+    group.bench_function(id(max, "expand_all"), |b| {
+        b.to_async(Runtime::new().unwrap()).iter(async || {
+            let mut builder = WorkspaceBuilder::new(mocker.mock_workspace_builder_context())
+                .await
+                .unwrap();
+
+            handle_unwrap(builder.load_graphs().await);
+
+            let workspace_graph = builder.build().await.unwrap();
+
+            handle_unwrap(workspace_graph.get_projects());
+            handle_unwrap(workspace_graph.get_tasks_with_internal());
+        })
+    });
+
+    group.finish();
+}
+
 fn limit_100(c: &mut Criterion) {
     do_limit(c, 100);
 }
@@ -60,6 +85,10 @@ fn limit_5000(c: &mut Criterion) {
     if should_run(5000) {
         do_limit(c, 5000);
     }
+}
+
+fn expand_all_1000(c: &mut Criterion) {
+    do_expand_all(c, 1000);
 }
 
 fn chained_limit_1000(c: &mut Criterion) {
@@ -79,6 +108,7 @@ criterion_group!(
     limit_1000,
     limit_5000,
     chained_limit_1000,
-    chained_limit_5000
+    chained_limit_5000,
+    expand_all_1000
 );
 criterion_main!(benches);

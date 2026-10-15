@@ -6,6 +6,7 @@ use moon_target::Target;
 use moon_task::Task;
 use moon_task_expander::{TaskExpander, TaskLookup};
 use once_cell::sync::OnceCell;
+use petgraph::algo::toposort;
 use petgraph::graph::{DiGraph, NodeIndex};
 use rustc_hash::FxHashMap;
 use scc::hash_map::Entry;
@@ -70,16 +71,14 @@ impl TaskGraph {
         Ok(&node.task)
     }
 
-    /// Return all tasks from the graph.
+    /// Return all tasks from the graph, sorted by target. Tasks are
+    /// expanded in parallel when there are enough of them.
     #[instrument(name = "get_all_tasks", skip(self))]
     pub fn get_all(&self) -> miette::Result<Vec<Arc<Task>>> {
-        let mut all = vec![];
+        let mut targets = self.nodes.keys().collect::<Vec<_>>();
+        targets.sort();
 
-        for target in self.nodes.keys() {
-            all.push(self.internal_get(target)?);
-        }
-
-        Ok(all)
+        self.internal_get_many(&targets)
     }
 
     /// Return all unexpanded tasks from the graph.
@@ -87,16 +86,11 @@ impl TaskGraph {
         Ok(self.nodes.values().map(|node| &node.task).collect())
     }
 
-    /// Return many tasks from the graph by target.
+    /// Return many tasks from the graph by target, in the order provided.
+    /// Tasks are expanded in parallel when there are enough of them.
     #[instrument(name = "get_many_tasks", skip(self))]
     pub fn get_many(&self, targets: &[Target]) -> miette::Result<Vec<Arc<Task>>> {
-        let mut many = vec![];
-
-        for target in targets {
-            many.push(self.internal_get(target)?);
-        }
-
-        Ok(many)
+        self.internal_get_many(&targets.iter().collect::<Vec<_>>())
     }
 
     /// Return many unexpanded tasks from the graph.
@@ -155,6 +149,63 @@ impl TaskGraph {
             project_graph: self.project_graph.clone(),
             tasks: self.tasks.clone(),
         })
+    }
+
+    /// Expand the provided targets and return their tasks in the same order.
+    /// When there are enough targets, they are expanded across threads in a
+    /// dependencies-first order, so that a thread expanding a dependent rarely
+    /// waits on another thread that is still expanding its dependency. The
+    /// graph is acyclic, so these waits can never deadlock. If expansion fails,
+    /// the error of the first failing target (in the provided order) is returned,
+    /// regardless of which thread failed first.
+    fn internal_get_many(&self, targets: &[&Target]) -> miette::Result<Vec<Arc<Task>>> {
+        if !should_run_in_parallel(targets.len()) {
+            return targets
+                .iter()
+                .map(|target| self.internal_get(target))
+                .collect();
+        }
+
+        let ranks = self.dependency_first_ranks();
+        let mut order = (0..targets.len()).collect::<Vec<_>>();
+
+        order.sort_by_cached_key(|position| {
+            self.nodes
+                .get(targets[*position])
+                .and_then(|node| ranks.get(node.index.index()).copied())
+                .unwrap_or(usize::MAX)
+        });
+
+        let mut results = Vec::with_capacity(targets.len());
+        results.resize_with(targets.len(), || None);
+
+        for (position, result) in order.iter().zip(map_in_parallel(&order, |position| {
+            self.internal_get(targets[*position])
+        })) {
+            results[*position] = Some(result);
+        }
+
+        results
+            .into_iter()
+            .map(|result| result.expect("Every target is expanded!"))
+            .collect()
+    }
+
+    /// Return the rank of each node (by graph index) in a dependencies-first
+    /// topological order. Ranks are only used to order work, so if sorting
+    /// fails, all nodes share the same rank.
+    fn dependency_first_ranks(&self) -> Vec<usize> {
+        let mut ranks = vec![0; self.graph.node_count()];
+
+        if let Ok(indices) = toposort(&self.graph, None) {
+            // Edges point from a task to its dependency,
+            // so reverse the order to get dependencies first
+            for (rank, index) in indices.into_iter().rev().enumerate() {
+                ranks[index.index()] = rank;
+            }
+        }
+
+        ranks
     }
 
     fn internal_get(&self, target: &Target) -> miette::Result<Arc<Task>> {

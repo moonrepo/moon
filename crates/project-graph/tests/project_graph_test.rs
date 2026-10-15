@@ -2767,3 +2767,345 @@ tasks:
         }
     }
 }
+
+mod parallel_expansion {
+    use super::*;
+    use moon_test_utils::create_empty_moon_sandbox;
+
+    const PROJECT_COUNT: usize = 24;
+
+    fn create_project_config(index: usize, extra: &str) -> String {
+        let mut config = String::from(
+            r#"
+fileGroups:
+  sources: ['src/**/*']
+tasks:
+  build:
+    command: 'echo $project'
+    inputs: ['@group(sources)', 'src']
+    outputs: ['dist']
+  test:
+    command: 'echo test'
+    deps:
+      - target: '~:build'
+        cacheStrategy: 'outputs'
+"#,
+        );
+
+        if index > 0 {
+            config.push_str(&format!(
+                r#"      - target: 'p{:02}:build'
+        cacheStrategy: 'outputs'
+"#,
+                index - 1
+            ));
+        }
+
+        config.push_str(
+            r#"  lint:
+    command: 'echo $target'
+    args: ['$projectSource']
+  internal:
+    command: 'echo internal'
+    options:
+      internal: true
+"#,
+        );
+        config.push_str(extra);
+
+        if index > 0 {
+            config = format!("dependsOn: ['p{:02}']\n{config}", index - 1);
+        }
+
+        config
+    }
+
+    fn create_sandbox(broken: &[usize]) -> MoonSandbox {
+        let sandbox = create_empty_moon_sandbox();
+
+        for index in 0..PROJECT_COUNT {
+            let extra = if broken.contains(&index) {
+                "  broken:\n    command: 'echo broken'\n    inputs: ['@group(missing)']\n"
+            } else {
+                ""
+            };
+
+            sandbox.create_file(
+                format!("p{index:02}/moon.yml"),
+                create_project_config(index, extra),
+            );
+            sandbox.create_file(format!("p{index:02}/src/index.ts"), "");
+        }
+
+        sandbox
+    }
+
+    // Builds the graphs without expanding anything, unlike the mocker
+    async fn build_unexpanded_graph(root: &Path) -> WorkspaceGraph {
+        let mocker = WorkspaceMocker::new(root).load_default_configs();
+        let mut builder = WorkspaceBuilder::new(mocker.mock_workspace_builder_context())
+            .await
+            .unwrap();
+
+        builder.load_graphs().await.unwrap();
+        builder.build().await.unwrap()
+    }
+
+    fn sorted_targets(graph: &WorkspaceGraph) -> Vec<Target> {
+        let mut targets = graph
+            .tasks
+            .get_all_unexpanded()
+            .unwrap()
+            .into_iter()
+            .map(|task| task.target.clone())
+            .collect::<Vec<_>>();
+        targets.sort();
+        targets
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn takes_the_parallel_path_for_every_task() {
+        let sandbox = create_sandbox(&[]);
+        let graph = build_unexpanded_graph(sandbox.path()).await;
+        let count = graph.tasks.get_all_unexpanded().unwrap().len();
+
+        assert_eq!(count, PROJECT_COUNT * 4);
+        assert!(count >= PARALLEL_MIN_ITEMS_PER_THREAD * 2);
+
+        if available_threads() > 1 {
+            assert!(should_run_in_parallel(count));
+            assert!(should_run_in_parallel(PROJECT_COUNT));
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn returns_tasks_sorted_by_target() {
+        let sandbox = create_sandbox(&[]);
+        let graph = build_unexpanded_graph(sandbox.path()).await;
+
+        assert_eq!(
+            graph
+                .tasks
+                .get_all()
+                .unwrap()
+                .into_iter()
+                .map(|task| task.target.clone())
+                .collect::<Vec<_>>(),
+            sorted_targets(&graph)
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn expands_the_same_tasks_as_serial_lookups() {
+        let sandbox = create_sandbox(&[]);
+        let parallel_graph = build_unexpanded_graph(sandbox.path()).await;
+        let serial_graph = build_unexpanded_graph(sandbox.path()).await;
+
+        let parallel_tasks = parallel_graph.tasks.get_all().unwrap();
+        let targets = sorted_targets(&serial_graph);
+
+        assert_eq!(parallel_tasks.len(), targets.len());
+
+        for (parallel_task, target) in parallel_tasks.iter().zip(&targets) {
+            let serial_task = serial_graph.tasks.get(target).unwrap();
+
+            assert_eq!(parallel_task.as_ref(), serial_task.as_ref());
+            assert!(parallel_task.state.expanded);
+        }
+
+        // Dep outputs were injected through nested lookups
+        let test = parallel_graph.get_task_from_project("p05", "test").unwrap();
+
+        assert!(
+            test.input_files
+                .contains_key(&WorkspaceRelativePathBuf::from("p05/dist"))
+        );
+        assert!(
+            test.input_files
+                .contains_key(&WorkspaceRelativePathBuf::from("p04/dist"))
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn shares_memoized_tasks_with_serial_lookups() {
+        let sandbox = create_sandbox(&[]);
+        let graph = build_unexpanded_graph(sandbox.path()).await;
+        let targets = sorted_targets(&graph);
+
+        // Expand some tasks serially first, including dependencies
+        // that other tasks inject outputs from
+        let before = targets
+            .iter()
+            .step_by(3)
+            .map(|target| graph.tasks.get(target).unwrap())
+            .collect::<Vec<_>>();
+
+        let all = graph.tasks.get_all().unwrap();
+
+        for task in &before {
+            let index = targets.binary_search(&task.target).unwrap();
+
+            assert!(Arc::ptr_eq(task, &all[index]));
+        }
+
+        // And the other way around
+        for (task, target) in all.iter().zip(&targets) {
+            assert!(Arc::ptr_eq(task, &graph.tasks.get(target).unwrap()));
+        }
+
+        // Calling again returns the same instances
+        for (left, right) in all.iter().zip(graph.tasks.get_all().unwrap()) {
+            assert!(Arc::ptr_eq(left, &right));
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn keeps_the_input_order_for_many_tasks() {
+        let sandbox = create_sandbox(&[]);
+        let graph = build_unexpanded_graph(sandbox.path()).await;
+        let mut targets = sorted_targets(&graph);
+        targets.reverse();
+
+        assert_eq!(
+            graph
+                .tasks
+                .get_many(&targets)
+                .unwrap()
+                .into_iter()
+                .map(|task| task.target.clone())
+                .collect::<Vec<_>>(),
+            targets
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn filters_internal_tasks_from_a_project() {
+        let sandbox = create_sandbox(&[]);
+        let graph = build_unexpanded_graph(sandbox.path()).await;
+
+        assert_eq!(
+            graph
+                .get_tasks_from_project("p03")
+                .unwrap()
+                .into_iter()
+                .map(|task| task.id.to_string())
+                .collect::<Vec<_>>(),
+            map_ids_from_target(graph.get_project("p03").unwrap().task_targets.clone())
+                .into_iter()
+                .filter(|id| id != "internal")
+                .collect::<Vec<_>>()
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn returns_the_same_error_as_serial_lookups() {
+        let sandbox = create_sandbox(&[17, 5, 11]);
+        let serial_graph = build_unexpanded_graph(sandbox.path()).await;
+
+        // The first failing target in sorted order wins,
+        // regardless of which thread fails first
+        let expected = serial_graph
+            .tasks
+            .get(&Target::parse("p05:broken").unwrap())
+            .unwrap_err()
+            .to_string();
+
+        assert!(expected.contains("missing"), "{expected}");
+
+        for _ in 0..5 {
+            let parallel_graph = build_unexpanded_graph(sandbox.path()).await;
+            let error = parallel_graph.tasks.get_all().unwrap_err().to_string();
+
+            assert_eq!(error, expected);
+
+            // Other tasks were still expanded and memoized
+            assert!(parallel_graph.get_task_from_project("p20", "build").is_ok());
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn returns_projects_sorted_by_id() {
+        let sandbox = create_sandbox(&[]);
+        let graph = build_unexpanded_graph(sandbox.path()).await;
+
+        let projects = graph.get_projects().unwrap();
+        let mut ids = graph
+            .get_projects_unexpanded()
+            .into_iter()
+            .map(|project| project.id.to_string())
+            .collect::<Vec<_>>();
+        ids.sort();
+
+        assert_eq!(
+            projects
+                .iter()
+                .map(|project| project.id.to_string())
+                .collect::<Vec<_>>(),
+            ids
+        );
+
+        for project in &projects {
+            assert!(Arc::ptr_eq(
+                project,
+                &graph.get_project(&project.id).unwrap()
+            ));
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn expands_the_same_projects_as_serial_lookups() {
+        let sandbox = create_sandbox(&[]);
+        let parallel_graph = build_unexpanded_graph(sandbox.path()).await;
+        let serial_graph = build_unexpanded_graph(sandbox.path()).await;
+
+        // Expand some serially first, which must be shared
+        let before = parallel_graph.get_project("p07").unwrap();
+        let projects = parallel_graph.get_projects().unwrap();
+
+        assert!(projects.iter().any(|project| Arc::ptr_eq(project, &before)));
+
+        for project in projects {
+            assert_eq!(
+                project.as_ref(),
+                serial_graph.get_project(&project.id).unwrap().as_ref()
+            );
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn keeps_the_input_order_for_many_projects() {
+        let sandbox = create_sandbox(&[]);
+        let graph = build_unexpanded_graph(sandbox.path()).await;
+        let ids = (0..PROJECT_COUNT)
+            .rev()
+            .map(|index| format!("p{index:02}"))
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            get_ids_from_projects(graph.get_projects_by_id(&ids).unwrap()).len(),
+            PROJECT_COUNT
+        );
+        assert_eq!(
+            graph
+                .get_projects_by_id(&ids)
+                .unwrap()
+                .into_iter()
+                .map(|project| project.id.to_string())
+                .collect::<Vec<_>>(),
+            ids
+        );
+
+        // The first unknown project in input order wins
+        let mut ids = ids;
+        ids.insert(20, "unknown-b".into());
+        ids.insert(3, "unknown-a".into());
+
+        assert!(
+            graph
+                .get_projects_by_id(&ids)
+                .unwrap_err()
+                .to_string()
+                .contains("unknown-a")
+        );
+    }
+}

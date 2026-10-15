@@ -202,6 +202,10 @@
   - Improved task graph build performance, by detecting dependency cycles once after all task
     dependencies have been linked, instead of on every link, which avoids repeatedly traversing deep
     task dependency chains.
+  - Improved project and task expansion performance when every project or task is requested, like by
+    `moon ci`, `moon check`, and `moon query`, by expanding them in parallel, with dependencies
+    expanded before their dependents. Every project and task is now returned in a deterministic
+    order, sorted by ID or target.
   - The graph's cache now stores a single hash manifest, instead of also storing an unused one when
     plugins discovered new input files.
   - The graph's cache file is now less than half the size, as data that's only used while building

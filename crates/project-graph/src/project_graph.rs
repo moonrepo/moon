@@ -171,16 +171,30 @@ impl ProjectGraph {
         Ok(&node.project)
     }
 
-    /// Return all projects from the graph.
+    /// Return all projects from the graph, sorted by ID. Projects are
+    /// expanded in parallel when there are enough of them.
     #[instrument(name = "get_all_projects", skip(self))]
     pub fn get_all(&self) -> miette::Result<Vec<Arc<Project>>> {
-        let mut all = vec![];
+        let mut ids = self.nodes.keys().collect::<Vec<_>>();
+        ids.sort();
 
-        for id in self.nodes.keys() {
-            all.push(self.internal_get(id)?);
-        }
+        self.get_many(&ids)
+    }
 
-        Ok(all)
+    /// Return many projects from the graph by ID or alias, in the order provided.
+    /// Projects are expanded in parallel when there are enough of them. If
+    /// expansion fails, the error of the first failing project (in the provided
+    /// order) is returned, regardless of which thread failed first.
+    #[instrument(name = "get_many_projects", skip_all)]
+    pub fn get_many<T: AsRef<str> + Sync>(
+        &self,
+        ids_or_aliases: &[T],
+    ) -> miette::Result<Vec<Arc<Project>>> {
+        // Expanding a project never reads other projects,
+        // so there's no need to order the work
+        map_in_parallel(ids_or_aliases, |id| self.internal_get(id.as_ref()))
+            .into_iter()
+            .collect()
     }
 
     /// Return all unexpanded projects from the graph.
@@ -507,23 +521,31 @@ impl ProjectGraph {
 
         let id = self.resolve_id(id_or_alias);
 
-        let project = match self.projects.entry_sync(id) {
+        if let Some(project) = self
+            .projects
+            .read_sync(&id, |_, project| Arc::clone(project))
+        {
+            return Ok(project);
+        }
+
+        // Expand outside of the map's bucket lock, so that threads expanding
+        // different projects in the same bucket don't block each other
+        let expander = ProjectExpander::new(ProjectExpanderContext {
+            aliases: &self.aliases,
+            workspace_root: &self.context.workspace_root,
+        });
+
+        let project = Arc::new(expander.expand(self.get_unexpanded(&id)?)?);
+
+        // If another thread expanded the same project in the meantime,
+        // keep the first one, so there's only ever one instance per project
+        Ok(match self.projects.entry_sync(id) {
             Entry::Occupied(entry) => Arc::clone(entry.get()),
             Entry::Vacant(entry) => {
-                let expander = ProjectExpander::new(ProjectExpanderContext {
-                    aliases: self.aliases(),
-                    workspace_root: &self.context.workspace_root,
-                });
-
-                let project = Arc::new(expander.expand(self.get_unexpanded(entry.key())?)?);
-
                 entry.insert_entry(Arc::clone(&project));
-
                 project
             }
-        };
-
-        Ok(project)
+        })
     }
 
     fn internal_search(&self, search: &Path) -> miette::Result<Arc<String>> {

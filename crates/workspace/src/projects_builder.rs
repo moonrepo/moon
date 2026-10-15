@@ -12,6 +12,7 @@ use moon_config::{
     DependencyScope, ProjectConfig, ProjectDependencyConfig, WorkspaceProjectGlobFormat,
     WorkspaceProjects, finalize_config,
 };
+use moon_config_loader::ProjectConfigFile;
 use moon_graph_utils::{GraphExpanderContext, NodeState};
 use moon_pdk_api::{ExtendProjectGraphInput, ExtendProjectGraphOutput, ExtendProjectOutput};
 use moon_project::{Project, ProjectAlias};
@@ -43,6 +44,11 @@ pub struct ProjectBuildData {
     #[serde(skip)]
     pub config: Option<ProjectConfig>,
 
+    /// Config file located within the source, which also
+    /// determines whether the source exists.
+    #[serde(skip)]
+    pub config_file: ProjectConfigFile,
+
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub extensions: Vec<ExtendProjectOutput>,
 
@@ -72,12 +78,29 @@ pub fn load_project_build_data(
     id: Id,
     source: WorkspaceRelativePathBuf,
 ) -> miette::Result<ProjectBuildData> {
-    let config = context
-        .config_loader
-        .load_project_config_from_source(&context.workspace_root, &source)?;
+    let loader = &context.config_loader;
+    let workspace_root = &context.workspace_root;
+
+    // Locate the config file once, which stops probing at the first file
+    // that exists, and also tells us whether the source exists, so that
+    // it doesn't need to be checked again when building
+    let config_file = loader.locate_project_file(&workspace_root.join(source.as_str()));
+
+    let config = match &config_file {
+        ProjectConfigFile::Unresolved => {
+            loader.load_project_config_from_source(workspace_root, &source)?
+        }
+        ProjectConfigFile::MissingRoot => {
+            loader.load_project_config_from_file(workspace_root, None)?
+        }
+        ProjectConfigFile::Located(file) => {
+            loader.load_project_config_from_file(workspace_root, file.as_deref())?
+        }
+    };
 
     Ok(ProjectBuildData {
         config: Some(config),
+        config_file,
         id: Some(id),
         source,
         ..Default::default()
@@ -131,7 +154,15 @@ pub async fn build_project(
     root_id: Option<Id>,
     monorepo: bool,
 ) -> miette::Result<Project> {
-    if !build_data.source.to_path(&context.workspace_root).exists() {
+    let source_exists = match &build_data.config_file {
+        ProjectConfigFile::Unresolved => {
+            build_data.source.to_path(&context.workspace_root).exists()
+        }
+        ProjectConfigFile::MissingRoot => false,
+        ProjectConfigFile::Located(_) => true,
+    };
+
+    if !source_exists {
         return Err(
             WorkspaceBuilderError::MissingProjectAtSource(build_data.source.to_string()).into(),
         );

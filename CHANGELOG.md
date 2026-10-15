@@ -192,6 +192,10 @@
   - Improved project and task graph build performance, by parsing identical task `command` and
     `args` strings once per graph build, instead of once per task in every project that inherits
     them.
+  - Improved project graph build performance, by locating each project's config file once, stopping
+    at the first supported extension that exists (in `yml`, `yaml`, `jsonc`, `json`, `pkl`, `hcl`,
+    `toml` order), instead of checking for every supported extension. As such, only that file is
+    loaded, instead of merging every project config file that exists in the project.
   - The graph's cache now stores a single hash manifest, instead of also storing an unused one when
     plugins discovered new input files.
   - The graph's cache file is now less than half the size, as data that's only used while building

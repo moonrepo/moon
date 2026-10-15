@@ -2872,7 +2872,7 @@ tasks:
         assert_eq!(count, PROJECT_COUNT * 4);
         assert!(count >= PARALLEL_MIN_ITEMS_PER_THREAD * 2);
 
-        if available_threads() > 1 {
+        if std::thread::available_parallelism().map_or(1, |count| count.get()) > 1 {
             assert!(should_run_in_parallel(count));
             assert!(should_run_in_parallel(PROJECT_COUNT));
         }

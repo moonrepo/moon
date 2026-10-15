@@ -206,6 +206,9 @@
     `moon ci`, `moon check`, and `moon query`, by expanding them in parallel, with dependencies
     expanded before their dependents. Every project and task is now returned in a deterministic
     order, sorted by ID or target.
+  - Improved `moon query projects` performance for the `taskTag`, `taskToolchain`, and `taskType`
+    fields, by reading each project's unexpanded tasks, instead of expanding every task in the
+    workspace to match the query.
   - The graph's cache now stores a single hash manifest, instead of also storing an unused one when
     plugins discovered new input files.
   - The graph's cache file is now less than half the size, as data that's only used while building

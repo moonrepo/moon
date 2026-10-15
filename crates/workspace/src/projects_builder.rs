@@ -19,7 +19,7 @@ use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_layer_relationships, enforce_tag_relationships};
 use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectNode, find_cycle_in_scopes};
 use moon_task::{Target, Task, TaskOptions};
-use moon_task_builder::TaskDepsBuilder;
+use moon_task_builder::{CommandLineCache, TaskDepsBuilder};
 use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -125,6 +125,7 @@ pub async fn extend_project_build_data_with_plugins(
 
 pub async fn build_project(
     context: Arc<WorkspaceBuilderContext>,
+    command_line_cache: Arc<CommandLineCache>,
     build_data: ProjectBuildData,
     id: Id,
     root_id: Option<Id>,
@@ -140,6 +141,7 @@ pub async fn build_project(
         &id,
         &build_data.source,
         ProjectBuilderContext {
+            command_line_cache,
             config_loader: &context.config_loader,
             enabled_toolchains: &context.enabled_toolchains,
             monorepo,
@@ -198,6 +200,11 @@ pub struct WorkspaceProjectsBuilder {
 
     /// Map of aliases to project IDs.
     aliases_to_ids: FxHashMap<String, Id>,
+
+    /// Parsed task command lines, shared across all projects in the build,
+    /// so that identical strings (from inherited tasks) are parsed once.
+    #[serde(skip)]
+    command_line_cache: Arc<CommandLineCache>,
 
     /// Cached projects build data.
     #[serde(skip)]
@@ -295,6 +302,7 @@ impl WorkspaceProjectsBuilder {
         Self {
             context: Some(context),
             aliases_to_ids: FxHashMap::default(),
+            command_line_cache: Arc::default(),
             build_data: ProjectBuildDataMap::default(),
             config_paths: FxHashSet::default(),
             plugin_input_paths: BTreeSet::default(),
@@ -435,6 +443,7 @@ impl WorkspaceProjectsBuilder {
         let context = self.context();
         let root_id = self.root_id.clone();
         let monorepo = self.repo_type.is_monorepo();
+        let command_line_cache = Arc::clone(&self.command_line_cache);
 
         run_pooled_tasks(
             queue,
@@ -447,6 +456,7 @@ impl WorkspaceProjectsBuilder {
 
                 Ok(build_project(
                     Arc::clone(&context),
+                    Arc::clone(&command_line_cache),
                     build_data,
                     id,
                     root_id.clone(),

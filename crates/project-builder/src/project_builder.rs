@@ -9,7 +9,9 @@ use moon_config_loader::ConfigLoader;
 use moon_file_group::FileGroup;
 use moon_project::{Project, ProjectAlias};
 use moon_task::Task;
-use moon_task_builder::{TasksBuilder, TasksBuilderContext, create_project_dep_from_task_dep};
+use moon_task_builder::{
+    CommandLineCache, TasksBuilder, TasksBuilderContext, create_project_dep_from_task_dep,
+};
 use moon_toolchain::filter_and_resolve_toolchain_ids;
 use moon_toolchain_plugin::{ToolchainRegistry, api::DefineRequirementsInput};
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -20,6 +22,7 @@ use std::sync::Arc;
 use tracing::{debug, instrument, trace};
 
 pub struct ProjectBuilderContext<'app> {
+    pub command_line_cache: Arc<CommandLineCache>,
     pub config_loader: &'app ConfigLoader,
     pub enabled_toolchains: &'app [Id],
     pub monorepo: bool,
@@ -459,6 +462,7 @@ impl<'app> ProjectBuilder<'app> {
             self.source,
             &self.toolchains,
             TasksBuilderContext {
+                command_line_cache: Arc::clone(&self.context.command_line_cache),
                 config_loader: self.context.config_loader,
                 enabled_toolchains: &self.enabled_toolchains,
                 monorepo: self.context.monorepo,

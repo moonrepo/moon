@@ -6509,6 +6509,7 @@ dependencies = [
  "moon_toolchain",
  "moon_toolchain_plugin",
  "rustc-hash",
+ "scc",
  "starbase_args",
  "starbase_sandbox",
  "system_env",

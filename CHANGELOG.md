@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.6.2
+## Unreleased
 
 #### 💥 Breaking
 
@@ -189,6 +189,9 @@
       have been added, instead of once for every relationship.
     - Project configs are now loaded on a thread pool bounded to the number of CPUs, instead of on a
       thread per project.
+  - Improved project and task graph build performance, by parsing identical task `command` and
+    `args` strings once per graph build, instead of once per task in every project that inherits
+    them.
   - The graph's cache now stores a single hash manifest, instead of also storing an unused one when
     plugins discovered new input files.
   - The graph's cache file is now less than half the size, as data that's only used while building
@@ -221,7 +224,7 @@
 
 - Updated proto to [v0.63.1](https://github.com/moonrepo/proto/releases/tag/v0.63.1).
 
-## Unreleased
+## 2.6.2
 
 #### 🐞 Fixes
 

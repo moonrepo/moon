@@ -26,6 +26,7 @@ use std::sync::{Arc, OnceLock};
 
 #[derive(Debug, Default)]
 pub struct WorkspaceMocker {
+    pub command_line_cache: Arc<CommandLineCache>,
     pub config_dir: PathBuf,
     pub config_loader: ConfigLoader,
     pub inherited_tasks: InheritedTasksManager,
@@ -236,6 +237,7 @@ impl WorkspaceMocker {
             &id,
             &source,
             ProjectBuilderContext {
+                command_line_cache: Arc::clone(&self.command_line_cache),
                 config_loader: &self.config_loader,
                 enabled_toolchains: &enabled_toolchains,
                 monorepo: self.monorepo,
@@ -278,6 +280,7 @@ impl WorkspaceMocker {
             &project.source,
             &project.toolchains,
             TasksBuilderContext {
+                command_line_cache: Arc::clone(&self.command_line_cache),
                 config_loader: &self.config_loader,
                 enabled_toolchains: &enabled_toolchains,
                 monorepo: self.monorepo,

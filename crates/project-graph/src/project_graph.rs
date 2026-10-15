@@ -15,7 +15,7 @@ use scc::hash_map::Entry;
 use std::collections::VecDeque;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use tracing::{debug, instrument};
 
 /// The internal graph partition that a dependency scope belongs to. Each
@@ -121,11 +121,16 @@ pub struct ProjectGraph {
     /// Directed-acyclic graph (DAG) of development, build, and root dependencies.
     development_graph: Dag<NodeIndex, DependencyScope>,
 
-    /// Map of node indexes to project IDs.
-    pub indexes: FxHashMap<NodeIndex, Id>,
+    /// Project IDs by node index. Node indexes are dense (0 to the node
+    /// count), so the ID of a node is at the position of its index.
+    pub indexes: Vec<Id>,
 
     /// Map of project nodes by ID.
     pub nodes: FxHashMap<Id, ProjectNode>,
+
+    /// Every project ID sorted, derived once, as `get_all` is called
+    /// repeatedly (like by affected tracking) and must be deterministic.
+    sorted_ids: OnceLock<Vec<Id>>,
 
     /// Cache of file path lookups, mapped by starting path to project ID (as a string).
     fs_cache: Arc<scc::HashMap<PathBuf, Arc<String>>>,
@@ -171,16 +176,54 @@ impl ProjectGraph {
         Ok(&node.project)
     }
 
-    /// Return all projects from the graph.
+    /// Return all projects from the graph, sorted by ID. Projects are
+    /// expanded in parallel when there are enough of them.
     #[instrument(name = "get_all_projects", skip(self))]
     pub fn get_all(&self) -> miette::Result<Vec<Arc<Project>>> {
-        let mut all = vec![];
+        let ids = self.sorted_ids.get_or_init(|| {
+            let mut ids = self.nodes.keys().cloned().collect::<Vec<_>>();
+            ids.sort();
+            ids
+        });
 
-        for id in self.nodes.keys() {
-            all.push(self.internal_get(id)?);
+        self.get_many(ids)
+    }
+
+    /// Return many projects from the graph by ID or alias, in the order provided.
+    /// Projects are expanded in parallel when there are enough of them. If
+    /// expansion fails, the error of the first failing project (in the provided
+    /// order) is returned, regardless of which thread failed first.
+    #[instrument(name = "get_many_projects", skip_all)]
+    pub fn get_many<T: AsRef<str> + Sync>(
+        &self,
+        ids_or_aliases: &[T],
+    ) -> miette::Result<Vec<Arc<Project>>> {
+        let mut results = Vec::with_capacity(ids_or_aliases.len());
+        results.resize_with(ids_or_aliases.len(), || None);
+
+        // Already expanded projects are returned directly, so that repeated
+        // calls (like by affected tracking) don't spawn threads for cache hits
+        let mut pending = vec![];
+
+        for (position, id) in ids_or_aliases.iter().enumerate() {
+            match self.get_expanded(id.as_ref()) {
+                Some(project) => results[position] = Some(Ok(project)),
+                None => pending.push(position),
+            }
         }
 
-        Ok(all)
+        // Expanding a project never reads other projects,
+        // so there's no need to order the work
+        for (position, result) in pending.iter().zip(map_in_parallel(&pending, |position| {
+            self.internal_get(ids_or_aliases[*position].as_ref())
+        })) {
+            results[*position] = Some(result);
+        }
+
+        results
+            .into_iter()
+            .map(|result| result.expect("Every project is expanded!"))
+            .collect()
     }
 
     /// Return all unexpanded projects from the graph.
@@ -190,7 +233,7 @@ impl ProjectGraph {
 
     /// Return the task configuration that the project inherited from ".moon/tasks",
     /// derived from the configs it was inherited from, as it's not stored in the graph.
-    pub fn get_inherited_tasks(&self, project: &Project) -> miette::Result<InheritedTasks> {
+    pub fn get_inherited_tasks(&self, project: &Project) -> miette::Result<Arc<InheritedTasks>> {
         self.context
             .inherited_tasks
             .get_inherited_config_from_sources(&project.inherited_from)
@@ -200,7 +243,7 @@ impl ProjectGraph {
     /// which is required when outputting the project to consumers.
     pub fn get_with_inherited_tasks(&self, project: &Project) -> miette::Result<Project> {
         let mut project = project.to_owned();
-        project.inherited = Some(self.get_inherited_tasks(&project)?);
+        project.inherited = Some(InheritedTasks::clone(&*self.get_inherited_tasks(&project)?));
 
         Ok(project)
     }
@@ -318,7 +361,7 @@ impl ProjectGraph {
 
         indices
             .into_iter()
-            .map(|index| self.indexes[&index].clone())
+            .map(|index| self.indexes[index.index()].clone())
             .collect()
     }
 
@@ -330,7 +373,7 @@ impl ProjectGraph {
     ) -> Vec<Id> {
         self.partitioned_graph(partition)
             .neighbors_directed(self.nodes[&project.id].index, direction)
-            .map(|index| self.indexes[&index].clone())
+            .map(|index| self.indexes[index.index()].clone())
             .collect()
     }
 
@@ -349,7 +392,7 @@ impl ProjectGraph {
         while let Some(index) = queue.pop_front() {
             for next_index in graph.neighbors_directed(index, direction) {
                 if visited.insert(next_index) {
-                    results.push(self.indexes[&next_index].clone());
+                    results.push(self.indexes[next_index.index()].clone());
                     queue.push_back(next_index);
                 }
             }
@@ -431,7 +474,7 @@ impl ProjectGraph {
         let (nodes, edges) = focused_graph.into_nodes_edges();
 
         let mut graph = DiGraph::with_capacity(nodes.len(), edges.len());
-        let mut indexes = FxHashMap::default();
+        let mut indexes = Vec::with_capacity(nodes.len());
         let mut projects = FxHashMap::default();
 
         // The focused graph has different node inndexes,
@@ -439,9 +482,9 @@ impl ProjectGraph {
         for (i, node) in nodes.into_iter().enumerate() {
             let new_index = NodeIndex::from(i as u32);
             let old_index = node.weight;
-            let id = &self.indexes[&old_index];
+            let id = &self.indexes[old_index.index()];
 
-            indexes.insert(new_index, id.to_owned());
+            indexes.push(id.to_owned());
 
             projects.insert(
                 id.to_owned(),
@@ -490,40 +533,50 @@ impl ProjectGraph {
 
     fn label_index(&self, index: NodeIndex) -> String {
         self.indexes
-            .get(&index)
+            .get(index.index())
             .map(|id| id.to_string())
             .unwrap_or_else(|| index.index().to_string())
     }
 
-    fn internal_get(&self, id_or_alias: &str) -> miette::Result<Arc<Project>> {
-        // Already expanded projects are the hot path for graph traversals,
-        // so read them without locking the bucket or allocating an ID
-        if let Some(project) = self
-            .projects
+    /// Return the project if it has already been expanded. This is the hot
+    /// path for graph traversals, so it first reads without locking the bucket
+    /// or allocating an ID, and only resolves aliases when that misses.
+    fn get_expanded(&self, id_or_alias: &str) -> Option<Arc<Project>> {
+        self.projects
             .read_sync(id_or_alias, |_, project| Arc::clone(project))
-        {
+            .or_else(|| {
+                let id = self.resolve_id(id_or_alias);
+
+                self.projects
+                    .read_sync(&id, |_, project| Arc::clone(project))
+            })
+    }
+
+    fn internal_get(&self, id_or_alias: &str) -> miette::Result<Arc<Project>> {
+        if let Some(project) = self.get_expanded(id_or_alias) {
             return Ok(project);
         }
 
         let id = self.resolve_id(id_or_alias);
 
-        let project = match self.projects.entry_sync(id) {
+        // Expand outside of the map's bucket lock, so that threads expanding
+        // different projects in the same bucket don't block each other
+        let expander = ProjectExpander::new(ProjectExpanderContext {
+            aliases: &self.aliases,
+            workspace_root: &self.context.workspace_root,
+        });
+
+        let project = Arc::new(expander.expand(self.get_unexpanded(&id)?)?);
+
+        // If another thread expanded the same project in the meantime,
+        // keep the first one, so there's only ever one instance per project
+        Ok(match self.projects.entry_sync(id) {
             Entry::Occupied(entry) => Arc::clone(entry.get()),
             Entry::Vacant(entry) => {
-                let expander = ProjectExpander::new(ProjectExpanderContext {
-                    aliases: self.aliases(),
-                    workspace_root: &self.context.workspace_root,
-                });
-
-                let project = Arc::new(expander.expand(self.get_unexpanded(entry.key())?)?);
-
                 entry.insert_entry(Arc::clone(&project));
-
                 project
             }
-        };
-
-        Ok(project)
+        })
     }
 
     fn internal_search(&self, search: &Path) -> miette::Result<Arc<String>> {
@@ -599,7 +652,7 @@ impl GraphData<Project, DependencyScope, Id> for ProjectGraph {
     }
 
     fn get_node_by_index(&self, index: &NodeIndex) -> &Project {
-        &self.nodes[&self.indexes[index]].project
+        &self.nodes[&self.indexes[index.index()]].project
     }
 
     fn get_node_key(&self, node: &Project) -> Id {
@@ -671,12 +724,7 @@ mod tests {
                 DependencyScope::Development,
             ))
             .unwrap();
-        project_graph
-            .indexes
-            .insert(NodeIndex::new(0), Id::raw("a"));
-        project_graph
-            .indexes
-            .insert(NodeIndex::new(1), Id::raw("b"));
+        project_graph.indexes = vec![Id::raw("a"), Id::raw("b")];
 
         // The union cycles, but each partition can still be sorted
         assert_eq!(

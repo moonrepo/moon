@@ -1,158 +1,6 @@
 # Changelog
 
-## 2.6.6
-
-#### 🐞 Fixes
-
-- Fixed an issue where development and build dependencies that inherit their version from the
-  workspace, like `serde = { workspace = true }` under `[dev-dependencies]` in Cargo, were not
-  included in task hashes, as their version was only looked up in the workspace's dependencies of
-  the same scope. Inherited versions are now resolved from the workspace's dependencies (like
-  `[workspace.dependencies]`) whichever scope inherits them, including for a project at the root of
-  the workspace. When an inherited version can't be resolved, its locked versions are hashed
-  instead. Tasks of affected projects will have a new hash, so they will not be cached on their
-  first run after upgrading.
-- Fixed an issue where the `unstable_nub` toolchain failed to load without a `plugin` locator
-  ("unstable_nub.plugin: a locator is required for plugins"), unlike every other built-in toolchain.
-  This includes the `unstable_nub: {}` that the docs show, and the config that
-  `moon toolchain add unstable_nub` writes.
-- Fixed an issue where an environment variable input (`$VAR` in `inputs`) that was not set, and the
-  same variable set to an empty string, produced the same task hash, so a run with one would replay
-  the cached output of the other. The same applied to environment variable inputs of toolchain setup
-  and install commands. Tasks with an environment variable input that is not set will have a new
-  hash, so they will not be cached on their first run after upgrading. A result cached by an earlier
-  version while the variable was not set may still be used when it's set to an empty string, until
-  the result expires from the cache.
-- Fixed an issue where the task `inputs` docs didn't state that the name of an environment variable
-  input must be uppercase. An input with lowercase letters in its name, like `$http_proxy`, is a
-  file path.
-- Fixed an issue where an environment variable name of only underscores, like `$_` or `$__`, was
-  substituted, so a path like `$__proto__.txt` became `proto__.txt`, and one like `$_x` used the
-  value of `$_`, which Bash sets to the path of the program it runs. A name must now contain a
-  letter or number, and other names are kept as-is.
-- Fixed an issue where a command failed to run when a toolchain added a path to `PATH` that can't be
-  joined into it, like the `node_modules/.bin` of a project in a `packages/a:b` directory on Unix
-  (as `:` is the `PATH` separator), or a path with a `"` on Windows. These paths are now skipped
-  with a warning. On Windows, a path with a `;` continues to be quoted and kept.
-- Fixed an issue where a project in a directory with glob characters in its path, like
-  `packages/x:y` or `packages/app (old)`, failed to run with "Failed to create glob from pattern",
-  and one like `packages/[lib]` silently matched the files of other projects instead of its own. The
-  project's path is now escaped when moon walks or matches with the task's input and output globs.
-  Globs shown by `moon task`, or passed to commands by `@globs`, `@in`, and `@out`, are unchanged.
-- Fixed an issue where a binary of a dependency with the same name as the task's shell, like a
-  `bash` or `sh` in `node_modules/.bin`, ran instead of the shell, and replaced the task's command.
-  The shell is now located using the `PATH` that moon was run with, before toolchain paths are added
-  to it, and never within a `node_modules` directory, which a package manager adds to it when
-  running moon from a script. Only when it can't be found there is it located using the task's
-  `PATH`.
-- Fixed an issue where a task that failed would not hydrate from the cache on its next run, even
-  though a cached result of a run that passed existed for its hash, and would run again instead.
-  This applied to a failure at any hash, not just the current one, and in a read-only cache
-  (`--cache read`), it never recovered, as the result of the failed run was never replaced. When
-  hydrating from a local archive, existing outputs are now removed first, so outputs left by a run
-  that failed, or by a run at another hash, don't remain.
-- Fixed an issue where a task's `cacheLifetime` was not applied to results in the local CAS
-  (`experiments.casOutputsCache`) or the remote cache, so an expired result was hydrated when the
-  task's last run was recent, like after switching to another hash and back, or after a run that
-  failed. A result is now checked against the lifetime by when it was stored.
-- Fixed an issue where a task's `timeout` greater than 24 hours was never enforced, for the task and
-  its checks, and a timeout of `0` cancelled the task immediately. A `timeout` can now be up to 1
-  week (`604800`), and a greater value fails to load the configuration. A timeout of `0` disables
-  it, which can be used to remove an inherited timeout.
-
-## 2.6.5
-
-#### 🐞 Fixes
-
-- Fixed an issue where the file groups docs stated that a project-level file group overrides an
-  inherited file group of the same name. Since v2, they are merged together, with project-level
-  inputs appended last, and since v2.5, `workspace.mergeStrategies.fileGroups` can be used to
-  replace instead.
-- Fixed an issue where every `moon run` and `moon ci` failed in a Git repository without any commits
-  (after `git init`), as `HEAD` couldn't be resolved. Until the first commit, the `$vcsRevision`
-  token is empty, and there are no revisions to compare, so all uncommitted files are considered
-  changed.
-- Fixed an issue where the daemon's memory grew without bound on Linux, and it couldn't be stopped
-  with `moon daemon stop` or `SIGTERM`. Its file watcher registered a watch for every directory in
-  the workspace, including `node_modules` and VCS ignored directories, and followed symlinks, which
-  revisits the same directories through every link to them, so in a pnpm workspace the registration
-  never finished. The watcher now skips ignored directories and symlinks, and is registered on its
-  own thread, so the daemon can shut down at any time. The same symlink walk on macOS and Windows
-  has also been removed.
-- Fixed an issue where running tasks with `--affected` outside of CI, like in a VCS hook, never
-  installed dependencies, so the tasks failed in a fresh clone or worktree. Dependencies are now
-  installed when the toolchain's vendor directory (like `node_modules`) is missing or empty, but
-  continue to be skipped when it exists.
-
-## 2.6.4
-
-#### 🚀 Updates
-
-- The Pkl modules generated since v2.6.3 type lists and maps as Pkl's amendable `Listing` and
-  `Mapping` only, as Pkl recommends for configuration data. A config that amends its module, and
-  assigns a `List`, `Set`, or `Map` to a setting, must convert it with `toListing()` or
-  `toMapping()`, or create it with `new Listing { ... }` instead. Updated the Pkl docs and examples
-  to match.
-- moon now handles `SIGHUP`, which is sent when the terminal is closed, like `SIGTERM`. Running
-  tasks receive `SIGHUP`, and are force killed after `pipeline.killProcessThreshold`, the pipeline
-  is marked as terminated, and moon exits with code 129. Previously moon was killed immediately, so
-  a `kill -HUP` left its tasks running. On Windows, closing the console window is handled the same
-  way, instead of aborting the pipeline with code 131.
-
-#### 🐞 Fixes
-
-- Fixed an issue where moon exited with code 1 and printed "Failed to flush buffered output to
-  console" when the command reading its output exited early (a broken pipe), instead of exiting
-  quietly with code 141.
-- Fixed an issue where, with the daemon enabled, a task would fail with "Failed to make daemon RPC
-  call" when its stdout/stderr, or its list of output files, was larger than 4 MiB. The daemon now
-  accepts messages up to 256 MiB, and if archiving or hydrating outputs through the daemon fails,
-  it's done in-process instead of failing the task.
-- Fixed an issue where the daemon was silently never used in development containers (like VS Code
-  Dev Containers), yet was used in CI environments that aren't Docker containers (like Kubernetes
-  pods), where it outlived the run. The daemon is now used in development containers, is never used
-  in CI, and the reason it was skipped is logged at the debug level.
-- Fixed an issue where `hasher.ignorePatterns` and `hasher.ignoreMissingPatterns` were matched
-  against absolute file paths instead of workspace relative paths. A pattern that matched a parent
-  directory of the workspace, like `**/.worktrees/**` for a git worktree nested in the repository,
-  ignored every input, so tasks were always cached and restored stale outputs. Patterns without a
-  `**/` prefix, like `docs/**`, now match as well.
-- Fixed an issue where `.env` files with multiple trailing comment markers (`#`) would not parse
-  correctly.
-
-#### ⚙️ Internal
-
-- Updated the npm release to publish `@moonrepo/cli` after the `@moonrepo/core-*` packages, and to
-  skip versions that are already published, so a failed release can be re-ran. Previously a failure
-  could publish a `@moonrepo/cli` version whose binaries were never published.
-
-## 2.6.3
-
-#### 🛡️ Security
-
-- Distrusted the 8 compromised eMudhra intermediate CA keys, and removed the "emSign ECC Root CA -
-  G3" root from our bundled root certificates. Previously, anyone in a position to intercept a
-  connection could use these keys to forge a certificate for any host, and proto would accept it on
-  Linux, and on all platforms for plugins that make requests through Extism's built-in HTTP
-  functions.
-  - Hosts with certificates that chain to "emSign ECC Root CA - G3" will now fail TLS verification.
-  - Requests to OCI registries on Linux still rely on the system certificate bundle, so update your
-    `ca-certificates` package.
-
-#### 🐞 Fixes
-
-- Fixed an issue where changing any setting in `.moon/workspace.*`, like `codeowners`, invalidated
-  the cache of every task. Only `.moon/extensions.*` and `.moon/toolchains.*` are now implicit task
-  inputs.
-- Fixed an issue where a task that stopped before running its command, because another task failed
-  or a requirement check failed, would be cached on the next run, reusing outputs from its previous
-  inputs.
-- Fixed an issue where deleted `optional: true` file outputs were not restored on a cache hit, when
-  the hash matched the task's last run.
-- Fixed an issue where outputs partially restored by a failed cache hydration could be reused as a
-  cache hit on the next run.
-
-## 2.6.2
+## Unreleased
 
 #### 💥 Breaking
 
@@ -341,6 +189,29 @@
       have been added, instead of once for every relationship.
     - Project configs are now loaded on a thread pool bounded to the number of CPUs, instead of on a
       thread per project.
+  - Improved project and task graph build performance, by parsing identical task `command` and
+    `args` strings once per graph build, instead of once per task in every project that inherits
+    them.
+  - Improved project graph build performance, by locating each project's config file once, stopping
+    at the first supported extension that exists (in `yml`, `yaml`, `jsonc`, `json`, `pkl`, `hcl`,
+    `toml` order), instead of checking for every supported extension. As such, only that file is
+    loaded, instead of merging every project config file that exists in the project.
+  - Improved project graph build performance, by deriving inherited global task configs once per
+    distinct set of matched `.moon/tasks` files and sharing them across projects, instead of cloning
+    them for every project.
+  - Improved task graph build performance, by detecting dependency cycles once after all task
+    dependencies have been linked, instead of on every link, which avoids repeatedly traversing deep
+    task dependency chains.
+  - Improved project and task expansion performance when every project or task is requested, like by
+    `moon ci`, `moon check`, and `moon query`, by expanding them in parallel, with dependencies
+    expanded before their dependents. Every project and task is now returned in a deterministic
+    order, sorted by ID or target.
+  - Improved `moon query projects` performance for the `taskTag`, `taskToolchain`, and `taskType`
+    fields, by reading each project's unexpanded tasks, instead of expanding every task in the
+    workspace to match the query.
+  - Improved `moon project-graph` and `moon task-graph` performance when focused on a project or
+    task, by walking the graph by node index with a breadth-first traversal, instead of scanning
+    every node for each visited one.
   - The graph's cache now stores a single hash manifest, instead of also storing an unused one when
     plugins discovered new input files.
   - The graph's cache file is now less than half the size, as data that's only used while building
@@ -350,6 +221,14 @@
 
 #### 🐞 Fixes
 
+- Fixed an issue where development and build dependencies that inherit their version from the
+  workspace, like `serde = { workspace = true }` under `[dev-dependencies]` in Cargo, were not
+  included in task hashes, as their version was only looked up in the workspace's dependencies of
+  the same scope. Inherited versions are now resolved from the workspace's dependencies (like
+  `[workspace.dependencies]`) whichever scope inherits them, including for a project at the root of
+  the workspace. When an inherited version can't be resolved, its locked versions are hashed
+  instead. Tasks of affected projects will have a new hash, so they will not be cached on their
+  first run after upgrading.
 - Fixed an issue where `--upstream none` would also remove the ordering edges between selected tasks
   that depend on each other, allowing them to run concurrently or in the wrong order. Use
   `--no-dependencies` instead, which keeps them ordered.
@@ -373,7 +252,159 @@
 
 - Updated proto to [v0.63.1](https://github.com/moonrepo/proto/releases/tag/v0.63.1).
 
-## Unreleased
+## 2.6.6
+
+#### 🐞 Fixes
+
+- Fixed an issue where development and build dependencies that inherit their version from the
+  workspace, like `serde = { workspace = true }` under `[dev-dependencies]` in Cargo, were not
+  included in task hashes, as their version was only looked up in the workspace's dependencies of
+  the same scope. Inherited versions are now resolved from the workspace's dependencies (like
+  `[workspace.dependencies]`) whichever scope inherits them, including for a project at the root of
+  the workspace. When an inherited version can't be resolved, its locked versions are hashed
+  instead. Tasks of affected projects will have a new hash, so they will not be cached on their
+  first run after upgrading.
+- Fixed an issue where the `unstable_nub` toolchain failed to load without a `plugin` locator
+  ("unstable_nub.plugin: a locator is required for plugins"), unlike every other built-in toolchain.
+  This includes the `unstable_nub: {}` that the docs show, and the config that
+  `moon toolchain add unstable_nub` writes.
+- Fixed an issue where an environment variable input (`$VAR` in `inputs`) that was not set, and the
+  same variable set to an empty string, produced the same task hash, so a run with one would replay
+  the cached output of the other. The same applied to environment variable inputs of toolchain setup
+  and install commands. Tasks with an environment variable input that is not set will have a new
+  hash, so they will not be cached on their first run after upgrading. A result cached by an earlier
+  version while the variable was not set may still be used when it's set to an empty string, until
+  the result expires from the cache.
+- Fixed an issue where the task `inputs` docs didn't state that the name of an environment variable
+  input must be uppercase. An input with lowercase letters in its name, like `$http_proxy`, is a
+  file path.
+- Fixed an issue where an environment variable name of only underscores, like `$_` or `$__`, was
+  substituted, so a path like `$__proto__.txt` became `proto__.txt`, and one like `$_x` used the
+  value of `$_`, which Bash sets to the path of the program it runs. A name must now contain a
+  letter or number, and other names are kept as-is.
+- Fixed an issue where a command failed to run when a toolchain added a path to `PATH` that can't be
+  joined into it, like the `node_modules/.bin` of a project in a `packages/a:b` directory on Unix
+  (as `:` is the `PATH` separator), or a path with a `"` on Windows. These paths are now skipped
+  with a warning. On Windows, a path with a `;` continues to be quoted and kept.
+- Fixed an issue where a project in a directory with glob characters in its path, like
+  `packages/x:y` or `packages/app (old)`, failed to run with "Failed to create glob from pattern",
+  and one like `packages/[lib]` silently matched the files of other projects instead of its own. The
+  project's path is now escaped when moon walks or matches with the task's input and output globs.
+  Globs shown by `moon task`, or passed to commands by `@globs`, `@in`, and `@out`, are unchanged.
+- Fixed an issue where a binary of a dependency with the same name as the task's shell, like a
+  `bash` or `sh` in `node_modules/.bin`, ran instead of the shell, and replaced the task's command.
+  The shell is now located using the `PATH` that moon was run with, before toolchain paths are added
+  to it, and never within a `node_modules` directory, which a package manager adds to it when
+  running moon from a script. Only when it can't be found there is it located using the task's
+  `PATH`.
+- Fixed an issue where a task that failed would not hydrate from the cache on its next run, even
+  though a cached result of a run that passed existed for its hash, and would run again instead.
+  This applied to a failure at any hash, not just the current one, and in a read-only cache
+  (`--cache read`), it never recovered, as the result of the failed run was never replaced. When
+  hydrating from a local archive, existing outputs are now removed first, so outputs left by a run
+  that failed, or by a run at another hash, don't remain.
+- Fixed an issue where a task's `cacheLifetime` was not applied to results in the local CAS
+  (`experiments.casOutputsCache`) or the remote cache, so an expired result was hydrated when the
+  task's last run was recent, like after switching to another hash and back, or after a run that
+  failed. A result is now checked against the lifetime by when it was stored.
+- Fixed an issue where a task's `timeout` greater than 24 hours was never enforced, for the task and
+  its checks, and a timeout of `0` cancelled the task immediately. A `timeout` can now be up to 1
+  week (`604800`), and a greater value fails to load the configuration. A timeout of `0` disables
+  it, which can be used to remove an inherited timeout.
+
+## 2.6.5
+
+#### 🐞 Fixes
+
+- Fixed an issue where the file groups docs stated that a project-level file group overrides an
+  inherited file group of the same name. Since v2, they are merged together, with project-level
+  inputs appended last, and since v2.5, `workspace.mergeStrategies.fileGroups` can be used to
+  replace instead.
+- Fixed an issue where every `moon run` and `moon ci` failed in a Git repository without any commits
+  (after `git init`), as `HEAD` couldn't be resolved. Until the first commit, the `$vcsRevision`
+  token is empty, and there are no revisions to compare, so all uncommitted files are considered
+  changed.
+- Fixed an issue where the daemon's memory grew without bound on Linux, and it couldn't be stopped
+  with `moon daemon stop` or `SIGTERM`. Its file watcher registered a watch for every directory in
+  the workspace, including `node_modules` and VCS ignored directories, and followed symlinks, which
+  revisits the same directories through every link to them, so in a pnpm workspace the registration
+  never finished. The watcher now skips ignored directories and symlinks, and is registered on its
+  own thread, so the daemon can shut down at any time. The same symlink walk on macOS and Windows
+  has also been removed.
+- Fixed an issue where running tasks with `--affected` outside of CI, like in a VCS hook, never
+  installed dependencies, so the tasks failed in a fresh clone or worktree. Dependencies are now
+  installed when the toolchain's vendor directory (like `node_modules`) is missing or empty, but
+  continue to be skipped when it exists.
+
+## 2.6.4
+
+#### 🚀 Updates
+
+- The Pkl modules generated since v2.6.3 type lists and maps as Pkl's amendable `Listing` and
+  `Mapping` only, as Pkl recommends for configuration data. A config that amends its module, and
+  assigns a `List`, `Set`, or `Map` to a setting, must convert it with `toListing()` or
+  `toMapping()`, or create it with `new Listing { ... }` instead. Updated the Pkl docs and examples
+  to match.
+- moon now handles `SIGHUP`, which is sent when the terminal is closed, like `SIGTERM`. Running
+  tasks receive `SIGHUP`, and are force killed after `pipeline.killProcessThreshold`, the pipeline
+  is marked as terminated, and moon exits with code 129. Previously moon was killed immediately, so
+  a `kill -HUP` left its tasks running. On Windows, closing the console window is handled the same
+  way, instead of aborting the pipeline with code 131.
+
+#### 🐞 Fixes
+
+- Fixed an issue where moon exited with code 1 and printed "Failed to flush buffered output to
+  console" when the command reading its output exited early (a broken pipe), instead of exiting
+  quietly with code 141.
+- Fixed an issue where, with the daemon enabled, a task would fail with "Failed to make daemon RPC
+  call" when its stdout/stderr, or its list of output files, was larger than 4 MiB. The daemon now
+  accepts messages up to 256 MiB, and if archiving or hydrating outputs through the daemon fails,
+  it's done in-process instead of failing the task.
+- Fixed an issue where the daemon was silently never used in development containers (like VS Code
+  Dev Containers), yet was used in CI environments that aren't Docker containers (like Kubernetes
+  pods), where it outlived the run. The daemon is now used in development containers, is never used
+  in CI, and the reason it was skipped is logged at the debug level.
+- Fixed an issue where `hasher.ignorePatterns` and `hasher.ignoreMissingPatterns` were matched
+  against absolute file paths instead of workspace relative paths. A pattern that matched a parent
+  directory of the workspace, like `**/.worktrees/**` for a git worktree nested in the repository,
+  ignored every input, so tasks were always cached and restored stale outputs. Patterns without a
+  `**/` prefix, like `docs/**`, now match as well.
+- Fixed an issue where `.env` files with multiple trailing comment markers (`#`) would not parse
+  correctly.
+
+#### ⚙️ Internal
+
+- Updated the npm release to publish `@moonrepo/cli` after the `@moonrepo/core-*` packages, and to
+  skip versions that are already published, so a failed release can be re-ran. Previously a failure
+  could publish a `@moonrepo/cli` version whose binaries were never published.
+
+## 2.6.3
+
+#### 🛡️ Security
+
+- Distrusted the 8 compromised eMudhra intermediate CA keys, and removed the "emSign ECC Root CA -
+  G3" root from our bundled root certificates. Previously, anyone in a position to intercept a
+  connection could use these keys to forge a certificate for any host, and proto would accept it on
+  Linux, and on all platforms for plugins that make requests through Extism's built-in HTTP
+  functions.
+  - Hosts with certificates that chain to "emSign ECC Root CA - G3" will now fail TLS verification.
+  - Requests to OCI registries on Linux still rely on the system certificate bundle, so update your
+    `ca-certificates` package.
+
+#### 🐞 Fixes
+
+- Fixed an issue where changing any setting in `.moon/workspace.*`, like `codeowners`, invalidated
+  the cache of every task. Only `.moon/extensions.*` and `.moon/toolchains.*` are now implicit task
+  inputs.
+- Fixed an issue where a task that stopped before running its command, because another task failed
+  or a requirement check failed, would be cached on the next run, reusing outputs from its previous
+  inputs.
+- Fixed an issue where deleted `optional: true` file outputs were not restored on a cache hit, when
+  the hash matched the task's last run.
+- Fixed an issue where outputs partially restored by a failed cache hydration could be reused as a
+  cache hit on the next run.
+
+## 2.6.2
 
 #### 🐞 Fixes
 

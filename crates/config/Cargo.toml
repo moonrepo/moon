@@ -15,6 +15,7 @@ indexmap = { workspace = true }
 miette = { workspace = true }
 regex = { workspace = true }
 rustc-hash = { workspace = true }
+scc = { workspace = true }
 schematic = { workspace = true, features = [
 	"config",
 	"env",

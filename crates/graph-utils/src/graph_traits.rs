@@ -14,82 +14,105 @@ pub trait GraphData<N, E, K> {
     fn get_node_key(&self, node: &N) -> K;
 }
 
-fn traverse_deep<N, E, K: Hash + Eq, G: GraphConnections<N, E, K> + ?Sized>(
-    graph_impl: &G,
-    node_to_traverse: &N,
-    for_dependents: bool,
-) -> Vec<K> {
-    let graph = graph_impl.get_graph();
-    let mut deps = FxHashMap::default();
-    let mut dep_order = 0;
-    let mut queue = vec![node_to_traverse];
-    let mut visited = FxHashSet::default();
-
-    while let Some(node) = queue.pop() {
-        let key = graph_impl.get_node_key(node);
-
-        if visited.contains(&key) {
-            continue;
-        } else {
-            visited.insert(key);
-        }
-
-        let dep_keys = if for_dependents {
-            graph_impl.dependents_of(node)
-        } else {
-            graph_impl.dependencies_of(node)
-        };
-
-        if dep_keys.is_empty() {
-            continue;
-        }
-
-        let dep_nodes = graph
-            .node_weights()
-            .filter_map(|index| {
-                let dep_node = graph_impl.get_node_by_index(index);
-
-                if dep_keys.contains(&graph_impl.get_node_key(dep_node)) {
-                    Some(dep_node)
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<_>>();
-
-        queue.extend(dep_nodes);
-
-        for dep_key in dep_keys {
-            if deps.contains_key(&dep_key) {
-                continue;
-            }
-
-            deps.insert(dep_key, dep_order);
-            dep_order += 1;
-        }
-    }
-
-    // Sort keys by insertion order
-    let mut deps = deps.into_iter().collect::<Vec<_>>();
-    deps.sort_by_key(|a| a.1);
-
-    // Then map and only return the keys
-    deps.into_iter().map(|dep| dep.0).collect()
-}
-
-fn keys_within<N, E, K: Hash + Eq, G: GraphConnections<N, E, K> + ?Sized>(
-    graph_impl: &G,
-    nodes: &[&N],
+/// Walk the graph breadth-first in the provided direction, starting from all
+/// of the provided seed indices at once (multi-source), and call `visit` for
+/// every newly reached node within the provided depth, with the neighbour it
+/// was reached through and its distance (1 = direct). Neighbours are walked in
+/// node index order, so the order is deterministic. If `visit` returns false,
+/// the node stays visited, but isn't walked through.
+///
+/// When `include_seeds` is false, the seeds are marked as visited up front, so
+/// they are never visited themselves. Otherwise they are only visited once
+/// they're reached through an edge (e.g. in a cycle).
+fn walk_indices<E>(
+    graph: &DiGraph<NodeIndex, E>,
+    seeds: &[NodeIndex],
     direction: Direction,
     depth: Depth,
+    include_seeds: bool,
+    edge_filter: impl Fn(&E) -> bool,
+    mut visit: impl FnMut(NodeIndex, NodeIndex, u32) -> bool,
+) {
+    if depth.is_none() || seeds.is_empty() {
+        return;
+    }
+
+    let mut seeds = seeds.to_vec();
+
+    seeds.sort();
+    seeds.dedup();
+
+    let mut visited = FxHashSet::default();
+
+    if !include_seeds {
+        visited.extend(seeds.iter().copied());
+    }
+
+    let mut queue = VecDeque::from_iter(seeds.into_iter().map(|index| (index, 0)));
+    let mut neighbors = vec![];
+
+    while let Some((index, distance)) = queue.pop_front() {
+        let next_distance = distance + 1;
+
+        if !depth.includes(next_distance) {
+            continue;
+        }
+
+        neighbors.clear();
+        neighbors.extend(
+            graph
+                .edges_directed(index, direction)
+                .filter(|edge| edge_filter(edge.weight()))
+                .map(|edge| match direction {
+                    Direction::Outgoing => edge.target(),
+                    Direction::Incoming => edge.source(),
+                }),
+        );
+        neighbors.sort();
+        neighbors.dedup();
+
+        for neighbor in &neighbors {
+            // A filtered out node stays visited, so that it's only checked once
+            if visited.insert(*neighbor) && visit(*neighbor, index, next_distance) {
+                queue.push_back((*neighbor, next_distance));
+            }
+        }
+    }
+}
+
+fn indices_within<E>(
+    graph: &DiGraph<NodeIndex, E>,
+    seeds: &[NodeIndex],
+    direction: Direction,
+    depth: Depth,
+    include_seeds: bool,
+) -> Vec<NodeIndex> {
+    let mut indices = vec![];
+
+    walk_indices(
+        graph,
+        seeds,
+        direction,
+        depth,
+        include_seeds,
+        |_| true,
+        |index, _, _| {
+            indices.push(index);
+            true
+        },
+    );
+
+    indices
+}
+
+fn map_keys<N, E, K: Hash + Eq, G: GraphConnections<N, E, K> + ?Sized>(
+    graph_impl: &G,
+    indices: Vec<NodeIndex>,
 ) -> Vec<K> {
-    let mut keys = vec![];
-
-    graph_impl.traverse_within(nodes, direction, depth, |node, _, _| {
-        keys.push(graph_impl.get_node_key(node));
-    });
-
-    keys
+    indices
+        .into_iter()
+        .map(|index| graph_impl.get_node_key(graph_impl.get_node_by_index(&index)))
+        .collect()
 }
 
 pub trait GraphConnections<N, E, K: Hash + Eq>: GraphData<N, E, K> {
@@ -105,16 +128,40 @@ pub trait GraphConnections<N, E, K: Hash + Eq>: GraphData<N, E, K> {
             .collect()
     }
 
-    /// Return a list of all node keys that the provided node depends on.
+    /// Return a list of all node keys that the provided node depends on,
+    /// in breadth-first order. The provided node is included if it's
+    /// reachable from itself (through a cycle).
     fn deep_dependencies_of(&self, node: &N) -> Vec<K> {
-        traverse_deep(self, node, false)
+        map_keys(
+            self,
+            self.deep_dependency_indices_of(self.get_node_index(node)),
+        )
+    }
+
+    /// Index-level variant of [`GraphConnections::deep_dependencies_of`].
+    fn deep_dependency_indices_of(&self, index: NodeIndex) -> Vec<NodeIndex> {
+        indices_within(
+            self.get_graph(),
+            &[index],
+            Direction::Outgoing,
+            Depth::Deep,
+            true,
+        )
     }
 
     /// Return a list of node keys that any of the provided nodes depend on,
     /// within the provided depth. The provided nodes are excluded, and keys
     /// are returned in breadth-first order.
     fn dependencies_within(&self, nodes: &[&N], depth: Depth) -> Vec<K> {
-        keys_within(self, nodes, Direction::Outgoing, depth)
+        map_keys(
+            self,
+            self.dependency_indices_within(&self.get_node_indices(nodes), depth),
+        )
+    }
+
+    /// Index-level variant of [`GraphConnections::dependencies_within`].
+    fn dependency_indices_within(&self, indices: &[NodeIndex], depth: Depth) -> Vec<NodeIndex> {
+        indices_within(self.get_graph(), indices, Direction::Outgoing, depth, false)
     }
 
     /// Return a list of direct node keys that require the provided node.
@@ -127,16 +174,45 @@ pub trait GraphConnections<N, E, K: Hash + Eq>: GraphData<N, E, K> {
             .collect()
     }
 
-    /// Return a list of all node keys that require the provided node.
+    /// Return a list of all node keys that require the provided node,
+    /// in breadth-first order. The provided node is included if it's
+    /// reachable from itself (through a cycle).
     fn deep_dependents_of(&self, node: &N) -> Vec<K> {
-        traverse_deep(self, node, true)
+        map_keys(
+            self,
+            self.deep_dependent_indices_of(self.get_node_index(node)),
+        )
+    }
+
+    /// Index-level variant of [`GraphConnections::deep_dependents_of`].
+    fn deep_dependent_indices_of(&self, index: NodeIndex) -> Vec<NodeIndex> {
+        indices_within(
+            self.get_graph(),
+            &[index],
+            Direction::Incoming,
+            Depth::Deep,
+            true,
+        )
     }
 
     /// Return a list of node keys that require any of the provided nodes,
     /// within the provided depth. The provided nodes are excluded, and keys
     /// are returned in breadth-first order.
     fn dependents_within(&self, nodes: &[&N], depth: Depth) -> Vec<K> {
-        keys_within(self, nodes, Direction::Incoming, depth)
+        map_keys(
+            self,
+            self.dependent_indices_within(&self.get_node_indices(nodes), depth),
+        )
+    }
+
+    /// Index-level variant of [`GraphConnections::dependents_within`].
+    fn dependent_indices_within(&self, indices: &[NodeIndex], depth: Depth) -> Vec<NodeIndex> {
+        indices_within(self.get_graph(), indices, Direction::Incoming, depth, false)
+    }
+
+    /// Return the graph indices for the provided nodes.
+    fn get_node_indices(&self, nodes: &[&N]) -> Vec<NodeIndex> {
+        nodes.iter().map(|node| self.get_node_index(node)).collect()
     }
 
     /// Walk the graph breadth-first in the provided direction, starting from
@@ -187,58 +263,25 @@ pub trait GraphConnections<N, E, K: Hash + Eq>: GraphData<N, E, K> {
         node_filter: impl Fn(&N) -> bool,
         mut visit: impl FnMut(&N, &N, u32),
     ) {
-        if depth.is_none() || nodes.is_empty() {
-            return;
-        }
+        walk_indices(
+            self.get_graph(),
+            &self.get_node_indices(nodes),
+            direction,
+            depth,
+            false,
+            edge_filter,
+            |index, via, distance| {
+                let node = self.get_node_by_index(&index);
 
-        let graph = self.get_graph();
-        let mut seeds = nodes
-            .iter()
-            .map(|node| self.get_node_index(node))
-            .collect::<Vec<_>>();
-
-        seeds.sort();
-        seeds.dedup();
-
-        let mut visited = FxHashSet::from_iter(seeds.iter().copied());
-        let mut queue = VecDeque::from_iter(seeds.into_iter().map(|index| (index, 0)));
-        let mut neighbors = vec![];
-
-        while let Some((index, distance)) = queue.pop_front() {
-            let next_distance = distance + 1;
-
-            if !depth.includes(next_distance) {
-                continue;
-            }
-
-            neighbors.clear();
-            neighbors.extend(
-                graph
-                    .edges_directed(index, direction)
-                    .filter(|edge| edge_filter(edge.weight()))
-                    .map(|edge| match direction {
-                        Direction::Outgoing => edge.target(),
-                        Direction::Incoming => edge.source(),
-                    }),
-            );
-            neighbors.sort();
-            neighbors.dedup();
-
-            for neighbor in &neighbors {
-                // A filtered out node stays visited, so that it's only checked once
-                if visited.insert(*neighbor) {
-                    let node = self.get_node_by_index(neighbor);
-
-                    if !node_filter(node) {
-                        continue;
-                    }
-
-                    visit(node, self.get_node_by_index(&index), next_distance);
-
-                    queue.push_back((*neighbor, next_distance));
+                if !node_filter(node) {
+                    return false;
                 }
-            }
-        }
+
+                visit(node, self.get_node_by_index(&via), distance);
+
+                true
+            },
+        );
     }
 
     /// Return a list of keys for all nodes currently within the graph.
@@ -265,27 +308,43 @@ pub trait GraphConversions<N: Clone + Display, E: Clone + Display, K: Hash + Eq>
     /// Return the graph focused for the provided node, which includes all of
     /// its dependencies, and its dependents within the provided depth.
     fn to_focused_graph(&self, focus_node: &N, dependents: Depth) -> DiGraph<NodeIndex, E> {
-        let dependencies = FxHashSet::from_iter(self.deep_dependencies_of(focus_node));
-        let dependents = FxHashSet::from_iter(self.dependents_within(&[focus_node], dependents));
-        let focus_key = self.get_node_key(focus_node);
+        let graph = self.get_graph();
+        let focus_index = self.get_node_index(focus_node);
+        let mut included = FxHashSet::default();
 
-        self.get_graph().filter_map(
-            |_, node| {
-                let node_key = self.get_node_key(self.get_node_by_index(node));
+        // Self
+        included.insert(focus_index);
 
-                if
-                // Self
-                node_key == focus_key ||
-                    // Dependencies
-                    dependencies.contains(&node_key) ||
-                    // Dependents
-                    dependents.contains(&node_key)
-                {
-                    Some(node.to_owned())
-                } else {
-                    None
-                }
+        // Dependencies
+        walk_indices(
+            graph,
+            &[focus_index],
+            Direction::Outgoing,
+            Depth::Deep,
+            true,
+            |_| true,
+            |index, _, _| {
+                included.insert(index);
+                true
             },
+        );
+
+        // Dependents
+        walk_indices(
+            graph,
+            &[focus_index],
+            Direction::Incoming,
+            dependents,
+            false,
+            |_| true,
+            |index, _, _| {
+                included.insert(index);
+                true
+            },
+        );
+
+        graph.filter_map(
+            |index, node| included.contains(&index).then(|| node.to_owned()),
             |_, edge| Some(edge.to_owned()),
         )
     }
@@ -634,6 +693,128 @@ mod tests {
         );
     }
 
+    // top -> left -> bottom
+    //    \-> right -/
+    fn create_diamond_graph() -> TestGraph {
+        TestGraph::new(
+            &["top", "left", "right", "bottom"],
+            &[
+                ("top", "left"),
+                ("top", "right"),
+                ("left", "bottom"),
+                ("right", "bottom"),
+            ],
+        )
+    }
+
+    #[test]
+    fn deep_dependencies_in_breadth_first_order() {
+        let graph = create_graph();
+
+        // `top` depends on `mid2` and `other`, which are walked in node index order
+        assert_eq!(
+            graph.deep_dependencies_of(graph.node("above")),
+            ["top", "other", "mid2", "mid1", "base"]
+        );
+        assert_eq!(
+            graph.deep_dependencies_of(graph.node("mid2")),
+            ["mid1", "base"]
+        );
+        assert!(graph.deep_dependencies_of(graph.node("base")).is_empty());
+        assert!(graph.deep_dependencies_of(graph.node("lone")).is_empty());
+    }
+
+    #[test]
+    fn deep_dependents_in_breadth_first_order() {
+        let graph = create_graph();
+
+        assert_eq!(
+            graph.deep_dependents_of(graph.node("base")),
+            ["mid1", "mid2", "top", "above"]
+        );
+        assert_eq!(
+            graph.deep_dependents_of(graph.node("other")),
+            ["top", "above"]
+        );
+        assert!(graph.deep_dependents_of(graph.node("above")).is_empty());
+        assert!(graph.deep_dependents_of(graph.node("lone")).is_empty());
+    }
+
+    #[test]
+    fn deep_includes_start_node_when_reachable_from_itself() {
+        let graph = TestGraph::new(&["x", "y", "z"], &[("x", "y"), ("y", "z"), ("z", "x")]);
+
+        assert_eq!(graph.deep_dependencies_of(graph.node("x")), ["y", "z", "x"]);
+        assert_eq!(graph.deep_dependents_of(graph.node("x")), ["z", "y", "x"]);
+        assert_eq!(graph.deep_dependencies_of(graph.node("z")), ["x", "y", "z"]);
+
+        let graph = TestGraph::new(&["a", "b"], &[("a", "b"), ("b", "a")]);
+
+        assert_eq!(graph.deep_dependencies_of(graph.node("a")), ["b", "a"]);
+        assert_eq!(graph.deep_dependents_of(graph.node("a")), ["b", "a"]);
+
+        // But not when it isn't
+        let graph = TestGraph::new(&["a", "b", "c"], &[("a", "b"), ("b", "c"), ("c", "b")]);
+
+        assert_eq!(graph.deep_dependencies_of(graph.node("a")), ["b", "c"]);
+        assert!(graph.deep_dependents_of(graph.node("a")).is_empty());
+    }
+
+    #[test]
+    fn deep_visits_diamond_nodes_once() {
+        let graph = create_diamond_graph();
+
+        assert_eq!(
+            graph.deep_dependencies_of(graph.node("top")),
+            ["left", "right", "bottom"]
+        );
+        assert_eq!(
+            graph.deep_dependents_of(graph.node("bottom")),
+            ["left", "right", "top"]
+        );
+    }
+
+    #[test]
+    fn index_and_key_apis_agree() {
+        let to_keys = |graph: &TestGraph, indices: Vec<NodeIndex>| {
+            indices
+                .iter()
+                .map(|index| graph.get_node_by_index(index).clone())
+                .collect::<Vec<_>>()
+        };
+
+        for graph in [
+            create_graph(),
+            create_diamond_graph(),
+            TestGraph::new(&["x", "y", "z"], &[("x", "y"), ("y", "z"), ("z", "x")]),
+        ] {
+            for name in graph.names.clone() {
+                let node = graph.node(&name);
+                let index = graph.get_node_index(node);
+
+                assert_eq!(
+                    to_keys(&graph, graph.deep_dependency_indices_of(index)),
+                    graph.deep_dependencies_of(node)
+                );
+                assert_eq!(
+                    to_keys(&graph, graph.deep_dependent_indices_of(index)),
+                    graph.deep_dependents_of(node)
+                );
+
+                for depth in [Depth::NONE, Depth::DIRECT, Depth::Limit(2), Depth::Deep] {
+                    assert_eq!(
+                        to_keys(&graph, graph.dependency_indices_within(&[index], depth)),
+                        graph.dependencies_within(&[node], depth)
+                    );
+                    assert_eq!(
+                        to_keys(&graph, graph.dependent_indices_within(&[index], depth)),
+                        graph.dependents_within(&[node], depth)
+                    );
+                }
+            }
+        }
+    }
+
     fn focused_names(graph: &TestGraph, node: &str, dependents: Depth) -> Vec<String> {
         let focused = graph.to_focused_graph(graph.node(node), dependents);
         let mut names = focused
@@ -664,6 +845,34 @@ mod tests {
             focused_names(&graph, "mid1", Depth::Deep),
             ["above", "base", "mid1", "mid2", "top"]
         );
+    }
+
+    #[test]
+    fn focused_graph_keeps_original_node_weights() {
+        let graph = create_diamond_graph();
+        let focused = graph.to_focused_graph(graph.node("left"), Depth::DIRECT);
+
+        // `right` is excluded, so `bottom` shifts down an index, but keeps its weight
+        assert_eq!(
+            focused.node_weights().copied().collect::<Vec<_>>(),
+            [NodeIndex::new(0), NodeIndex::new(1), NodeIndex::new(3)]
+        );
+        assert_eq!(
+            focused
+                .raw_edges()
+                .iter()
+                .map(|edge| (focused[edge.source()], focused[edge.target()]))
+                .collect::<Vec<_>>(),
+            [
+                (NodeIndex::new(0), NodeIndex::new(1)),
+                (NodeIndex::new(1), NodeIndex::new(3)),
+            ]
+        );
+
+        // Cycles include every node
+        let graph = TestGraph::new(&["x", "y", "z"], &[("x", "y"), ("y", "z"), ("z", "x")]);
+
+        assert_eq!(focused_names(&graph, "x", Depth::NONE), ["x", "y", "z"]);
     }
 
     #[test]

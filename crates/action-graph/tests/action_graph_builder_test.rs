@@ -4771,8 +4771,8 @@ mod action_graph_builder {
             assert_eq!(
                 context.primary_targets.into_iter().collect::<Vec<_>>(),
                 [
-                    Target::parse("client:build").unwrap(),
                     Target::parse("base:build").unwrap(),
+                    Target::parse("client:build").unwrap(),
                     Target::parse("common:build").unwrap(),
                     Target::parse("server:build").unwrap(),
                 ]

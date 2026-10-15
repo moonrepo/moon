@@ -5909,6 +5909,7 @@ dependencies = [
  "proto_core",
  "regex",
  "rustc-hash",
+ "scc",
  "schematic",
  "serde",
  "serde_json",
@@ -6164,6 +6165,7 @@ name = "moon_graph_utils"
 version = "0.0.1"
 dependencies = [
  "miette 7.6.0",
+ "moon_async_utils",
  "moon_common",
  "moon_config",
  "petgraph 0.8.3",
@@ -6171,6 +6173,7 @@ dependencies = [
  "serde",
  "starbase_utils",
  "thiserror 2.0.21",
+ "tracing",
 ]
 
 [[package]]
@@ -6511,6 +6514,7 @@ dependencies = [
  "moon_toolchain",
  "moon_toolchain_plugin",
  "rustc-hash",
+ "scc",
  "starbase_args",
  "starbase_sandbox",
  "system_env",
@@ -6549,7 +6553,6 @@ dependencies = [
 name = "moon_task_graph"
 version = "0.0.1"
 dependencies = [
- "daggy",
  "miette 7.6.0",
  "moon_common",
  "moon_config",
@@ -6788,7 +6791,6 @@ name = "moon_workspace"
 version = "0.0.1"
 dependencies = [
  "codspeed-criterion-compat",
- "daggy",
  "miette 7.6.0",
  "moon_async_utils",
  "moon_bench_utils",

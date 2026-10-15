@@ -1,17 +1,20 @@
-use daggy::Dag;
 use moon_config::{TaskDependencyConfig, TaskDependencyType};
-use moon_graph_utils::{GraphExpanderContext, NodeState};
+use moon_graph_utils::{GraphExpanderContext, NodeState, find_cycle};
 use moon_project_graph::ProjectGraph;
 use moon_task::{Target, Task};
 use moon_task_graph::{TaskGraph, TaskGraphError, TaskNode};
-use petgraph::graph::NodeIndex;
+use petgraph::graph::{DiGraph, NodeIndex};
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use std::mem;
 use std::sync::Arc;
 use tracing::instrument;
 
-pub type TaskDag = Dag<NodeState<Task>, TaskDependencyType>;
+/// The task graph while building. Edges are inserted without checking for
+/// cycles, which is done once all edges exist (see [`find_cycle`]), so that
+/// deep dependency chains aren't traversed on every insertion. Serialized as a
+/// plain petgraph graph for the workspace graph cache.
+pub type TaskDag = DiGraph<NodeState<Task>, TaskDependencyType>;
 
 /// Resolve the edge weight for a task dependency. The configured type always
 /// wins, except for `required` dependencies that were inherited as optional,
@@ -96,23 +99,32 @@ impl WorkspaceTasksBuilder {
                 let (source_index, target_index) =
                     resolve_dep_edge_endpoints(from_index, dep_index, edge_type);
 
-                self.graph
-                    .add_edge(source_index, target_index, edge_type)
-                    .map_err(|_| {
-                        let (source, target) = if source_index == from_index {
-                            (&task.target, &dep_config.target)
-                        } else {
-                            (&dep_config.target, &task.target)
-                        };
-
-                        TaskGraphError::WouldCycle {
-                            source_target: source.to_string(),
-                            target_target: target.to_string(),
-                        }
-                    })?;
+                self.graph.add_edge(source_index, target_index, edge_type);
             }
 
             self.insert_or_update_node(task);
+        }
+
+        // Check for cycles once all edges exist, instead of on every insertion.
+        // The edge reported is the first that closes a cycle in insertion order,
+        // which is the edge that would have been rejected when inserted. Its
+        // endpoints are already reversed for cleanup dependencies, so they name
+        // the source and target in the same order as the inserted edge
+        if let Some(edge) = find_cycle(&self.graph) {
+            let (source_index, target_index) = self.graph.edge_endpoints(edge).unwrap();
+            let label = |index: NodeIndex| {
+                self.targets_to_indexes
+                    .iter()
+                    .find(|(_, node_index)| **node_index == index)
+                    .map(|(target, _)| target.to_string())
+                    .unwrap_or_default()
+            };
+
+            return Err(TaskGraphError::WouldCycle {
+                source_target: label(source_index),
+                target_target: label(target_index),
+            }
+            .into());
         }
 
         Ok(())
@@ -128,7 +140,7 @@ impl WorkspaceTasksBuilder {
         let mut loaded_tasks = FxHashMap::default();
 
         // Move the loaded tasks out of the graph instead of cloning them. The
-        // DAG can only be filtered by reference, so they're swapped for
+        // graph can only be filtered by reference, so they're swapped for
         // placeholders, and the filter only keeps the nodes that were loaded
         for index in 0..graph.node_count() {
             let index = NodeIndex::new(index);
@@ -145,12 +157,15 @@ impl WorkspaceTasksBuilder {
             |_, edge| Some(*edge),
         );
 
-        for index in task_graph.graph.graph().node_indices() {
+        for index in task_graph.graph.node_indices() {
             let old_index = *task_graph.graph.node_weight(index).unwrap();
             let task = loaded_tasks.remove(&old_index).unwrap();
             let target = task.target.clone();
 
-            task_graph.indexes.insert(index, target.clone());
+            // Node indexes are dense and ascending, so push in order
+            debug_assert_eq!(task_graph.indexes.len(), index.index());
+
+            task_graph.indexes.push(target.clone());
             task_graph.nodes.insert(target, TaskNode { index, task });
         }
 

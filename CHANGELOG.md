@@ -1,74 +1,6 @@
 # Changelog
 
-## 2.6.4
-
-#### 🚀 Updates
-
-- The Pkl modules generated since v2.6.3 type lists and maps as Pkl's amendable `Listing` and
-  `Mapping` only, as Pkl recommends for configuration data. A config that amends its module, and
-  assigns a `List`, `Set`, or `Map` to a setting, must convert it with `toListing()` or
-  `toMapping()`, or create it with `new Listing { ... }` instead. Updated the Pkl docs and examples
-  to match.
-- moon now handles `SIGHUP`, which is sent when the terminal is closed, like `SIGTERM`. Running
-  tasks receive `SIGHUP`, and are force killed after `pipeline.killProcessThreshold`, the pipeline
-  is marked as terminated, and moon exits with code 129. Previously moon was killed immediately, so
-  a `kill -HUP` left its tasks running. On Windows, closing the console window is handled the same
-  way, instead of aborting the pipeline with code 131.
-
-#### 🐞 Fixes
-
-- Fixed an issue where moon exited with code 1 and printed "Failed to flush buffered output to
-  console" when the command reading its output exited early (a broken pipe), instead of exiting
-  quietly with code 141.
-- Fixed an issue where, with the daemon enabled, a task would fail with "Failed to make daemon RPC
-  call" when its stdout/stderr, or its list of output files, was larger than 4 MiB. The daemon now
-  accepts messages up to 256 MiB, and if archiving or hydrating outputs through the daemon fails,
-  it's done in-process instead of failing the task.
-- Fixed an issue where the daemon was silently never used in development containers (like VS Code
-  Dev Containers), yet was used in CI environments that aren't Docker containers (like Kubernetes
-  pods), where it outlived the run. The daemon is now used in development containers, is never used
-  in CI, and the reason it was skipped is logged at the debug level.
-- Fixed an issue where `hasher.ignorePatterns` and `hasher.ignoreMissingPatterns` were matched
-  against absolute file paths instead of workspace relative paths. A pattern that matched a parent
-  directory of the workspace, like `**/.worktrees/**` for a git worktree nested in the repository,
-  ignored every input, so tasks were always cached and restored stale outputs. Patterns without a
-  `**/` prefix, like `docs/**`, now match as well.
-- Fixed an issue where `.env` files with multiple trailing comment markers (`#`) would not parse
-  correctly.
-
-#### ⚙️ Internal
-
-- Updated the npm release to publish `@moonrepo/cli` after the `@moonrepo/core-*` packages, and to
-  skip versions that are already published, so a failed release can be re-ran. Previously a failure
-  could publish a `@moonrepo/cli` version whose binaries were never published.
-
-## 2.6.3
-
-#### 🛡️ Security
-
-- Distrusted the 8 compromised eMudhra intermediate CA keys, and removed the "emSign ECC Root CA -
-  G3" root from our bundled root certificates. Previously, anyone in a position to intercept a
-  connection could use these keys to forge a certificate for any host, and proto would accept it on
-  Linux, and on all platforms for plugins that make requests through Extism's built-in HTTP
-  functions.
-  - Hosts with certificates that chain to "emSign ECC Root CA - G3" will now fail TLS verification.
-  - Requests to OCI registries on Linux still rely on the system certificate bundle, so update your
-    `ca-certificates` package.
-
-#### 🐞 Fixes
-
-- Fixed an issue where changing any setting in `.moon/workspace.*`, like `codeowners`, invalidated
-  the cache of every task. Only `.moon/extensions.*` and `.moon/toolchains.*` are now implicit task
-  inputs.
-- Fixed an issue where a task that stopped before running its command, because another task failed
-  or a requirement check failed, would be cached on the next run, reusing outputs from its previous
-  inputs.
-- Fixed an issue where deleted `optional: true` file outputs were not restored on a cache hit, when
-  the hash matched the task's last run.
-- Fixed an issue where outputs partially restored by a failed cache hydration could be reused as a
-  cache hit on the next run.
-
-## 2.6.2
+## Unreleased
 
 #### 💥 Breaking
 
@@ -257,6 +189,29 @@
       have been added, instead of once for every relationship.
     - Project configs are now loaded on a thread pool bounded to the number of CPUs, instead of on a
       thread per project.
+  - Improved project and task graph build performance, by parsing identical task `command` and
+    `args` strings once per graph build, instead of once per task in every project that inherits
+    them.
+  - Improved project graph build performance, by locating each project's config file once, stopping
+    at the first supported extension that exists (in `yml`, `yaml`, `jsonc`, `json`, `pkl`, `hcl`,
+    `toml` order), instead of checking for every supported extension. As such, only that file is
+    loaded, instead of merging every project config file that exists in the project.
+  - Improved project graph build performance, by deriving inherited global task configs once per
+    distinct set of matched `.moon/tasks` files and sharing them across projects, instead of cloning
+    them for every project.
+  - Improved task graph build performance, by detecting dependency cycles once after all task
+    dependencies have been linked, instead of on every link, which avoids repeatedly traversing deep
+    task dependency chains.
+  - Improved project and task expansion performance when every project or task is requested, like by
+    `moon ci`, `moon check`, and `moon query`, by expanding them in parallel, with dependencies
+    expanded before their dependents. Every project and task is now returned in a deterministic
+    order, sorted by ID or target.
+  - Improved `moon query projects` performance for the `taskTag`, `taskToolchain`, and `taskType`
+    fields, by reading each project's unexpanded tasks, instead of expanding every task in the
+    workspace to match the query.
+  - Improved `moon project-graph` and `moon task-graph` performance when focused on a project or
+    task, by walking the graph by node index with a breadth-first traversal, instead of scanning
+    every node for each visited one.
   - The graph's cache now stores a single hash manifest, instead of also storing an unused one when
     plugins discovered new input files.
   - The graph's cache file is now less than half the size, as data that's only used while building
@@ -289,7 +244,77 @@
 
 - Updated proto to [v0.63.1](https://github.com/moonrepo/proto/releases/tag/v0.63.1).
 
-## Unreleased
+## 2.6.4
+
+#### 🚀 Updates
+
+- The Pkl modules generated since v2.6.3 type lists and maps as Pkl's amendable `Listing` and
+  `Mapping` only, as Pkl recommends for configuration data. A config that amends its module, and
+  assigns a `List`, `Set`, or `Map` to a setting, must convert it with `toListing()` or
+  `toMapping()`, or create it with `new Listing { ... }` instead. Updated the Pkl docs and examples
+  to match.
+- moon now handles `SIGHUP`, which is sent when the terminal is closed, like `SIGTERM`. Running
+  tasks receive `SIGHUP`, and are force killed after `pipeline.killProcessThreshold`, the pipeline
+  is marked as terminated, and moon exits with code 129. Previously moon was killed immediately, so
+  a `kill -HUP` left its tasks running. On Windows, closing the console window is handled the same
+  way, instead of aborting the pipeline with code 131.
+
+#### 🐞 Fixes
+
+- Fixed an issue where moon exited with code 1 and printed "Failed to flush buffered output to
+  console" when the command reading its output exited early (a broken pipe), instead of exiting
+  quietly with code 141.
+- Fixed an issue where, with the daemon enabled, a task would fail with "Failed to make daemon RPC
+  call" when its stdout/stderr, or its list of output files, was larger than 4 MiB. The daemon now
+  accepts messages up to 256 MiB, and if archiving or hydrating outputs through the daemon fails,
+  it's done in-process instead of failing the task.
+- Fixed an issue where the daemon was silently never used in development containers (like VS Code
+  Dev Containers), yet was used in CI environments that aren't Docker containers (like Kubernetes
+  pods), where it outlived the run. The daemon is now used in development containers, is never used
+  in CI, and the reason it was skipped is logged at the debug level.
+- Fixed an issue where `hasher.ignorePatterns` and `hasher.ignoreMissingPatterns` were matched
+  against absolute file paths instead of workspace relative paths. A pattern that matched a parent
+  directory of the workspace, like `**/.worktrees/**` for a git worktree nested in the repository,
+  ignored every input, so tasks were always cached and restored stale outputs. Patterns without a
+  `**/` prefix, like `docs/**`, now match as well.
+- Fixed an issue where `.env` files with multiple trailing comment markers (`#`) would not parse
+  correctly.
+
+#### ⚙️ Internal
+
+- Updated the npm release to publish `@moonrepo/cli` after the `@moonrepo/core-*` packages, and to
+  skip versions that are already published, so a failed release can be re-ran. Previously a failure
+  could publish a `@moonrepo/cli` version whose binaries were never published.
+
+## 2.6.3
+
+#### 🛡️ Security
+
+- Distrusted the 8 compromised eMudhra intermediate CA keys, and removed the "emSign ECC Root CA -
+  G3" root from our bundled root certificates. Previously, anyone in a position to intercept a
+  connection could use these keys to forge a certificate for any host, and proto would accept it on
+  Linux, and on all platforms for plugins that make requests through Extism's built-in HTTP
+  functions.
+  - Hosts with certificates that chain to "emSign ECC Root CA - G3" will now fail TLS verification.
+  - Requests to OCI registries on Linux still rely on the system certificate bundle, so update your
+    `ca-certificates` package.
+
+#### 🐞 Fixes
+
+- Fixed an issue where changing any setting in `.moon/workspace.*`, like `codeowners`, invalidated
+  the cache of every task. Only `.moon/extensions.*` and `.moon/toolchains.*` are now implicit task
+  inputs.
+- Fixed an issue where a task that stopped before running its command, because another task failed
+  or a requirement check failed, would be cached on the next run, reusing outputs from its previous
+  inputs.
+- Fixed an issue where deleted `optional: true` file outputs were not restored on a cache hit, when
+  the hash matched the task's last run.
+- Fixed an issue where outputs partially restored by a failed cache hydration could be reused as a
+  cache hit on the next run.
+
+## 2.6.2
+
+## 2.6.2
 
 #### 🐞 Fixes
 

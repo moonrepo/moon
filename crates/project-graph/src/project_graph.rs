@@ -190,7 +190,7 @@ impl ProjectGraph {
 
     /// Return the task configuration that the project inherited from ".moon/tasks",
     /// derived from the configs it was inherited from, as it's not stored in the graph.
-    pub fn get_inherited_tasks(&self, project: &Project) -> miette::Result<InheritedTasks> {
+    pub fn get_inherited_tasks(&self, project: &Project) -> miette::Result<Arc<InheritedTasks>> {
         self.context
             .inherited_tasks
             .get_inherited_config_from_sources(&project.inherited_from)
@@ -200,7 +200,7 @@ impl ProjectGraph {
     /// which is required when outputting the project to consumers.
     pub fn get_with_inherited_tasks(&self, project: &Project) -> miette::Result<Project> {
         let mut project = project.to_owned();
-        project.inherited = Some(self.get_inherited_tasks(&project)?);
+        project.inherited = Some(InheritedTasks::clone(&*self.get_inherited_tasks(&project)?));
 
         Ok(project)
     }

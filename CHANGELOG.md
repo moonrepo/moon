@@ -196,6 +196,9 @@
     at the first supported extension that exists (in `yml`, `yaml`, `jsonc`, `json`, `pkl`, `hcl`,
     `toml` order), instead of checking for every supported extension. As such, only that file is
     loaded, instead of merging every project config file that exists in the project.
+  - Improved project graph build performance, by deriving inherited global task configs once per
+    distinct set of matched `.moon/tasks` files and sharing them across projects, instead of cloning
+    them for every project.
   - The graph's cache now stores a single hash manifest, instead of also storing an unused one when
     plugins discovered new input files.
   - The graph's cache file is now less than half the size, as data that's only used while building

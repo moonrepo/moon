@@ -5908,6 +5908,7 @@ dependencies = [
  "proto_core",
  "regex",
  "rustc-hash",
+ "scc",
  "schematic",
  "serde",
  "serde_json",

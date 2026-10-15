@@ -36,7 +36,7 @@ pub struct ProjectBuilder<'app> {
     context: ProjectBuilderContext<'app>,
 
     // Configs to derive information from
-    global_configs: Option<InheritedTasks>,
+    global_configs: Option<Arc<InheritedTasks>>,
     local_config: Option<ProjectConfig>,
 
     // Values to be continually built
@@ -326,7 +326,7 @@ impl<'app> ProjectBuilder<'app> {
 
         // Only store the source paths, as the configs can be derived from them
         if let Some(global_configs) = self.global_configs.take() {
-            project.inherited_from = global_configs.configs.into_keys().collect();
+            project.inherited_from = global_configs.configs.keys().cloned().collect();
         }
 
         let config = self.local_config.take().unwrap_or_default();

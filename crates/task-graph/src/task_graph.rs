@@ -1,4 +1,3 @@
-use daggy::Dag;
 use moon_config::TaskDependencyType;
 use moon_graph_utils::*;
 use moon_project::ProjectError;
@@ -24,7 +23,8 @@ pub struct TaskGraph {
     pub context: GraphExpanderContext,
 
     /// Directed-acyclic graph (DAG) of non-expanded tasks and their relationships.
-    pub graph: Dag<NodeIndex, TaskDependencyType>,
+    /// Cycles are rejected when the graph is built, so it's not re-checked here.
+    pub graph: DiGraph<NodeIndex, TaskDependencyType>,
 
     /// Map of node indexes to task targets.
     pub indexes: FxHashMap<NodeIndex, Target>,
@@ -117,7 +117,7 @@ impl TaskGraph {
         let graph = self.to_focused_graph(&task, dependents);
         let (nodes, edges) = graph.into_nodes_edges();
 
-        let mut dag = Dag::with_capacity(nodes.len(), edges.len());
+        let mut dag = DiGraph::with_capacity(nodes.len(), edges.len());
         let mut indexes = FxHashMap::default();
         let mut tasks = FxHashMap::default();
 
@@ -141,9 +141,10 @@ impl TaskGraph {
             dag.add_node(new_index);
         }
 
+        // A subset of an acyclic graph is acyclic, so the edges are inserted
+        // without checking for cycles, but still deduplicated
         for edge in edges {
-            dag.update_edge(edge.source(), edge.target(), edge.weight)
-                .unwrap();
+            dag.update_edge(edge.source(), edge.target(), edge.weight);
         }
 
         Ok(Self {
@@ -198,7 +199,7 @@ impl TaskLookup for TaskGraph {
 
 impl GraphData<Task, TaskDependencyType, Target> for TaskGraph {
     fn get_graph(&self) -> &DiGraph<NodeIndex, TaskDependencyType> {
-        self.graph.graph()
+        &self.graph
     }
 
     fn get_nodes(&self) -> FxHashMap<NodeIndex, &Task> {

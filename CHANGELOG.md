@@ -199,6 +199,9 @@
   - Improved project graph build performance, by deriving inherited global task configs once per
     distinct set of matched `.moon/tasks` files and sharing them across projects, instead of cloning
     them for every project.
+  - Improved task graph build performance, by detecting dependency cycles once after all task
+    dependencies have been linked, instead of on every link, which avoids repeatedly traversing deep
+    task dependency chains.
   - The graph's cache now stores a single hash manifest, instead of also storing an unused one when
     plugins discovered new input files.
   - The graph's cache file is now less than half the size, as data that's only used while building

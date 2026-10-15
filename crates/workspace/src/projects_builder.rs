@@ -12,6 +12,7 @@ use moon_config::{
     DependencyScope, ProjectConfig, ProjectDependencyConfig, WorkspaceProjectGlobFormat,
     WorkspaceProjects, finalize_config,
 };
+use moon_config_loader::ProjectConfigFile;
 use moon_graph_utils::{GraphExpanderContext, NodeState};
 use moon_pdk_api::{ExtendProjectGraphInput, ExtendProjectGraphOutput, ExtendProjectOutput};
 use moon_project::{Project, ProjectAlias};
@@ -19,7 +20,7 @@ use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_layer_relationships, enforce_tag_relationships};
 use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectNode, find_cycle_in_scopes};
 use moon_task::{Target, Task, TaskOptions};
-use moon_task_builder::TaskDepsBuilder;
+use moon_task_builder::{CommandLineCache, TaskDepsBuilder};
 use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -42,6 +43,11 @@ pub struct ProjectBuildData {
 
     #[serde(skip)]
     pub config: Option<ProjectConfig>,
+
+    /// Config file located within the source, which also
+    /// determines whether the source exists.
+    #[serde(skip)]
+    pub config_file: ProjectConfigFile,
 
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub extensions: Vec<ExtendProjectOutput>,
@@ -72,12 +78,29 @@ pub fn load_project_build_data(
     id: Id,
     source: WorkspaceRelativePathBuf,
 ) -> miette::Result<ProjectBuildData> {
-    let config = context
-        .config_loader
-        .load_project_config_from_source(&context.workspace_root, &source)?;
+    let loader = &context.config_loader;
+    let workspace_root = &context.workspace_root;
+
+    // Locate the config file once, which stops probing at the first file
+    // that exists, and also tells us whether the source exists, so that
+    // it doesn't need to be checked again when building
+    let config_file = loader.locate_project_file(&workspace_root.join(source.as_str()));
+
+    let config = match &config_file {
+        ProjectConfigFile::Unresolved => {
+            loader.load_project_config_from_source(workspace_root, &source)?
+        }
+        ProjectConfigFile::MissingRoot => {
+            loader.load_project_config_from_file(workspace_root, None)?
+        }
+        ProjectConfigFile::Located(file) => {
+            loader.load_project_config_from_file(workspace_root, file.as_deref())?
+        }
+    };
 
     Ok(ProjectBuildData {
         config: Some(config),
+        config_file,
         id: Some(id),
         source,
         ..Default::default()
@@ -125,12 +148,21 @@ pub async fn extend_project_build_data_with_plugins(
 
 pub async fn build_project(
     context: Arc<WorkspaceBuilderContext>,
+    command_line_cache: Arc<CommandLineCache>,
     build_data: ProjectBuildData,
     id: Id,
     root_id: Option<Id>,
     monorepo: bool,
 ) -> miette::Result<Project> {
-    if !build_data.source.to_path(&context.workspace_root).exists() {
+    let source_exists = match &build_data.config_file {
+        ProjectConfigFile::Unresolved => {
+            build_data.source.to_path(&context.workspace_root).exists()
+        }
+        ProjectConfigFile::MissingRoot => false,
+        ProjectConfigFile::Located(_) => true,
+    };
+
+    if !source_exists {
         return Err(
             WorkspaceBuilderError::MissingProjectAtSource(build_data.source.to_string()).into(),
         );
@@ -140,6 +172,7 @@ pub async fn build_project(
         &id,
         &build_data.source,
         ProjectBuilderContext {
+            command_line_cache,
             config_loader: &context.config_loader,
             enabled_toolchains: &context.enabled_toolchains,
             monorepo,
@@ -198,6 +231,11 @@ pub struct WorkspaceProjectsBuilder {
 
     /// Map of aliases to project IDs.
     aliases_to_ids: FxHashMap<String, Id>,
+
+    /// Parsed task command lines, shared across all projects in the build,
+    /// so that identical strings (from inherited tasks) are parsed once.
+    #[serde(skip)]
+    command_line_cache: Arc<CommandLineCache>,
 
     /// Cached projects build data.
     #[serde(skip)]
@@ -295,6 +333,7 @@ impl WorkspaceProjectsBuilder {
         Self {
             context: Some(context),
             aliases_to_ids: FxHashMap::default(),
+            command_line_cache: Arc::default(),
             build_data: ProjectBuildDataMap::default(),
             config_paths: FxHashSet::default(),
             plugin_input_paths: BTreeSet::default(),
@@ -405,7 +444,10 @@ impl WorkspaceProjectsBuilder {
             let project = loaded_projects.remove(&old_index).unwrap();
             let id = project.id.clone();
 
-            project_graph.indexes.insert(index, id.clone());
+            // Node indexes are dense and ascending, so push in order
+            debug_assert_eq!(project_graph.indexes.len(), index.index());
+
+            project_graph.indexes.push(id.clone());
             project_graph
                 .nodes
                 .insert(id, ProjectNode { index, project });
@@ -435,6 +477,7 @@ impl WorkspaceProjectsBuilder {
         let context = self.context();
         let root_id = self.root_id.clone();
         let monorepo = self.repo_type.is_monorepo();
+        let command_line_cache = Arc::clone(&self.command_line_cache);
 
         run_pooled_tasks(
             queue,
@@ -447,6 +490,7 @@ impl WorkspaceProjectsBuilder {
 
                 Ok(build_project(
                     Arc::clone(&context),
+                    Arc::clone(&command_line_cache),
                     build_data,
                     id,
                     root_id.clone(),

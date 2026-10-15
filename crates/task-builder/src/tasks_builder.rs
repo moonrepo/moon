@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use crate::command_line::{CommandLineCache, CommandLineParseResult};
 use crate::tasks_builder_error::TasksBuilderError;
 use indexmap::{IndexMap, IndexSet};
 use moon_common::{
@@ -28,14 +29,6 @@ use std::path::Path;
 use std::sync::{Arc, OnceLock};
 use system_env::is_command_on_path;
 use tracing::{debug, instrument, trace};
-
-#[derive(Debug, Default)]
-struct CommandLineParseResult {
-    pub command: Option<TaskArg>,
-    pub args: Option<Vec<TaskArg>>,
-    pub env: Option<EnvMap>,
-    pub requires_shell: bool,
-}
 
 struct ConfigChain<'proj> {
     config: &'proj TaskConfig,
@@ -85,6 +78,7 @@ fn extract_config<'builder, 'proj>(
 
 #[derive(Debug)]
 pub struct TasksBuilderContext<'proj> {
+    pub command_line_cache: Arc<CommandLineCache>,
     pub config_loader: &'proj ConfigLoader,
     pub enabled_toolchains: &'proj [Id],
     pub monorepo: bool,
@@ -1054,166 +1048,6 @@ impl<'proj> TasksBuilder<'proj> {
         Ok(env)
     }
 
-    fn parse_command_line(
-        &self,
-        target: &Target,
-        args: &TaskArgs,
-    ) -> miette::Result<CommandLineParseResult> {
-        let mut res = CommandLineParseResult::default();
-
-        match args {
-            TaskArgs::Noop => Ok(res),
-            TaskArgs::List(list) => {
-                res.args = Some(list.iter().map(TaskArg::new).collect());
-
-                Ok(res)
-            }
-            TaskArgs::String(cmd) => {
-                use starbase_args::*;
-
-                if cmd.is_empty() {
-                    return Ok(res);
-                }
-
-                let mut args = vec![];
-                let mut env = EnvMap::default();
-
-                let mut handle_arg = |arg: &Argument, extract_env: bool| {
-                    if let Argument::Value(value) = arg {
-                        if !res.requires_shell
-                            && matches!(
-                                value,
-                                Value::Expansion(_)
-                                    | Value::Substitution(_)
-                                    | Value::MurexBraceQuoted(_)
-                                    | Value::NuRawQuoted(_)
-                            )
-                        {
-                            res.requires_shell = true;
-                        }
-
-                        if value.is_quoted() {
-                            args.push(TaskArg::new_quoted(
-                                value.get_quoted_value(),
-                                value.to_string(),
-                            ));
-                        } else {
-                            args.push(TaskArg::new_unquoted(value.to_string()));
-                        }
-                    } else if let Argument::EnvVar(key, value, _) = arg {
-                        if extract_env {
-                            if !matches!(value, Value::Expansion(_) | Value::Substitution(_)) {
-                                env.insert(key.to_owned(), Some(value.as_str().to_owned()));
-                            }
-                        } else {
-                            args.push(TaskArg::new_unquoted(arg.to_string()));
-                        }
-                    } else {
-                        args.push(TaskArg::new_unquoted(arg.to_string()));
-                    }
-                };
-
-                let command_line =
-                    parse(cmd).map_err(|error| TasksBuilderError::InvalidCommandSyntax {
-                        task: target.to_owned(),
-                        command: cmd.to_owned(),
-                        position: match error.line_col {
-                            LineColLocation::Pos((line, col)) => format!("{line}:{col}"),
-                            LineColLocation::Span((line, col), _) => format!("{line}:{col}"),
-                        },
-                    })?;
-
-                for pipeline in command_line.iter() {
-                    match pipeline {
-                        Pipeline::Start(commands) => {
-                            let mut allow_next_sequence = true;
-
-                            for sequence in commands.iter() {
-                                match sequence {
-                                    // If only env vars, allow it, otherwise it's a
-                                    // multi-command and we shouldn't allow it
-                                    Sequence::Start(command) | Sequence::Then(command) => {
-                                        if !allow_next_sequence {
-                                            return Err(
-                                                TasksBuilderError::UnsupportedCommandSyntax {
-                                                    task: target.to_owned(),
-                                                }
-                                                .into(),
-                                            );
-                                        }
-
-                                        allow_next_sequence = command
-                                            .iter()
-                                            .all(|arg| matches!(arg, Argument::EnvVar(_, _, _)));
-                                        let mut extract_env = true;
-
-                                        for arg in command.iter() {
-                                            handle_arg(arg, extract_env);
-
-                                            if extract_env
-                                                && !matches!(arg, Argument::EnvVar(_, _, _))
-                                            {
-                                                extract_env = false;
-                                            }
-                                        }
-                                    }
-                                    // Capture anything after `--`
-                                    Sequence::Passthrough(command) => {
-                                        handle_arg(
-                                            &Argument::Value(Value::Unquoted("--".into())),
-                                            false,
-                                        );
-
-                                        for arg in command.iter() {
-                                            handle_arg(arg, false);
-                                        }
-                                    }
-                                    Sequence::Stop(term) => {
-                                        if term == "--" {
-                                            handle_arg(
-                                                &Argument::Value(Value::Unquoted("--".into())),
-                                                false,
-                                            );
-                                        } else if term != ";" && term != "\n" {
-                                            return Err(
-                                                TasksBuilderError::UnsupportedCommandSyntax {
-                                                    task: target.to_owned(),
-                                                }
-                                                .into(),
-                                            );
-                                        }
-                                    }
-                                    _ => {
-                                        return Err(TasksBuilderError::UnsupportedCommandSyntax {
-                                            task: target.to_owned(),
-                                        }
-                                        .into());
-                                    }
-                                };
-                            }
-                        }
-                        _ => {
-                            return Err(TasksBuilderError::UnsupportedCommandSyntax {
-                                task: target.to_owned(),
-                            }
-                            .into());
-                        }
-                    };
-                }
-
-                if !args.is_empty() {
-                    res.args = Some(args);
-                }
-
-                if !env.is_empty() {
-                    res.env = Some(env);
-                }
-
-                Ok(res)
-            }
-        }
-    }
-
     fn get_command_line(
         &self,
         target: &Target,
@@ -1223,7 +1057,10 @@ impl<'proj> TasksBuilder<'proj> {
             return Ok(None);
         }
 
-        let parse_result = self.parse_command_line(target, &config.command)?;
+        let parse_result = self
+            .context
+            .command_line_cache
+            .parse(target, &config.command)?;
         let mut command_line = CommandLineParseResult::default();
 
         if let Some(mut args) = parse_result.args {
@@ -1240,7 +1077,10 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         if config.args != TaskArgs::Noop {
-            let parse_result = self.parse_command_line(target, &config.args)?;
+            let parse_result = self
+                .context
+                .command_line_cache
+                .parse(target, &config.args)?;
 
             if let Some(args) = parse_result.args {
                 command_line.args.get_or_insert_default().extend(args);

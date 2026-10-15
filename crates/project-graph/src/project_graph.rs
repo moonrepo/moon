@@ -121,8 +121,9 @@ pub struct ProjectGraph {
     /// Directed-acyclic graph (DAG) of development, build, and root dependencies.
     development_graph: Dag<NodeIndex, DependencyScope>,
 
-    /// Map of node indexes to project IDs.
-    pub indexes: FxHashMap<NodeIndex, Id>,
+    /// Project IDs by node index. Node indexes are dense (0 to the node
+    /// count), so the ID of a node is at the position of its index.
+    pub indexes: Vec<Id>,
 
     /// Map of project nodes by ID.
     pub nodes: FxHashMap<Id, ProjectNode>,
@@ -332,7 +333,7 @@ impl ProjectGraph {
 
         indices
             .into_iter()
-            .map(|index| self.indexes[&index].clone())
+            .map(|index| self.indexes[index.index()].clone())
             .collect()
     }
 
@@ -344,7 +345,7 @@ impl ProjectGraph {
     ) -> Vec<Id> {
         self.partitioned_graph(partition)
             .neighbors_directed(self.nodes[&project.id].index, direction)
-            .map(|index| self.indexes[&index].clone())
+            .map(|index| self.indexes[index.index()].clone())
             .collect()
     }
 
@@ -363,7 +364,7 @@ impl ProjectGraph {
         while let Some(index) = queue.pop_front() {
             for next_index in graph.neighbors_directed(index, direction) {
                 if visited.insert(next_index) {
-                    results.push(self.indexes[&next_index].clone());
+                    results.push(self.indexes[next_index.index()].clone());
                     queue.push_back(next_index);
                 }
             }
@@ -445,7 +446,7 @@ impl ProjectGraph {
         let (nodes, edges) = focused_graph.into_nodes_edges();
 
         let mut graph = DiGraph::with_capacity(nodes.len(), edges.len());
-        let mut indexes = FxHashMap::default();
+        let mut indexes = Vec::with_capacity(nodes.len());
         let mut projects = FxHashMap::default();
 
         // The focused graph has different node inndexes,
@@ -453,9 +454,9 @@ impl ProjectGraph {
         for (i, node) in nodes.into_iter().enumerate() {
             let new_index = NodeIndex::from(i as u32);
             let old_index = node.weight;
-            let id = &self.indexes[&old_index];
+            let id = &self.indexes[old_index.index()];
 
-            indexes.insert(new_index, id.to_owned());
+            indexes.push(id.to_owned());
 
             projects.insert(
                 id.to_owned(),
@@ -504,7 +505,7 @@ impl ProjectGraph {
 
     fn label_index(&self, index: NodeIndex) -> String {
         self.indexes
-            .get(&index)
+            .get(index.index())
             .map(|id| id.to_string())
             .unwrap_or_else(|| index.index().to_string())
     }
@@ -621,7 +622,7 @@ impl GraphData<Project, DependencyScope, Id> for ProjectGraph {
     }
 
     fn get_node_by_index(&self, index: &NodeIndex) -> &Project {
-        &self.nodes[&self.indexes[index]].project
+        &self.nodes[&self.indexes[index.index()]].project
     }
 
     fn get_node_key(&self, node: &Project) -> Id {
@@ -693,12 +694,7 @@ mod tests {
                 DependencyScope::Development,
             ))
             .unwrap();
-        project_graph
-            .indexes
-            .insert(NodeIndex::new(0), Id::raw("a"));
-        project_graph
-            .indexes
-            .insert(NodeIndex::new(1), Id::raw("b"));
+        project_graph.indexes = vec![Id::raw("a"), Id::raw("b")];
 
         // The union cycles, but each partition can still be sorted
         assert_eq!(

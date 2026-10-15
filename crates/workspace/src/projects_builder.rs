@@ -444,7 +444,10 @@ impl WorkspaceProjectsBuilder {
             let project = loaded_projects.remove(&old_index).unwrap();
             let id = project.id.clone();
 
-            project_graph.indexes.insert(index, id.clone());
+            // Node indexes are dense and ascending, so push in order
+            debug_assert_eq!(project_graph.indexes.len(), index.index());
+
+            project_graph.indexes.push(id.clone());
             project_graph
                 .nodes
                 .insert(id, ProjectNode { index, project });

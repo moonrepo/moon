@@ -27,8 +27,9 @@ pub struct TaskGraph {
     /// Cycles are rejected when the graph is built, so it's not re-checked here.
     pub graph: DiGraph<NodeIndex, TaskDependencyType>,
 
-    /// Map of node indexes to task targets.
-    pub indexes: FxHashMap<NodeIndex, Target>,
+    /// Task targets by node index. Node indexes are dense (0 to the node
+    /// count), so the target of a node is at the position of its index.
+    pub indexes: Vec<Target>,
 
     /// Map of task nodes by target.
     pub nodes: FxHashMap<Target, TaskNode>,
@@ -112,7 +113,7 @@ impl TaskGraph {
         let (nodes, edges) = graph.into_nodes_edges();
 
         let mut dag = DiGraph::with_capacity(nodes.len(), edges.len());
-        let mut indexes = FxHashMap::default();
+        let mut indexes = Vec::with_capacity(nodes.len());
         let mut tasks = FxHashMap::default();
 
         // The focused graph has different node inndexes,
@@ -120,9 +121,9 @@ impl TaskGraph {
         for (i, node) in nodes.into_iter().enumerate() {
             let new_index = NodeIndex::from(i as u32);
             let old_index = node.weight;
-            let target = &self.indexes[&old_index];
+            let target = &self.indexes[old_index.index()];
 
-            indexes.insert(new_index, target.to_owned());
+            indexes.push(target.to_owned());
 
             tasks.insert(
                 target.to_owned(),
@@ -261,7 +262,7 @@ impl GraphData<Task, TaskDependencyType, Target> for TaskGraph {
     }
 
     fn get_node_by_index(&self, index: &NodeIndex) -> &Task {
-        &self.nodes[&self.indexes[index]].task
+        &self.nodes[&self.indexes[index.index()]].task
     }
 
     fn get_node_key(&self, node: &Task) -> Target {

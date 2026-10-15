@@ -162,7 +162,10 @@ impl WorkspaceTasksBuilder {
             let task = loaded_tasks.remove(&old_index).unwrap();
             let target = task.target.clone();
 
-            task_graph.indexes.insert(index, target.clone());
+            // Node indexes are dense and ascending, so push in order
+            debug_assert_eq!(task_graph.indexes.len(), index.index());
+
+            task_graph.indexes.push(target.clone());
             task_graph.nodes.insert(target, TaskNode { index, task });
         }
 

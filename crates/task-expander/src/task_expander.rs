@@ -328,7 +328,7 @@ impl<'graph> TaskExpander<'graph> {
             // Otherwise check if it's a dir and not a file
             let abs_file = file.to_path(&self.context.workspace_root);
 
-            if abs_file.exists() && abs_file.is_dir() {
+            if abs_file.is_dir() {
                 task.input_globs
                     .insert(file.join("**/*"), TaskGlobInput::default());
 

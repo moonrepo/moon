@@ -50,5 +50,9 @@ pub enum ActionGraphError {
     WouldCycle {
         source_action: String,
         target_action: String,
+
+        /// The actions that form the cycle, when known.
+        #[help]
+        cycle: Option<String>,
     },
 }

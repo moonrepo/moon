@@ -1,5 +1,6 @@
 ---
 source: crates/cli/tests/action_graph_test.rs
+assertion_line: 72
 expression: assert.output()
 ---
 
@@ -18,11 +19,7 @@ digraph {
     2 -> 1 [ label="required"]
     4 -> 0 [ label="required"]
     5 -> 0 [ label="required"]
-    5 -> 1 [ label="required"]
     3 -> 0 [ label="required"]
-    3 -> 4 [ label="required"]
-    3 -> 1 [ label="required"]
-    3 -> 5 [ label="required"]
     7 -> 0 [ label="required"]
     7 -> 6 [ label="required"]
     9 -> 5 [ label="required"]
@@ -32,4 +29,8 @@ digraph {
     8 -> 7 [ label="required"]
     8 -> 2 [ label="required"]
     8 -> 9 [ label="required"]
+    3 -> 1 [ label="required"]
+    3 -> 5 [ label="required"]
+    3 -> 4 [ label="required"]
+    5 -> 1 [ label="required"]
 }

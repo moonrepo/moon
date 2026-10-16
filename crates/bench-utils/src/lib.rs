@@ -1,3 +1,6 @@
+mod generator;
+
+pub use generator::*;
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
 use std::fs;
 

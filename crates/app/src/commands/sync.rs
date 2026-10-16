@@ -1,7 +1,7 @@
 use crate::helpers::run_action_pipeline;
 use crate::session::{MoonSession, SessionResult};
 use iocraft::prelude::element;
-use moon_action_graph::{ActionGraphBuilderOptions, RunRequirements};
+use moon_action_graph::{ActionGraphBuilderOptions, BuildOutput, RunRequirements};
 use moon_console::ui::{Container, Notice, StyledText, Variant};
 
 pub use crate::commands::syncs::SyncCommands;
@@ -11,23 +11,25 @@ pub async fn sync(session: MoonSession) -> SessionResult {
     let mut action_graph_builder = session
         .build_action_graph_with_options(ActionGraphBuilderOptions::default())
         .await?;
-    let reqs = RunRequirements::default();
 
-    action_graph_builder.sync_workspace().await?;
+    action_graph_builder.set_requirements(RunRequirements::default());
+    action_graph_builder.sync_workspace();
 
     for project in workspace_graph.get_projects()? {
-        action_graph_builder.sync_project(&project, &reqs).await?;
+        action_graph_builder.sync_project(&project);
 
         for task in workspace_graph.get_tasks_from_project(&project.id)? {
             if task.options.run_in_sync_phase {
-                action_graph_builder
-                    .run_task(task.as_ref(), &RunRequirements::default())
-                    .await?;
+                action_graph_builder.run_task(task.as_ref());
             }
         }
     }
 
-    let (action_context, action_graph) = action_graph_builder.build();
+    let BuildOutput {
+        context: action_context,
+        graph: action_graph,
+        ..
+    } = action_graph_builder.build().await?;
 
     run_action_pipeline(&session, action_context, action_graph, None).await?;
 

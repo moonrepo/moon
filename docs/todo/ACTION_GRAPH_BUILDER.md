@@ -6,9 +6,9 @@ produces the same nodes and edges under the same conditions. Written on 2026-10-
 
 [docs/ACTION_GRAPH.md](../ACTION_GRAPH.md) is the specification of the nodes, edges, and conditions
 that must be preserved, and this plan doesn't repeat it. Estimates are marked as such. The phase 0
-decisions were made on 2026-10-15 (see [Decisions](#decisions)), and phase 1 (the harness, run
-against the current builder) was done the same day (see [Baseline](#baseline)). The new builder
-hasn't been started.
+decisions were made on 2026-10-15 (see [Decisions](#decisions)). Phases 1 and 2 were done the same
+day: the harness, run against the current builder (see [Baseline](#baseline)), and the new builder's
+task stages (see [Phase 2 results](#phase-2-results)).
 
 ## Summary
 
@@ -247,15 +247,20 @@ enum NodeKey {
 - `SyncProject → SyncProject` edges are computed from the full set of synced projects, production
   and peer edges first, then the other scopes in sorted order, skipping any that would close a cycle
   (decisions 1 and 2).
-- Nodes are added in a documented, deterministic order (by stage, then key), so node indices no
-  longer depend on how a command made its requests.
+- Task nodes are added in discovery order: requests in the order they were made, then each task's
+  dependencies, depth first, with a task before its dependencies. That's the order the current
+  builder inserts them in, so a build with only tasks has the same node indices. Where provisioning
+  nodes go is decided in phase 3.
+- Relations are added in the order the current builder links them (a task's requirements once its
+  dependencies have been visited, then its cleanups), so a cycle is reported for the same edge.
 
 ### Stage 4: order and validate
 
 1. **Serial edges** are computed against the assembled graph: walk each dependency's subtree over
    `Required` edges between `RunTask` nodes, and add edges to the anchor, in chain order. An edge
    that would cycle is skipped. Since every real edge already exists, nothing is ever removed
-   (decision 3).
+   (decision 3). Serial links are applied in the order the current builder makes them, and the
+   subtree walk skips serial, present dependency, cleanup, and wait edges.
 2. **Preference edges** (serial, required environments, and requirement edges that would close a
    requirement cycle, per decision 4) are the only ones that may be skipped. Any other cycle is an
    error, reported as `WouldCycle` for the first edge that closes it, with the cycle chain appended
@@ -265,10 +270,15 @@ enum NodeKey {
 
 ### Module layout
 
-`crates/action-graph/src/builder/`: `mod.rs` (requests and the public API), `select.rs`,
-`resolve.rs`, `assemble.rs`, `order.rs`, and `report.rs`. Estimated 1,600 to 2,000 lines, with most
-of the reduction coming from dropping repair logic (serial edge removal, deferred linking, cycle
-sets, and mixed reuse rules). This is an estimate.
+`crates/action-graph/src/builder/`: `mod.rs` (requests, the public API, the report, and the
+context), `select.rs` (stage 1), `assemble.rs` (stages 3 and 4), and `resolve.rs` (stage 2, in phase
+3).
+
+The original estimate of 1,600 to 2,000 lines for the whole builder was low: phase 2 alone is 1,781
+lines with doc comments, about a third of which is the task resolution logic, ported as is. The full
+builder will likely be about the size of the current one (an estimate). The gain is structure and
+determinism, not size: no repair logic (serial edge removal, deferred linking, cycle sets, or mixed
+reuse rules), no recursion, and no graph mutation while selecting.
 
 ## Verification
 
@@ -285,7 +295,9 @@ sets, and mixed reuse rules). This is an estimate.
    every test in
    [action_graph_builder_test.rs](../../crates/action-graph/tests/action_graph_builder_test.rs) (224
    tests, 114 snapshots) also runs in a differential mode that asserts both builders produce the
-   same canonical form, except for the documented decisions.
+   same canonical form, except for the documented decisions. Phase 2 added the comparison as its own
+   test (see [Phase 2 results](#phase-2-results)). Running the integration tests in a differential
+   mode comes with the switch.
 3. **Snapshots and `topo` assertions.** Node indices change with the new insertion order, which
    changes every dot snapshot and many `topo()` vectors, even for identical graphs. Snapshots are
    regenerated once, at the switch, and accepted only where the differential harness proves the
@@ -316,7 +328,8 @@ sets, and mixed reuse rules). This is an estimate.
 1. **Harness.** The canonical form, benchmark, and generator, run against the current builder only,
    as a baseline. Done on 2026-10-15, see [Baseline](#baseline).
 2. **Tasks.** Stages 1, 3, and 4 for tasks only, behind a separate type, with the harness comparing
-   the task subgraph (task nodes and the edges between them).
+   the task subgraph (task nodes and the edges between them). Done on 2026-10-15, see
+   [Phase 2 results](#phase-2-results).
 3. **Provisioning.** Stage 2, and project sync, with the harness comparing full graphs.
 4. **Switch.** Move the commands, MCP, and test utilities to the request API, regenerate snapshots
    (reviewed against the harness), and update ACTION_GRAPH.md.
@@ -377,13 +390,68 @@ sync, and installs disabled), `ci` (plain, deep affected depth and dependents, a
 - A coverage check fails a shard if its seeds stop producing any of: every node type, dependency
   variants, a dependencies workspace (members), cleanup and wait edges, requirement edges between
   `SetupEnvironment` and between `SetupToolchain` nodes, `SyncProject` dependency edges, affected
-  marks, ignored dependencies, and passthrough target states. Across the 208 graphs of one shard
-  (16 seeds), 274 task nodes shared their label with another node (dependency variants), and there
-  were 1,196 `SyncProject → SyncProject` edges.
+  marks, ignored dependencies, and passthrough target states. Across the 208 graphs of one shard (16
+  seeds), 274 task nodes shared their label with another node (dependency variants), and there were
+  1,196 `SyncProject → SyncProject` edges.
 - The suite takes about 25 seconds alone. Most of it is loading and dropping the toolchain plugins
   once per seed: dropping compiled plugins is slow on macOS (wasmtime deregisters the unwind info of
   every function), so each seed shares one plugin registry between its workspace graph and its
   builds.
+
+## Phase 2 results
+
+Done on 2026-10-15. The new builder is
+[`builder::ActionGraphBuilder`](../../crates/action-graph/src/builder/mod.rs), which isn't used by
+any command yet. Until phase 3, it produces the task subgraph only: the graph that the current
+builder produces when every builder option is disabled.
+
+### What was built
+
+- **Requests** ([mod.rs](../../crates/action-graph/src/builder/mod.rs)): `run_tasks`,
+  `run_tasks_with_plan`, `run_task`, `run_task_by_target`, and `run_task_by_target_locator` record
+  requests and return a `RequestId`. `set_requirements`, `set_query`, `set_changed_files`, and
+  `track_affected` configure the build, and `mock_affected` replaces the tracker in tests.
+  `build().await` returns the graph, the context, and a `BuildReport` (each request's partition or
+  nodes).
+- **Stage 1** ([select.rs](../../crates/action-graph/src/builder/select.rs)): a port of the current
+  task insertion, with the same gates in the same order, and the same affected calls. Dependencies
+  are walked with an explicit stack instead of async recursion, so deep chains no longer overflow
+  the stack. It records instances, relations, serial links, and context data, without creating nodes
+  or edges.
+- **Stages 3 and 4** ([assemble.rs](../../crates/action-graph/src/builder/assemble.rs)): nodes, then
+  relations (a cycle is an error), then present dependencies (a cycle is a warning), then serial
+  edges (a cycle is skipped), then freezing into an `ActionGraph`.
+- **Decision 8**: `ActionGraphError::WouldCycle` gained an optional `cycle` help field, which the
+  new builder fills with the whole cycle. The current builder passes `None`, so its errors don't
+  change.
+- `TargetsBlock` derives `Clone` and `Debug`, so that plan requests can be stored.
+
+### Comparison
+
+[action_graph_differential_test.rs](../../crates/action-graph/tests/action_graph_differential_test.rs)
+builds the same requests with both builders (every option disabled for the current one), and
+compares their canonical forms, including the context and partition, and error messages when both
+fail:
+
+| Comparison     | Workspaces                                                               | Requests                                                                                                                                                                                                            | Result    |
+| :------------- | :----------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :-------- |
+| Generated      | 64 seeds (4 shards)                                                      | 11 shapes: `run`, `ci`, `run --affected`, `ci` with deep affected depth and dependents, `ci --job`, a partitioned plan, `check --interactive`, `--no-deps`, `--query`, `action-graph`, and `action-graph <targets>` | identical |
+| Fixtures       | 14 fixtures (all but `tasks-ci-mismatch`, which fails to load by design) | the same 11 shapes                                                                                                                                                                                                  | identical |
+| Request orders | the serial and `dep-types` fixtures                                      | every ordered pair of tasks, and every task in reverse order, with and without dependencies                                                                                                                         | identical |
+
+Disabling serial ordering in the new builder makes every comparison fail (32 to 239 differences per
+test), so the comparisons are sensitive to real differences.
+
+### Findings
+
+- **Decision 3** (serial edges added last, skipping conflicts) produced no differences in any
+  compared case, including every request order of the `serial-conflict` fixture.
+- **Decision 7** (union semantics for the persistent gate) holds: the gates run in the same order,
+  and produce the same graphs.
+- **The stack overflow is fixed** for the new builder: a chain of 1,000 projects builds on a test
+  thread (2MB stack).
+- **Not compared yet**: provisioning and sync nodes, and the decisions about them (1, 2, 4, 5, and
+  9), which come with phase 3.
 
 ## Risks
 

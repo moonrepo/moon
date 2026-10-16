@@ -1893,6 +1893,7 @@ impl<'query> ActionGraphBuilder<'query> {
             return Err(ActionGraphError::WouldCycle {
                 source_action: self.graph.node_weight(from).unwrap().label(),
                 target_action: self.graph.node_weight(to).unwrap().label(),
+                cycle: None,
             }
             .into());
         }

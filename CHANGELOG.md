@@ -260,6 +260,9 @@
   when the toolchain also sets up an environment.
 - Fixed an issue where building the action graph would overflow the stack for very deep chains of
   task or project dependencies (around 1,000 deep).
+- Fixed an issue where `moon ci --job` would run every task in a job whose share of the tasks
+  started past the end, like the last jobs when there were fewer (affected) tasks than jobs, instead
+  of running nothing.
 
 #### ⚙️ Internal
 

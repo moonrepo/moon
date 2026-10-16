@@ -491,21 +491,19 @@ impl<'query> TaskSelector<'query> {
             }
 
             let job_size = candidates.len().div_ceil(job_total);
-            let (start, stop) = if job_index == 0 {
-                (0, job_size)
-            } else if job_index == job_total - 1 {
-                (job_size * job_index, candidates.len())
-            } else {
-                (job_size * job_index, job_size * (job_index + 1))
-            };
 
-            if candidates.get(start).is_some() {
-                if candidates.get(stop).is_some() {
-                    candidates = candidates[start..stop].to_vec();
-                } else {
-                    candidates = candidates[start..].to_vec();
-                }
-            }
+            // The last jobs can start past the end (10 candidates over 6 jobs
+            // leaves the last one empty), and must then run nothing, instead of
+            // every candidate
+            let stop = if job_index == job_total - 1 {
+                candidates.len()
+            } else {
+                (job_size * (job_index + 1)).min(candidates.len())
+            };
+            let start = (job_size * job_index).min(stop);
+
+            candidates.truncate(stop);
+            candidates.drain(..start);
 
             size = Some(job_size);
         }

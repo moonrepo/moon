@@ -2,7 +2,9 @@ mod utils;
 
 use moon_action::*;
 use moon_action_context::{ActionContext, TargetState};
-use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, BuildOutput, RunRequirements};
+use moon_action_graph::{
+    ActionGraph, ActionGraphBuilderOptions, BuildOutput, RunPartition, RunRequirements,
+};
 use moon_affected::AffectedBy;
 use moon_common::{Id, path::WorkspaceRelativePathBuf};
 use moon_config::{
@@ -13,9 +15,11 @@ use moon_exec_plan::{ExecutionPlan, GraphBlock, TargetsBlock};
 use moon_graph_utils::*;
 use moon_task::{Target, TargetLocator, Task, TaskFileInput};
 use moon_toolchain::ToolchainSpec;
+use moon_workspace_graph::WorkspaceGraph;
 use petgraph::graph::NodeIndex;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{assert_snapshot, create_sandbox};
+use std::sync::Arc;
 use utils::ActionGraphContainer;
 
 fn create_task(project: &str, id: &str) -> Task {
@@ -5248,6 +5252,119 @@ mod action_graph_builder {
 
             assert_eq!(context.primary_targets.len(), 2);
             assert_snapshot!(graph.to_dot());
+        }
+
+        async fn run_job(
+            container: &mut ActionGraphContainer,
+            wg: &Arc<WorkspaceGraph>,
+            job: usize,
+            job_total: usize,
+        ) -> RunPartition {
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            builder.set_requirements(RunRequirements {
+                job: Some(job),
+                job_total: Some(job_total),
+                ..Default::default()
+            });
+
+            let request =
+                builder.run_tasks(vec![TargetLocator::parse("partition:task-*").unwrap()]);
+
+            builder
+                .build()
+                .await
+                .unwrap()
+                .report
+                .take_partition(request)
+                .unwrap()
+        }
+
+        // The last jobs can start past the end of the candidates (10 over 6
+        // jobs leaves the last one empty), and must then run nothing
+        #[tokio::test(flavor = "multi_thread")]
+        async fn partitions_every_candidate_into_one_job() {
+            let sandbox = create_sandbox("tasks");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+            let wg = container.create_workspace_graph().await;
+
+            let mut expected = (1..=10)
+                .map(|i| format!("partition:task-{i}"))
+                .collect::<Vec<_>>();
+            expected.sort();
+
+            for job_total in [1, 3, 4, 6, 9, 10, 12] {
+                let mut targets = vec![];
+
+                for job in 0..job_total {
+                    let partition = run_job(&mut container, &wg, job, job_total).await;
+                    let size = partition.size.unwrap();
+
+                    assert!(
+                        partition.targets.len() <= size,
+                        "job {job} of {job_total} has {} targets, more than {size}",
+                        partition.targets.len()
+                    );
+
+                    targets.extend(
+                        partition
+                            .targets
+                            .into_values()
+                            .map(|target| target.to_string()),
+                    );
+                }
+
+                targets.sort();
+
+                assert_eq!(targets, expected, "{job_total} jobs");
+            }
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn partitions_more_jobs_than_candidates() {
+            let sandbox = create_sandbox("tasks");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+            let wg = container.create_workspace_graph().await;
+
+            for job in 0..12 {
+                let partition = run_job(&mut container, &wg, job, 12).await;
+
+                assert_eq!(partition.size, Some(1));
+                assert_eq!(partition.targets.len(), usize::from(job < 10), "job {job}");
+            }
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn partitions_no_candidates() {
+            let sandbox = create_sandbox("tasks");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+            let wg = container.create_workspace_graph().await;
+
+            for job in 0..3 {
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                // Nothing changed, so nothing is affected
+                builder.set_changed_files(FxHashSet::default());
+                builder.track_affected(Depth::Deep, false);
+                builder.set_requirements(RunRequirements {
+                    job: Some(job),
+                    job_total: Some(3),
+                    ..Default::default()
+                });
+
+                let request =
+                    builder.run_tasks(vec![TargetLocator::parse("partition:task-*").unwrap()]);
+                let partition = builder
+                    .build()
+                    .await
+                    .unwrap()
+                    .report
+                    .take_partition(request)
+                    .unwrap();
+
+                assert_eq!(partition.size, Some(0));
+                assert!(partition.targets.is_empty(), "job {job}");
+            }
         }
     }
 

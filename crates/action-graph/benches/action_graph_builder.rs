@@ -1,7 +1,5 @@
 use criterion::{BatchSize, BenchmarkId, Criterion, criterion_group, criterion_main};
-use moon_action_graph::ActionGraphBuilder as NewActionGraphBuilder;
-use moon_action_graph::legacy::ActionGraphBuilder;
-use moon_action_graph::{ActionGraphBuilderOptions, RunRequirements};
+use moon_action_graph::{ActionGraphBuilder, ActionGraphBuilderOptions, RunRequirements};
 use moon_app_context::AppContext;
 use moon_bench_utils::{create_chained_workspace, create_simple_workspace};
 use moon_common::{is_ci, is_local};
@@ -11,12 +9,13 @@ use starbase_sandbox::Sandbox;
 use std::sync::Arc;
 use tokio::runtime::{Builder, Runtime};
 
-// The current builder recurses (through boxed futures) once per task dependency
-// and project dependency, which overflows the 8MB stack of the main thread for
-// the 1000 project chain (900 still fits). So every build is spawned onto a
-// runtime worker with a larger stack, instead of being polled on the main thread
-// by `block_on`. That measures 9% to 32% slower (the most for the smallest
-// cases), but measures every builder, and every workspace size, the same way
+// The previous builder recursed (through boxed futures) once per task dependency
+// and project dependency, which overflowed the stack for the 1000 project chain,
+// so every build was spawned onto a runtime worker with a larger stack, instead
+// of being polled on the main thread by `block_on`. The current builder doesn't
+// need it, but builds are still spawned the same way, so that results remain
+// comparable with the ones in docs/todo/ACTION_GRAPH_BUILDER.md. Spawning
+// measures 9% to 32% slower (the most for the smallest cases)
 const WORKER_STACK_SIZE: usize = 256 * 1024 * 1024;
 
 fn create_runtime() -> Runtime {
@@ -89,45 +88,6 @@ fn bench_run_tasks(c: &mut Criterion, group_name: &str, max: u16, sandbox: Sandb
             |(app_context, graph, locators)| async move {
                 tokio::spawn(async move {
                     let mut builder = ActionGraphBuilder::new(
-                        app_context,
-                        graph,
-                        ActionGraphBuilderOptions::default(),
-                    )
-                    .unwrap();
-
-                    builder
-                        .run_tasks(
-                            locators,
-                            RunRequirements {
-                                ci: false,
-                                ..Default::default()
-                            },
-                        )
-                        .await
-                        .unwrap();
-
-                    builder.build()
-                })
-                .await
-                .unwrap()
-            },
-            BatchSize::SmallInput,
-        )
-    });
-
-    // The same, with the new builder (see docs/todo/ACTION_GRAPH_BUILDER.md)
-    group.bench_function(id(max, "new_run_tasks"), |b| {
-        b.to_async(&runtime).iter_batched(
-            || {
-                (
-                    Arc::clone(&app_context),
-                    Arc::clone(&graph),
-                    locators.clone(),
-                )
-            },
-            |(app_context, graph, locators)| async move {
-                tokio::spawn(async move {
-                    let mut builder = NewActionGraphBuilder::new(
                         app_context,
                         graph,
                         ActionGraphBuilderOptions::default(),

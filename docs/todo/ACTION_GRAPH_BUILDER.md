@@ -2,7 +2,8 @@
 
 A plan for replacing the action graph builder with a new implementation, written from scratch, that
 produces the same nodes and edges under the same conditions. Written on 2026-10-15 against
-`3.0-ag-new` at `20de2c6867`. Line references are as of that commit, and will drift.
+`3.0-ag-new` at `20de2c6867`. Line references are as of that commit, and will drift. Links to the
+previous builder are permalinks to that commit, as phase 5 deleted it.
 
 [docs/ACTION_GRAPH.md](../ACTION_GRAPH.md) is the specification of the nodes, edges, and conditions
 that must be preserved, and this plan doesn't repeat it. Estimates are marked as such. The phase 0
@@ -10,18 +11,20 @@ decisions were made on 2026-10-15 (see [Decisions](#decisions)). Phases 1 and 2 
 day: the harness, run against the current builder (see [Baseline](#baseline)), and the new builder's
 task stages (see [Phase 2 results](#phase-2-results)). Phase 3, provisioning and project syncs, was
 done on 2026-10-16 (see [Phase 3 results](#phase-3-results)), which completes the new builder. Phase
-4, the switch, was done the same day (see [Phase 4 results](#phase-4-results)): every command uses
-the new builder, and the previous one remains only for the differential tests, until phase 5.
+4, the switch, and phase 5, deleting the previous builder, were done the same day (see
+[Phase 4 results](#phase-4-results) and [Phase 5 results](#phase-5-results)). Only phase 6, a
+separate follow-up, remains.
 
 ## Summary
 
 The current builder
-([action_graph_builder.rs](../../crates/action-graph/src/action_graph_builder.rs)) is one struct of
-about 2,200 lines (excluding tests) that interleaves task selection, gating, plugin queries, node
-creation, edge linking, and edge repair, while inserting nodes one at a time. Much of its complexity
-exists to make insertion order not matter: affected state is tracked up front, `--no-dependencies`
-edges are linked at the end, serial edges are removed when a later dependency contradicts them,
-recursion carries path-local cycle sets, and some node types re-link on reuse while others don't.
+([action_graph_builder.rs](https://github.com/moonrepo/moon/blob/20de2c686770d6e833c7252d5eaccd1751d3cc0d/crates/action-graph/src/action_graph_builder.rs))
+is one struct of about 2,200 lines (excluding tests) that interleaves task selection, gating, plugin
+queries, node creation, edge linking, and edge repair, while inserting nodes one at a time. Much of
+its complexity exists to make insertion order not matter: affected state is tracked up front,
+`--no-dependencies` edges are linked at the end, serial edges are removed when a later dependency
+contradicts them, recursion carries path-local cycle sets, and some node types re-link on reuse
+while others don't.
 
 The new builder takes declarative requests, and builds in 4 stages with explicit intermediate data:
 
@@ -38,29 +41,30 @@ workspaces, against both builders, and compares canonical graphs.
 ## Why rewrite
 
 1. **One struct, many jobs.**
-   [The builder's fields](../../crates/action-graph/src/action_graph_builder.rs#L147) hold affected
-   tracking, the query, changed files, deferred `--no-dependencies` work, ignored dependencies,
-   passthrough and primary targets, serial edge bookkeeping, and cleanup and wait targets, all
-   mutated during insertion.
+   [The builder's fields](https://github.com/moonrepo/moon/blob/20de2c686770d6e833c7252d5eaccd1751d3cc0d/crates/action-graph/src/action_graph_builder.rs#L147)
+   hold affected tracking, the query, changed files, deferred `--no-dependencies` work, ignored
+   dependencies, passthrough and primary targets, serial edge bookkeeping, and cleanup and wait
+   targets, all mutated during insertion.
 2. **Insertion order leaks into the result**, and is compensated for in 5 places:
    - affected state is tracked before insertion
-     ([`track_affected`](../../crates/action-graph/src/action_graph_builder.rs#L342),
-     [`run_tasks`](../../crates/action-graph/src/action_graph_builder.rs#L630)), as marking lazily
-     starved transitive dependents;
+     ([`track_affected`](https://github.com/moonrepo/moon/blob/20de2c686770d6e833c7252d5eaccd1751d3cc0d/crates/action-graph/src/action_graph_builder.rs#L342),
+     [`run_tasks`](https://github.com/moonrepo/moon/blob/20de2c686770d6e833c7252d5eaccd1751d3cc0d/crates/action-graph/src/action_graph_builder.rs#L630)),
+     as marking lazily starved transitive dependents;
    - `--no-dependencies` edges are deferred to `build()`
-     ([`link_present_dependencies`](../../crates/action-graph/src/action_graph_builder.rs#L1702));
+     ([`link_present_dependencies`](https://github.com/moonrepo/moon/blob/20de2c686770d6e833c7252d5eaccd1751d3cc0d/crates/action-graph/src/action_graph_builder.rs#L1702));
    - serial edges are skipped when they'd cycle
-     ([`try_link_edge`](../../crates/action-graph/src/action_graph_builder.rs#L2184)), and removed
-     newest-first when a later dependency contradicts them
-     ([`unlink_serial_edges`](../../crates/action-graph/src/action_graph_builder.rs#L2131));
-   - [`internal_setup_toolchain`](../../crates/action-graph/src/action_graph_builder.rs#L1527),
-     [`internal_setup_environment`](../../crates/action-graph/src/action_graph_builder.rs#L1362),
-     and [`internal_sync_project`](../../crates/action-graph/src/action_graph_builder.rs#L1622)
+     ([`try_link_edge`](https://github.com/moonrepo/moon/blob/20de2c686770d6e833c7252d5eaccd1751d3cc0d/crates/action-graph/src/action_graph_builder.rs#L2184)),
+     and removed newest-first when a later dependency contradicts them
+     ([`unlink_serial_edges`](https://github.com/moonrepo/moon/blob/20de2c686770d6e833c7252d5eaccd1751d3cc0d/crates/action-graph/src/action_graph_builder.rs#L2131));
+   - [`internal_setup_toolchain`](https://github.com/moonrepo/moon/blob/20de2c686770d6e833c7252d5eaccd1751d3cc0d/crates/action-graph/src/action_graph_builder.rs#L1527),
+     [`internal_setup_environment`](https://github.com/moonrepo/moon/blob/20de2c686770d6e833c7252d5eaccd1751d3cc0d/crates/action-graph/src/action_graph_builder.rs#L1362),
+     and
+     [`internal_sync_project`](https://github.com/moonrepo/moon/blob/20de2c686770d6e833c7252d5eaccd1751d3cc0d/crates/action-graph/src/action_graph_builder.rs#L1622)
      carry path-local cycle sets;
    - node reuse is inconsistent:
-     [`insert_node_if_missing!`](../../crates/action-graph/src/action_graph_builder.rs#L30) re-links
-     edges, `insert_node_or_exit!` doesn't, so `SyncProject` edges are still decided by whichever
-     caller reached the project first.
+     [`insert_node_if_missing!`](https://github.com/moonrepo/moon/blob/20de2c686770d6e833c7252d5eaccd1751d3cc0d/crates/action-graph/src/action_graph_builder.rs#L30)
+     re-links edges, `insert_node_or_exit!` doesn't, so `SyncProject` edges are still decided by
+     whichever caller reached the project first.
 3. **Plugin calls are interleaved with graph mutation.** Every insertion awaits plugin functions
    (`locate_dependencies_root`, `define_requirements`, `has_func`, tier checks) while holding
    `&mut self`, through `Box::pin` async recursion. Results are memoized per input
@@ -342,7 +346,7 @@ reuse rules), no recursion, and no graph mutation while selecting.
 4. **Switch.** Move the commands, MCP, and test utilities to the request API, regenerate snapshots
    (reviewed against the harness), and update ACTION_GRAPH.md. Done on 2026-10-16, see
    [Phase 4 results](#phase-4-results).
-5. **Delete** the current builder.
+5. **Delete** the current builder. Done on 2026-10-16, see [Phase 5 results](#phase-5-results).
 6. **Follow-up:** store the built graph directly as `DiGraph<ActionNode, TaskDependencyType>`, which
    touches the action pipeline (`job_dispatcher.rs`, `action_pipeline.rs`), the `action-graph`
    command, and the graph traits. Decided: a separate change, after the switch. The `ActionGraph`
@@ -437,10 +441,10 @@ builder produces when every builder option is disabled.
 
 ### Comparison
 
-[action_graph_differential_test.rs](../../crates/action-graph/tests/action_graph_differential_test.rs)
-builds the same requests with both builders (every option disabled for the current one), and
-compares their canonical forms, including the context and partition, and error messages when both
-fail:
+[action_graph_differential_test.rs](https://github.com/moonrepo/moon/blob/64b2db9817c0868b343fd0b2a229e8c6f8f66d8f/crates/action-graph/tests/action_graph_differential_test.rs)
+(deleted in phase 5) builds the same requests with both builders (every option disabled for the
+current one), and compares their canonical forms, including the context and partition, and error
+messages when both fail:
 
 | Comparison     | Workspaces                                                               | Requests                                                                                                                                                                                                            | Result    |
 | :------------- | :----------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :-------- |
@@ -539,9 +543,9 @@ cycle check, instead of one search per edge.
 
 Done on 2026-10-16.
 
-- **API**: `moon_action_graph::ActionGraphBuilder` is the new builder. The previous one is
+- **API**: `moon_action_graph::ActionGraphBuilder` is the new builder. The previous one was kept as
   `moon_action_graph::legacy::ActionGraphBuilder`, used only by the differential test and the
-  benchmark. The shared types (`RunRequirements`, `RunPartition`, `TaskOrigin`, and
+  benchmark, until phase 5. The shared types (`RunRequirements`, `RunPartition`, `TaskOrigin`, and
   `ActionGraphBuilderOptions`) moved to
   [action_graph_options.rs](../../crates/action-graph/src/action_graph_options.rs), so phase 5 only
   deletes the legacy builder's file.
@@ -562,6 +566,25 @@ Done on 2026-10-16.
   linked last. Two tests that compared edge lists in order now sort them.
 - **Docs**: [ACTION_GRAPH.md](../ACTION_GRAPH.md) describes the new builder, and the changelog has
   the visible changes (decisions 1, 2, and 8, the speedup, and the stack overflow fix).
+
+## Phase 5 results
+
+Done on 2026-10-16.
+
+- **Deleted**: the previous builder (`action_graph_builder.rs`, 2,383 lines), its `legacy` module,
+  and the differential test (1,017 lines), which needs both builders. Its job ended at the switch:
+  the builder tests, their snapshots, and the invariant test now guard the new builder.
+- **Ported tests**: two unit tests that only existed in the previous builder's file, for the path
+  sets that guard against cycles, now run against the new builder:
+  `setup_toolchain::keeps_requirements_path_local_across_siblings` (two toolchains that both require
+  `tc-tier3` each link to its setup), and
+  `sync_project::keeps_dependencies_path_local_across_siblings` (two projects that both depend on
+  `baz` each link to its sync).
+- **Benchmark**: only the new builder is measured, under the previous builder's `run_tasks` name, so
+  that CodSpeed compares it with the history of the previous one. Builds are still spawned onto a
+  worker, so that the numbers stay comparable with the tables above.
+- **Docs**: links to the deleted files in this plan, [TOOLCHAIN_REQS.md](./TOOLCHAIN_REQS.md), and
+  [AFFECTED.md](./AFFECTED.md) are permalinks to the commits they were written against.
 
 ## Risks
 

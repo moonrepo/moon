@@ -77,17 +77,17 @@ locates a root it already knows which package manager (and runtime) the root bel
    That's reverse inference: a task that uses `node` gets `javascript` and its package manager.
    Flags are ignored.
 3. **Toolchain setup ordering.**
-   [`internal_setup_toolchain`](../../crates/action-graph/src/action_graph_builder.rs#L1527) links
-   `SetupToolchain(self) → SetupToolchain(required)` when `for_setup_toolchain` is set
-   ([loop](../../crates/action-graph/src/action_graph_builder.rs#L1561)).
+   [`internal_setup_toolchain`](https://github.com/moonrepo/moon/blob/20de2c686770d6e833c7252d5eaccd1751d3cc0d/crates/action-graph/src/action_graph_builder.rs#L1527)
+   links `SetupToolchain(self) → SetupToolchain(required)` when `for_setup_toolchain` is set
+   ([loop](https://github.com/moonrepo/moon/blob/20de2c686770d6e833c7252d5eaccd1751d3cc0d/crates/action-graph/src/action_graph_builder.rs#L1561)).
 4. **Environment setup ordering and delegation.**
-   [`internal_setup_environment`](../../crates/action-graph/src/action_graph_builder.rs#L1362)
-   ([loop](../../crates/action-graph/src/action_graph_builder.rs#L1397)):
+   [`internal_setup_environment`](https://github.com/moonrepo/moon/blob/20de2c686770d6e833c7252d5eaccd1751d3cc0d/crates/action-graph/src/action_graph_builder.rs#L1362)
+   ([loop](https://github.com/moonrepo/moon/blob/20de2c686770d6e833c7252d5eaccd1751d3cc0d/crates/action-graph/src/action_graph_builder.rs#L1397)):
    - with `for_setup_environment`, links `SetupEnvironment(self) → SetupToolchain(required)`;
    - **regardless of the flags**, links `SetupEnvironment(self) → SetupEnvironment(required)`, in
      this toolchain's root, via
-     [`link_environment_edges`](../../crates/action-graph/src/action_graph_builder.rs#L1948), which
-     skips an edge that would cycle. This is what makes `node-depman`'s and `deno`'s
+     [`link_environment_edges`](https://github.com/moonrepo/moon/blob/20de2c686770d6e833c7252d5eaccd1751d3cc0d/crates/action-graph/src/action_graph_builder.rs#L1948),
+     which skips an edge that would cycle. This is what makes `node-depman`'s and `deno`'s
      `setup_environment` run at all, as they never get a root of their own.
 
 [docs/ACTION_GRAPH.md](../ACTION_GRAPH.md) describes the resulting edges in detail.
@@ -268,8 +268,8 @@ working. Remove the fallback in a later major.
 - `crates/action-graph/src/action_graph_builder.rs`: `internal_setup_toolchain`,
   `internal_setup_environment`, `internal_install_dependencies`, and `link_environment_edges`
   (likely removed). The unit tests `keeps_toolchain_requirements_path_local_across_siblings`
-  ([L2345](../../crates/action-graph/src/action_graph_builder.rs#L2345)) and the `setup_env`
-  requirement tests in `crates/action-graph/tests/action_graph_builder_test.rs`
+  ([L2345](https://github.com/moonrepo/moon/blob/20de2c686770d6e833c7252d5eaccd1751d3cc0d/crates/action-graph/src/action_graph_builder.rs#L2345))
+  and the `setup_env` requirement tests in `crates/action-graph/tests/action_graph_builder_test.rs`
   (`*_required_toolchain_environments*`,
   `doesnt_link_required_toolchain_environments_that_would_cycle`) encode current behavior and will
   need revisiting.

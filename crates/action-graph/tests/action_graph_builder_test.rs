@@ -6092,6 +6092,30 @@ mod action_graph_builder {
     mod setup_toolchain {
         use super::*;
 
+        // Both require `tc-tier3`, so a sibling must still link to it, even
+        // though it was already setup through the other one
+        #[tokio::test(flavor = "multi_thread")]
+        async fn keeps_requirements_path_local_across_siblings() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            builder.setup_toolchain(&create_tier_spec_with_name("tc-tier3-reqs"), None);
+            builder.setup_toolchain(&create_tier_spec_with_name("tc-tier2-reqs"), None);
+
+            let graph = builder.build().await.unwrap().graph;
+
+            assert!(
+                graph
+                    .dependencies_of(&ActionNode::setup_toolchain(SetupToolchainNode {
+                        toolchain: create_tier_spec_with_name("tc-tier2-reqs"),
+                    }))
+                    .contains(&"SetupToolchain(tc-tier3:1.2.3)".to_owned())
+            );
+        }
+
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_graph_if_tier1() {
             let sandbox = create_sandbox("projects");
@@ -6435,6 +6459,38 @@ mod action_graph_builder {
 
     mod sync_project {
         use super::*;
+
+        // Both depend on `baz`, so a sibling must still link to it, even
+        // though it was already synced through the other one
+        #[tokio::test(flavor = "multi_thread")]
+        async fn keeps_dependencies_path_local_across_siblings() {
+            let sandbox = create_sandbox("projects");
+
+            sandbox.create_file("foo/moon.yml", "dependsOn: [bar, qux]\n");
+            sandbox.create_file("bar/moon.yml", "dependsOn: [baz]\nlanguage: javascript\n");
+            sandbox.create_file(
+                "qux/moon.yml",
+                "dependsOn: [baz]\nlanguage: rust\n\ntoolchains:\n  rust:\n    version: '1.90.0'\n",
+            );
+
+            let mut container = ActionGraphContainer::new(sandbox.path());
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            builder.set_requirements(RunRequirements::default());
+            builder.sync_project(&wg.get_project("bar").unwrap());
+            builder.sync_project(&wg.get_project("qux").unwrap());
+
+            let graph = builder.build().await.unwrap().graph;
+
+            assert!(
+                graph
+                    .dependencies_of(&ActionNode::sync_project(SyncProjectNode {
+                        project_id: Id::raw("qux"),
+                    }))
+                    .contains(&"SyncProject(baz)".to_owned())
+            );
+        }
 
         #[tokio::test(flavor = "multi_thread")]
         async fn graphs_single() {

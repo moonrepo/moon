@@ -1,6 +1,7 @@
 use criterion::{BatchSize, BenchmarkId, Criterion, criterion_group, criterion_main};
-use moon_action_graph::builder::ActionGraphBuilder as NewActionGraphBuilder;
-use moon_action_graph::{ActionGraphBuilder, ActionGraphBuilderOptions, RunRequirements};
+use moon_action_graph::ActionGraphBuilder as NewActionGraphBuilder;
+use moon_action_graph::legacy::ActionGraphBuilder;
+use moon_action_graph::{ActionGraphBuilderOptions, RunRequirements};
 use moon_app_context::AppContext;
 use moon_bench_utils::{create_chained_workspace, create_simple_workspace};
 use moon_common::{is_ci, is_local};

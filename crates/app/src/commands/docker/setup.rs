@@ -24,12 +24,11 @@ pub async fn setup(session: MoonSession) -> SessionResult {
     for project_id in &manifest.focused_projects {
         let project = workspace_graph.get_project(project_id)?;
 
-        action_graph_builder
-            .install_dependencies_by_project(&project)
-            .await?;
+        action_graph_builder.install_dependencies_by_project(&project);
     }
 
-    let (action_context, action_graph) = action_graph_builder.build();
+    let output = action_graph_builder.build().await?;
+    let (action_context, action_graph) = (output.context, output.graph);
 
     run_action_pipeline(&session, action_context, action_graph, None).await?;
 

@@ -6,10 +6,9 @@
 
 mod utils;
 
-use moon_action_graph::builder::ActionGraphBuilder as NewActionGraphBuilder;
-use moon_action_graph::{
-    ActionGraphBuilder, ActionGraphBuilderOptions, RunPartition, RunRequirements,
-};
+use moon_action_graph::ActionGraphBuilder as NewActionGraphBuilder;
+use moon_action_graph::legacy::ActionGraphBuilder;
+use moon_action_graph::{ActionGraphBuilderOptions, RunPartition, RunRequirements};
 use moon_affected::Depth;
 use moon_app_context::AppContext;
 use moon_bench_utils::{create_chained_workspace, create_generated_workspace};

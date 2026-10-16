@@ -122,6 +122,14 @@
     example, the Node.js package manager and Deno toolchains implement `setup_environment` (like
     importing Yarn plugins), which never ran before, as they don't locate a dependencies root (the
     JavaScript toolchain does).
+  - Rewrote the action graph builder, which now builds the graph in stages, instead of inserting one
+    action at a time. Building the graph is 13% to 47% faster in our benchmarks, and the graphs are
+    the same, except:
+    - Project syncs now depend on the syncs of every project they depend on, instead of only the
+      ones synced when the project was first reached. When projects depend on each other across
+      scopes (like production one way, and development the other), the production and peer
+      dependencies are kept.
+    - Errors for actions that would depend on each other now describe the whole cycle.
 - **Action pipeline**
   - Reading the states of task dependencies, while hashing and running tasks, no longer takes an
     exclusive lock, which serialized tasks running concurrently.
@@ -250,6 +258,8 @@
 - Fixed an issue where projects that share a dependencies root (like members of a workspace) but
   override a toolchain's version could run tasks before their version of the toolchain was setup,
   when the toolchain also sets up an environment.
+- Fixed an issue where building the action graph would overflow the stack for very deep chains of
+  task or project dependencies (around 1,000 deep).
 
 #### ⚙️ Internal
 

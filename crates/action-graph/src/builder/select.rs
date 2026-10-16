@@ -9,10 +9,11 @@
 //! inserted and the edges are linked, and the serial ordering links.
 
 use super::RequestId;
-use crate::action_graph_builder::{RunRequirements, TaskOrigin};
 use crate::action_graph_error::ActionGraphError;
+use crate::action_graph_options::{RunRequirements, TaskOrigin};
 use moon_action::{ActionNode, RunTaskNode};
 use moon_affected::{AffectedTracker, Depth};
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{Id, color};
 use moon_config::{EnvMap, PipelineActionSwitch, TaskDependencyConfig, TaskDependencyType};
 use moon_exec_plan::TargetsBlock;
@@ -60,7 +61,10 @@ impl TaskInstanceKey {
 /// assembling, in the order the requests were made.
 #[derive(Debug)]
 pub enum ProvisionRequest {
-    InstallDependencies(Arc<Project>),
+    InstallDependencies(ToolchainSpec, Arc<Project>),
+    InstallDependenciesByProject(Arc<Project>),
+    InstallDependenciesRoot(ToolchainSpec),
+    SetupEnvironment(ToolchainSpec, WorkspaceRelativePathBuf, Arc<Project>),
     SetupProto,
     SetupToolchain(ToolchainSpec, Option<Arc<Project>>),
     /// Set up the toolchain, and when it inserted a node, the environment in
@@ -373,6 +377,26 @@ impl<'query> TaskSelector<'query> {
         Ok(())
     }
 
+    /// Run the provided task with the args and env of a dependency config, but
+    /// not as a primary target, and without its dependents.
+    #[cfg(debug_assertions)]
+    pub fn run_task_with_config(
+        &mut self,
+        id: RequestId,
+        task: &Arc<Task>,
+        config: &TaskDependencyConfig,
+        reqs: &RunRequirements,
+    ) -> miette::Result<()> {
+        let indices = self
+            .insert(task, Some(config), reqs, TaskOrigin::Requested)?
+            .into_iter()
+            .collect();
+
+        self.results.insert(id, RequestResult::Instances(indices));
+
+        Ok(())
+    }
+
     /// Run the tasks of the provided target (and their dependents).
     pub fn run_task_by_target(
         &mut self,
@@ -559,7 +583,7 @@ impl<'query> TaskSelector<'query> {
         reqs: &RunRequirements,
         origin: TaskOrigin,
     ) -> miette::Result<Option<usize>> {
-        let index = self.insert(task, reqs, origin)?;
+        let index = self.insert(task, None, reqs, origin)?;
 
         // Only primary targets that were inserted are tracked
         if index.is_some() {
@@ -575,10 +599,11 @@ impl<'query> TaskSelector<'query> {
     fn insert(
         &mut self,
         task: &Arc<Task>,
+        config: Option<&TaskDependencyConfig>,
         reqs: &RunRequirements,
         origin: TaskOrigin,
     ) -> miette::Result<Option<usize>> {
-        let (root, frame) = match self.enter(task, None, origin, reqs.skip_affected, reqs)? {
+        let (root, frame) = match self.enter(task, config, origin, reqs.skip_affected, reqs)? {
             Entry::Skipped => return Ok(None),
             Entry::Existing(index) => return Ok(Some(index)),
             Entry::New(index, frame) => (index, frame),

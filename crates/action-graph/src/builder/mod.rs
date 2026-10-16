@@ -15,7 +15,7 @@ mod assemble;
 mod select;
 
 use crate::action_graph::ActionGraph;
-use crate::action_graph_builder::{ActionGraphBuilderOptions, RunPartition, RunRequirements};
+use crate::action_graph_options::{ActionGraphBuilderOptions, RunPartition, RunRequirements};
 use moon_action_context::{ActionContext, TargetState};
 use moon_affected::{AffectedTracker, Depth};
 use moon_app_context::AppContext;
@@ -45,6 +45,8 @@ enum Request {
     RunTask(Arc<Task>),
     RunTaskByTarget(Target),
     RunTaskByTargetLocator(TargetLocator),
+    #[cfg(debug_assertions)]
+    RunTaskWithConfig(Arc<Task>, moon_config::TaskDependencyConfig),
     SyncProject(Arc<Project>),
 }
 
@@ -115,6 +117,11 @@ impl BuildReport {
     /// The primary nodes of a `run_tasks` request, and the partition size.
     pub fn partition(&self, id: RequestId) -> Option<&RunPartition> {
         self.partitions.get(&id)
+    }
+
+    /// Take ownership of the partition of a `run_tasks` request.
+    pub fn take_partition(&mut self, id: RequestId) -> Option<RunPartition> {
+        self.partitions.remove(&id)
     }
 
     /// The nodes that a request inserted, or that already existed for it.
@@ -254,10 +261,42 @@ impl ActionGraphBuilder {
         self.request(Request::RunTaskByTargetLocator(locator.as_ref().to_owned()))
     }
 
+    /// Install the dependencies of the toolchain for the project, in the
+    /// closest root (or set it up, when it doesn't install dependencies).
+    pub fn install_dependencies(&mut self, spec: &ToolchainSpec, project: &Project) -> RequestId {
+        self.request(Request::Provision(ProvisionRequest::InstallDependencies(
+            spec.to_owned(),
+            Arc::new(project.to_owned()),
+        )))
+    }
+
     /// Install the dependencies of each of the project's toolchains (or set
     /// them up, when they don't install dependencies).
     pub fn install_dependencies_by_project(&mut self, project: &Project) -> RequestId {
-        self.request(Request::Provision(ProvisionRequest::InstallDependencies(
+        self.request(Request::Provision(
+            ProvisionRequest::InstallDependenciesByProject(Arc::new(project.to_owned())),
+        ))
+    }
+
+    /// Install dependencies in the workspace root, without an associated
+    /// project, when the located dependencies root is the workspace root.
+    pub fn install_dependencies_root(&mut self, spec: &ToolchainSpec) -> RequestId {
+        self.request(Request::Provision(
+            ProvisionRequest::InstallDependenciesRoot(spec.to_owned()),
+        ))
+    }
+
+    /// Setup the environment of the toolchain in the provided root, for the
+    /// project.
+    pub fn setup_environment(
+        &mut self,
+        spec: &ToolchainSpec,
+        root: &WorkspaceRelativePathBuf,
+        project: &Project,
+    ) -> RequestId {
+        self.request(Request::Provision(ProvisionRequest::SetupEnvironment(
+            spec.to_owned(),
+            root.to_owned(),
             Arc::new(project.to_owned()),
         )))
     }
@@ -346,6 +385,10 @@ impl ActionGraphBuilder {
                 }
                 Request::RunTaskByTargetLocator(locator) => {
                     selector.run_task_by_target_locator(id, &locator, &reqs)?
+                }
+                #[cfg(debug_assertions)]
+                Request::RunTaskWithConfig(task, config) => {
+                    selector.run_task_with_config(id, &task, &config, &reqs)?
                 }
             };
         }
@@ -469,6 +512,35 @@ impl ActionGraphBuilder {
 
 #[cfg(debug_assertions)]
 impl ActionGraphBuilder {
+    /// Track affected state for the changed files, without tracking projects
+    /// up front, so that tasks and projects are only checked when inserted.
+    pub fn set_affected(&mut self) -> miette::Result<()> {
+        let changed_files = self
+            .changed_files
+            .clone()
+            .expect("Changed files are required for affected tracking.");
+
+        self.mocked_affected = Some((
+            AffectedTracker::new(Arc::clone(&self.workspace_graph), changed_files),
+            Depth::Deep,
+        ));
+
+        Ok(())
+    }
+
+    /// Run the provided task with the args and env of a dependency config, but
+    /// not as a primary target, and without its dependents.
+    pub fn run_task_with_config(
+        &mut self,
+        task: &Task,
+        config: &moon_config::TaskDependencyConfig,
+    ) -> RequestId {
+        self.request(Request::RunTaskWithConfig(
+            Arc::new(task.to_owned()),
+            config.to_owned(),
+        ))
+    }
+
     /// Track affected state with a tracker that the test marks itself.
     pub fn mock_affected(
         &mut self,

@@ -16,9 +16,10 @@ use std::sync::Arc;
 async fn run_pipeline(
     app_context: Arc<AppContext>,
     workspace_graph: Arc<WorkspaceGraph>,
-    action_graph_builder: ActionGraphBuilder<'_>,
+    action_graph_builder: ActionGraphBuilder,
 ) -> miette::Result<Vec<Action>> {
-    let (action_context, action_graph) = action_graph_builder.build();
+    let output = action_graph_builder.build().await?;
+    let (action_context, action_graph) = (output.context, output.graph);
 
     let mut pipeline = ActionPipeline::new(app_context, workspace_graph, None);
     pipeline.bail = true;
@@ -58,13 +59,9 @@ impl SyncWorkspaceTool {
                 sync_workspace: true,
                 ..Default::default()
             },
-        )
-        .map_err(map_miette_error)?;
+        );
 
-        action_graph
-            .sync_workspace()
-            .await
-            .map_err(map_miette_error)?;
+        action_graph.sync_workspace();
 
         let actions = run_pipeline(
             Arc::clone(app_context),
@@ -110,26 +107,21 @@ impl SyncProjectsTool {
                 sync_workspace: false,
                 ..Default::default()
             },
-        )
-        .map_err(map_miette_error)?;
+        );
+
+        action_graph.set_requirements(RunRequirements::default());
 
         if self.ids.is_empty() {
             let projects = workspace_graph.get_projects().map_err(map_miette_error)?;
 
             for project in projects {
-                action_graph
-                    .sync_project(&project, &RunRequirements::default())
-                    .await
-                    .map_err(map_miette_error)?;
+                action_graph.sync_project(&project);
             }
         } else {
             for id in &self.ids {
                 let project = workspace_graph.get_project(id).map_err(map_miette_error)?;
 
-                action_graph
-                    .sync_project(&project, &RunRequirements::default())
-                    .await
-                    .map_err(map_miette_error)?;
+                action_graph.sync_project(&project);
             }
         }
 

@@ -18,8 +18,8 @@ use super::RequestId;
 use super::select::{Event, ProvisionRequest, SerialLink, TaskPlan};
 use super::{get_project_spec, get_spec};
 use crate::action_graph::ActionGraph;
-use crate::action_graph_builder::ActionGraphBuilderOptions;
 use crate::action_graph_error::ActionGraphError;
+use crate::action_graph_options::ActionGraphBuilderOptions;
 use daggy::{Dag, Walker};
 use miette::IntoDiagnostic;
 use moon_action::{
@@ -245,13 +245,28 @@ impl GraphAssembler<'_> {
 
     async fn provision(&mut self, request: ProvisionRequest) -> miette::Result<Vec<NodeIndex>> {
         let index = match request {
-            ProvisionRequest::InstallDependencies(project) => {
+            ProvisionRequest::InstallDependencies(spec, project) => {
+                self.install_dependencies(&spec, Some(&project)).await?
+            }
+            ProvisionRequest::InstallDependenciesByProject(project) => {
                 return Ok(self
                     .install_dependencies_by_toolchains(&project, &project.toolchains)
                     .await?
                     .into_iter()
                     .flatten()
                     .collect());
+            }
+            ProvisionRequest::InstallDependenciesRoot(spec) => {
+                self.install_dependencies_root(&spec).await?
+            }
+            ProvisionRequest::SetupEnvironment(spec, root, project) => {
+                Box::pin(self.internal_setup_environment(
+                    &spec,
+                    &root,
+                    Some(&project),
+                    FxHashSet::default(),
+                ))
+                .await?
             }
             ProvisionRequest::SetupProto => self.setup_proto(),
             ProvisionRequest::SetupToolchain(spec, project) => {
@@ -585,7 +600,7 @@ impl GraphAssembler<'_> {
 
         for toolchain_id in toolchains {
             if let Some(spec) = get_project_spec(self.app_context, toolchain_id, project) {
-                indices.push(self.install_dependencies(&spec, project).await?);
+                indices.push(self.install_dependencies(&spec, Some(project)).await?);
             }
         }
 
@@ -597,7 +612,7 @@ impl GraphAssembler<'_> {
     async fn install_dependencies(
         &mut self,
         spec: &ToolchainSpec,
-        project: &Project,
+        project: Option<&Project>,
     ) -> miette::Result<Option<NodeIndex>> {
         if spec.is_system() {
             return Ok(None);
@@ -613,11 +628,11 @@ impl GraphAssembler<'_> {
                 .get_plugin_config(&spec.id)
                 .is_some_and(|cfg| !cfg.install_dependencies)
         {
-            return self.setup_toolchain(spec, Some(project)).await;
+            return self.setup_toolchain(spec, project).await;
         }
 
         let sync_workspace_index = self.sync_workspace();
-        let setup_toolchain_index = self.setup_toolchain(spec, Some(project)).await?;
+        let setup_toolchain_index = self.setup_toolchain(spec, project).await?;
         let app_context = self.app_context;
         let toolchain = app_context.toolchain_registry.load(&spec.id).await?;
 
@@ -626,10 +641,15 @@ impl GraphAssembler<'_> {
             return Ok(setup_toolchain_index);
         }
 
+        let target_root = match project {
+            Some(project) => &project.root,
+            None => &app_context.workspace_root,
+        };
+
         // Only insert this action if a root was located
-        if let Some(deps_workspace) = self.locate_dependencies_root(spec, Some(project)).await?
+        if let Some(deps_workspace) = self.locate_dependencies_root(spec, project).await?
             && let Some(deps_role) =
-                toolchain.in_dependencies_workspace(&deps_workspace, &project.root)?
+                toolchain.in_dependencies_workspace(&deps_workspace, target_root)?
         {
             // The action is scoped to the located root, so that every project
             // resolving to it collapses into the same action
@@ -642,14 +662,14 @@ impl GraphAssembler<'_> {
             // package, and the project that owns it is associated, so that
             // project-level toolchain config is passed to the plugin
             let project_id = match deps_role {
-                DependenciesWorkspaceRole::PackageRoot => Some(project.id.clone()),
+                DependenciesWorkspaceRole::PackageRoot => project.map(|project| project.id.clone()),
                 _ => None,
             };
 
             let setup_env_index = Box::pin(self.internal_setup_environment(
                 spec,
                 &root,
-                project_id.as_ref().map(|_| project),
+                project_id.as_ref().and(project),
                 FxHashSet::default(),
             ))
             .await?;
@@ -695,6 +715,36 @@ impl GraphAssembler<'_> {
 
         // Or fallback entirely to setup toolchain
         Ok(setup_toolchain_index)
+    }
+
+    /// Install dependencies in the workspace root, without an associated
+    /// project, when the located dependencies root is the workspace root.
+    async fn install_dependencies_root(
+        &mut self,
+        spec: &ToolchainSpec,
+    ) -> miette::Result<Option<NodeIndex>> {
+        // Explicitly disabled
+        if spec.is_system()
+            || !self.options.install_dependencies.is_enabled(&spec.id)
+            || self
+                .app_context
+                .toolchains_config
+                .get_plugin_config(&spec.id)
+                .is_some_and(|cfg| !cfg.install_dependencies)
+        {
+            return Ok(None);
+        }
+
+        // Only insert actions if the dependencies root is the workspace root
+        if self
+            .locate_dependencies_root(spec, None)
+            .await?
+            .is_none_or(|deps_workspace| deps_workspace.root != self.app_context.workspace_root)
+        {
+            return Ok(None);
+        }
+
+        self.install_dependencies(spec, None).await
     }
 
     async fn locate_dependencies_root(

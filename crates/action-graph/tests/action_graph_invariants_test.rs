@@ -2,7 +2,8 @@ mod utils;
 
 use moon_action_context::ActionContext;
 use moon_action_graph::{
-    ActionGraph, ActionGraphBuilder, ActionGraphBuilderOptions, RunPartition, RunRequirements,
+    ActionGraph, ActionGraphBuilder, ActionGraphBuilderOptions, BuildOutput, RunPartition,
+    RunRequirements,
 };
 use moon_affected::Depth;
 use moon_app_context::AppContext;
@@ -143,7 +144,7 @@ impl GeneratedGraphs {
             Arc::clone(&self.app_context),
             Arc::clone(&self.workspace_graph),
             options,
-        )?;
+        );
 
         builder.set_changed_files(
             self.workspace
@@ -151,7 +152,7 @@ impl GeneratedGraphs {
                 .iter()
                 .map(WorkspaceRelativePathBuf::from)
                 .collect(),
-        )?;
+        );
 
         let local = RunRequirements {
             ci: false,
@@ -166,122 +167,101 @@ impl GeneratedGraphs {
 
         match scenario {
             Scenario::RunTasks | Scenario::RunTasksWithActionsDisabled => {
-                partition = Some(builder.run_tasks(self.locators(1), local).await?);
+                builder.set_requirements(local);
+                partition = Some(builder.run_tasks(self.locators(1)));
             }
             Scenario::RunTasksInCi => {
-                builder.sync_workspace().await?;
-                partition = Some(builder.run_tasks(self.locators(1), ci).await?);
+                builder.set_requirements(ci);
+                builder.sync_workspace();
+                partition = Some(builder.run_tasks(self.locators(1)));
             }
             Scenario::RunTasksAffected => {
-                builder.track_affected(Depth::NONE, false).await?;
-                partition = Some(builder.run_tasks(self.locators(1), local).await?);
+                builder.set_requirements(local);
+                builder.track_affected(Depth::NONE, false);
+                partition = Some(builder.run_tasks(self.locators(1)));
             }
             Scenario::RunTasksAffectedDeep => {
-                builder.track_affected(Depth::Deep, true).await?;
-                builder.sync_workspace().await?;
-                partition = Some(
-                    builder
-                        .run_tasks(
-                            self.locators(1),
-                            RunRequirements {
-                                dependents: Depth::Deep,
-                                ..ci
-                            },
-                        )
-                        .await?,
-                );
+                builder.set_requirements(RunRequirements {
+                    dependents: Depth::Deep,
+                    ..ci
+                });
+                builder.track_affected(Depth::Deep, true);
+                builder.sync_workspace();
+                partition = Some(builder.run_tasks(self.locators(1)));
             }
             Scenario::RunTasksPartitioned => {
-                builder.track_affected(Depth::NONE, true).await?;
-                builder.sync_workspace().await?;
-                partition = Some(
-                    builder
-                        .run_tasks(
-                            self.locators(1),
-                            RunRequirements {
-                                job: Some(self.workspace.seed as usize % 2),
-                                job_total: Some(2),
-                                ..ci
-                            },
-                        )
-                        .await?,
-                );
+                builder.set_requirements(RunRequirements {
+                    job: Some(self.workspace.seed as usize % 2),
+                    job_total: Some(2),
+                    ..ci
+                });
+                builder.track_affected(Depth::NONE, true);
+                builder.sync_workspace();
+                partition = Some(builder.run_tasks(self.locators(1)));
             }
             Scenario::RunTasksSkipPersistent => {
-                partition = Some(
-                    builder
-                        .run_tasks(
-                            self.locators(1),
-                            RunRequirements {
-                                interactive: true,
-                                skip_persistent: true,
-                                ..local
-                            },
-                        )
-                        .await?,
-                );
+                builder.set_requirements(RunRequirements {
+                    interactive: true,
+                    skip_persistent: true,
+                    ..local
+                });
+                partition = Some(builder.run_tasks(self.locators(1)));
             }
             Scenario::RunTasksWithoutDependencies => {
-                partition = Some(
-                    builder
-                        .run_tasks(
-                            self.locators(2),
-                            RunRequirements {
-                                no_dependencies: true,
-                                ..local
-                            },
-                        )
-                        .await?,
-                );
+                builder.set_requirements(RunRequirements {
+                    no_dependencies: true,
+                    ..local
+                });
+                partition = Some(builder.run_tasks(self.locators(2)));
             }
             Scenario::RunTasksWithQuery => {
+                builder.set_requirements(local);
                 builder.set_query("project~p*")?;
                 partition = Some(
-                    builder
-                        .run_tasks(
-                            [TargetLocator::parse(":t0")?, TargetLocator::parse(":t1")?],
-                            local,
-                        )
-                        .await?,
+                    builder.run_tasks([TargetLocator::parse(":t0")?, TargetLocator::parse(":t1")?]),
                 );
             }
             Scenario::RunTaskEach => {
+                builder.set_requirements(local);
+
                 for task in self.workspace_graph.get_tasks()? {
-                    builder.run_task(&task, &local).await?;
+                    builder.run_task(&task);
                 }
             }
             Scenario::Sync => {
-                builder.sync_workspace().await?;
+                builder.set_requirements(local);
+                builder.sync_workspace();
 
                 for project in self.workspace_graph.get_projects()? {
-                    builder.sync_project(&project, &local).await?;
+                    builder.sync_project(&project);
                 }
             }
             Scenario::Setup => {
-                builder.setup_proto().await?;
+                builder.setup_proto();
 
                 for toolchain_id in self.app_context.toolchains_config.plugins.keys() {
-                    if let Some(spec) = builder.get_workspace_spec(toolchain_id)
-                        && builder.setup_toolchain(&spec, None).await?.is_some()
-                        && !spec.is_system()
-                    {
-                        builder.setup_environment_root(&spec).await?;
+                    if let Some(spec) = builder.get_workspace_spec(toolchain_id) {
+                        builder.setup_toolchain_and_environment(&spec);
                     }
                 }
             }
             Scenario::DockerSetup => {
                 for project in self.workspace_graph.get_projects()? {
-                    builder.install_dependencies_by_project(&project).await?;
+                    builder.install_dependencies_by_project(&project);
                 }
             }
         };
 
-        let (context, graph) = builder.build();
+        let BuildOutput {
+            context,
+            graph,
+            mut report,
+        } = builder.build().await?;
 
         Ok(Build {
             context,
             graph,
-            partition,
+            partition: partition.and_then(|request| report.take_partition(request)),
             sync_workspace,
         })
     }
@@ -511,35 +491,27 @@ mod generated_workspaces {
                 sync_workspace: false,
                 ..Default::default()
             },
-        )
-        .unwrap();
+        );
 
-        builder
-            .set_changed_files(
-                graphs
-                    .workspace
-                    .changed_files
-                    .iter()
-                    .map(WorkspaceRelativePathBuf::from)
-                    .collect(),
-            )
-            .unwrap();
+        builder.set_changed_files(
+            graphs
+                .workspace
+                .changed_files
+                .iter()
+                .map(WorkspaceRelativePathBuf::from)
+                .collect(),
+        );
 
         let mut locators = graphs.locators(1);
         locators.reverse();
 
-        builder
-            .run_tasks(
-                locators,
-                RunRequirements {
-                    ci: false,
-                    ..Default::default()
-                },
-            )
-            .await
-            .unwrap();
+        builder.set_requirements(RunRequirements {
+            ci: false,
+            ..Default::default()
+        });
+        builder.run_tasks(locators);
 
-        let (context, graph) = builder.build();
+        let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
         // Node indices differ, but the graphs are the same
         forward.partition = None;
@@ -569,16 +541,11 @@ mod canonical_form {
 
         // Both depend on the teardown as a cleanup, once with args
         for id in ["base", "args-parent"] {
-            builder
-                .run_task(
-                    &wg.get_task_from_project("proj", id).unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&wg.get_task_from_project("proj", id).unwrap());
         }
 
-        let (context, graph) = builder.build();
+        let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
         let canonical = CanonicalActionGraph::new(&context, &graph);
         let variant = r#"RunTask(proj:teardown) args=["--force"]"#;
 
@@ -615,15 +582,10 @@ mod canonical_form {
         for id in ["base", "waits"] {
             let mut builder = container.create_builder(wg.clone()).await;
 
-            builder
-                .run_task(
-                    &wg.get_task_from_project("proj", id).unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&wg.get_task_from_project("proj", id).unwrap());
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             canonicals.push(CanonicalActionGraph::new(&context, &graph));
         }

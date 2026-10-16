@@ -9,8 +9,9 @@ that must be preserved, and this plan doesn't repeat it. Estimates are marked as
 decisions were made on 2026-10-15 (see [Decisions](#decisions)). Phases 1 and 2 were done the same
 day: the harness, run against the current builder (see [Baseline](#baseline)), and the new builder's
 task stages (see [Phase 2 results](#phase-2-results)). Phase 3, provisioning and project syncs, was
-done on 2026-10-16 (see [Phase 3 results](#phase-3-results)), which completes the new builder. It
-isn't used by any command yet.
+done on 2026-10-16 (see [Phase 3 results](#phase-3-results)), which completes the new builder. Phase
+4, the switch, was done the same day (see [Phase 4 results](#phase-4-results)): every command uses
+the new builder, and the previous one remains only for the differential tests, until phase 5.
 
 ## Summary
 
@@ -339,7 +340,8 @@ reuse rules), no recursion, and no graph mutation while selecting.
 3. **Provisioning.** Stage 2, and project sync, with the harness comparing full graphs. Done on
    2026-10-16, see [Phase 3 results](#phase-3-results).
 4. **Switch.** Move the commands, MCP, and test utilities to the request API, regenerate snapshots
-   (reviewed against the harness), and update ACTION_GRAPH.md.
+   (reviewed against the harness), and update ACTION_GRAPH.md. Done on 2026-10-16, see
+   [Phase 4 results](#phase-4-results).
 5. **Delete** the current builder.
 6. **Follow-up:** store the built graph directly as `DiGraph<ActionNode, TaskDependencyType>`, which
    touches the action pipeline (`job_dispatcher.rs`, `action_pipeline.rs`), the `action-graph`
@@ -532,6 +534,34 @@ The first version of the new builder was twice as slow on the 1,000 project chai
 here: the project sync walk keeps one set of the projects on the current path, instead of cloning
 one per project, and production edges between project syncs are added in one batch, with a single
 cycle check, instead of one search per edge.
+
+## Phase 4 results
+
+Done on 2026-10-16.
+
+- **API**: `moon_action_graph::ActionGraphBuilder` is the new builder. The previous one is
+  `moon_action_graph::legacy::ActionGraphBuilder`, used only by the differential test and the
+  benchmark. The shared types (`RunRequirements`, `RunPartition`, `TaskOrigin`, and
+  `ActionGraphBuilderOptions`) moved to
+  [action_graph_options.rs](../../crates/action-graph/src/action_graph_options.rs), so phase 5 only
+  deletes the legacy builder's file.
+- **Commands**: `run`, `ci`, `check`, and `exec` (through `exec.rs`), `action-graph`, `sync`,
+  `sync projects`, `setup`, `docker setup`, and the MCP sync tools record requests and read results
+  from the `BuildReport`. `moon setup` counts the toolchains it set up from the report, after the
+  build.
+- **Test-only requests**: `install_dependencies(spec, project)`, `install_dependencies_root`,
+  `setup_environment(spec, root, project)`, and the debug-only `run_task_with_config` and
+  `set_affected`, so that the existing tests exercise the same entry points as before.
+- **Tests**: the 224 builder tests, the action pipeline tests, and the invariant test were migrated
+  to the request API, mostly by a script. Results that used to be returned by a request (nodes,
+  partitions, errors) are now read after the build, and the 12 `should_panic` tests build, so that
+  their error surfaces.
+- **Snapshots**: 192 builder tests passed with their snapshots unchanged. The 19 builder snapshots
+  and 1 CLI snapshot that changed were each checked to contain the same nodes and edges: only the
+  order of edges in the dot output changed, as serial edges and edges between project syncs are now
+  linked last. Two tests that compared edge lists in order now sort them.
+- **Docs**: [ACTION_GRAPH.md](../ACTION_GRAPH.md) describes the new builder, and the changelog has
+  the visible changes (decisions 1, 2, and 8, the speedup, and the stack overflow fix).
 
 ## Risks
 

@@ -4,15 +4,20 @@ A reference for the action graph that moon builds before running the action pipe
 node, every edge between nodes, and the conditions under which each node and edge exists.
 
 Written on 2026-10-15 against `develop-3.0` at `6a680da217`, then updated on `3.0-ag-new` for the
-toolchain setup fixes. Line references are as of that update, and will drift. This describes the
-behavior of the code, which is the spec: where something looks surprising, it's called out in
-[Notes](#notes) instead of being described as the intent.
+toolchain setup fixes, and again on 2026-10-16 for the new builder (see
+[todo/ACTION_GRAPH_BUILDER.md](./todo/ACTION_GRAPH_BUILDER.md)). Line references are as of that
+update, and will drift. This describes the behavior of the code, which is the spec: where something
+looks surprising, it's called out in [Notes](#notes) instead of being described as the intent.
 
 Source files:
 
 - [action_node.rs](../crates/action/src/action_node.rs): node types and their identity.
-- [action_graph_builder.rs](../crates/action-graph/src/action_graph_builder.rs): every node and edge
-  insertion.
+- [builder/mod.rs](../crates/action-graph/src/builder/mod.rs): the builder's requests, and its build
+  stages.
+- [builder/select.rs](../crates/action-graph/src/builder/select.rs): which task instances and
+  project syncs exist, and the gates they pass.
+- [builder/assemble.rs](../crates/action-graph/src/builder/assemble.rs): every node and edge
+  insertion, and provisioning resolution.
 - [action_graph.rs](../crates/action-graph/src/action_graph.rs): the built graph, cycle detection,
   and topological sort.
 - [job_dispatcher.rs](../crates/action-pipeline/src/job_dispatcher.rs): how the pipeline interprets
@@ -39,17 +44,23 @@ which side declared the relationship; see [Cleanup](#cleanup-task-dependencies).
 | `Cleanup`  | The source runs after the target completes, even if it failed, and even after an abort. Only `RunTask` nodes. |
 | `Optional` | Never present. It's a task graph marker, and is normalized to `Required` on every path into the action graph. |
 
-**Lazy insertion.** Nothing is inserted up front. Each node is inserted on demand by a builder
-method, which first recursively inserts (or finds) the nodes it depends on, then links to them. A
-graph that's asked to run one task contains only that task, its dependencies, and the setup chain
-they need.
+**Requests and stages.** Commands record requests (`run_tasks`, `sync_project`, `setup_toolchain`,
+and so on), and nothing happens until `build()`
+([builder/mod.rs](../crates/action-graph/src/builder/mod.rs)). The build selects the task instances
+and project syncs that exist, applying their gates, as an event log
+([select.rs](../crates/action-graph/src/builder/select.rs)). Then it replays the events to insert
+nodes and link edges, resolving each task's provisioning actions right before the task
+([assemble.rs](../crates/action-graph/src/builder/assemble.rs)). Then it adds the edges that depend
+on the whole graph (project syncs, present dependencies, and serial ordering). A graph that's asked
+to run one task contains only that task, its dependencies, and the setup chain they need. Nodes are
+inserted in a fixed order: a task's project sync and toolchain actions before the task, and the task
+before its dependencies.
 
-**Deduplication.** Nodes are deduplicated by identity: the builder keeps an
-`FxHashMap<ActionNode, NodeIndex>`, and a node that already exists is reused. Identity is the node's
-`Hash`/`Eq` ([action_node.rs:253](../crates/action/src/action_node.rs#L253)), which is the label
-plus the fields listed per node below.
+**Deduplication.** Nodes are deduplicated by identity, and a node that already exists is reused.
+Task instances are keyed by target, args, and env, and provisioning and sync nodes by a `NodeKey` of
+the fields listed per node below.
 
-**Optional returns.** Every builder method returns `Option<NodeIndex>`. `None` means "no node for
+**Optional returns.** Every provisioning step returns `Option<NodeIndex>`. `None` means "no node for
 this, link nothing", and every edge list is filtered through it. This is how disabled or unsupported
 actions disappear from the graph without their dependents needing to know.
 
@@ -100,7 +111,7 @@ the toolchain supports. See [InstallDependencies](#installdependencies).
 
 Syncs the workspace (config schemas, codeowners, VCS hooks, and toolchain and extension
 `sync_workspace` hooks), and runs before nearly everything else.
-[sync_workspace](../crates/action-graph/src/action_graph_builder.rs#L1680).
+[sync_workspace](../crates/action-graph/src/builder/assemble.rs#L343).
 
 - **Exists when** `options.sync_workspace` is true (`pipeline.syncWorkspace`, default `true`), and
   something asks for it: another node links to it, `moon sync`, or `moon run`/`ci`/`check`/`exec` in
@@ -109,7 +120,7 @@ Syncs the workspace (config schemas, codeowners, VCS hooks, and toolchain and ex
 
 ### SetupProto
 
-Installs proto itself. [setup_proto](../crates/action-graph/src/action_graph_builder.rs#L1509).
+Installs proto itself. [setup_proto](../crates/action-graph/src/builder/assemble.rs#L351).
 
 - **Identity:** `proto.version` from `.moon/toolchains.yml`, so a singleton in practice.
 - **Exists when** a `SetupToolchain` node links to it, or `moon setup` inserts it directly.
@@ -118,7 +129,7 @@ Installs proto itself. [setup_proto](../crates/action-graph/src/action_graph_bui
 ### SetupToolchain
 
 Downloads and installs a toolchain's tool (tier 3).
-[internal_setup_toolchain](../crates/action-graph/src/action_graph_builder.rs#L1527).
+[internal_setup_toolchain](../crates/action-graph/src/builder/assemble.rs#L367).
 
 - **Identity:** the `ToolchainSpec`, the toolchain id plus its version requirement. Projects that
   override a toolchain's version (`toolchains.<id>.version` in `moon.yml`) get their own node per
@@ -145,7 +156,7 @@ Downloads and installs a toolchain's tool (tier 3).
 ### SetupEnvironment
 
 Prepares a toolchain's environment in a dependencies root, before dependencies are installed.
-[internal_setup_environment](../crates/action-graph/src/action_graph_builder.rs#L1362).
+[internal_setup_environment](../crates/action-graph/src/builder/assemble.rs#L449).
 
 - **Identity:** toolchain id, root (workspace-relative, empty for the workspace root), and an
   optional project id.
@@ -159,7 +170,7 @@ Prepares a toolchain's environment in a dependencies root, before dependencies a
   - something asks for it: the [install slot](#installdependencies), the environment of a toolchain
     that requires it (see below), or `moon setup` via `setup_environment_root`, which additionally
     requires that the located dependencies root is the workspace root
-    ([setup_environment_root](../crates/action-graph/src/action_graph_builder.rs#L1481)).
+    ([setup_environment_root](../crates/action-graph/src/builder/assemble.rs#L567)).
 - **Outgoing edges** (all `Required`):
 
   | To                             | When                                                                                                                                                                                                                                                               |
@@ -184,7 +195,7 @@ Prepares a toolchain's environment in a dependencies root, before dependencies a
 ### InstallDependencies
 
 Installs a toolchain's dependencies in a dependencies root (tier 2).
-[internal_install_dependencies](../crates/action-graph/src/action_graph_builder.rs#L372).
+[install_dependencies](../crates/action-graph/src/builder/assemble.rs#L612).
 
 This is the "install slot" for a toolchain. It's asked for once per toolchain of a task (or of a
 project, for `docker setup`), and it always returns the most specific node that exists for that
@@ -229,30 +240,32 @@ located dependencies root is the workspace root, otherwise it returns `None`.
 ### SyncProject
 
 Syncs a project through the `sync_project` hooks of its enabled toolchains and of extensions.
-[internal_sync_project](../crates/action-graph/src/action_graph_builder.rs#L1622).
+[walk_sync_project](../crates/action-graph/src/builder/select.rs#L906) and
+[link_synced_projects](../crates/action-graph/src/builder/assemble.rs#L937).
 
 - **Identity:** project id.
 - **Exists when all of:**
   - `options.sync_projects` is enabled for the project id (`pipeline.syncProjects`: a boolean, or a
     list of project ids);
-  - the project isn't already on the current recursion path;
+  - the project isn't already on the current path of the project sync walk;
   - the project passes the [affected check](#affected-gating), when affected tracking is active and
     not skipped for this insertion.
 - **Outgoing edges** (all `Required`):
 
-  | To                   | When                                                                                                                                                                                                                                                                                             |
-  | :------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-  | `SyncWorkspace`      | It exists.                                                                                                                                                                                                                                                                                       |
-  | `SyncProject(<dep>)` | `options.sync_project_dependencies` is true (`pipeline.syncProjectDependencies`, default `true`), `<dep>` is a **direct** dependency in the unioned project graph (every scope: production, development, build, peer, and root), isn't on the path, and its own node exists after its own gates. |
+  | To                   | When                                                                                                                                                                                                                     |
+  | :------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `SyncWorkspace`      | It exists.                                                                                                                                                                                                               |
+  | `SyncProject(<dep>)` | `options.sync_project_dependencies` is true (`pipeline.syncProjectDependencies`, default `true`), `<dep>` is a **direct** dependency (every scope: production, development, build, peer, and root), and its sync exists. |
 
-  Edges are linked only when the node is first inserted. When it already exists, it's returned as is
-  (`insert_node_or_exit!`), so the edge set of a `SyncProject` is decided by whichever caller
-  reached it first.
+  Project sync nodes are inserted while walking each synced project's dependencies, but the edges
+  between them are linked once every project sync is known, so that they don't depend on which
+  caller synced a project first. Production and peer dependencies are linked first (that partition
+  is acyclic), then development, build, and root dependencies, in sorted order, skipping any that
+  would close a cycle, as the combined project graph may have cycles across scopes.
 
 ### RunTask
 
-Runs a task's command.
-[internal_run_task](../crates/action-graph/src/action_graph_builder.rs#L1229).
+Runs a task's command. [enter](../crates/action-graph/src/builder/select.rs#L679).
 
 - **Identity:** target, the interactive and persistent flags (which change the label), plus the
   `args` and `env` from the dependency config that inserted it (env keys sorted for hashing). A task
@@ -284,11 +297,11 @@ Runs a task's command.
 
 - **Outgoing edges** (excluding task dependencies, all `Required`):
 
-  | To                     | When                                                                                                                                                                                                                                        |
-  | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-  | `SyncProject(<owner>)` | The owning project's node exists after its gates. For a primary target, the project's affected check uses the run's requirements; for a dependency it's skipped.                                                                            |
-  | install slot, per id   | For each id in `task.toolchains` that resolves to a spec ([`get_project_spec`](../crates/action-graph/src/action_graph_builder.rs#L281)): not disabled in the project's `toolchains` config, with the project's version or the workspace's. |
-  | `SyncWorkspace`        | Fallback: only when none of the edges above exist, and `SyncWorkspace` is enabled.                                                                                                                                                          |
+  | To                     | When                                                                                                                                                                                                                              |
+  | :--------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `SyncProject(<owner>)` | The owning project's node exists after its gates. For a primary target, the project's affected check uses the run's requirements; for a dependency it's skipped.                                                                  |
+  | install slot, per id   | For each id in `task.toolchains` that resolves to a spec ([`get_project_spec`](../crates/action-graph/src/builder/mod.rs#L67)): not disabled in the project's `toolchains` config, with the project's version or the workspace's. |
+  | `SyncWorkspace`        | Fallback: only when none of the edges above exist, and `SyncWorkspace` is enabled.                                                                                                                                                |
 
   The fallback guarantees that every `RunTask` reaches `SyncWorkspace` when it's enabled, either
   directly or through one of its other edges.
@@ -301,7 +314,7 @@ re-evaluating edges or dependencies.
 A task's `deps` are expanded in the task graph before the action graph sees them, so every
 `dep.target` is scoped to a project id, all projects (`:task`), or a project tag (`#tag:task`); the
 `^:` and `~:` scopes error here. Each target resolves to one or more tasks, and internal tasks are
-allowed. [internal_run_task_dependencies](../crates/action-graph/src/action_graph_builder.rs#L800).
+allowed. [link_dependency](../crates/action-graph/src/builder/select.rs#L825).
 
 Each resolved dependency task is inserted through the same `RunTask` path, with:
 
@@ -325,11 +338,10 @@ also chains them, because a serial edge can be skipped for forming a cycle.
 ### Cleanup task dependencies
 
 When task `T` declares `deps: [{ target: C, type: cleanup }]`, `C` runs **after** `T`, so the edge
-is `C → T` with weight `Cleanup`
-([link_cleanup_edges](../crates/action-graph/src/action_graph_builder.rs#L1920)). It's linked by the
-caller that owns `T`'s index, after `T` is inserted, and it's skipped if a `Cleanup` edge already
-links the pair. `C` may also depend on `T` in another way (for example, a `required` dep); that's a
-separate edge with its own weight, and both are kept.
+is `C → T` with weight `Cleanup` ([replay](../crates/action-graph/src/builder/assemble.rs#L163)).
+It's linked by the caller that owns `T`'s index, after `T` is inserted, and it's skipped if a
+`Cleanup` edge already links the pair. `C` may also depend on `T` in another way (for example, a
+`required` dep); that's a separate edge with its own weight, and both are kept.
 
 Cleanup dependencies are inserted even under `--no-dependencies`, as they must always run after the
 task.
@@ -338,13 +350,14 @@ task.
 
 When a task sets `options.runDepsInParallel: false`, its `required` dependencies run one after
 another, and so does each dependency's whole task subtree
-([link_serial_required_edges](../crates/action-graph/src/action_graph_builder.rs#L1993)). For
+([link_serial_required_edges](../crates/action-graph/src/builder/assemble.rs#L1135)). For
 dependencies `d1, d2, d3` in declared order, with `prev` the last required dependency so far and
 `prev_standard` the last required dependency that isn't persistent:
 
-1. When `d_i` is inserted, walk its subtree: `d_i` plus every `RunTask` it reaches over
-   `Required`/`Optional` edges, skipping serial edges, `Wait` and `Cleanup` edges, and non-task
-   nodes.
+1. A serial link is recorded when `d_i` is reached, and applied once every real edge exists, in the
+   same order. Applying it walks `d_i`'s subtree: `d_i` plus every `RunTask` it reaches over
+   `Required` edges, skipping serial edges, present dependency edges, `Wait` and `Cleanup` edges,
+   and non-task nodes.
 2. For each node `x` in that subtree, add `x → anchor` (`Required`), where `anchor` is `prev` if `x`
    is persistent, else `prev_standard`. A persistent action is marked completed when dispatched, so
    ordering a standard action after one would run it immediately; it's ordered after the last
@@ -353,24 +366,20 @@ dependencies `d1, d2, d3` in declared order, with `prev` the last required depen
 
 Serial edges are a preference, not a dependency:
 
-- They're added with `try_link_edge`, which silently skips an edge that would form a cycle, or that
-  duplicates an existing `Required` edge. This happens when the same node is in the serial chains of
-  several parents.
-- Each is recorded in `serial_edges` with its insertion order, so the subtree walk doesn't follow
-  it, and so it can be removed later.
-- When a real dependency edge is linked later in the opposite direction, the serial edges on the
-  path that would form the cycle are removed, newest first, until the path is gone
-  ([unlink_serial_edges](../crates/action-graph/src/action_graph_builder.rs#L2131)). If the path
-  consists of real dependencies only, it's an actual cycle, and building fails with `WouldCycle`.
-- When a real dependency is linked over an existing serial edge between the same pair, the edge is
-  promoted: it's dropped from `serial_edges` and becomes a dependency.
+- They're added with [`try_link_edge`](../crates/action-graph/src/builder/assemble.rs#L851), which
+  silently skips an edge that would form a cycle, or that duplicates an existing `Required` edge.
+  This happens when the same node is in the serial chains of several parents, or when a real
+  dependency links the nodes the other way.
+- As every real edge exists before any serial edge is added, a serial edge is never added and then
+  removed: one that contradicts a dependency is skipped instead.
+- Each is recorded in `serial_edges`, so the subtree walk doesn't follow it.
 
 ### Present-dependency edges (`--no-dependencies`)
 
 With `no_dependencies`, a selected task's non-cleanup dependencies aren't inserted. Instead, when
 the graph is built, each of its dependencies that **already has a node** (because it was selected
 itself, or reached through another task) gets an edge, regardless of insertion order
-([link_present_dependencies](../crates/action-graph/src/action_graph_builder.rs#L1702)):
+([link_present_dependencies](../crates/action-graph/src/builder/assemble.rs#L1001)):
 
 - The edge is task → dependency, weighted `Required` (or `Wait`).
 - If the dependency target has several nodes, those whose `args` and `env` match the dependency
@@ -384,10 +393,12 @@ itself, or reached through another task) gets an edge, regardless of insertion o
 
 When affected tracking is active (`moon run --affected`, `moon ci`, and so on) and not skipped for
 the insertion, a `RunTask` or `SyncProject` node is only inserted if its task or project is marked
-affected ([is_task_affected](../crates/action-graph/src/action_graph_builder.rs#L2250),
-[is_project_affected](../crates/action-graph/src/action_graph_builder.rs#L2217)). Affected state is
-computed up front (`track_affected`, then `track_tasks` in `run_tasks`), so insertion order doesn't
-change the result.
+affected ([is_task_affected](../crates/action-graph/src/builder/select.rs#L1025),
+[is_project_affected](../crates/action-graph/src/builder/select.rs#L992)). Affected state is
+computed up front (`track_affected`, then `track_tasks` when selecting `run_tasks`), so insertion
+order doesn't change the result. Project syncs are checked while selecting, at the point where the
+task that owns them is inserted, as marking a task affected also marks its project, so the order of
+the checks matters.
 
 The check is skipped:
 
@@ -403,14 +414,14 @@ edges only exist between affected projects.
 ## Task selection
 
 Which tasks become primary `RunTask` nodes is decided before any edges are linked
-([run_tasks](../crates/action-graph/src/action_graph_builder.rs#L630)):
+([select_tasks](../crates/action-graph/src/builder/select.rs#L426)):
 
 1. Resolve each target locator to tasks. Internal tasks are excluded. A `:task` locator is bounded
    by `--query` when one is set (glob locators aren't).
 2. Deduplicate, then append dependents of the selected tasks up to `--dependents` depth
-   ([internal_resolve_dependents](../crates/action-graph/src/action_graph_builder.rs#L969)). The
-   walk follows incoming task graph edges, **except** `cleanup` edges, and skips projects that don't
-   match `--query`. A task that was both selected and reached as a dependent counts as requested.
+   ([resolve_dependents](../crates/action-graph/src/builder/select.rs#L1060)). The walk follows
+   incoming task graph edges, **except** `cleanup` edges, and skips projects that don't match
+   `--query`. A task that was both selected and reached as a dependent counts as requested.
 3. Track affected state for every candidate (or every task, when affected state flows through
    relations).
 4. When partitioning into jobs (`--job`/`--job-total`, or an execution plan's partitioned jobs),
@@ -422,26 +433,23 @@ Which tasks become primary `RunTask` nodes is decided before any edges are linke
 
 There are four different mechanisms, and they behave differently:
 
-- **Recursion path sets.** `SetupToolchain`, `SetupEnvironment`, and `SyncProject` carry a set of
-  ids on the current recursion path. A requirement or project dependency that's already on the path
-  is skipped, so no edge is created for it. The set is cloned per branch, so it's path-local:
-  siblings that share a dependency both link to it (tests:
-  `keeps_toolchain_requirements_path_local_across_siblings`,
-  `keeps_project_dependencies_path_local_across_siblings`). For a cyclic project dependency (the
-  unioned project graph may have cycles across scopes), which side gets the edge depends on which
-  project was reached first.
-- **Skipped edges.** Serial ordering edges (`try_link_edge`) and required environment edges
-  (`link_environment_edges`) are preferences, and are skipped when they would form a cycle, instead
-  of failing the build.
-- **Edge insertion.** `link_edge` rejects an edge that would form a cycle, after first trying to
-  remove contradicting serial edges, and fails the build with `ActionGraphError::WouldCycle`.
+- **Path sets.** `SetupToolchain` and `SetupEnvironment` resolution carries a set of the toolchains
+  on the current recursion path, and the project sync walk keeps a set of the projects on its stack.
+  A requirement or project dependency that's already on the path isn't walked again. The sets are
+  path-local, so siblings that share a dependency both reach it.
+- **Skipped edges.** Preferences are skipped when they would form a cycle, instead of failing the
+  build: serial ordering edges, required environments, requirements between toolchain setups (when
+  two toolchains require each other), and project sync edges outside the production and peer scopes.
+- **Edge insertion.** [`link_edge`](../crates/action-graph/src/builder/assemble.rs#L819) rejects a
+  real dependency edge that would form a cycle, and fails the build with
+  `ActionGraphError::WouldCycle`, which names that edge, and describes the whole cycle in its help.
 - **Sort time.** `sort_topological` checks for cycles again and fails with `CycleDetected`
   ([action_graph.rs:113](../crates/action-graph/src/action_graph.rs#L113)).
 
 ## Builder options
 
 `ActionGraphBuilderOptions`
-([action_graph_builder.rs:119](../crates/action-graph/src/action_graph_builder.rs#L119)) gate whole
+([action_graph_options.rs:55](../crates/action-graph/src/action_graph_options.rs#L55)) gate whole
 node types. A `PipelineActionSwitch` is `Default` (enabled), `Enabled(bool)`, or `Only(ids)`
 (enabled for the listed ids).
 
@@ -460,17 +468,19 @@ Per-toolchain config adds two more gates: a toolchain's `installDependencies: fa
 
 ## Entry points
 
-Which commands seed the graph, with which options, and through which builder methods.
+Which commands seed the graph, with which options, and through which builder requests. Requests only
+record what to build, and results (like the partition that `exec` prints) are read from the
+`BuildReport` that `build()` returns.
 
-| Command                                | Options                                                | Seeds                                                                                                       |
-| :------------------------------------- | :----------------------------------------------------- | :---------------------------------------------------------------------------------------------------------- |
-| `moon run`, `ci`, `check`, `exec`      | pipeline config; all disabled with `--no-actions`      | `sync_workspace` in CI, then `run_tasks_with_plan` ([exec.rs:446](../crates/app/src/commands/exec.rs#L446)) |
-| `moon action-graph [targets]`          | pipeline config                                        | `run_task_by_target` per target, or `run_task` for every task                                               |
-| `moon sync`                            | all enabled (ignores pipeline config)                  | `sync_workspace`, `sync_project` for every project, and `run_task` for every task with `runInSyncPhase`     |
-| `moon sync projects`                   | only `sync_projects` and `sync_project_dependencies`   | `sync_project` for every project                                                                            |
-| `moon setup`                           | only `setup_toolchains` and `setup_environment`        | `setup_proto`, then `setup_toolchain` and `setup_environment_root` for every configured toolchain           |
-| `moon docker setup`                    | pipeline config                                        | `install_dependencies_by_project` for every focused project (an install slot per project toolchain)         |
-| MCP `sync_workspace` / `sync_projects` | all enabled; `sync_projects` disables `sync_workspace` | `sync_workspace` / `sync_project`                                                                           |
+| Command                                | Options                                                | Seeds                                                                                                                                                       |
+| :------------------------------------- | :----------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `moon run`, `ci`, `check`, `exec`      | pipeline config; all disabled with `--no-actions`      | `sync_workspace` in CI, then `run_tasks_with_plan` ([exec.rs:446](../crates/app/src/commands/exec.rs#L446))                                                 |
+| `moon action-graph [targets]`          | pipeline config                                        | `run_task_by_target` per target, or `run_task` for every task                                                                                               |
+| `moon sync`                            | all enabled (ignores pipeline config)                  | `sync_workspace`, `sync_project` for every project, and `run_task` for every task with `runInSyncPhase`                                                     |
+| `moon sync projects`                   | only `sync_projects` and `sync_project_dependencies`   | `sync_project` for every project                                                                                                                            |
+| `moon setup`                           | only `setup_toolchains` and `setup_environment`        | `setup_proto`, then `setup_toolchain_and_environment` for every configured toolchain, which sets up the root environment when the toolchain inserted a node |
+| `moon docker setup`                    | pipeline config                                        | `install_dependencies_by_project` for every focused project (an install slot per project toolchain)                                                         |
+| MCP `sync_workspace` / `sync_projects` | all enabled; `sync_projects` disables `sync_workspace` | `sync_workspace` / `sync_project`                                                                                                                           |
 
 ## How the pipeline reads edges
 
@@ -514,7 +524,9 @@ dropped.
 
 ## Build outputs besides the graph
 
-`build()` also returns an `ActionContext` with state collected while linking:
+`build()` returns the graph, a `BuildReport` with the result of each request (the nodes it produced,
+and the partition of a `run_tasks` request), and an `ActionContext` with state collected while
+building:
 
 | Field                  | Contents                                                                 |
 | :--------------------- | :----------------------------------------------------------------------- |
@@ -541,9 +553,5 @@ Behaviors that follow from the code above, and may be worth a second look:
    requirement produced no node (for example, the required toolchain has no tier 3 support itself),
    because the check is on the edge list's length, not on whether any edge resolved. Required
    environments are the exception: they only count when they exist.
-4. **`SyncProject` edges are first-caller-wins.** A project's dependency edges are linked only when
-   its node is inserted. Since the node is inserted before its dependencies are recursed into, and
-   the project's affected state or the recursion path can differ between callers, a later caller
-   that would have produced more edges gets the existing node unchanged.
-5. **`moon sync` ignores `pipeline.*`.** It uses `ActionGraphBuilderOptions::default()`, which
+4. **`moon sync` ignores `pipeline.*`.** It uses `ActionGraphBuilderOptions::default()`, which
    enables every action type regardless of workspace config. So do the MCP sync tools.

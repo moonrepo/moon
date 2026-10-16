@@ -2,7 +2,7 @@ mod utils;
 
 use moon_action::*;
 use moon_action_context::{ActionContext, TargetState};
-use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, RunRequirements};
+use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, BuildOutput, RunRequirements};
 use moon_affected::AffectedBy;
 use moon_common::{Id, path::WorkspaceRelativePathBuf};
 use moon_config::{
@@ -92,9 +92,9 @@ mod action_graph_builder {
             let spec = create_tier_spec(1);
 
             let project = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &project).await.unwrap();
+            builder.install_dependencies(&spec, &project);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
@@ -113,9 +113,9 @@ mod action_graph_builder {
             let spec = create_tier_spec(2);
 
             let project = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &project).await.unwrap();
+            builder.install_dependencies(&spec, &project);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -145,9 +145,9 @@ mod action_graph_builder {
             let spec = create_tier_spec(3);
 
             let project = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &project).await.unwrap();
+            builder.install_dependencies(&spec, &project);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -184,16 +184,10 @@ mod action_graph_builder {
             spec2.req = Some(create_unresolved_version(Version::new(4, 5, 6)));
 
             let project = wg.get_project("bar").unwrap();
-            builder
-                .install_dependencies(&spec1, &project)
-                .await
-                .unwrap();
-            builder
-                .install_dependencies(&spec2, &project)
-                .await
-                .unwrap();
+            builder.install_dependencies(&spec1, &project);
+            builder.install_dependencies(&spec2, &project);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -239,16 +233,10 @@ mod action_graph_builder {
             // Both versions resolve to the same environment, like projects that
             // share a dependencies root while overriding the toolchain's version
             let project = wg.get_project("bar").unwrap();
-            builder
-                .install_dependencies(&spec1, &project)
-                .await
-                .unwrap();
-            builder
-                .install_dependencies(&spec2, &project)
-                .await
-                .unwrap();
+            builder.install_dependencies(&spec1, &project);
+            builder.install_dependencies(&spec2, &project);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
 
@@ -280,28 +268,22 @@ mod action_graph_builder {
             let mut builder = container.create_builder(wg.clone()).await;
 
             let project = wg.get_project("bar").unwrap();
-            builder
-                .install_dependencies(
-                    &builder
-                        .get_project_spec(&Id::raw("rust"), &project)
-                        .unwrap(),
-                    &project,
-                )
-                .await
-                .unwrap();
+            builder.install_dependencies(
+                &builder
+                    .get_project_spec(&Id::raw("rust"), &project)
+                    .unwrap(),
+                &project,
+            );
 
             let project = wg.get_project("qux").unwrap();
-            builder
-                .install_dependencies(
-                    &builder
-                        .get_project_spec(&Id::raw("rust"), &project)
-                        .unwrap(),
-                    &project,
-                )
-                .await
-                .unwrap();
+            builder.install_dependencies(
+                &builder
+                    .get_project_spec(&Id::raw("rust"), &project)
+                    .unwrap(),
+                &project,
+            );
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -340,9 +322,9 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let project = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &project).await.unwrap();
+            builder.install_dependencies(&spec, &project);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -386,9 +368,9 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let project = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &project).await.unwrap();
+            builder.install_dependencies(&spec, &project);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -438,9 +420,9 @@ mod action_graph_builder {
             let spec = create_tier_spec(2);
 
             let project = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &project).await.unwrap();
+            builder.install_dependencies(&spec, &project);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
@@ -465,9 +447,9 @@ mod action_graph_builder {
             let mut builder = container.create_builder(wg.clone()).await;
 
             let project = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &project).await.unwrap();
+            builder.install_dependencies(&spec, &project);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
@@ -494,9 +476,9 @@ mod action_graph_builder {
             let spec = create_tier_spec(2);
 
             let project = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &project).await.unwrap();
+            builder.install_dependencies(&spec, &project);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
@@ -525,11 +507,12 @@ mod action_graph_builder {
             let spec = create_tier_spec(3);
 
             let project = wg.get_project("bar").unwrap();
-            let index = builder.install_dependencies(&spec, &project).await.unwrap();
+            let index = builder.install_dependencies(&spec, &project);
 
-            assert!(index.is_some());
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
 
-            let (_, graph) = builder.build();
+            assert!(!output.report.nodes(index).is_empty());
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -561,11 +544,12 @@ mod action_graph_builder {
             let mut builder = container.create_builder(wg.clone()).await;
 
             let project = wg.get_project("bar").unwrap();
-            let index = builder.install_dependencies(&spec, &project).await.unwrap();
+            let index = builder.install_dependencies(&spec, &project);
 
-            assert!(index.is_some());
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
 
-            let (_, graph) = builder.build();
+            assert!(!output.report.nodes(index).is_empty());
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -599,9 +583,9 @@ mod action_graph_builder {
             let spec = create_tier_spec(2);
 
             let project = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &project).await.unwrap();
+            builder.install_dependencies(&spec, &project);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -631,9 +615,9 @@ mod action_graph_builder {
             let spec = create_tier_spec(2);
 
             let project = wg.get_project("isolated").unwrap();
-            builder.install_dependencies(&spec, &project).await.unwrap();
+            builder.install_dependencies(&spec, &project);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_eq!(
                 topo(graph),
@@ -666,11 +650,12 @@ mod action_graph_builder {
             // and provisioning one here would clobber the workspace's environment,
             // since the package manager resolves upwards to the same root
             let project = wg.get_project("out").unwrap();
-            let index = builder.install_dependencies(&spec, &project).await.unwrap();
+            let index = builder.install_dependencies(&spec, &project);
 
-            assert!(index.is_none());
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
 
-            let (_, graph) = builder.build();
+            assert!(output.report.nodes(index).is_empty());
 
             assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
         }
@@ -688,11 +673,12 @@ mod action_graph_builder {
             // There's no workspace, so the located root is the only package,
             // and this project isn't it
             let project = wg.get_project("bar").unwrap();
-            let index = builder.install_dependencies(&spec, &project).await.unwrap();
+            let index = builder.install_dependencies(&spec, &project);
 
-            assert!(index.is_none());
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
 
-            let (_, graph) = builder.build();
+            assert!(output.report.nodes(index).is_empty());
 
             assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
         }
@@ -712,11 +698,12 @@ mod action_graph_builder {
             let spec = create_tier_spec(3);
 
             let project = wg.get_project("out").unwrap();
-            let index = builder.install_dependencies(&spec, &project).await.unwrap();
+            let index = builder.install_dependencies(&spec, &project);
 
-            assert!(index.is_some());
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
 
-            let (_, graph) = builder.build();
+            assert!(!output.report.nodes(index).is_empty());
 
             assert_eq!(
                 topo(graph),
@@ -741,9 +728,9 @@ mod action_graph_builder {
             let spec = create_tier_spec(2);
 
             let project = wg.get_project("in").unwrap();
-            builder.install_dependencies(&spec, &project).await.unwrap();
+            builder.install_dependencies(&spec, &project);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_eq!(
                 topo(graph),
@@ -772,9 +759,9 @@ mod action_graph_builder {
             let spec = create_tier_spec(2);
 
             let project = wg.get_project("root").unwrap();
-            builder.install_dependencies(&spec, &project).await.unwrap();
+            builder.install_dependencies(&spec, &project);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_eq!(
                 topo(graph),
@@ -804,11 +791,12 @@ mod action_graph_builder {
 
             let spec = create_tier_spec(2);
 
-            let index = builder.install_dependencies_root(&spec).await.unwrap();
+            let index = builder.install_dependencies_root(&spec);
 
-            assert!(index.is_some());
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
 
-            let (_, graph) = builder.build();
+            assert!(!output.report.nodes(index).is_empty());
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -835,9 +823,9 @@ mod action_graph_builder {
 
             let spec = create_tier_spec(3);
 
-            builder.install_dependencies_root(&spec).await.unwrap();
+            builder.install_dependencies_root(&spec);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -868,9 +856,9 @@ mod action_graph_builder {
 
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
-            builder.install_dependencies_root(&spec).await.unwrap();
+            builder.install_dependencies_root(&spec);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -904,9 +892,9 @@ mod action_graph_builder {
 
             let spec = create_tier_spec(2);
 
-            builder.install_dependencies_root(&spec).await.unwrap();
+            builder.install_dependencies_root(&spec);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -936,12 +924,16 @@ mod action_graph_builder {
             let spec = create_tier_spec(2);
 
             let project = wg.get_project("in").unwrap();
-            let project_index = builder.install_dependencies(&spec, &project).await.unwrap();
-            let root_index = builder.install_dependencies_root(&spec).await.unwrap();
+            let project_index = builder.install_dependencies(&spec, &project);
+            let root_index = builder.install_dependencies_root(&spec);
 
-            assert_eq!(project_index, root_index);
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
 
-            let (_, graph) = builder.build();
+            assert_eq!(
+                output.report.nodes(project_index),
+                output.report.nodes(root_index)
+            );
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -970,11 +962,12 @@ mod action_graph_builder {
 
             let spec = create_tier_spec(2);
 
-            let index = builder.install_dependencies_root(&spec).await.unwrap();
+            let index = builder.install_dependencies_root(&spec);
 
-            assert!(index.is_none());
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
 
-            let (_, graph) = builder.build();
+            assert!(output.report.nodes(index).is_empty());
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
@@ -990,11 +983,12 @@ mod action_graph_builder {
 
             let spec = create_tier_spec(1);
 
-            let index = builder.install_dependencies_root(&spec).await.unwrap();
+            let index = builder.install_dependencies_root(&spec);
 
-            assert!(index.is_none());
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
 
-            let (_, graph) = builder.build();
+            assert!(output.report.nodes(index).is_empty());
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
@@ -1018,9 +1012,9 @@ mod action_graph_builder {
 
             let spec = create_tier_spec(2);
 
-            builder.install_dependencies_root(&spec).await.unwrap();
+            builder.install_dependencies_root(&spec);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
@@ -1042,9 +1036,9 @@ mod action_graph_builder {
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
 
-            builder.install_dependencies_root(&spec).await.unwrap();
+            builder.install_dependencies_root(&spec);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
@@ -1068,9 +1062,9 @@ mod action_graph_builder {
 
             let spec = create_tier_spec(2);
 
-            builder.install_dependencies_root(&spec).await.unwrap();
+            builder.install_dependencies_root(&spec);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
@@ -1090,12 +1084,10 @@ mod action_graph_builder {
 
             let task = create_task("bar", "build");
 
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -1131,12 +1123,10 @@ mod action_graph_builder {
             let mut task = create_task("bar", "build");
             task.toolchains = vec![Id::raw("tc-tier3")];
 
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -1165,20 +1155,14 @@ mod action_graph_builder {
 
             let task = create_task("bar", "build");
 
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_eq!(
                 topo(graph),
@@ -1207,12 +1191,10 @@ mod action_graph_builder {
             let mut task = create_task("bar", "build");
             task.options.interactive = true;
 
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_eq!(
                 topo(graph).last().unwrap(),
@@ -1234,18 +1216,13 @@ mod action_graph_builder {
 
             let task = create_task("bar", "build");
 
-            builder
-                .run_task(
-                    &task,
-                    &RunRequirements {
-                        interactive: true,
-                        ..Default::default()
-                    },
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements {
+                interactive: true,
+                ..Default::default()
+            });
+            builder.run_task(&task);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_eq!(
                 topo(graph).last().unwrap(),
@@ -1268,12 +1245,10 @@ mod action_graph_builder {
             let mut task = create_task("bar", "build");
             task.options.persistent = true;
 
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_eq!(
                 topo(graph).last().unwrap(),
@@ -1296,40 +1271,30 @@ mod action_graph_builder {
             let task = create_task("bar", "build");
 
             // Test collapsing
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
 
             // Separate nodes
-            builder
-                .run_task_with_config(
-                    &task,
-                    &RunRequirements::default(),
-                    &TaskDependencyConfig {
-                        args: vec!["a".into(), "b".into(), "c".into()],
-                        ..TaskDependencyConfig::default()
-                    },
-                )
-                .await
-                .unwrap();
-            builder
-                .run_task_with_config(
-                    &task,
-                    &RunRequirements::default(),
-                    &TaskDependencyConfig {
-                        args: vec!["x".into(), "y".into(), "z".into()],
-                        ..TaskDependencyConfig::default()
-                    },
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_with_config(
+                &task,
+                &TaskDependencyConfig {
+                    args: vec!["a".into(), "b".into(), "c".into()],
+                    ..TaskDependencyConfig::default()
+                },
+            );
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_with_config(
+                &task,
+                &TaskDependencyConfig {
+                    args: vec!["x".into(), "y".into(), "z".into()],
+                    ..TaskDependencyConfig::default()
+                },
+            );
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_eq!(
                 topo(graph),
@@ -1367,30 +1332,24 @@ mod action_graph_builder {
 
             let task = create_task("bar", "build");
 
-            builder
-                .run_task_with_config(
-                    &task,
-                    &RunRequirements::default(),
-                    &TaskDependencyConfig {
-                        args: vec!["a".into(), "b".into(), "c".into()],
-                        ..TaskDependencyConfig::default()
-                    },
-                )
-                .await
-                .unwrap();
-            builder
-                .run_task_with_config(
-                    &task,
-                    &RunRequirements::default(),
-                    &TaskDependencyConfig {
-                        args: vec!["a".into(), "b".into(), "c".into()],
-                        ..TaskDependencyConfig::default()
-                    },
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_with_config(
+                &task,
+                &TaskDependencyConfig {
+                    args: vec!["a".into(), "b".into(), "c".into()],
+                    ..TaskDependencyConfig::default()
+                },
+            );
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_with_config(
+                &task,
+                &TaskDependencyConfig {
+                    args: vec!["a".into(), "b".into(), "c".into()],
+                    ..TaskDependencyConfig::default()
+                },
+            );
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_eq!(
                 topo(graph),
@@ -1422,30 +1381,24 @@ mod action_graph_builder {
 
             let task = create_task("bar", "build");
 
-            builder
-                .run_task_with_config(
-                    &task,
-                    &RunRequirements::default(),
-                    &TaskDependencyConfig {
-                        args: vec!["a".into(), "b".into(), "c".into()],
-                        ..TaskDependencyConfig::default()
-                    },
-                )
-                .await
-                .unwrap();
-            builder
-                .run_task_with_config(
-                    &task,
-                    &RunRequirements::default(),
-                    &TaskDependencyConfig {
-                        args: vec!["a".into(), "b".into(), "c".into()],
-                        ..TaskDependencyConfig::default()
-                    },
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_with_config(
+                &task,
+                &TaskDependencyConfig {
+                    args: vec!["a".into(), "b".into(), "c".into()],
+                    ..TaskDependencyConfig::default()
+                },
+            );
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_with_config(
+                &task,
+                &TaskDependencyConfig {
+                    args: vec!["a".into(), "b".into(), "c".into()],
+                    ..TaskDependencyConfig::default()
+                },
+            );
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_eq!(
                 topo(graph),
@@ -1478,40 +1431,30 @@ mod action_graph_builder {
             let task = create_task("bar", "build");
 
             // Test collapsing
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
 
             // Separate nodes
-            builder
-                .run_task_with_config(
-                    &task,
-                    &RunRequirements::default(),
-                    &TaskDependencyConfig {
-                        env: EnvMap::from_iter([("FOO".into(), Some("1".into()))]),
-                        ..TaskDependencyConfig::default()
-                    },
-                )
-                .await
-                .unwrap();
-            builder
-                .run_task_with_config(
-                    &task,
-                    &RunRequirements::default(),
-                    &TaskDependencyConfig {
-                        env: EnvMap::from_iter([("BAR".into(), Some("2".into()))]),
-                        ..TaskDependencyConfig::default()
-                    },
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_with_config(
+                &task,
+                &TaskDependencyConfig {
+                    env: EnvMap::from_iter([("FOO".into(), Some("1".into()))]),
+                    ..TaskDependencyConfig::default()
+                },
+            );
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_with_config(
+                &task,
+                &TaskDependencyConfig {
+                    env: EnvMap::from_iter([("BAR".into(), Some("2".into()))]),
+                    ..TaskDependencyConfig::default()
+                },
+            );
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_eq!(
                 topo(graph),
@@ -1549,30 +1492,24 @@ mod action_graph_builder {
 
             let task = create_task("bar", "build");
 
-            builder
-                .run_task_with_config(
-                    &task,
-                    &RunRequirements::default(),
-                    &TaskDependencyConfig {
-                        env: EnvMap::from_iter([("FOO".into(), Some("1".into()))]),
-                        ..TaskDependencyConfig::default()
-                    },
-                )
-                .await
-                .unwrap();
-            builder
-                .run_task_with_config(
-                    &task,
-                    &RunRequirements::default(),
-                    &TaskDependencyConfig {
-                        env: EnvMap::from_iter([("FOO".into(), Some("1".into()))]),
-                        ..TaskDependencyConfig::default()
-                    },
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_with_config(
+                &task,
+                &TaskDependencyConfig {
+                    env: EnvMap::from_iter([("FOO".into(), Some("1".into()))]),
+                    ..TaskDependencyConfig::default()
+                },
+            );
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_with_config(
+                &task,
+                &TaskDependencyConfig {
+                    env: EnvMap::from_iter([("FOO".into(), Some("1".into()))]),
+                    ..TaskDependencyConfig::default()
+                },
+            );
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_eq!(
                 topo(graph),
@@ -1605,54 +1542,41 @@ mod action_graph_builder {
             let task = create_task("bar", "build");
 
             // Test collapsing
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
 
             // Separate nodes
-            builder
-                .run_task_with_config(
-                    &task,
-                    &RunRequirements::default(),
-                    &TaskDependencyConfig {
-                        args: vec!["a".into(), "b".into(), "c".into()],
-                        env: EnvMap::from_iter([("FOO".into(), Some("1".into()))]),
-                        ..TaskDependencyConfig::default()
-                    },
-                )
-                .await
-                .unwrap();
-            builder
-                .run_task_with_config(
-                    &task,
-                    &RunRequirements::default(),
-                    &TaskDependencyConfig {
-                        args: vec!["a".into(), "b".into(), "c".into()],
-                        env: EnvMap::from_iter([("BAR".into(), Some("2".into()))]),
-                        ..TaskDependencyConfig::default()
-                    },
-                )
-                .await
-                .unwrap();
-            builder
-                .run_task_with_config(
-                    &task,
-                    &RunRequirements::default(),
-                    &TaskDependencyConfig {
-                        args: vec!["x".into(), "y".into(), "z".into()],
-                        env: EnvMap::from_iter([("BAR".into(), Some("2".into()))]),
-                        ..TaskDependencyConfig::default()
-                    },
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_with_config(
+                &task,
+                &TaskDependencyConfig {
+                    args: vec!["a".into(), "b".into(), "c".into()],
+                    env: EnvMap::from_iter([("FOO".into(), Some("1".into()))]),
+                    ..TaskDependencyConfig::default()
+                },
+            );
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_with_config(
+                &task,
+                &TaskDependencyConfig {
+                    args: vec!["a".into(), "b".into(), "c".into()],
+                    env: EnvMap::from_iter([("BAR".into(), Some("2".into()))]),
+                    ..TaskDependencyConfig::default()
+                },
+            );
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_with_config(
+                &task,
+                &TaskDependencyConfig {
+                    args: vec!["x".into(), "y".into(), "z".into()],
+                    env: EnvMap::from_iter([("BAR".into(), Some("2".into()))]),
+                    ..TaskDependencyConfig::default()
+                },
+            );
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_eq!(
                 topo(graph),
@@ -1703,15 +1627,13 @@ mod action_graph_builder {
 
                 // Empty set works fine, just needs to be some
                 let changed_files = FxHashSet::default();
-                builder.set_changed_files(changed_files).unwrap();
+                builder.set_changed_files(changed_files);
                 builder.set_affected().unwrap();
 
-                builder
-                    .run_task(&task, &RunRequirements::default())
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements::default());
+                builder.run_task(&task);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 assert!(!topo(graph).into_iter().any(|node| {
                     if let ActionNode::RunTask(inner) = &node {
@@ -1742,12 +1664,10 @@ mod action_graph_builder {
                         .unwrap();
                 });
 
-                builder
-                    .run_task(&task, &RunRequirements::default())
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements::default());
+                builder.run_task(&task);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 assert!(!topo(graph).is_empty());
             }
@@ -1772,18 +1692,13 @@ mod action_graph_builder {
                     },
                 );
 
-                builder
-                    .run_task(
-                        &task,
-                        &RunRequirements {
-                            dependents: Depth::Deep,
-                            ..Default::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    dependents: Depth::Deep,
+                    ..Default::default()
+                });
+                builder.run_task(&task);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 assert_eq!(
                     topo(graph),
@@ -1834,25 +1749,20 @@ mod action_graph_builder {
                 );
 
                 // base:test first, so its walk marks base:build before its visit
-                builder
-                    .run_tasks(
-                        create_adverse_order_locators([
-                            "base:test",
-                            "base:build",
-                            "mid:build",
-                            "mid:test",
-                            "top:build",
-                            "top:test",
-                        ]),
-                        RunRequirements {
-                            dependents: Depth::Deep,
-                            ..Default::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    dependents: Depth::Deep,
+                    ..Default::default()
+                });
+                builder.run_tasks(create_adverse_order_locators([
+                    "base:test",
+                    "base:build",
+                    "mid:build",
+                    "mid:test",
+                    "top:build",
+                    "top:test",
+                ]));
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 assert_eq!(
                     extract_run_task_targets(graph),
@@ -1881,25 +1791,20 @@ mod action_graph_builder {
                     |_| {},
                 );
 
-                builder
-                    .run_tasks(
-                        create_adverse_order_locators([
-                            "mid:test",
-                            "mid:build",
-                            "top:test",
-                            "top:build",
-                            "base:test",
-                            "base:build",
-                        ]),
-                        RunRequirements {
-                            dependents: Depth::Deep,
-                            ..Default::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    dependents: Depth::Deep,
+                    ..Default::default()
+                });
+                builder.run_tasks(create_adverse_order_locators([
+                    "mid:test",
+                    "mid:build",
+                    "top:test",
+                    "top:build",
+                    "base:test",
+                    "base:build",
+                ]));
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 assert_eq!(
                     extract_run_task_targets(graph),
@@ -1934,25 +1839,20 @@ mod action_graph_builder {
                     |_| {},
                 );
 
-                builder
-                    .run_tasks(
-                        create_adverse_order_locators([
-                            "top:test",
-                            "top:build",
-                            "mid:test",
-                            "mid:build",
-                            "base:test",
-                            "base:build",
-                        ]),
-                        RunRequirements {
-                            dependents: Depth::Deep,
-                            ..Default::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    dependents: Depth::Deep,
+                    ..Default::default()
+                });
+                builder.run_tasks(create_adverse_order_locators([
+                    "top:test",
+                    "top:build",
+                    "mid:test",
+                    "mid:build",
+                    "base:test",
+                    "base:build",
+                ]));
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 assert_eq!(
                     extract_run_task_targets(graph),
@@ -1987,20 +1887,15 @@ mod action_graph_builder {
                 );
 
                 // While `top:build` is the only requested target
-                builder
-                    .run_tasks(
-                        vec![TargetLocator::Qualified(
-                            Target::parse("top:build").unwrap(),
-                        )],
-                        RunRequirements {
-                            dependents: Depth::Deep,
-                            ..Default::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    dependents: Depth::Deep,
+                    ..Default::default()
+                });
+                builder.run_tasks(vec![TargetLocator::Qualified(
+                    Target::parse("top:build").unwrap(),
+                )]);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 extract_run_task_targets(graph)
             }
@@ -2041,25 +1936,18 @@ mod action_graph_builder {
                 let wg = container.create_workspace_graph().await;
                 let mut builder = container.create_builder(wg.clone()).await;
 
-                builder
-                    .set_changed_files(FxHashSet::from_iter([WorkspaceRelativePathBuf::from(
-                        "app/src.txt",
-                    )]))
-                    .unwrap();
-                builder.track_affected(Depth::Deep, false).await.unwrap();
+                builder.set_changed_files(FxHashSet::from_iter([WorkspaceRelativePathBuf::from(
+                    "app/src.txt",
+                )]));
+                builder.track_affected(Depth::Deep, false);
 
-                builder
-                    .run_tasks(
-                        vec![TargetLocator::parse("app:publish").unwrap()],
-                        RunRequirements {
-                            dependents,
-                            ..Default::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    dependents,
+                    ..Default::default()
+                });
+                builder.run_tasks(vec![TargetLocator::parse("app:publish").unwrap()]);
 
-                let (context, graph) = builder.build();
+                let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
                 (context, extract_run_task_targets(graph))
             }
@@ -2103,19 +1991,14 @@ mod action_graph_builder {
                 let mut task = create_task("bar", "build");
                 task.options.run_in_ci = TaskOptionRunInCI::Enabled(true);
 
-                builder
-                    .run_task(
-                        &task,
-                        &RunRequirements {
-                            ci: true,
-                            ci_check: true,
-                            ..Default::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    ci: true,
+                    ci_check: true,
+                    ..Default::default()
+                });
+                builder.run_task(&task);
 
-                let (context, graph) = builder.build();
+                let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
                 assert_eq!(context.get_target_states(), FxHashMap::default());
                 assert!(!topo(graph).is_empty());
@@ -2131,20 +2014,15 @@ mod action_graph_builder {
 
                 let task = wg.get_task_from_project("ci", "ci3-dependency").unwrap();
 
-                builder
-                    .run_task(
-                        &task,
-                        &RunRequirements {
-                            ci: true,
-                            ci_check: true,
-                            dependents: Depth::Deep,
-                            ..RunRequirements::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    ci: true,
+                    ci_check: true,
+                    dependents: Depth::Deep,
+                    ..RunRequirements::default()
+                });
+                builder.run_task(&task);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 assert_snapshot!(graph.to_dot());
             }
@@ -2159,20 +2037,15 @@ mod action_graph_builder {
 
                 let task = wg.get_task_from_project("ci", "ci4-dependency").unwrap();
 
-                builder
-                    .run_task(
-                        &task,
-                        &RunRequirements {
-                            ci: true,
-                            ci_check: true,
-                            dependents: Depth::Deep,
-                            ..RunRequirements::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    ci: true,
+                    ci_check: true,
+                    dependents: Depth::Deep,
+                    ..RunRequirements::default()
+                });
+                builder.run_task(&task);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 assert_snapshot!(graph.to_dot());
             }
@@ -2192,19 +2065,14 @@ mod action_graph_builder {
                 let mut task = create_task("bar", "build");
                 task.options.run_in_ci = TaskOptionRunInCI::Skip;
 
-                builder
-                    .run_task(
-                        &task,
-                        &RunRequirements {
-                            ci: true,
-                            ci_check: true,
-                            ..Default::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    ci: true,
+                    ci_check: true,
+                    ..Default::default()
+                });
+                builder.run_task(&task);
 
-                let (context, graph) = builder.build();
+                let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
                 assert_eq!(
                     context.get_target_states(),
@@ -2228,19 +2096,14 @@ mod action_graph_builder {
                 let mut task = create_task("bar", "build");
                 task.options.run_in_ci = TaskOptionRunInCI::Enabled(false);
 
-                builder
-                    .run_task(
-                        &task,
-                        &RunRequirements {
-                            ci: true,
-                            ci_check: true,
-                            ..Default::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    ci: true,
+                    ci_check: true,
+                    ..Default::default()
+                });
+                builder.run_task(&task);
 
-                let (context, graph) = builder.build();
+                let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
                 assert_eq!(
                     context.get_target_states(),
@@ -2264,19 +2127,14 @@ mod action_graph_builder {
                 let mut task = create_task("bar", "build");
                 task.options.run_in_ci = TaskOptionRunInCI::Enabled(false);
 
-                builder
-                    .run_task(
-                        &task,
-                        &RunRequirements {
-                            ci: true,
-                            ci_check: false,
-                            ..Default::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    ci: true,
+                    ci_check: false,
+                    ..Default::default()
+                });
+                builder.run_task(&task);
 
-                let (context, graph) = builder.build();
+                let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
                 assert_eq!(context.get_target_states(), FxHashMap::default());
                 assert!(!topo(graph).is_empty());
@@ -2293,19 +2151,14 @@ mod action_graph_builder {
                 let mut task = create_task("bar", "build");
                 task.options.run_in_ci = TaskOptionRunInCI::Enabled(false);
 
-                builder
-                    .run_task(
-                        &task,
-                        &RunRequirements {
-                            ci: false,
-                            ci_check: false,
-                            ..Default::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    ci: false,
+                    ci_check: false,
+                    ..Default::default()
+                });
+                builder.run_task(&task);
 
-                let (context, graph) = builder.build();
+                let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
                 assert_eq!(context.get_target_states(), FxHashMap::default());
                 assert!(!topo(graph).is_empty());
@@ -2321,20 +2174,15 @@ mod action_graph_builder {
 
                 let task = wg.get_task_from_project("ci", "ci2-dependency").unwrap();
 
-                builder
-                    .run_task(
-                        &task,
-                        &RunRequirements {
-                            ci: true,
-                            ci_check: true,
-                            dependents: Depth::Deep,
-                            ..RunRequirements::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    ci: true,
+                    ci_check: true,
+                    dependents: Depth::Deep,
+                    ..RunRequirements::default()
+                });
+                builder.run_task(&task);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 assert_snapshot!(graph.to_dot());
             }
@@ -2349,20 +2197,15 @@ mod action_graph_builder {
 
                 let task = wg.get_task_from_project("ci", "ci2-dependency").unwrap();
 
-                builder
-                    .run_task(
-                        &task,
-                        &RunRequirements {
-                            ci: true,
-                            ci_check: true,
-                            dependents: Depth::Deep,
-                            ..RunRequirements::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    ci: true,
+                    ci_check: true,
+                    dependents: Depth::Deep,
+                    ..RunRequirements::default()
+                });
+                builder.run_task(&task);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 assert_snapshot!(graph.to_dot());
             }
@@ -2415,10 +2258,11 @@ mod action_graph_builder {
                 for id in ids {
                     let task = wg.get_task_from_project("proj", id).unwrap();
 
-                    builder.run_task(&task, &reqs).await.unwrap();
+                    builder.set_requirements(reqs.clone());
+                    builder.run_task(&task);
                 }
 
-                let (context, graph) = builder.build();
+                let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
                 (context, extract_run_task_targets(graph))
             }
@@ -2639,12 +2483,10 @@ mod action_graph_builder {
 
                 let task = wg.get_task_from_project("deps", "chain3").unwrap();
 
-                builder
-                    .run_task(&task, &RunRequirements::default())
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements::default());
+                builder.run_task(&task);
 
-                let (context, graph) = builder.build();
+                let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
                 assert!(context.ignored_dependencies.is_empty());
                 assert_snapshot!(graph.to_dot());
@@ -2670,12 +2512,10 @@ mod action_graph_builder {
                     },
                 );
 
-                builder
-                    .run_task(&task, &RunRequirements::default())
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements::default());
+                builder.run_task(&task);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 assert_snapshot!(graph.to_dot());
             }
@@ -2690,18 +2530,13 @@ mod action_graph_builder {
 
                 let task = wg.get_task_from_project("deps", "chain3").unwrap();
 
-                builder
-                    .run_task(
-                        &task,
-                        &RunRequirements {
-                            no_dependencies: true,
-                            ..RunRequirements::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    no_dependencies: true,
+                    ..RunRequirements::default()
+                });
+                builder.run_task(&task);
 
-                let (context, graph) = builder.build();
+                let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
                 assert_snapshot!(graph.to_dot());
                 assert_eq!(
@@ -2733,18 +2568,13 @@ mod action_graph_builder {
                     },
                 );
 
-                builder
-                    .run_task(
-                        &task,
-                        &RunRequirements {
-                            no_dependencies: true,
-                            ..RunRequirements::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    no_dependencies: true,
+                    ..RunRequirements::default()
+                });
+                builder.run_task(&task);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 assert_snapshot!(graph.to_dot());
             }
@@ -2764,20 +2594,17 @@ mod action_graph_builder {
                     let wg = container.create_workspace_graph().await;
                     let mut builder = container.create_builder(wg.clone()).await;
 
-                    builder
-                        .run_tasks(
-                            ids.iter()
-                                .map(|id| TargetLocator::parse(&format!("deps:{id}")).unwrap())
-                                .collect::<Vec<_>>(),
-                            RunRequirements {
-                                no_dependencies: true,
-                                ..RunRequirements::default()
-                            },
-                        )
-                        .await
-                        .unwrap();
+                    builder.set_requirements(RunRequirements {
+                        no_dependencies: true,
+                        ..RunRequirements::default()
+                    });
+                    builder.run_tasks(
+                        ids.iter()
+                            .map(|id| TargetLocator::parse(&format!("deps:{id}")).unwrap())
+                            .collect::<Vec<_>>(),
+                    );
 
-                    let (context, graph) = builder.build();
+                    let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
                     assert_eq!(
                         topo(graph)
@@ -2812,30 +2639,25 @@ mod action_graph_builder {
                     let wg = container.create_workspace_graph().await;
                     let mut builder = container.create_builder(wg.clone()).await;
 
-                    builder
-                        .set_changed_files(FxHashSet::from_iter([WorkspaceRelativePathBuf::from(
-                            "b/src.txt",
-                        )]))
-                        .unwrap();
-                    builder.track_affected(Depth::Deep, true).await.unwrap();
+                    builder.set_changed_files(FxHashSet::from_iter([
+                        WorkspaceRelativePathBuf::from("b/src.txt"),
+                    ]));
+                    builder.track_affected(Depth::Deep, true);
 
-                    builder
-                        .run_tasks(
-                            locators
-                                .iter()
-                                .map(|locator| TargetLocator::parse(locator).unwrap())
-                                .collect::<Vec<_>>(),
-                            RunRequirements {
-                                ci: true,
-                                ci_check: true,
-                                no_dependencies: true,
-                                ..RunRequirements::default()
-                            },
-                        )
-                        .await
-                        .unwrap();
+                    builder.set_requirements(RunRequirements {
+                        ci: true,
+                        ci_check: true,
+                        no_dependencies: true,
+                        ..RunRequirements::default()
+                    });
+                    builder.run_tasks(
+                        locators
+                            .iter()
+                            .map(|locator| TargetLocator::parse(locator).unwrap())
+                            .collect::<Vec<_>>(),
+                    );
 
-                    let (context, graph) = builder.build();
+                    let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
                     let inner = graph.get_inner_graph();
                     let edges = inner
                         .graph()
@@ -2949,13 +2771,17 @@ mod action_graph_builder {
                         ..RunRequirements::default()
                     };
 
+                    builder.set_requirements(reqs);
+
                     for id in ids {
                         let task = wg.get_task_from_project("proj", id).unwrap();
 
-                        builder.run_task(&task, &reqs).await.unwrap();
+                        builder.run_task(&task);
                     }
 
-                    builder.build()
+                    let output = builder.build().await.unwrap();
+
+                    (output.context, output.graph)
                 }
 
                 // The task is ran with args by another task, and on its own
@@ -3077,17 +2903,12 @@ mod action_graph_builder {
 
                 let task = wg.get_task_from_project("deps", "chain3").unwrap();
 
-                builder
-                    .run_task(
-                        &task,
-                        &RunRequirements {
-                            ..RunRequirements::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    ..RunRequirements::default()
+                });
+                builder.run_task(&task);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 assert_snapshot!(graph.to_dot());
             }
@@ -3112,17 +2933,12 @@ mod action_graph_builder {
                     },
                 );
 
-                builder
-                    .run_task(
-                        &task,
-                        &RunRequirements {
-                            ..RunRequirements::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    ..RunRequirements::default()
+                });
+                builder.run_task(&task);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 assert_snapshot!(graph.to_dot());
             }
@@ -3137,18 +2953,13 @@ mod action_graph_builder {
 
                 let task = wg.get_task_from_project("deps", "chain3").unwrap();
 
-                builder
-                    .run_task(
-                        &task,
-                        &RunRequirements {
-                            dependents: Depth::DIRECT,
-                            ..RunRequirements::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    dependents: Depth::DIRECT,
+                    ..RunRequirements::default()
+                });
+                builder.run_task(&task);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 assert_snapshot!(graph.to_dot());
             }
@@ -3177,18 +2988,13 @@ mod action_graph_builder {
                     },
                 );
 
-                builder
-                    .run_task(
-                        &task,
-                        &RunRequirements {
-                            dependents: Depth::DIRECT,
-                            ..RunRequirements::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    dependents: Depth::DIRECT,
+                    ..RunRequirements::default()
+                });
+                builder.run_task(&task);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 assert_snapshot!(graph.to_dot());
             }
@@ -3203,18 +3009,13 @@ mod action_graph_builder {
 
                 let task = wg.get_task_from_project("deps", "chain3").unwrap();
 
-                builder
-                    .run_task(
-                        &task,
-                        &RunRequirements {
-                            dependents: Depth::Deep,
-                            ..RunRequirements::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    dependents: Depth::Deep,
+                    ..RunRequirements::default()
+                });
+                builder.run_task(&task);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 assert_snapshot!(graph.to_dot());
             }
@@ -3247,18 +3048,13 @@ mod action_graph_builder {
                     },
                 );
 
-                builder
-                    .run_task(
-                        &task,
-                        &RunRequirements {
-                            dependents: Depth::Deep,
-                            ..RunRequirements::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    dependents: Depth::Deep,
+                    ..RunRequirements::default()
+                });
+                builder.run_task(&task);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 assert_snapshot!(graph.to_dot());
             }
@@ -3275,24 +3071,17 @@ mod action_graph_builder {
                 let task = wg.get_task_from_project("deps", "base").unwrap();
 
                 // First insert the task as a dependency of another target
-                builder
-                    .run_task(&parent, &RunRequirements::default())
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements::default());
+                builder.run_task(&parent);
 
                 // Then run it as an explicit target with dependents
-                builder
-                    .run_task(
-                        &task,
-                        &RunRequirements {
-                            dependents: Depth::DIRECT,
-                            ..RunRequirements::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    dependents: Depth::DIRECT,
+                    ..RunRequirements::default()
+                });
+                builder.run_task(&task);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 assert_snapshot!(graph.to_dot());
 
@@ -3312,18 +3101,13 @@ mod action_graph_builder {
 
                 let task = wg.get_task_from_project("deps", "chain5").unwrap();
 
-                builder
-                    .run_task(
-                        &task,
-                        &RunRequirements {
-                            dependents: Depth::Limit(2),
-                            ..RunRequirements::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    dependents: Depth::Limit(2),
+                    ..RunRequirements::default()
+                });
+                builder.run_task(&task);
 
-                let (context, graph) = builder.build();
+                let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
                 // `chain2` is 3 hops away
                 assert_eq!(
@@ -3358,17 +3142,20 @@ mod action_graph_builder {
                         .create_builder(container.create_workspace_graph().await)
                         .await;
 
+                    builder.set_requirements(RunRequirements {
+                        dependents: Depth::Deep,
+                        job: Some(job),
+                        job_total: Some(2),
+                        ..RunRequirements::default()
+                    });
+                    let request =
+                        builder.run_tasks(vec![TargetLocator::parse("deps:chain5").unwrap()]);
                     let partition = builder
-                        .run_tasks(
-                            vec![TargetLocator::parse("deps:chain5").unwrap()],
-                            RunRequirements {
-                                dependents: Depth::Deep,
-                                job: Some(job),
-                                job_total: Some(2),
-                                ..RunRequirements::default()
-                            },
-                        )
+                        .build()
                         .await
+                        .unwrap()
+                        .report
+                        .take_partition(request)
                         .unwrap();
 
                     assert_eq!(partition.size, Some(3));
@@ -3403,20 +3190,15 @@ mod action_graph_builder {
                 let wg = container.create_workspace_graph().await;
                 let mut builder = container.create_builder(wg.clone()).await;
 
-                builder
-                    .run_tasks(
-                        vec![TargetLocator::parse("ci:ci2-dependency").unwrap()],
-                        RunRequirements {
-                            ci: true,
-                            ci_check: true,
-                            dependents: Depth::Deep,
-                            ..RunRequirements::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    ci: true,
+                    ci_check: true,
+                    dependents: Depth::Deep,
+                    ..RunRequirements::default()
+                });
+                builder.run_tasks(vec![TargetLocator::parse("ci:ci2-dependency").unwrap()]);
 
-                let (context, _) = builder.build();
+                let context = builder.build().await.unwrap().context;
 
                 // Both are reached, but aren't ran in CI either
                 assert_eq!(
@@ -3452,18 +3234,13 @@ mod action_graph_builder {
 
                 let task = wg.get_task_from_project("a", "task").unwrap();
 
-                builder
-                    .run_task(
-                        &task,
-                        &RunRequirements {
-                            dependents: Depth::Deep,
-                            ..RunRequirements::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    dependents: Depth::Deep,
+                    ..RunRequirements::default()
+                });
+                builder.run_task(&task);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 // `a` has no dependents, so only its dependency chain runs;
                 // `d` and `e` are dependents of the upstream `c`, not of `a`
@@ -3483,18 +3260,13 @@ mod action_graph_builder {
 
                 let task = wg.get_task_from_project("c", "task").unwrap();
 
-                builder
-                    .run_task(
-                        &task,
-                        &RunRequirements {
-                            dependents: Depth::Deep,
-                            ..RunRequirements::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    dependents: Depth::Deep,
+                    ..RunRequirements::default()
+                });
+                builder.run_task(&task);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 // Everything is downstream of `c`
                 assert_eq!(
@@ -3513,18 +3285,13 @@ mod action_graph_builder {
 
                 let task = wg.get_task_from_project("c", "task").unwrap();
 
-                builder
-                    .run_task(
-                        &task,
-                        &RunRequirements {
-                            dependents: Depth::DIRECT,
-                            ..RunRequirements::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    dependents: Depth::DIRECT,
+                    ..RunRequirements::default()
+                });
+                builder.run_task(&task);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 assert_eq!(
                     extract_run_task_targets(graph),
@@ -3548,14 +3315,16 @@ mod action_graph_builder {
                 // Inserts `c` as a dependency only, with no dependents expanded
                 let task_b = wg.get_task_from_project("b", "task").unwrap();
 
-                builder.run_task(&task_b, &reqs).await.unwrap();
+                builder.set_requirements(reqs.clone());
+                builder.run_task(&task_b);
 
                 // Then runs `c` as an explicit target, which must expand them
                 let task_c = wg.get_task_from_project("c", "task").unwrap();
 
-                builder.run_task(&task_c, &reqs).await.unwrap();
+                builder.set_requirements(reqs.clone());
+                builder.run_task(&task_c);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 assert_eq!(
                     extract_run_task_targets(graph),
@@ -3581,26 +3350,19 @@ mod action_graph_builder {
                 }
 
                 if let Some(file) = changed_file {
-                    builder
-                        .set_changed_files(FxHashSet::from_iter([WorkspaceRelativePathBuf::from(
-                            file,
-                        )]))
-                        .unwrap();
-                    builder.track_affected(Depth::Deep, false).await.unwrap();
+                    builder.set_changed_files(FxHashSet::from_iter([
+                        WorkspaceRelativePathBuf::from(file),
+                    ]));
+                    builder.track_affected(Depth::Deep, false);
                 }
 
-                builder
-                    .run_tasks(
-                        vec![TargetLocator::parse(locator).unwrap()],
-                        RunRequirements {
-                            dependents: Depth::Deep,
-                            ..RunRequirements::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    dependents: Depth::Deep,
+                    ..RunRequirements::default()
+                });
+                builder.run_tasks(vec![TargetLocator::parse(locator).unwrap()]);
 
-                let (context, graph) = builder.build();
+                let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
                 (context, extract_run_task_targets(graph))
             }
@@ -3643,18 +3405,13 @@ mod action_graph_builder {
 
                 let task = wg.get_task_from_project("a", "deploy").unwrap();
 
-                builder
-                    .run_task(
-                        &task,
-                        &RunRequirements {
-                            dependents: Depth::Deep,
-                            ..RunRequirements::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    dependents: Depth::Deep,
+                    ..RunRequirements::default()
+                });
+                builder.run_task(&task);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 // `a` doesn't match, but was explicitly selected
                 assert_eq!(extract_run_task_targets(graph), ["a:deploy", "b:deploy"]);
@@ -3702,12 +3459,10 @@ mod action_graph_builder {
 
             let task = wg.get_task_from_project("deps", "parallel").unwrap();
 
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -3726,12 +3481,10 @@ mod action_graph_builder {
 
             let task = wg.get_task_from_project("deps", "serial").unwrap();
 
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -3750,12 +3503,10 @@ mod action_graph_builder {
 
             let task = wg.get_task_from_project("deps", "chain1").unwrap();
 
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -3774,12 +3525,10 @@ mod action_graph_builder {
 
             let task = wg.get_task_from_project("deps", "base").unwrap();
 
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -3798,18 +3547,13 @@ mod action_graph_builder {
 
             let task = wg.get_task_from_project("deps", "base").unwrap();
 
-            builder
-                .run_task(
-                    &task,
-                    &RunRequirements {
-                        dependents: Depth::Deep,
-                        ..RunRequirements::default()
-                    },
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements {
+                dependents: Depth::Deep,
+                ..RunRequirements::default()
+            });
+            builder.run_task(&task);
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert_snapshot!(graph.to_dot());
             // Dependents are primary targets as well
@@ -3837,20 +3581,15 @@ mod action_graph_builder {
 
             let task = wg.get_task_from_project("deps", "base").unwrap();
 
-            builder
-                .run_task(
-                    &task,
-                    &RunRequirements {
-                        ci: true,
-                        ci_check: true,
-                        dependents: Depth::Deep,
-                        ..RunRequirements::default()
-                    },
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements {
+                ci: true,
+                ci_check: true,
+                dependents: Depth::Deep,
+                ..RunRequirements::default()
+            });
+            builder.run_task(&task);
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert_snapshot!(graph.to_dot());
             // Dependents are primary targets as well, while `parent2` isn't ran in CI
@@ -3884,13 +3623,11 @@ mod action_graph_builder {
                 .collect();
 
             for task in &tasks {
-                builder
-                    .run_task(task, &RunRequirements::default())
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements::default());
+                builder.run_task(task);
             }
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
         }
@@ -3908,12 +3645,10 @@ mod action_graph_builder {
             // all of which must run after clean — not just build-tasks itself.
             let task = wg.get_task_from_project("app", "build").unwrap();
 
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -3937,12 +3672,10 @@ mod action_graph_builder {
             // `last-build -> first-build` edge, and no `last-build -> server`
             let task = wg.get_task_from_project("proj", "dev").unwrap();
 
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
         }
@@ -3962,13 +3695,11 @@ mod action_graph_builder {
             for name in ["parent1", "parent2"] {
                 let task = wg.get_task_from_project("proj", name).unwrap();
 
-                builder
-                    .run_task(&task, &RunRequirements::default())
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements::default());
+                builder.run_task(&task);
             }
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
         }
@@ -4026,16 +3757,19 @@ mod action_graph_builder {
 
                 let reqs = RunRequirements::default();
 
+                builder.set_requirements(reqs);
+
                 for id in ids {
                     let task = wg.get_task_from_project("proj", id).unwrap();
 
-                    builder
-                        .run_task(&task, &reqs)
-                        .await
-                        .unwrap_or_else(|error| panic!("{ids:?}: {error}"));
+                    builder.run_task(&task);
                 }
 
-                builder.build().1
+                builder
+                    .build()
+                    .await
+                    .unwrap_or_else(|error| panic!("{ids:?}: {error}"))
+                    .graph
             }
 
             #[tokio::test(flavor = "multi_thread")]
@@ -4184,10 +3918,10 @@ mod action_graph_builder {
                     ..TaskDependencyConfig::default()
                 });
 
-                let error = builder
-                    .run_task(&task, &RunRequirements::default())
-                    .await
-                    .unwrap_err();
+                builder.set_requirements(RunRequirements::default());
+                builder.run_task(&task);
+
+                let error = builder.build().await.err().unwrap();
 
                 assert!(
                     error.to_string().contains(
@@ -4250,12 +3984,10 @@ mod action_graph_builder {
 
             let task = wg.get_task_from_project("proj", "base").unwrap();
 
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert_snapshot!(graph.to_dot());
 
@@ -4291,12 +4023,10 @@ mod action_graph_builder {
 
             let task = wg.get_task_from_project("proj", "base").unwrap();
 
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             let teardown = find_task_index(&graph, "proj:teardown");
 
@@ -4319,12 +4049,10 @@ mod action_graph_builder {
 
             let task = wg.get_task_from_project("proj", "waits").unwrap();
 
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert_snapshot!(graph.to_dot());
 
@@ -4353,23 +4081,23 @@ mod action_graph_builder {
 
             let task = wg.get_task_from_project("proj", "serial").unwrap();
 
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
 
             let edges = map_edges(&graph);
-            let task_edges = edges
+            let mut task_edges = edges
                 .iter()
                 .filter(|(source, target, _)| {
                     source.contains("Task(proj:") && target.contains("Task(proj:")
                 })
                 .cloned()
                 .collect::<Vec<_>>();
+
+            task_edges.sort();
 
             // Only the required deps are chained (b runs after a), while the
             // wait and cleanup deps take no part in the chain
@@ -4383,13 +4111,13 @@ mod action_graph_builder {
                     ),
                     (
                         "RunTask(proj:serial)".into(),
-                        "RunTask(proj:a)".into(),
-                        "required".into()
+                        "RunPersistentTask(proj:server)".into(),
+                        "wait".into()
                     ),
                     (
                         "RunTask(proj:serial)".into(),
-                        "RunPersistentTask(proj:server)".into(),
-                        "wait".into()
+                        "RunTask(proj:a)".into(),
+                        "required".into()
                     ),
                     (
                         "RunTask(proj:serial)".into(),
@@ -4415,21 +4143,21 @@ mod action_graph_builder {
 
             let task = wg.get_task_from_project("proj", "serial-wait").unwrap();
 
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             let edges = map_edges(&graph);
-            let task_edges = edges
+            let mut task_edges = edges
                 .iter()
                 .filter(|(source, target, _)| {
                     source.contains("Task(proj:") && target.contains("Task(proj:")
                 })
                 .cloned()
                 .collect::<Vec<_>>();
+
+            task_edges.sort();
 
             // Unlike a persistent dep, a non-persistent wait dep completes,
             // but it's not waited on, so b is still chained after a (not c)
@@ -4448,13 +4176,13 @@ mod action_graph_builder {
                     ),
                     (
                         "RunTask(proj:serial-wait)".into(),
-                        "RunTask(proj:c)".into(),
-                        "wait".into()
+                        "RunTask(proj:b)".into(),
+                        "required".into()
                     ),
                     (
                         "RunTask(proj:serial-wait)".into(),
-                        "RunTask(proj:b)".into(),
-                        "required".into()
+                        "RunTask(proj:c)".into(),
+                        "wait".into()
                     ),
                 ]
             );
@@ -4486,18 +4214,13 @@ mod action_graph_builder {
 
             let task = wg.get_task_from_project("proj", "args-parent").unwrap();
 
-            builder
-                .run_task(
-                    &task,
-                    &RunRequirements {
-                        dependents: Depth::DIRECT,
-                        ..Default::default()
-                    },
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements {
+                dependents: Depth::DIRECT,
+                ..Default::default()
+            });
+            builder.run_task(&task);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_eq!(
                 find_task_args(&graph, "proj:teardown"),
@@ -4522,19 +4245,14 @@ mod action_graph_builder {
 
             let task = wg.get_task_from_project("proj", "args-parent").unwrap();
 
-            builder
-                .run_task(
-                    &task,
-                    &RunRequirements {
-                        no_dependencies: true,
-                        dependents: Depth::DIRECT,
-                        ..Default::default()
-                    },
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements {
+                no_dependencies: true,
+                dependents: Depth::DIRECT,
+                ..Default::default()
+            });
+            builder.run_task(&task);
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             // The cleanup is linked, so only the others are ignored
             assert_eq!(
@@ -4572,12 +4290,10 @@ mod action_graph_builder {
 
                 let task = wg.get_task_from_project("proj", id).unwrap();
 
-                builder
-                    .run_task(&task, &RunRequirements::default())
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements::default());
+                builder.run_task(&task);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
                 let edges = map_edges(&graph);
 
                 assert!(
@@ -4612,12 +4328,10 @@ mod action_graph_builder {
                 .get_task_from_project("proj", "serial-inner-wait")
                 .unwrap();
 
-            builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
             let edges = map_edges(&graph);
 
             // Waits on the first to start, but serially, must run after it completes
@@ -4644,13 +4358,11 @@ mod action_graph_builder {
             for id in ["base", "other"] {
                 let task = wg.get_task_from_project("proj", id).unwrap();
 
-                builder
-                    .run_task(&task, &RunRequirements::default())
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements::default());
+                builder.run_task(&task);
             }
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
 
@@ -4682,13 +4394,11 @@ mod action_graph_builder {
             for id in ["env-first", "env-second"] {
                 let task = wg.get_task_from_project("proj", id).unwrap();
 
-                builder
-                    .run_task(&task, &RunRequirements::default())
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements::default());
+                builder.run_task(&task);
             }
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
             let edges = map_edges(&graph);
 
             assert!(edges.contains(&(
@@ -4714,18 +4424,13 @@ mod action_graph_builder {
 
             let task = wg.get_task_from_project("proj", "base").unwrap();
 
-            builder
-                .run_task(
-                    &task,
-                    &RunRequirements {
-                        dependents: Depth::DIRECT,
-                        ..RunRequirements::default()
-                    },
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements {
+                dependents: Depth::DIRECT,
+                ..RunRequirements::default()
+            });
+            builder.run_task(&task);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             // The cleanup task is a "dependent" of the task it cleans up, but
             // cleanup edges aren't followed when expanding dependents, as it's
@@ -4776,10 +4481,10 @@ mod action_graph_builder {
                 ..TaskDependencyConfig::default()
             });
 
-            let error = builder
-                .run_task(&task, &RunRequirements::default())
-                .await
-                .unwrap_err();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(&task);
+
+            let error = builder.build().await.err().unwrap();
 
             assert!(
                 error.to_string().contains(
@@ -4840,13 +4545,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target(
-                    Target::parse("^:build").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target(Target::parse("^:build").unwrap());
+
+            builder.build().await.unwrap();
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -4858,13 +4560,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target(
-                    Target::parse("~:build").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target(Target::parse("~:build").unwrap());
+
+            builder.build().await.unwrap();
         }
         #[tokio::test(flavor = "multi_thread")]
         #[should_panic(
@@ -4877,13 +4576,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target(
-                    Target::parse("unknown:build").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target(Target::parse("unknown:build").unwrap());
+
+            builder.build().await.unwrap();
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -4895,13 +4591,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target(
-                    Target::parse("server:unknown").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target(Target::parse("server:unknown").unwrap());
+
+            builder.build().await.unwrap();
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -4913,13 +4606,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target(
-                    Target::parse("common:internal").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target(Target::parse("common:internal").unwrap());
+
+            builder.build().await.unwrap();
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -4930,15 +4620,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target(
-                    Target::parse(":build").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target(Target::parse(":build").unwrap());
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -4962,15 +4647,10 @@ mod action_graph_builder {
 
             builder.set_query("language=rust").unwrap();
 
-            builder
-                .run_task_by_target(
-                    Target::parse(":build").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target(Target::parse(":build").unwrap());
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -4987,15 +4667,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target(
-                    Target::parse(":unknown").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target(Target::parse(":unknown").unwrap());
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert!(graph.is_empty());
             assert!(context.primary_targets.is_empty());
@@ -5009,15 +4684,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target(
-                    Target::parse(":internal").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target(Target::parse(":internal").unwrap());
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert!(graph.is_empty());
             assert!(context.primary_targets.is_empty());
@@ -5031,15 +4701,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target(
-                    Target::parse("client:lint").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target(Target::parse("client:lint").unwrap());
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -5056,15 +4721,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target(
-                    Target::parse("misc:requiresInternal").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target(Target::parse("misc:requiresInternal").unwrap());
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -5081,15 +4741,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target(
-                    Target::parse("#frontend:lint").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target(Target::parse("#frontend:lint").unwrap());
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -5109,15 +4764,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target(
-                    Target::parse("#unknown:lint").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target(Target::parse("#unknown:lint").unwrap());
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert!(graph.is_empty());
             assert!(context.primary_targets.is_empty());
@@ -5131,15 +4781,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target(
-                    Target::parse("#frontend:internal").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target(Target::parse("#frontend:internal").unwrap());
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert!(graph.is_empty());
             assert!(context.primary_targets.is_empty());
@@ -5154,15 +4799,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target(
-                    Target::parse("client:#quality").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target(Target::parse("client:#quality").unwrap());
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert!(!graph.is_empty());
             // Both `client:lint` and `client:test` are tagged "quality"
@@ -5180,15 +4820,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target(
-                    Target::parse(":#quality").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target(Target::parse(":#quality").unwrap());
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
             let dot = graph.to_dot();
 
             // client:lint, client:test, common:lint should be selected
@@ -5208,15 +4843,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target(
-                    Target::parse("#frontend:#quality").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target(Target::parse("#frontend:#quality").unwrap());
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
             let dot = graph.to_dot();
 
             // #frontend matches client and common; quality matches lint/test
@@ -5234,15 +4864,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target(
-                    Target::parse("server:#quality").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target(Target::parse("server:#quality").unwrap());
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert!(graph.is_empty());
             assert!(context.primary_targets.is_empty());
@@ -5256,15 +4881,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target(
-                    Target::parse(":#unknown-tag").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target(Target::parse(":#unknown-tag").unwrap());
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert!(graph.is_empty());
             assert!(context.primary_targets.is_empty());
@@ -5283,13 +4903,12 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target_locator(
-                    TargetLocator::Qualified(Target::parse("common:internal").unwrap()),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target_locator(TargetLocator::Qualified(
+                Target::parse("common:internal").unwrap(),
+            ));
+
+            builder.build().await.unwrap();
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -5300,15 +4919,12 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target_locator(
-                    TargetLocator::Qualified(Target::parse("server:build").unwrap()),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target_locator(TargetLocator::Qualified(
+                Target::parse("server:build").unwrap(),
+            ));
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -5325,23 +4941,13 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target_locator(
-                    TargetLocator::parse(":*-dependency").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target_locator(TargetLocator::parse(":*-dependency").unwrap());
 
-            builder
-                .run_task_by_target_locator(
-                    TargetLocator::parse(":{a,c}").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target_locator(TargetLocator::parse(":{a,c}").unwrap());
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -5366,15 +4972,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target_locator(
-                    TargetLocator::parse("#front*:build").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target_locator(TargetLocator::parse("#front*:build").unwrap());
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -5395,15 +4996,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target_locator(
-                    TargetLocator::parse(":#qual*").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target_locator(TargetLocator::parse(":#qual*").unwrap());
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
             let dot = graph.to_dot();
 
             assert_eq!(
@@ -5428,15 +5024,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target_locator(
-                    TargetLocator::parse("#front*:#qual*").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target_locator(TargetLocator::parse("#front*:#qual*").unwrap());
 
-            let (context, _) = builder.build();
+            let context = builder.build().await.unwrap().context;
 
             assert_eq!(
                 context.primary_targets.into_iter().collect::<Vec<_>>(),
@@ -5456,15 +5047,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target_locator(
-                    TargetLocator::parse(":#unknown-*").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target_locator(TargetLocator::parse(":#unknown-*").unwrap());
 
-            let (context, _) = builder.build();
+            let context = builder.build().await.unwrap().context;
 
             assert!(context.primary_targets.is_empty());
         }
@@ -5477,15 +5063,11 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
+            builder.set_requirements(RunRequirements::default());
             builder
-                .run_task_by_target_locator(
-                    TargetLocator::parse("c{lient,ommon}:test").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+                .run_task_by_target_locator(TargetLocator::parse("c{lient,ommon}:test").unwrap());
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -5502,15 +5084,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target_locator(
-                    TargetLocator::parse("{foo,bar}:task-*").unwrap(),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target_locator(TargetLocator::parse("{foo,bar}:task-*").unwrap());
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert_snapshot!(graph.to_dot());
             assert!(context.primary_targets.is_empty());
@@ -5524,15 +5101,12 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target_locator(
-                    TargetLocator::Qualified(Target::parse("misc:requiresInternal").unwrap()),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target_locator(TargetLocator::Qualified(
+                Target::parse("misc:requiresInternal").unwrap(),
+            ));
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -5554,15 +5128,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target_locator(
-                    TargetLocator::DefaultProject(Id::raw("build")),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target_locator(TargetLocator::DefaultProject(Id::raw("build")));
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -5580,13 +5149,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target_locator(
-                    TargetLocator::DefaultProject(Id::raw("build")),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target_locator(TargetLocator::DefaultProject(Id::raw("build")));
+
+            builder.build().await.unwrap();
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -5603,13 +5169,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_task_by_target_locator(
-                    TargetLocator::DefaultProject(Id::raw("build")),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task_by_target_locator(TargetLocator::DefaultProject(Id::raw("build")));
+
+            builder.build().await.unwrap();
         }
     }
 
@@ -5626,15 +5189,10 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_tasks(
-                    vec![TargetLocator::parse("partition:task-*").unwrap()],
-                    RunRequirements::default(),
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.run_tasks(vec![TargetLocator::parse("partition:task-*").unwrap()]);
 
-            let (context, _) = builder.build();
+            let context = builder.build().await.unwrap().context;
 
             assert_eq!(context.primary_targets.len(), 10);
         }
@@ -5649,19 +5207,14 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_tasks(
-                    vec![TargetLocator::parse("partition:task-*").unwrap()],
-                    RunRequirements {
-                        job: Some(0),
-                        job_total: Some(3),
-                        ..Default::default()
-                    },
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements {
+                job: Some(0),
+                job_total: Some(3),
+                ..Default::default()
+            });
+            builder.run_tasks(vec![TargetLocator::parse("partition:task-*").unwrap()]);
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert_eq!(context.primary_targets.len(), 4);
             assert_snapshot!(graph.to_dot());
@@ -5671,19 +5224,14 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_tasks(
-                    vec![TargetLocator::parse("partition:task-*").unwrap()],
-                    RunRequirements {
-                        job: Some(1),
-                        job_total: Some(3),
-                        ..Default::default()
-                    },
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements {
+                job: Some(1),
+                job_total: Some(3),
+                ..Default::default()
+            });
+            builder.run_tasks(vec![TargetLocator::parse("partition:task-*").unwrap()]);
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert_eq!(context.primary_targets.len(), 4);
             assert_snapshot!(graph.to_dot());
@@ -5693,19 +5241,14 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder
-                .run_tasks(
-                    vec![TargetLocator::parse("partition:task-*").unwrap()],
-                    RunRequirements {
-                        job: Some(2),
-                        job_total: Some(3),
-                        ..Default::default()
-                    },
-                )
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements {
+                job: Some(2),
+                job_total: Some(3),
+                ..Default::default()
+            });
+            builder.run_tasks(vec![TargetLocator::parse("partition:task-*").unwrap()]);
 
-            let (context, graph) = builder.build();
+            let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
             assert_eq!(context.primary_targets.len(), 2);
             assert_snapshot!(graph.to_dot());
@@ -5726,14 +5269,12 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let project = wg.get_project("bar").unwrap();
-            let index = builder
-                .setup_environment(&spec, &project.source, &project)
-                .await
-                .unwrap();
+            let index = builder.setup_environment(&spec, &project.source, &project);
 
-            assert!(index.is_some());
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
 
-            let (_, graph) = builder.build();
+            assert!(!output.report.nodes(index).is_empty());
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -5760,18 +5301,12 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let bar = wg.get_project("bar").unwrap();
-            builder
-                .setup_environment(&spec, &bar.source, &bar)
-                .await
-                .unwrap();
+            builder.setup_environment(&spec, &bar.source, &bar);
 
             let baz = wg.get_project("baz").unwrap();
-            builder
-                .setup_environment(&spec, &baz.source, &baz)
-                .await
-                .unwrap();
+            builder.setup_environment(&spec, &baz.source, &baz);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -5803,18 +5338,13 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let project = wg.get_project("bar").unwrap();
-            let index1 = builder
-                .setup_environment(&spec, &project.source, &project)
-                .await
-                .unwrap();
-            let index2 = builder
-                .setup_environment(&spec, &project.source, &project)
-                .await
-                .unwrap();
+            let index1 = builder.setup_environment(&spec, &project.source, &project);
+            let index2 = builder.setup_environment(&spec, &project.source, &project);
 
-            assert_eq!(index1, index2);
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
 
-            let (_, graph) = builder.build();
+            assert_eq!(output.report.nodes(index1), output.report.nodes(index2));
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -5842,14 +5372,12 @@ mod action_graph_builder {
             let spec = create_tier_spec(2);
 
             let project = wg.get_project("bar").unwrap();
-            let index = builder
-                .setup_environment(&spec, &project.source, &project)
-                .await
-                .unwrap();
+            let index = builder.setup_environment(&spec, &project.source, &project);
 
-            assert!(index.is_none());
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
 
-            let (_, graph) = builder.build();
+            assert!(output.report.nodes(index).is_empty());
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
@@ -5874,12 +5402,9 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let project = wg.get_project("bar").unwrap();
-            builder
-                .setup_environment(&spec, &project.source, &project)
-                .await
-                .unwrap();
+            builder.setup_environment(&spec, &project.source, &project);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
@@ -5904,12 +5429,9 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let project = wg.get_project("bar").unwrap();
-            builder
-                .setup_environment(&spec, &project.source, &project)
-                .await
-                .unwrap();
+            builder.setup_environment(&spec, &project.source, &project);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
@@ -5936,12 +5458,9 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let project = wg.get_project("bar").unwrap();
-            builder
-                .setup_environment(&spec, &project.source, &project)
-                .await
-                .unwrap();
+            builder.setup_environment(&spec, &project.source, &project);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -5977,14 +5496,12 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let project = wg.get_project("bar").unwrap();
-            let index = builder
-                .setup_environment(&spec, &project.source, &project)
-                .await
-                .unwrap();
+            let index = builder.setup_environment(&spec, &project.source, &project);
 
-            assert!(index.is_some());
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
 
-            let (_, graph) = builder.build();
+            assert!(!output.report.nodes(index).is_empty());
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -6028,14 +5545,12 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-reqs");
 
             let project = wg.get_project("bar").unwrap();
-            let index = builder
-                .setup_environment(&spec, &project.source, &project)
-                .await
-                .unwrap();
+            let index = builder.setup_environment(&spec, &project.source, &project);
 
-            assert!(index.is_some());
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
 
-            let (_, graph) = builder.build();
+            assert!(!output.report.nodes(index).is_empty());
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -6074,14 +5589,12 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-reqs");
 
             let project = wg.get_project("bar").unwrap();
-            let index = builder
-                .setup_environment(&spec, &project.source, &project)
-                .await
-                .unwrap();
+            let index = builder.setup_environment(&spec, &project.source, &project);
 
-            assert!(index.is_none());
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
 
-            let (_, graph) = builder.build();
+            assert!(output.report.nodes(index).is_empty());
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
@@ -6108,10 +5621,9 @@ mod action_graph_builder {
 
             let project = wg.get_project("bar").unwrap();
 
-            let error = builder
-                .setup_environment(&spec, &project.source, &project)
-                .await
-                .unwrap_err();
+            builder.setup_environment(&spec, &project.source, &project);
+
+            let error = builder.build().await.err().unwrap();
 
             assert_eq!(
                 error.to_string(),
@@ -6177,12 +5689,9 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let project = wg.get_project("bar").unwrap();
-            builder
-                .setup_environment(&spec, &project.source, &project)
-                .await
-                .unwrap();
+            builder.setup_environment(&spec, &project.source, &project);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -6214,12 +5723,9 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let project = wg.get_project("bar").unwrap();
-            builder
-                .setup_environment(&spec, &project.source, &project)
-                .await
-                .unwrap();
+            builder.setup_environment(&spec, &project.source, &project);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -6253,9 +5759,9 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let project = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &project).await.unwrap();
+            builder.install_dependencies(&spec, &project);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -6303,13 +5809,14 @@ mod action_graph_builder {
             let project = wg.get_project("bar").unwrap();
 
             for id in ["tc-tier2-setup-env", "tc-tier3-setup-env"] {
-                builder
-                    .setup_environment(&create_tier_spec_with_name(id), &project.source, &project)
-                    .await
-                    .unwrap();
+                builder.setup_environment(
+                    &create_tier_spec_with_name(id),
+                    &project.source,
+                    &project,
+                );
             }
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert!(graph.sort_topological().is_ok());
             assert_eq!(
@@ -6340,14 +5847,12 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let project = wg.get_project("bar").unwrap();
-            let index = builder
-                .setup_environment(&spec, &project.source, &project)
-                .await
-                .unwrap();
+            let index = builder.setup_environment(&spec, &project.source, &project);
 
-            assert!(index.is_some());
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
 
-            let (_, graph) = builder.build();
+            assert!(!output.report.nodes(index).is_empty());
 
             assert_eq!(
                 topo(graph),
@@ -6376,18 +5881,12 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let bar = wg.get_project("bar").unwrap();
-            builder
-                .setup_environment(&spec, &bar.source, &bar)
-                .await
-                .unwrap();
+            builder.setup_environment(&spec, &bar.source, &bar);
 
             let baz = wg.get_project("baz").unwrap();
-            builder
-                .setup_environment(&spec, &baz.source, &baz)
-                .await
-                .unwrap();
+            builder.setup_environment(&spec, &baz.source, &baz);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -6429,11 +5928,12 @@ mod action_graph_builder {
 
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
-            let index = builder.setup_environment_root(&spec).await.unwrap();
+            let index = builder.setup_environment_root(&spec);
 
-            assert!(index.is_some());
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
 
-            let (_, graph) = builder.build();
+            assert!(!output.report.nodes(index).is_empty());
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -6468,11 +5968,12 @@ mod action_graph_builder {
 
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
-            let index = builder.setup_environment_root(&spec).await.unwrap();
+            let index = builder.setup_environment_root(&spec);
 
-            assert!(index.is_some());
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
 
-            let (_, graph) = builder.build();
+            assert!(!output.report.nodes(index).is_empty());
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -6507,11 +6008,12 @@ mod action_graph_builder {
 
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
-            let index = builder.setup_environment_root(&spec).await.unwrap();
+            let index = builder.setup_environment_root(&spec);
 
-            assert!(index.is_none());
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
 
-            let (_, graph) = builder.build();
+            assert!(output.report.nodes(index).is_empty());
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
@@ -6528,11 +6030,12 @@ mod action_graph_builder {
             // Supports tier 2 but not `setup_environment`
             let spec = create_tier_spec(2);
 
-            let index = builder.setup_environment_root(&spec).await.unwrap();
+            let index = builder.setup_environment_root(&spec);
 
-            assert!(index.is_none());
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
 
-            let (_, graph) = builder.build();
+            assert!(output.report.nodes(index).is_empty());
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
@@ -6548,11 +6051,12 @@ mod action_graph_builder {
 
             let spec = create_tier_spec(1);
 
-            let index = builder.setup_environment_root(&spec).await.unwrap();
+            let index = builder.setup_environment_root(&spec);
 
-            assert!(index.is_none());
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
 
-            let (_, graph) = builder.build();
+            assert!(output.report.nodes(index).is_empty());
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
@@ -6576,9 +6080,9 @@ mod action_graph_builder {
 
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
-            builder.setup_environment_root(&spec).await.unwrap();
+            builder.setup_environment_root(&spec);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
@@ -6598,9 +6102,9 @@ mod action_graph_builder {
 
             let ts = ToolchainSpec::new_global(Id::raw("tc-tier1"));
 
-            builder.setup_toolchain(&ts, None).await.unwrap();
+            builder.setup_toolchain(&ts, None);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
@@ -6616,9 +6120,9 @@ mod action_graph_builder {
 
             let ts = ToolchainSpec::new_global(Id::raw("tc-tier2"));
 
-            builder.setup_toolchain(&ts, None).await.unwrap();
+            builder.setup_toolchain(&ts, None);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
@@ -6638,10 +6142,10 @@ mod action_graph_builder {
                 create_unresolved_version(Version::new(1, 2, 3)),
             );
 
-            builder.setup_toolchain(&system, None).await.unwrap();
-            builder.setup_toolchain(&node, None).await.unwrap();
+            builder.setup_toolchain(&system, None);
+            builder.setup_toolchain(&node, None);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -6674,13 +6178,13 @@ mod action_graph_builder {
             let node4 = node1.clone();
             let node5 = node2.clone();
 
-            builder.setup_toolchain(&node1, None).await.unwrap();
-            builder.setup_toolchain(&node2, None).await.unwrap();
-            builder.setup_toolchain(&node3, None).await.unwrap();
-            builder.setup_toolchain(&node4, None).await.unwrap();
-            builder.setup_toolchain(&node5, None).await.unwrap();
+            builder.setup_toolchain(&node1, None);
+            builder.setup_toolchain(&node2, None);
+            builder.setup_toolchain(&node3, None);
+            builder.setup_toolchain(&node4, None);
+            builder.setup_toolchain(&node5, None);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -6705,10 +6209,10 @@ mod action_graph_builder {
 
             let node = create_tier_spec(3);
 
-            builder.setup_toolchain(&node, None).await.unwrap();
-            builder.setup_toolchain(&node, None).await.unwrap();
+            builder.setup_toolchain(&node, None);
+            builder.setup_toolchain(&node, None);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_eq!(
                 topo(graph),
@@ -6742,10 +6246,10 @@ mod action_graph_builder {
                 create_unresolved_version(Version::new(1, 2, 3)),
             );
 
-            builder.setup_toolchain(&system, None).await.unwrap();
-            builder.setup_toolchain(&node, None).await.unwrap();
+            builder.setup_toolchain(&system, None);
+            builder.setup_toolchain(&node, None);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
@@ -6773,10 +6277,10 @@ mod action_graph_builder {
                 create_unresolved_version(Version::new(1, 2, 3)),
             );
 
-            builder.setup_toolchain(&system, None).await.unwrap();
-            builder.setup_toolchain(&node, None).await.unwrap();
+            builder.setup_toolchain(&system, None);
+            builder.setup_toolchain(&node, None);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
@@ -6807,10 +6311,10 @@ mod action_graph_builder {
                 create_unresolved_version(Version::new(1, 2, 3)),
             );
 
-            builder.setup_toolchain(&system, None).await.unwrap();
-            builder.setup_toolchain(&node, None).await.unwrap();
+            builder.setup_toolchain(&system, None);
+            builder.setup_toolchain(&node, None);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -6836,9 +6340,9 @@ mod action_graph_builder {
                 create_unresolved_version(Version::new(1, 2, 3)),
             );
 
-            builder.setup_toolchain(&node, None).await.unwrap();
+            builder.setup_toolchain(&node, None);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -6870,9 +6374,9 @@ mod action_graph_builder {
                 create_unresolved_version(Version::new(1, 2, 3)),
             );
 
-            builder.setup_toolchain(&node, None).await.unwrap();
+            builder.setup_toolchain(&node, None);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -6917,11 +6421,12 @@ mod action_graph_builder {
             // and doesn't support tier 3 itself
             let node = create_tier_spec_with_name("tc-tier2-setup-env");
 
-            let index = builder.setup_toolchain(&node, None).await.unwrap();
+            let index = builder.setup_toolchain(&node, None);
 
-            assert!(index.is_none());
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
 
-            let (_, graph) = builder.build();
+            assert!(output.report.nodes(index).is_empty());
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
@@ -6940,12 +6445,10 @@ mod action_graph_builder {
             let mut builder = container.create_builder(wg.clone()).await;
 
             let bar = wg.get_project("bar").unwrap();
-            builder
-                .sync_project(&bar, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.sync_project(&bar);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -6968,24 +6471,18 @@ mod action_graph_builder {
             let mut builder = container.create_builder(wg.clone()).await;
 
             let foo = wg.get_project("foo").unwrap();
-            builder
-                .sync_project(&foo, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.sync_project(&foo);
 
             let bar = wg.get_project("bar").unwrap();
-            builder
-                .sync_project(&bar, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.sync_project(&bar);
 
             let qux = wg.get_project("qux").unwrap();
-            builder
-                .sync_project(&qux, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.sync_project(&qux);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -7022,18 +6519,14 @@ mod action_graph_builder {
                 .await;
 
             let foo = wg.get_project("foo").unwrap();
-            builder
-                .sync_project(&foo, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.sync_project(&foo);
 
             let qux = wg.get_project("qux").unwrap();
-            builder
-                .sync_project(&qux, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.sync_project(&qux);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -7060,20 +6553,14 @@ mod action_graph_builder {
 
             let foo = wg.get_project("foo").unwrap();
 
-            builder
-                .sync_project(&foo, &RunRequirements::default())
-                .await
-                .unwrap();
-            builder
-                .sync_project(&foo, &RunRequirements::default())
-                .await
-                .unwrap();
-            builder
-                .sync_project(&foo, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.sync_project(&foo);
+            builder.set_requirements(RunRequirements::default());
+            builder.sync_project(&foo);
+            builder.set_requirements(RunRequirements::default());
+            builder.sync_project(&foo);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_eq!(
                 topo(graph),
@@ -7106,12 +6593,10 @@ mod action_graph_builder {
                 .await;
 
             let bar = wg.get_project("bar").unwrap();
-            builder
-                .sync_project(&bar, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.sync_project(&bar);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
@@ -7134,12 +6619,10 @@ mod action_graph_builder {
                 .await;
 
             let bar = wg.get_project("bar").unwrap();
-            builder
-                .sync_project(&bar, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.sync_project(&bar);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
@@ -7162,12 +6645,10 @@ mod action_graph_builder {
                 .await;
 
             let bar = wg.get_project("bar").unwrap();
-            builder
-                .sync_project(&bar, &RunRequirements::default())
-                .await
-                .unwrap();
+            builder.set_requirements(RunRequirements::default());
+            builder.sync_project(&bar);
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -7194,9 +6675,9 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder.sync_workspace().await.unwrap();
+            builder.sync_workspace();
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
@@ -7211,11 +6692,11 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder.sync_workspace().await.unwrap();
-            builder.sync_workspace().await.unwrap();
-            builder.sync_workspace().await.unwrap();
+            builder.sync_workspace();
+            builder.sync_workspace();
+            builder.sync_workspace();
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
         }
@@ -7235,9 +6716,9 @@ mod action_graph_builder {
                 )
                 .await;
 
-            builder.sync_workspace().await.unwrap();
+            builder.sync_workspace();
 
-            let (_, graph) = builder.build();
+            let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
@@ -7266,14 +6747,16 @@ mod action_graph_builder {
                     ..Default::default()
                 };
 
-                let partition = builder
-                    .run_tasks_with_plan(&plan, RunRequirements::default())
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements::default());
+                let request = builder.run_tasks_with_plan(&plan);
+                let BuildOutput {
+                    context,
+                    graph,
+                    mut report,
+                } = builder.build().await.unwrap();
+                let partition = report.take_partition(request).unwrap();
 
                 assert_eq!(partition.targets.len(), 1);
-
-                let (context, graph) = builder.build();
 
                 assert_eq!(context.primary_targets.len(), 1);
                 assert_snapshot!(graph.to_dot());
@@ -7296,14 +6779,16 @@ mod action_graph_builder {
                     ..Default::default()
                 };
 
-                let partition = builder
-                    .run_tasks_with_plan(&plan, RunRequirements::default())
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements::default());
+                let request = builder.run_tasks_with_plan(&plan);
+                let BuildOutput {
+                    context,
+                    graph,
+                    mut report,
+                } = builder.build().await.unwrap();
+                let partition = report.take_partition(request).unwrap();
 
                 assert_eq!(partition.targets.len(), 2);
-
-                let (context, graph) = builder.build();
 
                 assert_eq!(context.primary_targets.len(), 2);
                 assert_snapshot!(graph.to_dot());
@@ -7329,14 +6814,16 @@ mod action_graph_builder {
                     ..Default::default()
                 };
 
-                let partition = builder
-                    .run_tasks_with_plan(&plan, RunRequirements::default())
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements::default());
+                let request = builder.run_tasks_with_plan(&plan);
+                let BuildOutput {
+                    context,
+                    graph,
+                    mut report,
+                } = builder.build().await.unwrap();
+                let partition = report.take_partition(request).unwrap();
 
                 assert_eq!(partition.targets.len(), 1);
-
-                let (context, graph) = builder.build();
 
                 assert_eq!(context.primary_targets.len(), 1);
                 assert_snapshot!(graph.to_dot());
@@ -7365,22 +6852,21 @@ mod action_graph_builder {
                     ..Default::default()
                 };
 
-                let partition = builder
-                    .run_tasks_with_plan(
-                        &plan,
-                        RunRequirements {
-                            job: Some(0),
-                            job_total: Some(2),
-                            ..Default::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    job: Some(0),
+                    job_total: Some(2),
+                    ..Default::default()
+                });
+                let request = builder.run_tasks_with_plan(&plan);
+                let BuildOutput {
+                    context,
+                    graph,
+                    mut report,
+                } = builder.build().await.unwrap();
+                let partition = report.take_partition(request).unwrap();
 
                 assert_eq!(partition.targets.len(), 1);
                 assert_eq!(partition.size, Some(1));
-
-                let (context, graph) = builder.build();
 
                 assert_eq!(context.primary_targets.len(), 1);
                 assert_snapshot!(graph.to_dot());
@@ -7405,22 +6891,21 @@ mod action_graph_builder {
                     ..Default::default()
                 };
 
-                let partition = builder
-                    .run_tasks_with_plan(
-                        &plan,
-                        RunRequirements {
-                            job: Some(1),
-                            job_total: Some(2),
-                            ..Default::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    job: Some(1),
+                    job_total: Some(2),
+                    ..Default::default()
+                });
+                let request = builder.run_tasks_with_plan(&plan);
+                let BuildOutput {
+                    context,
+                    graph,
+                    mut report,
+                } = builder.build().await.unwrap();
+                let partition = report.take_partition(request).unwrap();
 
                 assert_eq!(partition.targets.len(), 1);
                 assert_eq!(partition.size, Some(1));
-
-                let (context, graph) = builder.build();
 
                 assert_eq!(context.primary_targets.len(), 1);
                 assert_snapshot!(graph.to_dot());
@@ -7446,10 +6931,10 @@ mod action_graph_builder {
                     ..Default::default()
                 };
 
-                builder
-                    .run_tasks_with_plan(&plan, RunRequirements::default())
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements::default());
+                builder.run_tasks_with_plan(&plan);
+
+                builder.build().await.unwrap();
             }
 
             #[should_panic(expected = "invalid job index was provided")]
@@ -7472,17 +6957,14 @@ mod action_graph_builder {
                     ..Default::default()
                 };
 
-                builder
-                    .run_tasks_with_plan(
-                        &plan,
-                        RunRequirements {
-                            job: Some(5),
-                            job_total: Some(2),
-                            ..Default::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    job: Some(5),
+                    job_total: Some(2),
+                    ..Default::default()
+                });
+                builder.run_tasks_with_plan(&plan);
+
+                builder.build().await.unwrap();
             }
 
             #[should_panic(expected = "pipeline has been configured for 5 jobs")]
@@ -7505,17 +6987,14 @@ mod action_graph_builder {
                     ..Default::default()
                 };
 
-                builder
-                    .run_tasks_with_plan(
-                        &plan,
-                        RunRequirements {
-                            job: Some(0),
-                            job_total: Some(5),
-                            ..Default::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    job: Some(0),
+                    job_total: Some(5),
+                    ..Default::default()
+                });
+                builder.run_tasks_with_plan(&plan);
+
+                builder.build().await.unwrap();
             }
         }
 
@@ -7542,18 +7021,13 @@ mod action_graph_builder {
                     ..Default::default()
                 };
 
-                builder
-                    .run_tasks_with_plan(
-                        &plan,
-                        RunRequirements {
-                            no_dependencies: plan.graph.no_dependencies.unwrap_or_default(),
-                            ..Default::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    no_dependencies: plan.graph.no_dependencies.unwrap_or_default(),
+                    ..Default::default()
+                });
+                builder.run_tasks_with_plan(&plan);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 assert_eq!(extract_run_task_targets(graph), ["deps:chain3"]);
             }
@@ -7578,18 +7052,13 @@ mod action_graph_builder {
                     ..Default::default()
                 };
 
-                builder
-                    .run_tasks_with_plan(
-                        &plan,
-                        RunRequirements {
-                            dependents: plan.graph.dependents.unwrap_or_default(),
-                            ..Default::default()
-                        },
-                    )
-                    .await
-                    .unwrap();
+                builder.set_requirements(RunRequirements {
+                    dependents: plan.graph.dependents.unwrap_or_default(),
+                    ..Default::default()
+                });
+                builder.run_tasks_with_plan(&plan);
 
-                let (_, graph) = builder.build();
+                let graph = builder.build().await.unwrap().graph;
 
                 assert_snapshot!(graph.to_dot());
             }

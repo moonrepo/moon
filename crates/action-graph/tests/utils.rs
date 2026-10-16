@@ -44,7 +44,7 @@ impl ActionGraphContainer {
     pub async fn create_builder(
         &mut self,
         workspace_graph: Arc<WorkspaceGraph>,
-    ) -> ActionGraphBuilder<'_> {
+    ) -> ActionGraphBuilder {
         let config = &self.mocker.workspace_config.pipeline;
 
         self.create_builder_with_options(
@@ -63,13 +63,12 @@ impl ActionGraphContainer {
         &mut self,
         workspace_graph: Arc<WorkspaceGraph>,
         options: ActionGraphBuilderOptions,
-    ) -> ActionGraphBuilder<'_> {
+    ) -> ActionGraphBuilder {
         ActionGraphBuilder::new(
             Arc::new(self.mocker.mock_app_context()),
             workspace_graph,
             options,
         )
-        .unwrap()
     }
 }
 

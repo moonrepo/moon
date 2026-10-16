@@ -321,13 +321,12 @@ impl WorkspaceMocker {
         builder.build().await.unwrap()
     }
 
-    pub async fn create_action_graph(&self) -> ActionGraphBuilder<'_> {
+    pub async fn create_action_graph(&self) -> ActionGraphBuilder {
         ActionGraphBuilder::new(
             self.mock_app_context().into(),
             self.mock_workspace_graph().await.into(),
             Default::default(),
         )
-        .unwrap()
     }
 
     pub async fn mock_action_pipeline(&self) -> ActionPipeline {

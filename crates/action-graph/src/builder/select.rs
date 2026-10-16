@@ -404,7 +404,7 @@ impl<'query> TaskSelector<'query> {
         target: &Target,
         reqs: &RunRequirements,
     ) -> miette::Result<()> {
-        let tasks = self.resolve_tasks_from_target(target, false)?;
+        let tasks = self.resolve_tasks_from_target(target, TaskOrigin::Requested)?;
 
         self.run_primary_tasks(id, tasks, reqs)
     }
@@ -416,7 +416,7 @@ impl<'query> TaskSelector<'query> {
         locator: &TargetLocator,
         reqs: &RunRequirements,
     ) -> miette::Result<()> {
-        let tasks = self.resolve_tasks_from_target_locator(locator, false)?;
+        let tasks = self.resolve_tasks_from_target_locator(locator)?;
 
         self.run_primary_tasks(id, tasks, reqs)
     }
@@ -431,7 +431,7 @@ impl<'query> TaskSelector<'query> {
         let mut tasks = vec![];
 
         for locator in locators {
-            tasks.extend(self.resolve_tasks_from_target_locator(locator, false)?);
+            tasks.extend(self.resolve_tasks_from_target_locator(locator)?);
         }
 
         // Expand the selection with the dependents of the selected tasks up
@@ -630,7 +630,8 @@ impl<'query> TaskSelector<'query> {
                     break None;
                 };
 
-                let dep_tasks = self.resolve_tasks_from_target(&dep.target, true)?;
+                let dep_tasks =
+                    self.resolve_tasks_from_target(&dep.target, TaskOrigin::Dependency)?;
 
                 frame.current = Some((frame.next_dep, dep_tasks, 0));
                 frame.next_dep += 1;
@@ -1056,7 +1057,8 @@ impl<'query> TaskSelector<'query> {
     /// Resolve the dependents of the provided tasks, up to the depth, in
     /// breadth-first order. The provided tasks are excluded. When a query has
     /// been set, dependents in projects that don't match it are not added,
-    /// nor walked through.
+    /// nor walked through. Internal dependents are walked through, but not
+    /// added, as they only run as a dependency of another task.
     fn resolve_dependents(&self, tasks: &[&Task], depth: Depth) -> miette::Result<Vec<Arc<Task>>> {
         if depth.is_none() || tasks.is_empty() {
             return Ok(vec![]);
@@ -1091,25 +1093,32 @@ impl<'query> TaskSelector<'query> {
                 })
             },
             |task, _, _| {
-                targets.push(task.target.clone());
+                if !task.is_internal() {
+                    targets.push(task.target.clone());
+                }
             },
         );
 
         let mut dep_tasks = vec![];
 
         for target in targets {
-            dep_tasks.extend(self.resolve_tasks_from_target(&target, true)?);
+            dep_tasks.extend(self.resolve_tasks_from_target(&target, TaskOrigin::Dependent)?);
         }
 
         Ok(dep_tasks)
     }
 
+    /// Resolve the tasks of a target. Requested tasks exclude internal tasks,
+    /// and `:task` targets are bounded by the query. Dependents and dependencies
+    /// are neither, as internal tasks can be depended on, and dependencies are
+    /// always inserted.
     fn resolve_tasks_from_target(
         &self,
         target: &Target,
-        allow_internal: bool,
+        origin: TaskOrigin,
     ) -> miette::Result<Vec<Arc<Task>>> {
         let mut tasks = vec![];
+        let requested = origin == TaskOrigin::Requested;
 
         // First, find all projects based on the target scope
         let (scope, scope_value) = target.get_project_scope();
@@ -1118,8 +1127,8 @@ impl<'query> TaskSelector<'query> {
             // :task
             TargetProjectScope::All => {
                 let projects = match self.query {
-                    Some(query) => self.workspace_graph.query_projects(query)?,
-                    None => self.workspace_graph.get_projects()?,
+                    Some(query) if requested => self.workspace_graph.query_projects(query)?,
+                    _ => self.workspace_graph.get_projects()?,
                 };
 
                 (projects, false)
@@ -1171,7 +1180,7 @@ impl<'query> TaskSelector<'query> {
             };
 
             for project_task in project_tasks {
-                if !allow_internal && project_task.is_internal() {
+                if requested && project_task.is_internal() {
                     if bubble_error {
                         return Err(ProjectError::UnknownTask {
                             task_id: project_task.id.to_string(),
@@ -1193,7 +1202,6 @@ impl<'query> TaskSelector<'query> {
     fn resolve_tasks_from_target_locator(
         &self,
         locator: &TargetLocator,
-        allow_internal: bool,
     ) -> miette::Result<Vec<Arc<Task>>> {
         let mut tasks = vec![];
 
@@ -1246,7 +1254,7 @@ impl<'query> TaskSelector<'query> {
                     }
 
                     for task in self.workspace_graph.query_tasks(build_query(&query)?)? {
-                        if !allow_internal && task.is_internal() {
+                        if task.is_internal() {
                             continue;
                         }
 
@@ -1267,7 +1275,7 @@ impl<'query> TaskSelector<'query> {
                     target.to_owned()
                 };
 
-                tasks.extend(self.resolve_tasks_from_target(&target, allow_internal)?);
+                tasks.extend(self.resolve_tasks_from_target(&target, TaskOrigin::Requested)?);
             }
             TargetLocator::DefaultProject(task_id) => {
                 let project = self.workspace_graph.get_default_project().map_err(|_| {
@@ -1278,7 +1286,7 @@ impl<'query> TaskSelector<'query> {
 
                 let target = Target::new(&project.id, task_id)?;
 
-                tasks.extend(self.resolve_tasks_from_target(&target, allow_internal)?);
+                tasks.extend(self.resolve_tasks_from_target(&target, TaskOrigin::Requested)?);
             }
         };
 

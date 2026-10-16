@@ -266,6 +266,9 @@
 - Fixed an issue where `--affected --force` would not track which tasks were affected, so they were
   missing from the run report and the affected tasks output, even though affected files were still
   passed to them.
+- Fixed an issue where `--dependents` would run internal tasks as dependents, even though internal
+  tasks can only run as a dependency of another task. Dependents of internal tasks are still added,
+  and they run the internal task as a dependency.
 
 #### ⚙️ Internal
 

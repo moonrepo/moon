@@ -3497,6 +3497,117 @@ mod action_graph_builder {
                 assert_eq!(extract_run_task_targets(graph), ["a:deploy", "b:deploy"]);
             }
 
+            // Dependencies are always inserted, so the query never bounds them.
+            // Configured `:task` dependencies are rejected when tasks are built,
+            // so the task is constructed manually
+            #[tokio::test(flavor = "multi_thread")]
+            async fn query_doesnt_bound_dependencies() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                builder.set_query("project=client").unwrap();
+
+                let mut task = create_task("misc", "all-builds");
+
+                task.deps.push(TaskDependencyConfig {
+                    target: Target::parse(":build").unwrap(),
+                    ..TaskDependencyConfig::default()
+                });
+
+                builder.set_requirements(RunRequirements::default());
+                builder.run_task(&task);
+
+                let graph = builder.build().await.unwrap().graph;
+
+                assert_eq!(
+                    extract_run_task_targets(graph),
+                    [
+                        "base:build",
+                        "client:build",
+                        "common:build",
+                        "misc:all-builds",
+                        "server:build"
+                    ]
+                );
+            }
+
+            // Internal tasks only run as a dependency of another task, so they're
+            // never added as dependents, but they're walked through, so that the
+            // dependents beyond them are
+            async fn run_internal_chain(dependents: Depth) -> (Vec<String>, Vec<String>) {
+                let sandbox = create_sandbox("tasks");
+
+                sandbox.create_file(
+                    "internal-chain/moon.yml",
+                    [
+                        "tasks:",
+                        "  source:",
+                        "    command: 'source'",
+                        "  prepare:",
+                        "    command: 'prepare'",
+                        "    deps: ['source']",
+                        "    options:",
+                        "      internal: true",
+                        "  build:",
+                        "    command: 'build'",
+                        "    deps: ['prepare']",
+                    ]
+                    .join("\n"),
+                );
+
+                let mut container = ActionGraphContainer::new(sandbox.path());
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                builder.set_requirements(RunRequirements {
+                    dependents,
+                    ..RunRequirements::default()
+                });
+                builder.run_tasks(vec![TargetLocator::parse("internal-chain:source").unwrap()]);
+
+                let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
+
+                let mut primary_targets = context
+                    .primary_targets
+                    .into_iter()
+                    .map(|target| target.to_string())
+                    .collect::<Vec<_>>();
+                primary_targets.sort();
+
+                (primary_targets, extract_run_task_targets(graph))
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn walks_through_internal_dependents_without_adding_them() {
+                let (primary_targets, targets) = run_internal_chain(Depth::Deep).await;
+
+                assert_eq!(
+                    primary_targets,
+                    ["internal-chain:build", "internal-chain:source"]
+                );
+
+                // Still ran, as a dependency of `build`
+                assert_eq!(
+                    targets,
+                    [
+                        "internal-chain:build",
+                        "internal-chain:prepare",
+                        "internal-chain:source"
+                    ]
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_add_internal_direct_dependents() {
+                let (primary_targets, targets) = run_internal_chain(Depth::DIRECT).await;
+
+                assert_eq!(primary_targets, ["internal-chain:source"]);
+                assert_eq!(targets, ["internal-chain:source"]);
+            }
+
             #[tokio::test(flavor = "multi_thread")]
             async fn query_doesnt_bound_explicit_targets() {
                 // `b` doesn't match, but was explicitly selected, and `a` is

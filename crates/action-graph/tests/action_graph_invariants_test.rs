@@ -606,8 +606,8 @@ mod canonical_form {
 
 mod invariants {
     use super::*;
-    use daggy::Dag;
     use moon_action::{ActionNode, RunTaskNode, SetupToolchainNode, SyncProjectNode};
+    use moon_action_graph::ActionGraphType;
     use moon_common::Id;
     use moon_config::{TaskDependencyType, UnresolvedVersionSpec};
     use moon_task::Target;
@@ -616,7 +616,7 @@ mod invariants {
     use rustc_hash::FxHashSet;
 
     struct GraphMocker {
-        graph: Dag<ActionNode, TaskDependencyType>,
+        graph: ActionGraphType,
     }
 
     impl GraphMocker {
@@ -625,7 +625,7 @@ mod invariants {
         }
 
         fn link(&mut self, from: NodeIndex, to: NodeIndex, weight: TaskDependencyType) {
-            self.graph.add_edge(from, to, weight).unwrap();
+            self.graph.add_edge(from, to, weight);
         }
     }
 
@@ -644,7 +644,9 @@ mod invariants {
 
     #[test]
     fn reports_each_violation() {
-        let mut mocker = GraphMocker { graph: Dag::new() };
+        let mut mocker = GraphMocker {
+            graph: ActionGraphType::new(),
+        };
 
         let sync = mocker.add(ActionNode::sync_workspace());
         let task_a = mocker.add(create_task("a"));
@@ -661,10 +663,7 @@ mod invariants {
         mocker.link(tool, task_a, TaskDependencyType::Required);
         mocker.link(tool_wait, sync, TaskDependencyType::Wait);
 
-        let graph = ActionGraph::new_with_cleanups(
-            mocker.graph.into_graph(),
-            FxHashSet::from_iter([task_b]),
-        );
+        let graph = ActionGraph::new_with_cleanups(mocker.graph, FxHashSet::from_iter([task_b]));
 
         assert_eq!(
             find_invariant_violations(&graph, true),

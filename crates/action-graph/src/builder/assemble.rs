@@ -17,10 +17,9 @@
 use super::RequestId;
 use super::select::{Event, ProvisionRequest, SerialLink, TaskPlan};
 use super::{get_project_spec, get_spec};
-use crate::action_graph::ActionGraph;
+use crate::action_graph::{ActionGraph, ActionGraphType};
 use crate::action_graph_error::ActionGraphError;
 use crate::action_graph_options::ActionGraphBuilderOptions;
-use daggy::{Dag, Walker};
 use miette::IntoDiagnostic;
 use moon_action::{
     ActionNode, InstallDependenciesNode, SetupEnvironmentNode, SetupToolchainNode, SyncProjectNode,
@@ -29,6 +28,7 @@ use moon_app_context::AppContext;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_common::{Id, color};
 use moon_config::{TaskDependencyConfig, TaskDependencyType};
+use moon_graph_utils::{CycleSpace, add_acyclic_edge, add_acyclic_edges};
 use moon_pdk_api::{DefineRequirementsInput, LocateDependenciesRootInput};
 use moon_project::Project;
 use moon_task::Target;
@@ -82,7 +82,8 @@ struct GraphAssembler<'app> {
     options: &'app ActionGraphBuilderOptions,
     workspace_graph: &'app WorkspaceGraph,
 
-    graph: Dag<ActionNode, TaskDependencyType>,
+    graph: ActionGraphType,
+    cycle_space: CycleSpace,
     keys: FxHashMap<NodeKey, NodeIndex>,
     cleanup_indices: FxHashSet<NodeIndex>,
 
@@ -109,7 +110,8 @@ pub async fn assemble(
         app_context,
         options,
         workspace_graph,
-        graph: Dag::new(),
+        graph: ActionGraphType::new(),
+        cycle_space: CycleSpace::default(),
         keys: FxHashMap::default(),
         cleanup_indices: FxHashSet::default(),
         instance_nodes: vec![None; instances.len()],
@@ -322,7 +324,7 @@ impl GraphAssembler<'_> {
     }
 
     fn freeze(self) -> ActionGraph {
-        ActionGraph::new_with_cleanups(self.graph.into_graph(), self.cleanup_indices)
+        ActionGraph::new_with_cleanups(self.graph, self.cleanup_indices)
     }
 
     // PROVISIONING
@@ -809,7 +811,7 @@ impl GraphAssembler<'_> {
         to: NodeIndex,
         weight: TaskDependencyType,
     ) -> miette::Result<()> {
-        if self.graph.add_edge(from, to, weight).is_err() {
+        if add_acyclic_edge(&mut self.graph, from, to, weight, &mut self.cycle_space).is_err() {
             return Err(ActionGraphError::WouldCycle {
                 source_action: self.label(from),
                 target_action: self.label(to),
@@ -840,7 +842,13 @@ impl GraphAssembler<'_> {
             return None;
         }
 
-        match self.graph.add_edge(from, to, TaskDependencyType::Required) {
+        match add_acyclic_edge(
+            &mut self.graph,
+            from,
+            to,
+            TaskDependencyType::Required,
+            &mut self.cycle_space,
+        ) {
             Ok(edge_index) => {
                 trace!(
                     index = from.index(),
@@ -867,7 +875,6 @@ impl GraphAssembler<'_> {
     /// and cleans up after another), and the pipeline honors all of them.
     fn has_edge_of_type(&self, from: NodeIndex, to: NodeIndex, weight: TaskDependencyType) -> bool {
         self.graph
-            .graph()
             .edges_connecting(from, to)
             .any(|edge| *edge.weight() == weight)
     }
@@ -875,7 +882,7 @@ impl GraphAssembler<'_> {
     /// Describe the cycle that an edge from `from` to `to` would introduce,
     /// as `to` already reaches `from`.
     fn find_cycle(&self, from: NodeIndex, to: NodeIndex) -> Option<String> {
-        let graph = self.graph.graph();
+        let graph = &self.graph;
         let mut parents = FxHashMap::<NodeIndex, NodeIndex>::default();
         let mut queue = VecDeque::from([to]);
 
@@ -960,14 +967,13 @@ impl GraphAssembler<'_> {
             // otherwise only link to the workspace sync, so they're added at
             // once, with a single cycle check, instead of one for each edge
             if matches!(partition, ScopePartition::Production)
-                && self
-                    .graph
-                    .add_edges(
-                        edges
-                            .iter()
-                            .map(|(from, to)| (*from, *to, TaskDependencyType::Required)),
-                    )
-                    .is_ok()
+                && add_acyclic_edges(
+                    &mut self.graph,
+                    edges
+                        .iter()
+                        .map(|(from, to)| (*from, *to, TaskDependencyType::Required)),
+                )
+                .is_ok()
             {
                 continue;
             }
@@ -998,7 +1004,7 @@ impl GraphAssembler<'_> {
 
         let mut target_indices = FxHashMap::<Target, Vec<NodeIndex>>::default();
 
-        for index in self.graph.graph().node_indices() {
+        for index in self.graph.node_indices() {
             if let ActionNode::RunTask(inner) = &self.graph[index] {
                 target_indices
                     .entry(inner.target.clone())
@@ -1070,7 +1076,13 @@ impl GraphAssembler<'_> {
                             continue;
                         }
 
-                        match self.graph.add_edge(*owner_index, *dep_index, weight) {
+                        match add_acyclic_edge(
+                            &mut self.graph,
+                            *owner_index,
+                            *dep_index,
+                            weight,
+                            &mut self.cycle_space,
+                        ) {
                             Ok(edge_index) => {
                                 self.present_edges.insert(edge_index);
                             }
@@ -1142,18 +1154,13 @@ impl GraphAssembler<'_> {
 
             ordered.push(node_index);
 
-            let mut children = self.graph.children(node_index);
-
-            while let Some((edge_index, child_index)) = children.walk_next(&self.graph) {
-                if !self.serial_edges.contains(&edge_index)
-                    && !self.present_edges.contains(&edge_index)
-                    && self
-                        .graph
-                        .edge_weight(edge_index)
-                        .is_some_and(|weight| weight.is_required_type())
-                    && matches!(self.graph[child_index], ActionNode::RunTask(_))
+            for edge in self.graph.edges_directed(node_index, Direction::Outgoing) {
+                if !self.serial_edges.contains(&edge.id())
+                    && !self.present_edges.contains(&edge.id())
+                    && edge.weight().is_required_type()
+                    && matches!(self.graph[edge.target()], ActionNode::RunTask(_))
                 {
-                    stack.push(child_index);
+                    stack.push(edge.target());
                 }
             }
         }

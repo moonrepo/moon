@@ -614,6 +614,11 @@ Done on 2026-10-16, on a branch from `develop-3.0` after the rewrite
 - **Pipeline**: the job dispatcher reads nodes from the graph, instead of the node map.
 - **Tests**: the builder, invariant, pipeline, project graph, task graph, and graph command tests
   pass with every snapshot unchanged.
+- **daggy**: removed afterwards, along with the project graph's use of it. `add_acyclic_edge` and
+  `add_acyclic_edges` in [graph_cycle.rs](../../crates/graph-utils/src/graph_cycle.rs) add edges to
+  a plain `DiGraph` with the same checks as `Dag::add_edge` and `Dag::add_edges`, including skipping
+  the search when an edge can't close a cycle. The bulk check uses a topological sort instead of
+  `is_cyclic_directed`, which recurses once per node, so deep chains can't overflow the stack.
 
 ### Benchmark
 

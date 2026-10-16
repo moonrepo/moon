@@ -26,9 +26,10 @@ Source files:
 ## Model
 
 The graph is a `DiGraph<ActionNode, TaskDependencyType>`
-([action_graph.rs:12](../crates/action-graph/src/action_graph.rs#L12)). The builder assembles it as
-a `Dag<ActionNode, TaskDependencyType>`, so edges are rejected on insertion if they would form a
-cycle.
+([action_graph.rs:12](../crates/action-graph/src/action_graph.rs#L12)). The builder adds edges with
+`add_acyclic_edge` and `add_acyclic_edges`
+([graph_cycle.rs](../crates/graph-utils/src/graph_cycle.rs)), so edges are rejected on insertion if
+they would form a cycle.
 
 **Edge direction.** Every edge points from the node that runs later to the node that runs earlier:
 `A → B` means A waits on B. This holds for all edge weights, including cleanup edges (the cleanup

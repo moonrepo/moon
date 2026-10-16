@@ -1,5 +1,4 @@
 use crate::project_graph_error::ProjectGraphError;
-use daggy::Dag;
 use moon_common::Id;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_config::{DependencyScope, InheritedTasks};
@@ -116,10 +115,10 @@ pub struct ProjectGraph {
     graph: DiGraph<NodeIndex, DependencyScope>,
 
     /// Directed-acyclic graph (DAG) of production and peer dependencies.
-    production_graph: Dag<NodeIndex, DependencyScope>,
+    production_graph: DiGraph<NodeIndex, DependencyScope>,
 
     /// Directed-acyclic graph (DAG) of development, build, and root dependencies.
-    development_graph: Dag<NodeIndex, DependencyScope>,
+    development_graph: DiGraph<NodeIndex, DependencyScope>,
 
     /// Project IDs by node index. Node indexes are dense (0 to the node
     /// count), so the ID of a node is at the position of its index.
@@ -301,8 +300,8 @@ impl ProjectGraph {
         partition: ScopePartition,
     ) -> &DiGraph<NodeIndex, DependencyScope> {
         match partition {
-            ScopePartition::Production => self.production_graph.graph(),
-            ScopePartition::Development => self.development_graph.graph(),
+            ScopePartition::Production => &self.production_graph,
+            ScopePartition::Development => &self.development_graph,
         }
     }
 
@@ -411,8 +410,8 @@ impl ProjectGraph {
         &mut self,
         mut graph: DiGraph<NodeIndex, DependencyScope>,
     ) -> miette::Result<()> {
-        let mut production_graph = Dag::with_capacity(graph.node_count(), graph.edge_count());
-        let mut development_graph = Dag::with_capacity(graph.node_count(), graph.edge_count());
+        let mut production_graph = DiGraph::with_capacity(graph.node_count(), graph.edge_count());
+        let mut development_graph = DiGraph::with_capacity(graph.node_count(), graph.edge_count());
 
         // Weight-based lookups require each node's weight to be its own
         // index, but the builders may provide stale pre-filtered indices
@@ -446,8 +445,8 @@ impl ProjectGraph {
 
         // Adding edges in bulk only checks each graph for cycles once, instead
         // of on every insertion, so only find the offending edge when one fails
-        if production_graph.add_edges(production_edges).is_err()
-            || development_graph.add_edges(development_edges).is_err()
+        if add_acyclic_edges(&mut production_graph, production_edges).is_err()
+            || add_acyclic_edges(&mut development_graph, development_edges).is_err()
         {
             let edge = find_cycle_in_scopes(&graph).expect("Partition cycle must exist!");
             let (source, target) = graph.edge_endpoints(edge).unwrap();

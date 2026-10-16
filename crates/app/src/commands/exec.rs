@@ -9,7 +9,7 @@ use clap::{Args, ValueEnum};
 use iocraft::prelude::element;
 use moon_action::Action;
 use moon_action_context::ActionContext;
-use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, RunRequirements};
+use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, BuildOutput, RunRequirements};
 use moon_affected::Depth;
 use moon_app_macros::{with_affected_args, with_shared_exec_args};
 use moon_cache::CacheMode;
@@ -463,7 +463,7 @@ impl ExecWorkflow {
 
         // Always pass changed files, even if not checking affected,
         // as it's required for plugins, contexts, and more
-        action_graph_builder.set_changed_files(changed_files)?;
+        action_graph_builder.set_changed_files(changed_files);
 
         // Only track affected if enabled
         let affected_depth = self.get_affected_depth();
@@ -471,41 +471,41 @@ impl ExecWorkflow {
         let no_dependencies = self.get_no_dependencies();
 
         if self.affected {
-            action_graph_builder
-                .track_affected(affected_depth, self.ci_env && self.ci_check)
-                .await?;
+            action_graph_builder.track_affected(affected_depth, self.ci_env && self.ci_check);
         }
 
         // Always sync workspace in CI
         if self.ci_env {
-            action_graph_builder.sync_workspace().await?;
+            action_graph_builder.sync_workspace();
         }
 
         // Insert targets into the graph
         let job = self.get_job();
         let job_total = self.get_job_total();
 
-        let partition = action_graph_builder
-            .run_tasks_with_plan(
-                &self.plan,
-                RunRequirements {
-                    ci: self.ci_env,
-                    ci_check: self.ci_check,
-                    no_dependencies,
-                    dependents,
-                    interactive: self.args.interactive,
-                    job,
-                    job_total,
-                    // Forcing runs tasks even when not affected, but still
-                    // tracks affected files for the `affectedFiles` option.
-                    skip_affected: !self.affected || self.args.force,
-                    skip_persistent: self.args.skip_persistent,
-                },
-            )
-            .await?;
+        action_graph_builder.set_requirements(RunRequirements {
+            ci: self.ci_env,
+            ci_check: self.ci_check,
+            no_dependencies,
+            dependents,
+            interactive: self.args.interactive,
+            job,
+            job_total,
+            // Forcing runs tasks even when not affected, but still
+            // tracks affected files for the `affectedFiles` option.
+            skip_affected: !self.affected || self.args.force,
+            skip_persistent: self.args.skip_persistent,
+        });
+
+        let request = action_graph_builder.run_tasks_with_plan(&self.plan);
 
         // Build the graph
-        let (action_context, action_graph) = action_graph_builder.build();
+        let BuildOutput {
+            context: action_context,
+            graph: action_graph,
+            mut report,
+        } = action_graph_builder.build().await?;
+        let partition = report.take_partition(request).unwrap_or_default();
         let targets = self.get_targets();
 
         if let Some(index) = &job

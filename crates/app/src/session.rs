@@ -106,7 +106,7 @@ impl MoonSession {
         }
     }
 
-    pub async fn build_action_graph<'graph>(&self) -> miette::Result<ActionGraphBuilder<'graph>> {
+    pub async fn build_action_graph(&self) -> miette::Result<ActionGraphBuilder> {
         let config = &self.workspace_config.pipeline;
 
         self.build_action_graph_with_options(ActionGraphBuilderOptions {
@@ -120,14 +120,18 @@ impl MoonSession {
         .await
     }
 
-    pub async fn build_action_graph_with_options<'graph>(
+    pub async fn build_action_graph_with_options(
         &self,
         options: ActionGraphBuilderOptions,
-    ) -> miette::Result<ActionGraphBuilder<'graph>> {
+    ) -> miette::Result<ActionGraphBuilder> {
         let app_context = self.get_app_context().await?;
         let workspace_graph = self.get_workspace_graph().await?;
 
-        ActionGraphBuilder::new(app_context, workspace_graph, options)
+        Ok(ActionGraphBuilder::new(
+            app_context,
+            workspace_graph,
+            options,
+        ))
     }
 
     pub fn build_code_generator(&self) -> CodeGenerator<'_> {

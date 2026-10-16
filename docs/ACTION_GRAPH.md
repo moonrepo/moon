@@ -3,9 +3,10 @@
 A reference for the action graph that moon builds before running the action pipeline: every type of
 node, every edge between nodes, and the conditions under which each node and edge exists.
 
-Written on 2026-10-15 against `develop-3.0` at `6a680da217`. Line references are as of that commit,
-and will drift. This describes the behavior of the code, which is the spec: where something looks
-surprising, it's called out in [Notes](#notes) instead of being described as the intent.
+Written on 2026-10-15 against `develop-3.0` at `6a680da217`, then updated on `3.0-ag-new` for the
+toolchain setup fixes. Line references are as of that update, and will drift. This describes the
+behavior of the code, which is the spec: where something looks surprising, it's called out in
+[Notes](#notes) instead of being described as the intent.
 
 Source files:
 
@@ -98,7 +99,7 @@ the toolchain supports. See [InstallDependencies](#installdependencies).
 
 Syncs the workspace (config schemas, codeowners, VCS hooks, and toolchain and extension
 `sync_workspace` hooks), and runs before nearly everything else.
-[sync_workspace](../crates/action-graph/src/action_graph_builder.rs#L1651).
+[sync_workspace](../crates/action-graph/src/action_graph_builder.rs#L1659).
 
 - **Exists when** `options.sync_workspace` is true (`pipeline.syncWorkspace`, default `true`), and
   something asks for it: another node links to it, `moon sync`, or `moon run`/`ci`/`check`/`exec` in
@@ -107,7 +108,7 @@ Syncs the workspace (config schemas, codeowners, VCS hooks, and toolchain and ex
 
 ### SetupProto
 
-Installs proto itself. [setup_proto](../crates/action-graph/src/action_graph_builder.rs#L1480).
+Installs proto itself. [setup_proto](../crates/action-graph/src/action_graph_builder.rs#L1488).
 
 - **Identity:** `proto.version` from `.moon/toolchains.yml`, so a singleton in practice.
 - **Exists when** a `SetupToolchain` node links to it, or `moon setup` inserts it directly.
@@ -116,7 +117,7 @@ Installs proto itself. [setup_proto](../crates/action-graph/src/action_graph_bui
 ### SetupToolchain
 
 Downloads and installs a toolchain's tool (tier 3).
-[internal_setup_toolchain](../crates/action-graph/src/action_graph_builder.rs#L1498).
+[internal_setup_toolchain](../crates/action-graph/src/action_graph_builder.rs#L1506).
 
 - **Identity:** the `ToolchainSpec`, the toolchain id plus its version requirement. Projects that
   override a toolchain's version (`toolchains.<id>.version` in `moon.yml`) get their own node per
@@ -143,7 +144,7 @@ Downloads and installs a toolchain's tool (tier 3).
 ### SetupEnvironment
 
 Prepares a toolchain's environment in a dependencies root, before dependencies are installed.
-[internal_setup_environment](../crates/action-graph/src/action_graph_builder.rs#L1357).
+[internal_setup_environment](../crates/action-graph/src/action_graph_builder.rs#L1362).
 
 - **Identity:** toolchain id, root (workspace-relative, empty for the workspace root), and an
   optional project id.
@@ -157,7 +158,7 @@ Prepares a toolchain's environment in a dependencies root, before dependencies a
   - something asks for it: the [install slot](#installdependencies), or `moon setup` via
     `setup_environment_root`, which additionally requires that the located dependencies root is the
     workspace root
-    ([setup_environment_root](../crates/action-graph/src/action_graph_builder.rs#L1452)).
+    ([setup_environment_root](../crates/action-graph/src/action_graph_builder.rs#L1460)).
 - **Outgoing edges** (all `Required`):
 
   | To                           | When                                                                                                                                         |
@@ -165,6 +166,10 @@ Prepares a toolchain's environment in a dependencies root, before dependencies a
   | `SetupToolchain(<required>)` | `define_requirements` returns the id with `for_setup_environment: true`. Note it requires the toolchain to be _set up_, not its environment. |
   | `SyncWorkspace`              | It exists.                                                                                                                                   |
   | `SetupToolchain(<self>)`     | It exists.                                                                                                                                   |
+
+  Edges are linked on every request, even when the node already exists. The toolchain version isn't
+  part of its identity, so projects that share a dependencies root but override the version each add
+  their own `SetupToolchain`, and the environment waits for all of them.
 
 ### InstallDependencies
 
@@ -182,36 +187,39 @@ toolchain, inserting the chain beneath it as it goes. The caller links to whatev
   workspace (members), every project that resolves to the same root collapses into **one** node.
 - **Resolution**, in order. The first matching row decides what the slot returns:
 
-  | #   | Condition                                                                                                                                                                              | Returns                                                       |
-  | :-- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------ |
-  | 1   | The spec is `system`, or `options.install_dependencies` is disabled for the toolchain id (`pipeline.installDependencies`), or the toolchain's `installDependencies` setting is `false` | `None`. No setup chain is inserted either.                    |
-  | 2   | The plugin doesn't support tier 2 (no `locate_dependencies_root`)                                                                                                                      | `SetupToolchain` (or `None` if that doesn't exist)            |
-  | 3   | `locate_dependencies_root` finds no root, or the project's root (workspace root when there's no project) isn't in that dependencies workspace                                          | `SetupToolchain` (or `None`)                                  |
-  | 4   | The plugin exports `install_dependencies`                                                                                                                                              | `InstallDependencies`                                         |
-  | 5   | Otherwise                                                                                                                                                                              | `SetupEnvironment` if it exists, else `SetupToolchain`/`None` |
+  | #   | Condition                                                                                                                                                     | Returns                                                       |
+  | :-- | :------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------ |
+  | 1   | The spec is `system`                                                                                                                                          | `None`                                                        |
+  | 2   | `options.install_dependencies` is disabled for the toolchain id (`pipeline.installDependencies`), or the toolchain's `installDependencies` setting is `false` | `SetupToolchain` (or `None` if that doesn't exist)            |
+  | 3   | The plugin doesn't support tier 2 (no `locate_dependencies_root`)                                                                                             | `SetupToolchain` (or `None`)                                  |
+  | 4   | `locate_dependencies_root` finds no root, or the project's root (workspace root when there's no project) isn't in that dependencies workspace                 | `SetupToolchain` (or `None`)                                  |
+  | 5   | The plugin exports `install_dependencies`                                                                                                                     | `InstallDependencies`                                         |
+  | 6   | Otherwise                                                                                                                                                     | `SetupEnvironment` if it exists, else `SetupToolchain`/`None` |
 
   "In that dependencies workspace" means the path is the root itself, or the root has `members` and
   the path relative to the root matches one of the member globs
   ([toolchain_plugin.rs:177](../crates/toolchain-plugin/src/toolchain_plugin.rs#L177)).
 
-  `SyncWorkspace` and `SetupToolchain` are inserted (when enabled) before rows 2–5 are evaluated,
-  and `SetupEnvironment` before rows 4–5, so they exist even when the slot returns something else.
+  Row 2 means disabling installs never disables toolchain setup: tasks still wait on the toolchain
+  being setup, but no `SetupEnvironment` is inserted for it. `SyncWorkspace` and `SetupToolchain`
+  are inserted (when enabled) before rows 3–6 are evaluated, and `SetupEnvironment` before rows 5–6,
+  so they exist even when the slot returns something else.
 
 - **Outgoing edges:** one `Required` edge per request, to the **first** of `SetupEnvironment`,
   `SetupToolchain`, `SyncWorkspace` that exists (`link_first_available_edge`). The rest are reached
-  transitively, as `SetupEnvironment` already links to both. Requests that resolve to an existing
-  node normally link the same target again, which is a no-op; see [Notes](#notes) for when they
-  don't.
-- In case 5, the returned `SetupEnvironment` is also linked to the first of `SetupToolchain`,
+  transitively, as `SetupEnvironment` already links to both. When requests that resolve to the same
+  node pass different versions of the toolchain (projects sharing a root that override it), and
+  there's no `SetupEnvironment`, each request links its own version's `SetupToolchain`.
+- In case 6, the returned `SetupEnvironment` is also linked to the first of `SetupToolchain`,
   `SyncWorkspace`. Both edges already exist from its own insertion, so this adds nothing.
 
-`install_dependencies_root` (no project) applies row 1, then only continues if the located
-dependencies root is the workspace root, otherwise it returns `None`.
+`install_dependencies_root` (no project) returns `None` for rows 1 and 2, then only continues if the
+located dependencies root is the workspace root, otherwise it returns `None`.
 
 ### SyncProject
 
 Syncs a project through the `sync_project` hooks of its enabled toolchains and of extensions.
-[internal_sync_project](../crates/action-graph/src/action_graph_builder.rs#L1593).
+[internal_sync_project](../crates/action-graph/src/action_graph_builder.rs#L1601).
 
 - **Identity:** project id.
 - **Exists when all of:**
@@ -234,7 +242,7 @@ Syncs a project through the `sync_project` hooks of its enabled toolchains and o
 ### RunTask
 
 Runs a task's command.
-[internal_run_task](../crates/action-graph/src/action_graph_builder.rs#L1224).
+[internal_run_task](../crates/action-graph/src/action_graph_builder.rs#L1229).
 
 - **Identity:** target, the interactive and persistent flags (which change the label), plus the
   `args` and `env` from the dependency config that inserted it (env keys sorted for hashing). A task
@@ -283,7 +291,7 @@ re-evaluating edges or dependencies.
 A task's `deps` are expanded in the task graph before the action graph sees them, so every
 `dep.target` is scoped to a project id, all projects (`:task`), or a project tag (`#tag:task`); the
 `^:` and `~:` scopes error here. Each target resolves to one or more tasks, and internal tasks are
-allowed. [internal_run_task_dependencies](../crates/action-graph/src/action_graph_builder.rs#L795).
+allowed. [internal_run_task_dependencies](../crates/action-graph/src/action_graph_builder.rs#L800).
 
 Each resolved dependency task is inserted through the same `RunTask` path, with:
 
@@ -308,7 +316,7 @@ also chains them, because a serial edge can be skipped for forming a cycle.
 
 When task `T` declares `deps: [{ target: C, type: cleanup }]`, `C` runs **after** `T`, so the edge
 is `C → T` with weight `Cleanup`
-([link_cleanup_edges](../crates/action-graph/src/action_graph_builder.rs#L1891)). It's linked by the
+([link_cleanup_edges](../crates/action-graph/src/action_graph_builder.rs#L1899)). It's linked by the
 caller that owns `T`'s index, after `T` is inserted, and it's skipped if a `Cleanup` edge already
 links the pair. `C` may also depend on `T` in another way (for example, a `required` dep); that's a
 separate edge with its own weight, and both are kept.
@@ -320,7 +328,7 @@ task.
 
 When a task sets `options.runDepsInParallel: false`, its `required` dependencies run one after
 another, and so does each dependency's whole task subtree
-([link_serial_required_edges](../crates/action-graph/src/action_graph_builder.rs#L1934)). For
+([link_serial_required_edges](../crates/action-graph/src/action_graph_builder.rs#L1942)). For
 dependencies `d1, d2, d3` in declared order, with `prev` the last required dependency so far and
 `prev_standard` the last required dependency that isn't persistent:
 
@@ -342,7 +350,7 @@ Serial edges are a preference, not a dependency:
   it, and so it can be removed later.
 - When a real dependency edge is linked later in the opposite direction, the serial edges on the
   path that would form the cycle are removed, newest first, until the path is gone
-  ([unlink_serial_edges](../crates/action-graph/src/action_graph_builder.rs#L2072)). If the path
+  ([unlink_serial_edges](../crates/action-graph/src/action_graph_builder.rs#L2080)). If the path
   consists of real dependencies only, it's an actual cycle, and building fails with `WouldCycle`.
 - When a real dependency is linked over an existing serial edge between the same pair, the edge is
   promoted: it's dropped from `serial_edges` and becomes a dependency.
@@ -352,7 +360,7 @@ Serial edges are a preference, not a dependency:
 With `no_dependencies`, a selected task's non-cleanup dependencies aren't inserted. Instead, when
 the graph is built, each of its dependencies that **already has a node** (because it was selected
 itself, or reached through another task) gets an edge, regardless of insertion order
-([link_present_dependencies](../crates/action-graph/src/action_graph_builder.rs#L1673)):
+([link_present_dependencies](../crates/action-graph/src/action_graph_builder.rs#L1681)):
 
 - The edge is task → dependency, weighted `Required` (or `Wait`).
 - If the dependency target has several nodes, those whose `args` and `env` match the dependency
@@ -366,8 +374,8 @@ itself, or reached through another task) gets an edge, regardless of insertion o
 
 When affected tracking is active (`moon run --affected`, `moon ci`, and so on) and not skipped for
 the insertion, a `RunTask` or `SyncProject` node is only inserted if its task or project is marked
-affected ([is_task_affected](../crates/action-graph/src/action_graph_builder.rs#L2191),
-[is_project_affected](../crates/action-graph/src/action_graph_builder.rs#L2158)). Affected state is
+affected ([is_task_affected](../crates/action-graph/src/action_graph_builder.rs#L2199),
+[is_project_affected](../crates/action-graph/src/action_graph_builder.rs#L2166)). Affected state is
 computed up front (`track_affected`, then `track_tasks` in `run_tasks`), so insertion order doesn't
 change the result.
 
@@ -385,12 +393,12 @@ edges only exist between affected projects.
 ## Task selection
 
 Which tasks become primary `RunTask` nodes is decided before any edges are linked
-([run_tasks](../crates/action-graph/src/action_graph_builder.rs#L625)):
+([run_tasks](../crates/action-graph/src/action_graph_builder.rs#L630)):
 
 1. Resolve each target locator to tasks. Internal tasks are excluded. A `:task` locator is bounded
    by `--query` when one is set (glob locators aren't).
 2. Deduplicate, then append dependents of the selected tasks up to `--dependents` depth
-   ([internal_resolve_dependents](../crates/action-graph/src/action_graph_builder.rs#L964)). The
+   ([internal_resolve_dependents](../crates/action-graph/src/action_graph_builder.rs#L969)). The
    walk follows incoming task graph edges, **except** `cleanup` edges, and skips projects that don't
    match `--query`. A task that was both selected and reached as a dependent counts as requested.
 3. Track affected state for every candidate (or every task, when affected state flows through
@@ -424,18 +432,18 @@ There are three different mechanisms, and they behave differently:
 node types. A `PipelineActionSwitch` is `Default` (enabled), `Enabled(bool)`, or `Only(ids)`
 (enabled for the listed ids).
 
-| Option                      | Gates                                     | Keyed by     | Source (`session.build_action_graph`) |
-| :-------------------------- | :---------------------------------------- | :----------- | :------------------------------------ |
-| `install_dependencies`      | `InstallDependencies` and its setup chain | toolchain id | `pipeline.installDependencies`        |
-| `setup_environment`         | `SetupEnvironment`                        | toolchain id | always `true`                         |
-| `setup_toolchains`          | `SetupToolchain`                          | toolchain id | always `true`                         |
-| `sync_projects`             | `SyncProject`                             | project id   | `pipeline.syncProjects`               |
-| `sync_project_dependencies` | `SyncProject → SyncProject` edges         | n/a          | `pipeline.syncProjectDependencies`    |
-| `sync_workspace`            | `SyncWorkspace`                           | n/a          | `pipeline.syncWorkspace`              |
+| Option                      | Gates                                                                                     | Keyed by     | Source (`session.build_action_graph`) |
+| :-------------------------- | :---------------------------------------------------------------------------------------- | :----------- | :------------------------------------ |
+| `install_dependencies`      | `InstallDependencies` and `SetupEnvironment` from the install slot (not `SetupToolchain`) | toolchain id | `pipeline.installDependencies`        |
+| `setup_environment`         | `SetupEnvironment`                                                                        | toolchain id | always `true`                         |
+| `setup_toolchains`          | `SetupToolchain`                                                                          | toolchain id | always `true`                         |
+| `sync_projects`             | `SyncProject`                                                                             | project id   | `pipeline.syncProjects`               |
+| `sync_project_dependencies` | `SyncProject → SyncProject` edges                                                         | n/a          | `pipeline.syncProjectDependencies`    |
+| `sync_workspace`            | `SyncWorkspace`                                                                           | n/a          | `pipeline.syncWorkspace`              |
 
 Per-toolchain config adds two more gates: a toolchain's `installDependencies: false` in
-`.moon/toolchains.yml` disables its install slot, and a project's `toolchains.<id>` set to disabled
-removes the toolchain from that project's tasks entirely.
+`.moon/toolchains.yml` reduces its install slot to toolchain setup (row 2), and a project's
+`toolchains.<id>` set to disabled removes the toolchain from that project's tasks entirely.
 
 ## Entry points
 
@@ -509,31 +517,19 @@ dropped.
 
 Behaviors that follow from the code above, and may be worth a second look:
 
-1. **Disabling installs drops toolchain setup for tasks.** Row 1 of the install slot returns `None`
-   before `SetupToolchain` is inserted, and the install slot is a task's only path to toolchain
-   setup. With `pipeline.installDependencies: false` (or a toolchain's
-   `installDependencies: false`), task runs insert no `SetupToolchain` or `SetupEnvironment` for
-   that toolchain at all.
-2. **`SetupProto` doesn't link `SyncWorkspace`.** It's the only non-root node that doesn't, so it
+1. **`SetupProto` doesn't link `SyncWorkspace`.** It's the only non-root node that doesn't, so it
    may run before or in parallel with the workspace sync.
-3. **`SetupProto` gating is workspace-wide.** `requires_proto()` is true if any toolchain in
+2. **`SetupProto` gating is workspace-wide.** `requires_proto()` is true if any toolchain in
    `.moon/toolchains.yml` has a version, so a global (unversioned) toolchain still depends on
    `SetupProto` in that case. The graph also doesn't consult `MOON_TOOLCHAIN_FORCE_GLOBALS`; the
    node is inserted, and the `setup_proto` action skips itself at runtime.
-4. **Requirement-only toolchains are inserted unconditionally.** A toolchain without tier 3 (or
+3. **Requirement-only toolchains are inserted unconditionally.** A toolchain without tier 3 (or
    without `setup_environment`) is still inserted when it declares a requirement, even if that
    requirement produced no node (for example, the required toolchain has no tier 3 support itself),
    because the check is on the edge list's length, not on whether any edge resolved.
-5. **`SyncProject` edges are first-caller-wins.** A project's dependency edges are linked only when
+4. **`SyncProject` edges are first-caller-wins.** A project's dependency edges are linked only when
    its node is inserted. Since the node is inserted before its dependencies are recursed into, and
    the project's affected state or the recursion path can differ between callers, a later caller
    that would have produced more edges gets the existing node unchanged.
-6. **`moon sync` ignores `pipeline.*`.** It uses `ActionGraphBuilderOptions::default()`, which
+5. **`moon sync` ignores `pipeline.*`.** It uses `ActionGraphBuilderOptions::default()`, which
    enables every action type regardless of workspace config. So do the MCP sync tools.
-7. **Shared roots with mixed toolchain versions.** Neither `InstallDependencies` nor
-   `SetupEnvironment` includes the toolchain version in its identity, but `SetupToolchain` does.
-   When projects that resolve to the same dependencies root override the toolchain's version:
-   - with a `SetupEnvironment`, it's first-caller-wins (`insert_node_or_exit!`), so it only links
-     the first version's `SetupToolchain`. The other versions' `SetupToolchain` nodes are still
-     inserted, but nothing links to them, so their tasks aren't ordered after them;
-   - without one, `InstallDependencies` links every version's `SetupToolchain`, one per request.

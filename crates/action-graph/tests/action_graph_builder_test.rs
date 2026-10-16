@@ -216,6 +216,62 @@ mod action_graph_builder {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn graphs_multiple_toolchain_versions_with_setup_env() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer::new(sandbox.path())
+                // Plugin matches based on cwd, so the project owns the root package
+                .set_working_dir(sandbox.path().join("bar"));
+
+            container.mocker = container.mocker.update_toolchains_config(|cfg| {
+                cfg.plugins
+                    .entry(Id::raw("tc-tier3-setup-env"))
+                    .or_default();
+            });
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let spec1 = create_tier_spec_with_name("tc-tier3-setup-env");
+
+            let mut spec2 = create_tier_spec_with_name("tc-tier3-setup-env");
+            spec2.req = Some(create_unresolved_version(Version::new(4, 5, 6)));
+
+            // Both versions resolve to the same environment, like projects that
+            // share a dependencies root while overriding the toolchain's version
+            let project = wg.get_project("bar").unwrap();
+            builder
+                .install_dependencies(&spec1, &project)
+                .await
+                .unwrap();
+            builder
+                .install_dependencies(&spec2, &project)
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+
+            // The environment must not be setup until every version has been
+            let env_node = ActionNode::setup_environment(SetupEnvironmentNode {
+                project_id: Some(Id::raw("bar")),
+                root: WorkspaceRelativePathBuf::from("bar"),
+                toolchain_id: spec1.id.clone(),
+            });
+            let mut env_deps = graph.dependencies_of(&env_node);
+            env_deps.sort();
+
+            assert_eq!(
+                env_deps,
+                vec![
+                    "SetupToolchain(tc-tier3-setup-env:1.2.3)",
+                    "SetupToolchain(tc-tier3-setup-env:4.5.6)",
+                    "SyncWorkspace",
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn graphs_multiple_toolchain_versions_using_overrides() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer::new(sandbox.path());
@@ -444,6 +500,82 @@ mod action_graph_builder {
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn graphs_setup_toolchain_if_disabled() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer::new(sandbox.path())
+                // Plugin matches based on cwd, so the project owns the root package
+                .set_working_dir(sandbox.path().join("bar"));
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container
+                .create_builder_with_options(
+                    wg.clone(),
+                    ActionGraphBuilderOptions {
+                        install_dependencies: false.into(),
+                        ..Default::default()
+                    },
+                )
+                .await;
+
+            // Dependencies aren't installed, but the toolchain must still be
+            // setup, so that its binaries are available to the project's tasks
+            let spec = create_tier_spec(3);
+
+            let project = wg.get_project("bar").unwrap();
+            let index = builder.install_dependencies(&spec, &project).await.unwrap();
+
+            assert!(index.is_some());
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_proto(create_proto_version()),
+                    ActionNode::setup_toolchain(SetupToolchainNode { toolchain: spec }),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn graphs_setup_toolchain_if_disabled_in_config() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer::new(sandbox.path())
+                // Plugin matches based on cwd, so the project owns the root package
+                .set_working_dir(sandbox.path().join("bar"));
+
+            let spec = create_tier_spec(3);
+
+            container.mocker = container.mocker.update_toolchains_config(|cfg| {
+                if let Some(inner) = cfg.plugins.get_mut(&spec.id) {
+                    inner.install_dependencies = false;
+                }
+            });
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let project = wg.get_project("bar").unwrap();
+            let index = builder.install_dependencies(&spec, &project).await.unwrap();
+
+            assert!(index.is_some());
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_proto(create_proto_version()),
+                    ActionNode::setup_toolchain(SetupToolchainNode { toolchain: spec }),
+                ]
+            );
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -976,6 +1108,47 @@ mod action_graph_builder {
                     ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain(SetupToolchainNode {
                         toolchain: create_node_spec(),
+                    }),
+                    ActionNode::run_task(RunTaskNode::new(task.target.clone()))
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn sets_up_toolchain_if_installing_deps_is_disabled() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+            let mut builder = container
+                .create_builder_with_options(
+                    container.create_workspace_graph().await,
+                    ActionGraphBuilderOptions {
+                        install_dependencies: false.into(),
+                        ..Default::default()
+                    },
+                )
+                .await;
+
+            let mut task = create_task("bar", "build");
+            task.toolchains = vec![Id::raw("tc-tier3")];
+
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::sync_project(SyncProjectNode {
+                        project_id: Id::raw("bar"),
+                    }),
+                    ActionNode::setup_proto(create_proto_version()),
+                    ActionNode::setup_toolchain(SetupToolchainNode {
+                        toolchain: create_tier_spec(3),
                     }),
                     ActionNode::run_task(RunTaskNode::new(task.target.clone()))
                 ]

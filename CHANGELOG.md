@@ -239,6 +239,12 @@
   it as valid, and an unreadable graph is rebuilt instead of failing.
 - Fixed an issue where duplicate project ID errors could report the existing and new project sources
   in a different order between runs.
+- Fixed an issue where disabling dependency installs (with `pipeline.installDependencies`, or a
+  toolchain's `installDependencies` setting) would also stop the toolchain from being setup for
+  tasks, so its configured version was not installed, or added to `PATH`, before they ran.
+- Fixed an issue where projects that share a dependencies root (like members of a workspace) but
+  override a toolchain's version could run tasks before their version of the toolchain was setup,
+  when the toolchain also sets up an environment.
 
 #### ⚙️ Internal
 

@@ -374,16 +374,21 @@ impl<'query> ActionGraphBuilder<'query> {
         spec: &ToolchainSpec,
         project: Option<&Project>,
     ) -> miette::Result<Option<NodeIndex>> {
-        // Explicitly disabled
-        if spec.is_system()
-            || !self.options.install_dependencies.is_enabled(&spec.id)
+        if spec.is_system() {
+            return Ok(None);
+        }
+
+        // If installing dependencies is disabled, we still need to ensure the
+        // toolchain has been setup (and indirectly, the workspace synced), so
+        // that its binaries are available to tasks
+        if !self.options.install_dependencies.is_enabled(&spec.id)
             || self
                 .app_context
                 .toolchains_config
                 .get_plugin_config(&spec.id)
                 .is_some_and(|cfg| !cfg.install_dependencies)
         {
-            return Ok(None);
+            return self.setup_toolchain(spec, project).await;
         }
 
         let sync_workspace_index = self.sync_workspace().await?;
@@ -1420,7 +1425,10 @@ impl<'query> ActionGraphBuilder<'query> {
         edges.push(self.sync_workspace().await?);
         edges.push(self.setup_toolchain(spec, project).await?);
 
-        let index = insert_node_or_exit!(
+        // The node may already exist, but the edges must still be linked, as the
+        // version is not part of its identity, so another version of the toolchain
+        // (overridden by a project that shares the root) must also be setup first
+        let index = insert_node_if_missing!(
             self,
             ActionNode::setup_environment(SetupEnvironmentNode {
                 project_id: project.map(|p| p.id.clone()),

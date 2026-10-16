@@ -55,6 +55,7 @@ cacheable!(
 );
 
 cacheable_enum!(
+    #[derive(Clone, Debug)]
     #[serde(untagged)]
     pub enum TargetsBlock {
         Partitioned { jobs: Vec<Vec<TargetLocator>> },

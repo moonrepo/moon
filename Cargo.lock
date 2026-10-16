@@ -5369,6 +5369,7 @@ dependencies = [
 name = "moon_action_graph"
 version = "0.0.1"
 dependencies = [
+ "codspeed-criterion-compat",
  "daggy",
  "graph-cycles",
  "miette 7.6.0",
@@ -5376,6 +5377,7 @@ dependencies = [
  "moon_action_context",
  "moon_affected",
  "moon_app_context",
+ "moon_bench_utils",
  "moon_common",
  "moon_config",
  "moon_exec_plan",

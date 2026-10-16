@@ -27,6 +27,10 @@ api_struct!(
         /// Other toolchains that this toolchain requires and must be setup before hand.
         /// If targeting an unstable toolchain, the identifier must be prefixed with "unstable_".
         /// When the toolchain is stable, both identifiers will continue to work.
+        ///
+        /// When this toolchain's environment is setup, the environments of these
+        /// toolchains are also setup beforehand, in this toolchain's dependencies root,
+        /// as they typically don't locate a root of their own.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub requires: Vec<String>,
 

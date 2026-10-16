@@ -12,8 +12,9 @@ day: the harness, run against the current builder (see [Baseline](#baseline)), a
 task stages (see [Phase 2 results](#phase-2-results)). Phase 3, provisioning and project syncs, was
 done on 2026-10-16 (see [Phase 3 results](#phase-3-results)), which completes the new builder. Phase
 4, the switch, and phase 5, deleting the previous builder, were done the same day (see
-[Phase 4 results](#phase-4-results) and [Phase 5 results](#phase-5-results)). Only phase 6, a
-separate follow-up, remains.
+[Phase 4 results](#phase-4-results) and [Phase 5 results](#phase-5-results)). Phase 6, storing the
+built graph directly, was done on 2026-10-16 too, as a separate change (see
+[Phase 6 results](#phase-6-results)), which completes the plan.
 
 ## Summary
 
@@ -78,8 +79,10 @@ workspaces, against both builders, and compares canonical graphs.
    formats a new `String` on every lookup.
 6. **The built graph is indirect.** It's a `Dag<NodeIndex, _>` whose weights index into a
    `FxHashMap<NodeIndex, ActionNode>`
-   ([action_graph.rs:12](../../crates/action-graph/src/action_graph.rs#L12)), and `get_node_index`
-   is a linear scan ([action_graph.rs:185](../../crates/action-graph/src/action_graph.rs#L185)).
+   ([action_graph.rs:12](https://github.com/moonrepo/moon/blob/20de2c686770d6e833c7252d5eaccd1751d3cc0d/crates/action-graph/src/action_graph.rs#L12)),
+   and `get_node_index` is a linear scan
+   ([action_graph.rs:185](https://github.com/moonrepo/moon/blob/20de2c686770d6e833c7252d5eaccd1751d3cc0d/crates/action-graph/src/action_graph.rs#L185)).
+   Fixed in phase 6.
 7. **There was no benchmark** for building the action graph, so its cost was unknown. Phase 1 added
    one (see [Baseline](#baseline)).
 8. **Deep dependency chains overflow the stack.** Insertion recurses through boxed futures once per
@@ -350,7 +353,8 @@ reuse rules), no recursion, and no graph mutation while selecting.
 6. **Follow-up:** store the built graph directly as `DiGraph<ActionNode, TaskDependencyType>`, which
    touches the action pipeline (`job_dispatcher.rs`, `action_pipeline.rs`), the `action-graph`
    command, and the graph traits. Decided: a separate change, after the switch. The `ActionGraph`
-   API stays the same during the rewrite.
+   API stays the same during the rewrite. Done on 2026-10-16, see
+   [Phase 6 results](#phase-6-results).
 
 ## Baseline
 
@@ -586,6 +590,46 @@ Done on 2026-10-16.
 - **Docs**: links to the deleted files in this plan, [TOOLCHAIN_REQS.md](./TOOLCHAIN_REQS.md), and
   [AFFECTED.md](./AFFECTED.md) are permalinks to the commits they were written against.
 
+## Phase 6 results
+
+Done on 2026-10-16, on a branch from `develop-3.0` after the rewrite
+([#2768](https://github.com/moonrepo/moon/pull/2768)) merged.
+
+- **Storage**: `ActionGraph` stores a `DiGraph<ActionNode, TaskDependencyType>`, so a node is
+  `graph[index]`, instead of a `Dag<NodeIndex, _>` whose weights were each node's own index, plus a
+  `FxHashMap<NodeIndex, ActionNode>` of the nodes. `get_inner_nodes` is gone, and `ActionGraph::new`
+  takes the graph alone. `get_nodes` returns nodes in index order, instead of the map's order.
+- **Builder**: assembles into a `Dag<ActionNode, _>`, which keeps the cycle check on every edge, and
+  freezes it with `into_graph()`, so the separate node list and the conversion into a map are gone.
+- **`get_node_index`**: a map from node to index, created on first use, instead of a linear scan.
+  Only the graph traits (`dependencies_of` and friends) use it, so builds don't pay for it.
+- **Graph traits**: `GraphData` has a `NodeWeight` associated type, so a graph's node weights are
+  either the nodes themselves (the action graph), or their indices (the project and task graphs,
+  unchanged). `get_node_keys` and `to_focused_graph` use node indices instead of node weights, which
+  were always the same.
+- **JSON**: `to_json` serializes the graph's nodes by index whatever their weights are, so
+  `moon action-graph --json` (and the project and task graph equivalents) output the same JSON as
+  before. A unit test checks that a graph that stores its nodes inline, and one that stores indices,
+  serialize the same, and the same as serializing the indexed graph as is.
+- **Pipeline**: the job dispatcher reads nodes from the graph, instead of the node map.
+- **Tests**: the builder, invariant, pipeline, project graph, task graph, and graph command tests
+  pass with every snapshot unchanged.
+
+### Benchmark
+
+Measured the same way as the [Baseline](#benchmark), against `develop-3.0` before the change, on
+2026-10-16. Every case is faster (p < 0.05). This wasn't profiled, but freezing no longer builds a
+map of every node, which is probably most of it:
+
+| Case                     |  Before |   After | Change |
+| :----------------------- | ------: | ------: | -----: |
+| `run_tasks/10`           |  144 µs |  138 µs |    -4% |
+| `run_tasks/100`          | 1.18 ms | 1.14 ms |    -3% |
+| `run_tasks/1000`         | 12.9 ms | 12.7 ms |    -3% |
+| `chained/run_tasks/10`   |   64 µs |   62 µs |    -4% |
+| `chained/run_tasks/100`  |  441 µs |  428 µs |    -3% |
+| `chained/run_tasks/1000` | 4.19 ms | 4.04 ms |    -3% |
+
 ## Risks
 
 - **Hidden order dependence that users rely on.** Graphs that differ only in conflict cases
@@ -612,4 +656,5 @@ Decided on 2026-10-15. No questions are open.
 3. **Project cycles:** production and peer edges first (decision 2).
 4. **Serial conflicts:** add serial edges last, and skip conflicts (decision 3).
 5. **Cycle errors:** `WouldCycle` for the closing edge, with the chain appended (decision 8).
-6. **Graph storage:** a separate change, after the switch (phase 6).
+6. **Graph storage:** a separate change, after the switch (phase 6, see
+   [Phase 6 results](#phase-6-results)).

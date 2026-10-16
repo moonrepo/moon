@@ -613,19 +613,15 @@ mod invariants {
     use moon_task::Target;
     use moon_toolchain::ToolchainSpec;
     use petgraph::graph::NodeIndex;
-    use rustc_hash::{FxHashMap, FxHashSet};
+    use rustc_hash::FxHashSet;
 
     struct GraphMocker {
-        graph: Dag<NodeIndex, TaskDependencyType>,
-        nodes: FxHashMap<NodeIndex, ActionNode>,
+        graph: Dag<ActionNode, TaskDependencyType>,
     }
 
     impl GraphMocker {
         fn add(&mut self, node: ActionNode) -> NodeIndex {
-            let index = self.graph.add_node(NodeIndex::default());
-            self.graph[index] = index;
-            self.nodes.insert(index, node);
-            index
+            self.graph.add_node(node)
         }
 
         fn link(&mut self, from: NodeIndex, to: NodeIndex, weight: TaskDependencyType) {
@@ -648,10 +644,7 @@ mod invariants {
 
     #[test]
     fn reports_each_violation() {
-        let mut mocker = GraphMocker {
-            graph: Dag::new(),
-            nodes: FxHashMap::default(),
-        };
+        let mut mocker = GraphMocker { graph: Dag::new() };
 
         let sync = mocker.add(ActionNode::sync_workspace());
         let task_a = mocker.add(create_task("a"));
@@ -669,8 +662,7 @@ mod invariants {
         mocker.link(tool_wait, sync, TaskDependencyType::Wait);
 
         let graph = ActionGraph::new_with_cleanups(
-            mocker.graph,
-            mocker.nodes,
+            mocker.graph.into_graph(),
             FxHashSet::from_iter([task_b]),
         );
 

@@ -2660,7 +2660,6 @@ mod action_graph_builder {
                     let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
                     let inner = graph.get_inner_graph();
                     let edges = inner
-                        .graph()
                         .edge_indices()
                         .filter_map(|edge| {
                             let (source, target) = inner.edge_endpoints(edge).unwrap();
@@ -2725,7 +2724,6 @@ mod action_graph_builder {
                     let inner = graph.get_inner_graph();
 
                     let mut edges = inner
-                        .graph()
                         .edge_indices()
                         .filter_map(|edge| {
                             let (source, target) = inner.edge_endpoints(edge).unwrap();
@@ -3717,7 +3715,6 @@ mod action_graph_builder {
                 let inner = graph.get_inner_graph();
 
                 let mut edges = inner
-                    .graph()
                     .edge_indices()
                     .filter_map(|edge| {
                         let (source, target) = inner.edge_endpoints(edge).unwrap();
@@ -3937,12 +3934,12 @@ mod action_graph_builder {
         use super::*;
 
         fn find_task_index(graph: &ActionGraph, target: &str) -> NodeIndex {
-            graph
-                .get_inner_nodes()
-                .iter()
-                .find_map(|(index, node)| match node {
-                    ActionNode::RunTask(inner) if inner.target.as_str() == target => Some(*index),
-                    _ => None,
+            let inner = graph.get_inner_graph();
+
+            inner
+                .node_indices()
+                .find(|index| {
+                    matches!(&inner[*index], ActionNode::RunTask(node) if node.target.as_str() == target)
                 })
                 .unwrap_or_else(|| panic!("No node for target {target}!"))
         }
@@ -3960,7 +3957,6 @@ mod action_graph_builder {
             let inner = graph.get_inner_graph();
 
             inner
-                .graph()
                 .edge_indices()
                 .map(|edge| {
                     let (source, target) = inner.edge_endpoints(edge).unwrap();
@@ -4190,8 +4186,8 @@ mod action_graph_builder {
 
         fn find_task_args(graph: &ActionGraph, target: &str) -> Vec<Vec<String>> {
             graph
-                .get_inner_nodes()
-                .values()
+                .get_nodes()
+                .into_iter()
                 .filter_map(|node| match node {
                     ActionNode::RunTask(inner) if inner.target.as_str() == target => {
                         Some(inner.args.clone())
@@ -4452,8 +4448,8 @@ mod action_graph_builder {
             );
             assert_eq!(
                 graph
-                    .get_inner_nodes()
-                    .values()
+                    .get_nodes()
+                    .into_iter()
                     .filter(|node| node.label() == "RunTask(proj:teardown)")
                     .count(),
                 1

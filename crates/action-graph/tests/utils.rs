@@ -284,7 +284,7 @@ impl CanonicalActionGraph {
             ..Default::default()
         };
 
-        for node in graph.get_inner_nodes().values() {
+        for node in graph.get_nodes() {
             let key = get_node_key(node);
 
             if canonical.nodes.contains_key(&key) {
@@ -301,12 +301,12 @@ impl CanonicalActionGraph {
             );
         }
 
-        let inner = graph.get_inner_graph().graph();
+        let inner = graph.get_inner_graph();
 
         for edge in inner.edge_references() {
             canonical.edges.insert((
-                get_node_key_at(graph, inner[edge.source()]),
-                get_node_key_at(graph, inner[edge.target()]),
+                get_node_key_at(graph, edge.source()),
+                get_node_key_at(graph, edge.target()),
                 get_edge_weight(edge.weight()),
             ));
         }
@@ -459,10 +459,10 @@ pub fn assert_canonical_eq(left: &CanonicalActionGraph, right: &CanonicalActionG
 /// - Every cleanup index is a `RunTask` node with an outgoing `Cleanup` edge.
 pub fn find_invariant_violations(graph: &ActionGraph, sync_workspace: bool) -> Vec<String> {
     let mut violations = vec![];
-    let inner = graph.get_inner_graph().graph();
+    let inner = graph.get_inner_graph();
     let node_at = |index: NodeIndex| {
         graph
-            .get_node_from_index(&inner[index])
+            .get_node_from_index(&index)
             .expect("Graph index has no node!")
     };
     let is_task = |index: NodeIndex| matches!(node_at(index), ActionNode::RunTask(_));
@@ -539,22 +539,19 @@ pub fn find_invariant_violations(graph: &ActionGraph, sync_workspace: bool) -> V
     }
 
     for index in graph.get_cleanup_indices() {
-        let Some(graph_index) = inner
-            .node_indices()
-            .find(|graph_index| inner[*graph_index] == *index)
-        else {
+        if inner.node_weight(*index).is_none() {
             violations.push(format!("cleanup index {} has no node", index.index()));
             continue;
-        };
+        }
 
-        if !is_task(graph_index)
+        if !is_task(*index)
             || !inner
-                .edges_directed(graph_index, Direction::Outgoing)
+                .edges_directed(*index, Direction::Outgoing)
                 .any(|edge| *edge.weight() == TaskDependencyType::Cleanup)
         {
             violations.push(format!(
                 "cleanup node {} has no outgoing cleanup edge",
-                node_at(graph_index).label()
+                node_at(*index).label()
             ));
         }
     }

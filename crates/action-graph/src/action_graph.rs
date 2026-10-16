@@ -1,5 +1,4 @@
 use crate::action_graph_error::ActionGraphError;
-use daggy::Dag;
 use graph_cycles::Cycles;
 use moon_action::ActionNode;
 use moon_config::TaskDependencyType;
@@ -7,36 +6,39 @@ use moon_graph_utils::*;
 use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
+use std::sync::OnceLock;
 use tracing::debug;
 
-pub type ActionGraphType = Dag<NodeIndex, TaskDependencyType>;
+pub type ActionGraphType = DiGraph<ActionNode, TaskDependencyType>;
 
 pub struct ActionGraph {
     graph: ActionGraphType,
-    nodes: FxHashMap<NodeIndex, ActionNode>,
 
     // Indexes of every action that runs *after* another action as a cleanup.
     // Tracked separately so that they can be located without having to scan
     // every edge in the graph.
     cleanup_indices: FxHashSet<NodeIndex>,
+
+    // Index of every node, for looking up a node's index from the node itself.
+    // Only the graph traits need it, so it's created on first use.
+    node_indices: OnceLock<FxHashMap<ActionNode, NodeIndex>>,
 }
 
 impl ActionGraph {
-    pub fn new(graph: ActionGraphType, nodes: FxHashMap<NodeIndex, ActionNode>) -> Self {
-        Self::new_with_cleanups(graph, nodes, FxHashSet::default())
+    pub fn new(graph: ActionGraphType) -> Self {
+        Self::new_with_cleanups(graph, FxHashSet::default())
     }
 
     pub fn new_with_cleanups(
         graph: ActionGraphType,
-        nodes: FxHashMap<NodeIndex, ActionNode>,
         cleanup_indices: FxHashSet<NodeIndex>,
     ) -> Self {
         debug!("Creating action graph");
 
         ActionGraph {
             graph,
-            nodes,
             cleanup_indices,
+            node_indices: OnceLock::new(),
         }
     }
 
@@ -56,20 +58,16 @@ impl ActionGraph {
         &self.graph
     }
 
-    pub fn get_inner_nodes(&self) -> &FxHashMap<NodeIndex, ActionNode> {
-        &self.nodes
-    }
-
     pub fn get_node_from_index(&self, index: &NodeIndex) -> Option<&ActionNode> {
-        self.nodes.get(index)
+        self.graph.node_weight(*index)
     }
 
     pub fn get_nodes(&self) -> Vec<&ActionNode> {
-        self.nodes.values().collect()
+        self.graph.node_weights().collect()
     }
 
     pub fn get_node_count(&self) -> usize {
-        self.nodes.len()
+        self.graph.node_count()
     }
 
     pub fn group_priorities(&self, topo_indices: Vec<NodeIndex>) -> BTreeMap<u8, Vec<NodeIndex>> {
@@ -126,7 +124,7 @@ impl ActionGraph {
                     .map(|index| {
                         self.graph
                             .node_weight(index)
-                            .map(|n| self.get_node_by_index(n).label())
+                            .map(|node| node.label())
                             .unwrap_or_else(|| "(unknown)".into())
                     })
                     .collect::<Vec<_>>()
@@ -152,7 +150,7 @@ impl ActionGraph {
             Err(cycle) => Err(ActionGraphError::CycleDetected(
                 self.graph
                     .node_weight(cycle.node_id())
-                    .map(|n| self.get_node_by_index(n).label())
+                    .map(|node| node.label())
                     .unwrap_or_else(|| "(unknown)".into()),
             )
             .into()),
@@ -161,19 +159,21 @@ impl ActionGraph {
 }
 
 impl GraphData<ActionNode, TaskDependencyType, String> for ActionGraph {
-    fn get_graph(&self) -> &DiGraph<NodeIndex, TaskDependencyType> {
-        self.graph.graph()
+    type NodeWeight = ActionNode;
+
+    fn get_graph(&self) -> &ActionGraphType {
+        &self.graph
     }
 
     fn get_nodes(&self) -> FxHashMap<NodeIndex, &ActionNode> {
-        self.nodes
-            .iter()
-            .map(|(index, node)| (*index, node))
+        self.graph
+            .node_indices()
+            .map(|index| (index, &self.graph[index]))
             .collect()
     }
 
     fn get_node_by_index(&self, index: &NodeIndex) -> &ActionNode {
-        &self.nodes[index]
+        &self.graph[*index]
     }
 
     fn get_node_key(&self, node: &ActionNode) -> String {
@@ -183,13 +183,17 @@ impl GraphData<ActionNode, TaskDependencyType, String> for ActionGraph {
 
 impl GraphConnections<ActionNode, TaskDependencyType, String> for ActionGraph {
     fn get_node_index(&self, node: &ActionNode) -> NodeIndex {
-        for (index, n) in &self.nodes {
-            if n == node {
-                return *index;
-            }
-        }
+        let indices = self.node_indices.get_or_init(|| {
+            let mut indices = FxHashMap::default();
 
-        panic!("Action node not found in graph!");
+            for index in self.graph.node_indices() {
+                indices.entry(self.graph[index].clone()).or_insert(index);
+            }
+
+            indices
+        });
+
+        *indices.get(node).expect("Action node not found in graph!")
     }
 }
 

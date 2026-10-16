@@ -82,8 +82,7 @@ struct GraphAssembler<'app> {
     options: &'app ActionGraphBuilderOptions,
     workspace_graph: &'app WorkspaceGraph,
 
-    graph: Dag<NodeIndex, TaskDependencyType>,
-    nodes: Vec<ActionNode>,
+    graph: Dag<ActionNode, TaskDependencyType>,
     keys: FxHashMap<NodeKey, NodeIndex>,
     cleanup_indices: FxHashSet<NodeIndex>,
 
@@ -111,7 +110,6 @@ pub async fn assemble(
         options,
         workspace_graph,
         graph: Dag::new(),
-        nodes: vec![],
         keys: FxHashMap::default(),
         cleanup_indices: FxHashSet::default(),
         instance_nodes: vec![None; instances.len()],
@@ -293,17 +291,13 @@ impl GraphAssembler<'_> {
     // NODES
 
     fn insert_node(&mut self, key: Option<NodeKey>, node: ActionNode) -> NodeIndex {
-        // Node weights are their own index, as the action graph has always had
-        let index = NodeIndex::new(self.graph.node_count());
-
         debug!(
-            index = index.index(),
+            index = self.graph.node_count(),
             "Adding {} to graph",
             color::muted_light(node.label())
         );
 
-        self.graph.add_node(index);
-        self.nodes.push(node);
+        let index = self.graph.add_node(node);
 
         if let Some(key) = key {
             self.keys.insert(key, index);
@@ -324,18 +318,11 @@ impl GraphAssembler<'_> {
     }
 
     fn label(&self, index: NodeIndex) -> String {
-        self.nodes[index.index()].label()
+        self.graph[index].label()
     }
 
     fn freeze(self) -> ActionGraph {
-        let nodes = self
-            .nodes
-            .into_iter()
-            .enumerate()
-            .map(|(index, node)| (NodeIndex::new(index), node))
-            .collect();
-
-        ActionGraph::new_with_cleanups(self.graph, nodes, self.cleanup_indices)
+        ActionGraph::new_with_cleanups(self.graph.into_graph(), self.cleanup_indices)
     }
 
     // PROVISIONING
@@ -1011,12 +998,12 @@ impl GraphAssembler<'_> {
 
         let mut target_indices = FxHashMap::<Target, Vec<NodeIndex>>::default();
 
-        for (index, node) in self.nodes.iter().enumerate() {
-            if let ActionNode::RunTask(inner) = node {
+        for index in self.graph.graph().node_indices() {
+            if let ActionNode::RunTask(inner) = &self.graph[index] {
                 target_indices
                     .entry(inner.target.clone())
                     .or_default()
-                    .push(NodeIndex::new(index));
+                    .push(index);
             }
         }
 
@@ -1053,7 +1040,7 @@ impl GraphAssembler<'_> {
                     .copied()
                     .filter(|index| {
                         matches!(
-                            &self.nodes[index.index()],
+                            &self.graph[*index],
                             ActionNode::RunTask(inner)
                                 if inner.args == dep.args && inner.env == dep.env
                         )
@@ -1164,7 +1151,7 @@ impl GraphAssembler<'_> {
                         .graph
                         .edge_weight(edge_index)
                         .is_some_and(|weight| weight.is_required_type())
-                    && matches!(self.nodes[child_index.index()], ActionNode::RunTask(_))
+                    && matches!(self.graph[child_index], ActionNode::RunTask(_))
                 {
                     stack.push(child_index);
                 }
@@ -1176,7 +1163,7 @@ impl GraphAssembler<'_> {
             // dispatched, so a non-persistent action ordered after one would
             // simply run immediately. Order those against the previous
             // dependency that does complete
-            let anchor = if self.nodes[node_index.index()].is_persistent() {
+            let anchor = if self.graph[node_index].is_persistent() {
                 previous
             } else {
                 previous_standard

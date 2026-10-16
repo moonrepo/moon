@@ -640,6 +640,8 @@ impl ProjectGraph {
 }
 
 impl GraphData<Project, DependencyScope, Id> for ProjectGraph {
+    type NodeWeight = NodeIndex;
+
     fn get_graph(&self) -> &DiGraph<NodeIndex, DependencyScope> {
         &self.graph
     }

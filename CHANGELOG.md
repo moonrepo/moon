@@ -117,6 +117,11 @@
   - The "Tracking affected tasks" step now reports how many hops away a task that was affected
     through a dependency is, like `(2 hops away)`. Affected projects and tasks in the JSON output of
     `moon query affected` also include a `distance` field, which is `0` when directly affected.
+  - When a toolchain's environment is setup, the environments of the toolchains that it requires
+    (from `define_requirements`) are now also setup, in the same dependencies root, beforehand. For
+    example, the Node.js package manager and Deno toolchains implement `setup_environment` (like
+    importing Yarn plugins), which never ran before, as they don't locate a dependencies root (the
+    JavaScript toolchain does).
 - **Action pipeline**
   - Reading the states of task dependencies, while hashing and running tasks, no longer takes an
     exclusive lock, which serialized tasks running concurrently.

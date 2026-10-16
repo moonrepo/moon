@@ -70,6 +70,7 @@ flowchart RL
   InstallDependencies -- "first available of" --> SetupEnvironment
   InstallDependencies -.-> SetupToolchain
   InstallDependencies -.-> SyncWorkspace
+  SetupEnvironment -- "requirements" --> SetupEnvironment
   SetupEnvironment --> SetupToolchain
   SetupEnvironment --> SyncWorkspace
   SetupToolchain -- "requirements" --> SetupToolchain
@@ -88,7 +89,7 @@ the toolchain supports. See [InstallDependencies](#installdependencies).
 | `SyncWorkspace`       | `SyncWorkspace`                              | singleton                                              | nothing                                                        |
 | `SetupProto`          | `SetupProto(<version>)`                      | proto version                                          | nothing                                                        |
 | `SetupToolchain`      | `SetupToolchain(<id> <req>)`                 | `ToolchainSpec` (id + version requirement)             | `SyncWorkspace`, `SetupProto`, other `SetupToolchain`          |
-| `SetupEnvironment`    | `SetupEnvironment(<id>[, <root>])`           | toolchain id, root, project id                         | `SyncWorkspace`, `SetupToolchain`                              |
+| `SetupEnvironment`    | `SetupEnvironment(<id>[, <root>])`           | toolchain id, root, project id                         | `SyncWorkspace`, `SetupToolchain`, other `SetupEnvironment`    |
 | `InstallDependencies` | `InstallDependencies(<id>[, <root>])`        | toolchain id, root, members, project id                | one of `SetupEnvironment`, `SetupToolchain`, `SyncWorkspace`   |
 | `SyncProject`         | `SyncProject(<project>)`                     | project id                                             | `SyncWorkspace`, other `SyncProject`                           |
 | `RunTask`             | `Run[Interactive\|Persistent]Task(<target>)` | target, interactive, persistent, dependency args + env | `SyncProject`, install slots, `SyncWorkspace`, other `RunTask` |
@@ -99,7 +100,7 @@ the toolchain supports. See [InstallDependencies](#installdependencies).
 
 Syncs the workspace (config schemas, codeowners, VCS hooks, and toolchain and extension
 `sync_workspace` hooks), and runs before nearly everything else.
-[sync_workspace](../crates/action-graph/src/action_graph_builder.rs#L1659).
+[sync_workspace](../crates/action-graph/src/action_graph_builder.rs#L1680).
 
 - **Exists when** `options.sync_workspace` is true (`pipeline.syncWorkspace`, default `true`), and
   something asks for it: another node links to it, `moon sync`, or `moon run`/`ci`/`check`/`exec` in
@@ -108,7 +109,7 @@ Syncs the workspace (config schemas, codeowners, VCS hooks, and toolchain and ex
 
 ### SetupProto
 
-Installs proto itself. [setup_proto](../crates/action-graph/src/action_graph_builder.rs#L1488).
+Installs proto itself. [setup_proto](../crates/action-graph/src/action_graph_builder.rs#L1509).
 
 - **Identity:** `proto.version` from `.moon/toolchains.yml`, so a singleton in practice.
 - **Exists when** a `SetupToolchain` node links to it, or `moon setup` inserts it directly.
@@ -117,7 +118,7 @@ Installs proto itself. [setup_proto](../crates/action-graph/src/action_graph_bui
 ### SetupToolchain
 
 Downloads and installs a toolchain's tool (tier 3).
-[internal_setup_toolchain](../crates/action-graph/src/action_graph_builder.rs#L1506).
+[internal_setup_toolchain](../crates/action-graph/src/action_graph_builder.rs#L1527).
 
 - **Identity:** the `ToolchainSpec`, the toolchain id plus its version requirement. Projects that
   override a toolchain's version (`toolchains.<id>.version` in `moon.yml`) get their own node per
@@ -154,18 +155,27 @@ Prepares a toolchain's environment in a dependencies root, before dependencies a
   - the spec isn't `system`;
   - the toolchain isn't already on the current recursion path;
   - the plugin exports `setup_environment`, **or** it declared at least one requirement for
-    environment setup;
-  - something asks for it: the [install slot](#installdependencies), or `moon setup` via
-    `setup_environment_root`, which additionally requires that the located dependencies root is the
-    workspace root
-    ([setup_environment_root](../crates/action-graph/src/action_graph_builder.rs#L1460)).
+    environment setup, **or** the environment of a toolchain it requires exists;
+  - something asks for it: the [install slot](#installdependencies), the environment of a toolchain
+    that requires it (see below), or `moon setup` via `setup_environment_root`, which additionally
+    requires that the located dependencies root is the workspace root
+    ([setup_environment_root](../crates/action-graph/src/action_graph_builder.rs#L1481)).
 - **Outgoing edges** (all `Required`):
 
-  | To                           | When                                                                                                                                         |
-  | :--------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
-  | `SetupToolchain(<required>)` | `define_requirements` returns the id with `for_setup_environment: true`. Note it requires the toolchain to be _set up_, not its environment. |
-  | `SyncWorkspace`              | It exists.                                                                                                                                   |
-  | `SetupToolchain(<self>)`     | It exists.                                                                                                                                   |
+  | To                             | When                                                                                                                                                                                                                                                               |
+  | :----------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `SetupToolchain(<required>)`   | `define_requirements` returns the id with `for_setup_environment: true`. Note it requires the toolchain to be _set up_, not its environment.                                                                                                                       |
+  | `SetupEnvironment(<required>)` | `define_requirements` returns the id in `requires`, whatever its flags, the id isn't itself or already on the path, and the required toolchain's environment exists after its own gates, in **this** root and with this project. Skipped if it would form a cycle. |
+  | `SyncWorkspace`                | It exists.                                                                                                                                                                                                                                                         |
+  | `SetupToolchain(<self>)`       | It exists.                                                                                                                                                                                                                                                         |
+
+  Required toolchains (like Node.js and the package managers, required by JavaScript) typically
+  don't locate a dependencies root, so their environments never get an install slot of their own.
+  Instead they're setup in the root that the requiring toolchain located, before its own
+  environment, and so before it installs dependencies. A required toolchain without a spec is an
+  error when the requirements are for environment setup, otherwise it's skipped. Required
+  environments are linked with `link_environment_edges`, which skips an edge that would form a
+  cycle, as toolchains may require each other (like Python and uv): the one reached first wins.
 
   Edges are linked on every request, even when the node already exists. The toolchain version isn't
   part of its identity, so projects that share a dependencies root but override the version each add
@@ -219,7 +229,7 @@ located dependencies root is the workspace root, otherwise it returns `None`.
 ### SyncProject
 
 Syncs a project through the `sync_project` hooks of its enabled toolchains and of extensions.
-[internal_sync_project](../crates/action-graph/src/action_graph_builder.rs#L1601).
+[internal_sync_project](../crates/action-graph/src/action_graph_builder.rs#L1622).
 
 - **Identity:** project id.
 - **Exists when all of:**
@@ -316,7 +326,7 @@ also chains them, because a serial edge can be skipped for forming a cycle.
 
 When task `T` declares `deps: [{ target: C, type: cleanup }]`, `C` runs **after** `T`, so the edge
 is `C → T` with weight `Cleanup`
-([link_cleanup_edges](../crates/action-graph/src/action_graph_builder.rs#L1899)). It's linked by the
+([link_cleanup_edges](../crates/action-graph/src/action_graph_builder.rs#L1920)). It's linked by the
 caller that owns `T`'s index, after `T` is inserted, and it's skipped if a `Cleanup` edge already
 links the pair. `C` may also depend on `T` in another way (for example, a `required` dep); that's a
 separate edge with its own weight, and both are kept.
@@ -328,7 +338,7 @@ task.
 
 When a task sets `options.runDepsInParallel: false`, its `required` dependencies run one after
 another, and so does each dependency's whole task subtree
-([link_serial_required_edges](../crates/action-graph/src/action_graph_builder.rs#L1942)). For
+([link_serial_required_edges](../crates/action-graph/src/action_graph_builder.rs#L1993)). For
 dependencies `d1, d2, d3` in declared order, with `prev` the last required dependency so far and
 `prev_standard` the last required dependency that isn't persistent:
 
@@ -350,7 +360,7 @@ Serial edges are a preference, not a dependency:
   it, and so it can be removed later.
 - When a real dependency edge is linked later in the opposite direction, the serial edges on the
   path that would form the cycle are removed, newest first, until the path is gone
-  ([unlink_serial_edges](../crates/action-graph/src/action_graph_builder.rs#L2080)). If the path
+  ([unlink_serial_edges](../crates/action-graph/src/action_graph_builder.rs#L2131)). If the path
   consists of real dependencies only, it's an actual cycle, and building fails with `WouldCycle`.
 - When a real dependency is linked over an existing serial edge between the same pair, the edge is
   promoted: it's dropped from `serial_edges` and becomes a dependency.
@@ -360,7 +370,7 @@ Serial edges are a preference, not a dependency:
 With `no_dependencies`, a selected task's non-cleanup dependencies aren't inserted. Instead, when
 the graph is built, each of its dependencies that **already has a node** (because it was selected
 itself, or reached through another task) gets an edge, regardless of insertion order
-([link_present_dependencies](../crates/action-graph/src/action_graph_builder.rs#L1681)):
+([link_present_dependencies](../crates/action-graph/src/action_graph_builder.rs#L1702)):
 
 - The edge is task → dependency, weighted `Required` (or `Wait`).
 - If the dependency target has several nodes, those whose `args` and `env` match the dependency
@@ -374,8 +384,8 @@ itself, or reached through another task) gets an edge, regardless of insertion o
 
 When affected tracking is active (`moon run --affected`, `moon ci`, and so on) and not skipped for
 the insertion, a `RunTask` or `SyncProject` node is only inserted if its task or project is marked
-affected ([is_task_affected](../crates/action-graph/src/action_graph_builder.rs#L2199),
-[is_project_affected](../crates/action-graph/src/action_graph_builder.rs#L2166)). Affected state is
+affected ([is_task_affected](../crates/action-graph/src/action_graph_builder.rs#L2250),
+[is_project_affected](../crates/action-graph/src/action_graph_builder.rs#L2217)). Affected state is
 computed up front (`track_affected`, then `track_tasks` in `run_tasks`), so insertion order doesn't
 change the result.
 
@@ -410,7 +420,7 @@ Which tasks become primary `RunTask` nodes is decided before any edges are linke
 
 ## Cycle guards
 
-There are three different mechanisms, and they behave differently:
+There are four different mechanisms, and they behave differently:
 
 - **Recursion path sets.** `SetupToolchain`, `SetupEnvironment`, and `SyncProject` carry a set of
   ids on the current recursion path. A requirement or project dependency that's already on the path
@@ -420,6 +430,9 @@ There are three different mechanisms, and they behave differently:
   `keeps_project_dependencies_path_local_across_siblings`). For a cyclic project dependency (the
   unioned project graph may have cycles across scopes), which side gets the edge depends on which
   project was reached first.
+- **Skipped edges.** Serial ordering edges (`try_link_edge`) and required environment edges
+  (`link_environment_edges`) are preferences, and are skipped when they would form a cycle, instead
+  of failing the build.
 - **Edge insertion.** `link_edge` rejects an edge that would form a cycle, after first trying to
   remove contradicting serial edges, and fails the build with `ActionGraphError::WouldCycle`.
 - **Sort time.** `sort_topological` checks for cycles again and fails with `CycleDetected`
@@ -526,7 +539,8 @@ Behaviors that follow from the code above, and may be worth a second look:
 3. **Requirement-only toolchains are inserted unconditionally.** A toolchain without tier 3 (or
    without `setup_environment`) is still inserted when it declares a requirement, even if that
    requirement produced no node (for example, the required toolchain has no tier 3 support itself),
-   because the check is on the edge list's length, not on whether any edge resolved.
+   because the check is on the edge list's length, not on whether any edge resolved. Required
+   environments are the exception: they only count when they exist.
 4. **`SyncProject` edges are first-caller-wins.** A project's dependency edges are linked only when
    its node is inserted. Since the node is inserted before its dependencies are recursed into, and
    the project's affected state or the recursion path can differ between callers, a later caller

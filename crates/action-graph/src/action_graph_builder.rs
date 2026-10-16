@@ -1377,6 +1377,7 @@ impl<'query> ActionGraphBuilder<'query> {
         let toolchain_registry = &self.app_context.toolchain_registry;
         let toolchain = toolchain_registry.load(&spec.id).await?;
         let mut edges = vec![];
+        let mut env_edges = vec![];
 
         cycle.insert(&spec.id);
 
@@ -1393,32 +1394,51 @@ impl<'query> ActionGraphBuilder<'query> {
             })
             .await?;
 
-        if !output.requires.is_empty() && output.for_setup_environment {
-            for require_id in output.requires {
-                let require_id = Id::new(require_id)?;
+        for require_id in output.requires {
+            let require_id = Id::new(require_id)?;
 
-                if require_id != spec.id {
-                    // Skip if already in cycle
-                    if cycle.contains(&require_id) {
-                        continue;
-                    }
+            // Skip if itself or already in cycle
+            if require_id == spec.id || cycle.contains(&require_id) {
+                continue;
+            }
 
-                    if let Some(require_spec) = self.get_spec(&require_id, project) {
-                        // Requires the toolchain to be setup, not the environment!
-                        edges.push(Box::pin(self.setup_toolchain(&require_spec, project)).await?);
-                    } else {
-                        return Err(ActionGraphError::MissingToolchainRequirement {
-                            id: spec.id.to_string(),
-                            dep_id: require_id.to_string(),
-                        }
-                        .into());
+            let Some(require_spec) = self.get_spec(&require_id, project) else {
+                if output.for_setup_environment {
+                    return Err(ActionGraphError::MissingToolchainRequirement {
+                        id: spec.id.to_string(),
+                        dep_id: require_id.to_string(),
                     }
+                    .into());
                 }
+
+                continue;
+            };
+
+            // Requires the toolchain to be setup, not the environment!
+            if output.for_setup_environment {
+                edges.push(Box::pin(self.setup_toolchain(&require_spec, project)).await?);
+            }
+
+            // Required toolchains (like Node.js for JavaScript) typically don't
+            // locate a dependencies root, as this toolchain does, so their
+            // environment must be setup in this toolchain's root, before its own
+            if let Some(env_index) = Box::pin(self.internal_setup_environment(
+                &require_spec,
+                root,
+                project,
+                cycle.clone(),
+            ))
+            .await?
+            {
+                env_edges.push(env_index);
             }
         }
 
         // Toolchain does not support it
-        if !toolchain.has_func("setup_environment").await && edges.is_empty() {
+        if !toolchain.has_func("setup_environment").await
+            && edges.is_empty()
+            && env_edges.is_empty()
+        {
             return Ok(None);
         }
 
@@ -1438,6 +1458,7 @@ impl<'query> ActionGraphBuilder<'query> {
         );
 
         self.link_available_edges(index, edges)?;
+        self.link_environment_edges(index, env_edges);
 
         Ok(Some(index))
     }
@@ -1918,6 +1939,36 @@ impl<'query> ActionGraphBuilder<'query> {
         }
 
         Ok(())
+    }
+
+    /// Link the environments of the toolchains that the environment at `index`
+    /// requires. Toolchains may require each other (like Python and uv), so when
+    /// the required environment already depends on this one, which happens when
+    /// it was reached first, the edge would introduce a cycle, and is skipped.
+    fn link_environment_edges(&mut self, index: NodeIndex, edges: Vec<NodeIndex>) {
+        for edge in edges {
+            if self.has_edge_of_type(index, edge, TaskDependencyType::Required) {
+                continue;
+            }
+
+            if self
+                .graph
+                .add_edge(index, edge, TaskDependencyType::Required)
+                .is_ok()
+            {
+                trace!(
+                    index = index.index(),
+                    requires = ?[edge.index()],
+                    "Linking requirements for index"
+                );
+            } else {
+                trace!(
+                    index = index.index(),
+                    requires = ?[edge.index()],
+                    "Not linking required environment for index, as it would introduce a cycle"
+                );
+            }
+        }
     }
 
     /// Add serial ordering edges from every task within `index`'s dependency

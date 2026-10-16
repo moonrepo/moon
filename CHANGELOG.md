@@ -117,6 +117,19 @@
   - The "Tracking affected tasks" step now reports how many hops away a task that was affected
     through a dependency is, like `(2 hops away)`. Affected projects and tasks in the JSON output of
     `moon query affected` also include a `distance` field, which is `0` when directly affected.
+  - When a toolchain's environment is setup, the environments of the toolchains that it requires
+    (from `define_requirements`) are now also setup, in the same dependencies root, beforehand. For
+    example, the Node.js package manager and Deno toolchains implement `setup_environment` (like
+    importing Yarn plugins), which never ran before, as they don't locate a dependencies root (the
+    JavaScript toolchain does).
+  - Rewrote the action graph builder, which now builds the graph in stages, instead of inserting one
+    action at a time. Building the graph is 13% to 47% faster in our benchmarks, and the graphs are
+    the same, except:
+    - Project syncs now depend on the syncs of every project they depend on, instead of only the
+      ones synced when the project was first reached. When projects depend on each other across
+      scopes (like production one way, and development the other), the production and peer
+      dependencies are kept.
+    - Errors for actions that would depend on each other now describe the whole cycle.
 - **Action pipeline**
   - Reading the states of task dependencies, while hashing and running tasks, no longer takes an
     exclusive lock, which serialized tasks running concurrently.
@@ -239,6 +252,14 @@
   it as valid, and an unreadable graph is rebuilt instead of failing.
 - Fixed an issue where duplicate project ID errors could report the existing and new project sources
   in a different order between runs.
+- Fixed an issue where disabling dependency installs (with `pipeline.installDependencies`, or a
+  toolchain's `installDependencies` setting) would also stop the toolchain from being setup for
+  tasks, so its configured version was not installed, or added to `PATH`, before they ran.
+- Fixed an issue where projects that share a dependencies root (like members of a workspace) but
+  override a toolchain's version could run tasks before their version of the toolchain was setup,
+  when the toolchain also sets up an environment.
+- Fixed an issue where building the action graph would overflow the stack for very deep chains of
+  task or project dependencies (around 1,000 deep).
 
 #### ⚙️ Internal
 

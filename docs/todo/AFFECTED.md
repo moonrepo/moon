@@ -136,8 +136,8 @@ Fix:
 [guides/ci.mdx:22](../../website/docs/guides/ci.mdx#L22) says dependents run. But relation marks
 only count with `-g` ([exec.rs:698](../../crates/app/src/commands/exec.rs#L698), checked by the
 builder's `is_task_affected` at
-[action_graph_builder.rs:2070](../../crates/action-graph/src/action_graph_builder.rs#L2070)). A
-dependent therefore only runs when its own inputs changed.
+[action_graph_builder.rs:2191](https://github.com/moonrepo/moon/blob/6a680da2174ea5f53735d1035382d406af41db15/crates/action-graph/src/action_graph_builder.rs#L2191)).
+A dependent therefore only runs when its own inputs changed.
 
 Related: project-level relations (`dependsOn`, or Cargo path dependencies added by the Rust plugin)
 mark dependent projects, but never cause their tasks to run (moonrepo/moon#2499). Only task `deps`

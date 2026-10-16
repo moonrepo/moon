@@ -8,7 +8,9 @@ produces the same nodes and edges under the same conditions. Written on 2026-10-
 that must be preserved, and this plan doesn't repeat it. Estimates are marked as such. The phase 0
 decisions were made on 2026-10-15 (see [Decisions](#decisions)). Phases 1 and 2 were done the same
 day: the harness, run against the current builder (see [Baseline](#baseline)), and the new builder's
-task stages (see [Phase 2 results](#phase-2-results)).
+task stages (see [Phase 2 results](#phase-2-results)). Phase 3, provisioning and project syncs, was
+done on 2026-10-16 (see [Phase 3 results](#phase-3-results)), which completes the new builder. It
+isn't used by any command yet.
 
 ## Summary
 
@@ -195,27 +197,32 @@ struct TaskPlan {
 - Serial chains are recorded as data, not edges.
 - Affected checks go through the same `AffectedTracker` calls as today, in a deterministic order, so
   `ActionContext.affected` gets the same marks.
+- Project syncs are walked here too, at the point where a task is inserted, as their affected checks
+  must happen in the same order as the task checks: marking a task affected also marks its project,
+  so checking projects after every task could sync dependency projects that are skipped today. The
+  walk needs no plugin calls, and uses an explicit stack, like tasks.
+- Everything is recorded as an event log, in the order that nodes are inserted and edges are linked:
+  workspace and project syncs, entering a task (before its dependencies), exiting a task (after
+  them), and provisioning requests.
 
 ### Stage 2: resolve
 
 Decides which `SyncWorkspace`, `SetupProto`, `SetupToolchain`, `SetupEnvironment`,
-`InstallDependencies`, and `SyncProject` nodes exist, producing a `ProvisionPlan`.
+`InstallDependencies`, and `SyncProject` nodes exist.
 
-1. **Gather facts** with an async worklist. Unknown keys are fetched concurrently, then expanded
-   synchronously, until no new keys appear (requirements can introduce new toolchains):
-   - `ToolchainFacts`, keyed by toolchain id and config scope (a project, or the workspace): tier 2
-     and 3 support, `install_dependencies` and `setup_environment` exports, and the
-     `define_requirements` output;
-   - `RootFacts`, keyed by toolchain id and project (or the workspace root): the located
-     `DependenciesWorkspace`, and the project's role in it.
+**As built, this differs from the original design.** Plugin facts aren't gathered up front. Instead,
+the assemble stage replays the event log, and resolves each task's toolchains (the install slot
+table, environment setup with its requirements and required environments, toolchain setup with its
+requirements, and the proto rule) right before inserting the task's node, through the toolchain
+registry, as the current builder does. The registry memoizes every plugin call by its input, so
+nothing is called twice. This was chosen because:
 
-   Builder options and toolchain switches are applied before gathering, so disabled toolchains are
-   never queried.
-
-2. **Resolve** with pure functions over the facts: the install slot table, environment setup
-   (requirements and required environments), toolchain setup (requirements), the proto rule, and the
-   project sync set (owners of task instances, plus their dependency closure, with affected gating
-   and switches).
+- the walks that overflowed the stack (task dependencies and project syncs) are iterative in stage
+  1, while toolchain requirements recurse only a few levels;
+- it ports the provisioning logic almost line by line, which keeps the risk of behavior changes low;
+- it keeps the node order the same as today's, so most snapshots won't change at the switch;
+- building is already fast (see [Phase 3 results](#phase-3-results)), so concurrent plugin calls
+  aren't needed.
 
 Requirements are read exactly as they are today: `requires` with `for_setup_toolchain` and
 `for_setup_environment`, and required environments regardless of the flags (see the `SetupToolchain`
@@ -247,10 +254,9 @@ enum NodeKey {
 - `SyncProject → SyncProject` edges are computed from the full set of synced projects, production
   and peer edges first, then the other scopes in sorted order, skipping any that would close a cycle
   (decisions 1 and 2).
-- Task nodes are added in discovery order: requests in the order they were made, then each task's
-  dependencies, depth first, with a task before its dependencies. That's the order the current
-  builder inserts them in, so a build with only tasks has the same node indices. Where provisioning
-  nodes go is decided in phase 3.
+- Nodes are added in the order the current builder inserts them, by replaying the event log: a
+  task's project sync and toolchain actions before the task, and the task before its dependencies.
+  So node indices are the same as today's.
 - Relations are added in the order the current builder links them (a task's requirements once its
   dependencies have been visited, then its cleanups), so a cycle is reported for the same edge.
 
@@ -270,9 +276,9 @@ enum NodeKey {
 
 ### Module layout
 
-`crates/action-graph/src/builder/`: `mod.rs` (requests, the public API, the report, and the
-context), `select.rs` (stage 1), `assemble.rs` (stages 3 and 4), and `resolve.rs` (stage 2, in phase
-3).
+`crates/action-graph/src/builder/`: `mod.rs` (requests, the public API, the specs, the report, and
+the context), `select.rs` (stage 1), and `assemble.rs` (stages 2 to 4: replaying the events,
+resolving provisioning, the whole graph edges, and freezing).
 
 The original estimate of 1,600 to 2,000 lines for the whole builder was low: phase 2 alone is 1,781
 lines with doc comments, about a third of which is the task resolution logic, ported as is. The full
@@ -330,7 +336,8 @@ reuse rules), no recursion, and no graph mutation while selecting.
 2. **Tasks.** Stages 1, 3, and 4 for tasks only, behind a separate type, with the harness comparing
    the task subgraph (task nodes and the edges between them). Done on 2026-10-15, see
    [Phase 2 results](#phase-2-results).
-3. **Provisioning.** Stage 2, and project sync, with the harness comparing full graphs.
+3. **Provisioning.** Stage 2, and project sync, with the harness comparing full graphs. Done on
+   2026-10-16, see [Phase 3 results](#phase-3-results).
 4. **Switch.** Move the commands, MCP, and test utilities to the request API, regenerate snapshots
    (reviewed against the harness), and update ACTION_GRAPH.md.
 5. **Delete** the current builder.
@@ -451,7 +458,80 @@ test), so the comparisons are sensitive to real differences.
 - **The stack overflow is fixed** for the new builder: a chain of 1,000 projects builds on a test
   thread (2MB stack).
 - **Not compared yet**: provisioning and sync nodes, and the decisions about them (1, 2, 4, 5, and
-  9), which come with phase 3.
+  9), which come with phase 3 (see [Phase 3 results](#phase-3-results)).
+
+## Phase 3 results
+
+Done on 2026-10-16. The new builder now produces whole graphs, with every option.
+
+### What was built
+
+- **Requests**: `sync_workspace`, `sync_project`, `setup_proto`, `setup_toolchain`,
+  `setup_environment_root`, and `install_dependencies_by_project`, plus `get_spec`,
+  `get_project_spec`, and `get_workspace_spec`. `moon setup` only sets up a toolchain's root
+  environment when the toolchain inserted a node, which a builder that only records requests can't
+  branch on, so `setup_toolchain_and_environment` encodes that as one request.
+- **Stage 1** records the event log, and walks project syncs with the same gates and affected checks
+  as today (see [Stage 1](#stage-1-select)).
+- **Stages 2 to 4** ([assemble.rs](../../crates/action-graph/src/builder/assemble.rs)): replay the
+  events, resolving provisioning as today, with `NodeKey` identities for provisioning and sync
+  nodes. Then link the whole graph edges: project syncs (decisions 1 and 2), present dependencies,
+  and serial edges.
+- **Decision 4**: requirement edges between toolchain setups are skipped when they would cycle, like
+  required environments.
+- **Decisions 5 and 9**: kept as today, so nothing changed.
+
+### Comparison
+
+The differential test now builds every case with matching options, in 5 profiles: every action,
+none, actions disabled in config, setup only, and project syncs only. Every task request shape runs
+with and without actions, plus the provisioning commands: `ci` with a workspace sync, `run` with
+actions disabled, `sync`, `sync projects`, `setup`, and `docker setup`. That's 28 cases for each of
+the 64 generated workspaces and 14 fixtures, plus the request order comparisons, which now run with
+every action.
+
+Every node, every other edge, the context, partitions, and errors are identical. The only
+differences are edges between project syncs, as decided. Instead of being compared, those edges are
+checked against the decisions:
+
+- an edge that only the new builder has must be a direct project dependency (decision 1);
+- an edge that only the current builder has must not be a production or peer dependency, and must
+  close a cycle in the new graph (decision 2).
+
+Every difference across every case passed those checks. Removing the `InstallDependencies` edges
+from the new builder makes every generated workspace comparison fail (55 to 97 differences per
+shard), so the provisioning comparisons are sensitive to real differences.
+
+### Findings
+
+- **Decisions 1 and 2** change graphs whenever projects are synced through more than one caller, or
+  depend on each other across scopes, both of which the generated workspaces do often. Fixture
+  graphs didn't change.
+- **Decision 4** wasn't exercised: no compared case has two toolchains that require each other for
+  toolchain setup.
+- **Error precedence**: tasks are all selected before any provisioning is resolved, so when a build
+  has both a task error and a provisioning error, the task error is reported, even if the current
+  builder would have hit the provisioning error first. No compared case hit this.
+- **Deep chains** no longer overflow the stack with every action enabled either: project syncs are
+  walked with an explicit stack too.
+
+### Benchmark
+
+Both builders, measured the same way as the [Baseline](#benchmark), on 2026-10-16:
+
+| Case                     | Current |     New | Change |
+| :----------------------- | ------: | ------: | -----: |
+| `run_tasks/10`           |  200 µs |  148 µs |   -26% |
+| `run_tasks/100`          | 1.75 ms | 1.19 ms |   -32% |
+| `run_tasks/1000`         | 18.5 ms | 13.2 ms |   -29% |
+| `chained/run_tasks/10`   |   76 µs |   66 µs |   -13% |
+| `chained/run_tasks/100`  |  601 µs |  460 µs |   -24% |
+| `chained/run_tasks/1000` | 8.25 ms | 4.35 ms |   -47% |
+
+The first version of the new builder was twice as slow on the 1,000 project chain. Two fixes got it
+here: the project sync walk keeps one set of the projects on the current path, instead of cloning
+one per project, and production edges between project syncs are added in one batch, with a single
+cycle check, instead of one search per edge.
 
 ## Risks
 

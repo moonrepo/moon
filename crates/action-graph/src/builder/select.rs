@@ -1,22 +1,25 @@
-//! Stage 1: select the task instances that exist, and how they relate.
+//! Stage 1: select the task instances and project syncs that exist, and how
+//! they relate.
 //!
-//! This doesn't create any graph nodes or edges. It walks the requests, and the
-//! dependencies of each task they reach, applying the same gates in the same
-//! order as the action graph has always done, and records the result as data:
-//! the instances (in discovery order), their relations (in the order they're
-//! linked), and the serial ordering links (in the order they're made).
+//! This doesn't create any graph nodes or edges. It walks the requests, the
+//! dependencies of each task they reach, and the dependencies of each project
+//! that's synced, applying the same gates in the same order as the action graph
+//! has always done (affected checks have side effects, so their order matters),
+//! and records the result as data: an event log in the order that the nodes are
+//! inserted and the edges are linked, and the serial ordering links.
 
 use super::RequestId;
 use crate::action_graph_builder::{RunRequirements, TaskOrigin};
 use crate::action_graph_error::ActionGraphError;
 use moon_action::{ActionNode, RunTaskNode};
 use moon_affected::{AffectedTracker, Depth};
-use moon_common::color;
-use moon_config::{EnvMap, TaskDependencyConfig, TaskDependencyType};
+use moon_common::{Id, color};
+use moon_config::{EnvMap, PipelineActionSwitch, TaskDependencyConfig, TaskDependencyType};
 use moon_exec_plan::TargetsBlock;
-use moon_project::ProjectError;
+use moon_project::{Project, ProjectError};
 use moon_query::{Criteria, build_query};
 use moon_task::{Target, TargetError, TargetLocator, TargetProjectScope, TargetTaskScope, Task};
+use moon_toolchain::ToolchainSpec;
 use moon_workspace_graph::projects::ProjectGraphError;
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
 use petgraph::Direction;
@@ -53,12 +56,50 @@ impl TaskInstanceKey {
     }
 }
 
-/// A relation between 2 task instances, from the instance that runs later.
+/// A request for a provisioning or sync action, which is resolved while
+/// assembling, in the order the requests were made.
 #[derive(Debug)]
-pub struct TaskRelation {
-    pub from: usize,
-    pub to: usize,
-    pub weight: TaskDependencyType,
+pub enum ProvisionRequest {
+    InstallDependencies(Arc<Project>),
+    SetupProto,
+    SetupToolchain(ToolchainSpec, Option<Arc<Project>>),
+    /// Set up the toolchain, and when it inserted a node, the environment in
+    /// the workspace root (like `moon setup`).
+    SetupToolchainAndEnvironment(ToolchainSpec),
+    SetupEnvironmentRoot(ToolchainSpec),
+    SyncWorkspace,
+}
+
+/// What happened, in the order that the nodes are inserted, and the edges
+/// are linked, so that assembling produces the same node indices as always.
+#[derive(Debug)]
+pub enum Event {
+    /// A call to sync the workspace, which inserts its node on the first call.
+    SyncWorkspace,
+    /// A project sync that was inserted.
+    AddSyncProject(Id),
+    /// Link a project sync to the workspace sync, once the syncs of its
+    /// dependencies have been inserted. The edges to those syncs are linked
+    /// once every project sync is known.
+    LinkSyncProject(Id),
+    /// A task instance that was inserted, after its owning project's sync (when
+    /// it's synced), and before its dependencies. Its toolchains are set up
+    /// (and their dependencies installed) before its node is inserted.
+    EnterTask {
+        instance: usize,
+        project: Arc<Project>,
+        toolchains: Vec<Id>,
+        sync_project: Option<Id>,
+    },
+    /// A task instance whose dependencies have been visited: link its setup
+    /// and sync edges, then its requirements, then its cleanups (reversed).
+    ExitTask {
+        instance: usize,
+        requirements: Vec<(usize, TaskDependencyType)>,
+        cleanups: Vec<usize>,
+    },
+    /// A provisioning or sync request.
+    Request(RequestId, ProvisionRequest),
 }
 
 /// A serial ordering link: the dependency at `index` (and its subtree) must
@@ -80,15 +121,18 @@ pub enum RequestResult {
     },
     /// The primary instances of any other task request.
     Instances(Vec<usize>),
+    /// The project of a project sync request, when it passed the gates.
+    SyncProject(Option<Id>),
 }
 
 /// Everything selected for the task requests of a build.
 pub struct TaskPlan {
     /// The `RunTask` payload of each instance, in discovery order.
     pub instances: Vec<ActionNode>,
-    /// Relations in the order that they're linked: a task's requirements once
-    /// all of its dependencies have been visited, then its cleanups.
-    pub relations: Vec<TaskRelation>,
+    /// The events, in the order that nodes are inserted, and edges are linked.
+    pub events: Vec<Event>,
+    /// The projects that are synced, as their syncs depend on each other.
+    pub synced_projects: Vec<Arc<Project>>,
     /// Serial ordering links, in the order that they're made.
     pub serial_links: Vec<SerialLink>,
     /// The dependencies (that aren't a cleanup) of tasks that were inserted
@@ -128,15 +172,32 @@ enum Entry {
     New(usize, Option<Frame>),
 }
 
+/// A project sync whose dependencies are being visited.
+struct SyncFrame {
+    project: Arc<Project>,
+    deps: Vec<Id>,
+    next_dep: usize,
+}
+
+enum SyncEntry {
+    Skipped,
+    Existing,
+    New(SyncFrame),
+}
+
 pub struct TaskSelector<'query> {
     workspace_graph: Arc<WorkspaceGraph>,
     query: Option<&'query Criteria<'query>>,
     affected: Option<AffectedTracker>,
     affected_depth: Depth,
+    sync_projects: PipelineActionSwitch,
+    sync_project_dependencies: bool,
 
+    events: Vec<Event>,
     instances: Vec<ActionNode>,
     instance_indices: FxHashMap<TaskInstanceKey, usize>,
-    relations: Vec<TaskRelation>,
+    synced_projects: Vec<Arc<Project>>,
+    synced_project_ids: FxHashSet<Id>,
     serial_links: Vec<SerialLink>,
     no_dependencies_tasks: FxHashMap<Target, Vec<TaskDependencyConfig>>,
     cleanup_targets: FxHashSet<Target>,
@@ -152,15 +213,21 @@ impl<'query> TaskSelector<'query> {
         query: Option<&'query Criteria<'query>>,
         affected: Option<AffectedTracker>,
         affected_depth: Depth,
+        sync_projects: PipelineActionSwitch,
+        sync_project_dependencies: bool,
     ) -> Self {
         Self {
             workspace_graph,
             query,
             affected,
             affected_depth,
+            sync_projects,
+            sync_project_dependencies,
+            events: vec![],
             instances: vec![],
             instance_indices: FxHashMap::default(),
-            relations: vec![],
+            synced_projects: vec![],
+            synced_project_ids: FxHashSet::default(),
             serial_links: vec![],
             no_dependencies_tasks: FxHashMap::default(),
             cleanup_targets: FxHashSet::default(),
@@ -174,7 +241,8 @@ impl<'query> TaskSelector<'query> {
     pub fn finish(self) -> TaskPlan {
         TaskPlan {
             instances: self.instances,
-            relations: self.relations,
+            events: self.events,
+            synced_projects: self.synced_projects,
             serial_links: self.serial_links,
             no_dependencies_tasks: self.no_dependencies_tasks,
             affected: self.affected,
@@ -187,6 +255,28 @@ impl<'query> TaskSelector<'query> {
     }
 
     // REQUESTS
+
+    /// Record a provisioning or sync request, which is resolved in order.
+    pub fn provision(&mut self, id: RequestId, request: ProvisionRequest) {
+        self.events.push(Event::Request(id, request));
+    }
+
+    /// Sync the project, and when enabled, the projects it depends on.
+    pub fn sync_project(
+        &mut self,
+        id: RequestId,
+        project: &Arc<Project>,
+        reqs: &RunRequirements,
+    ) -> miette::Result<()> {
+        let synced = self.walk_sync_project(project, reqs.skip_affected)?;
+
+        self.results.insert(
+            id,
+            RequestResult::SyncProject(synced.then(|| project.id.clone())),
+        );
+
+        Ok(())
+    }
 
     /// Run the tasks of the provided locators as primary targets, along with
     /// their dependents (up to the depth), partitioned across jobs.
@@ -494,6 +584,11 @@ impl<'query> TaskSelector<'query> {
             Entry::New(index, frame) => (index, frame),
         };
 
+        // Without dependencies to visit, its edges are linked right away
+        if frame.is_none() {
+            self.exit_task(root, vec![], vec![]);
+        }
+
         let mut stack = frame.into_iter().collect::<Vec<_>>();
 
         while let Some(frame) = stack.last_mut() {
@@ -537,7 +632,11 @@ impl<'query> TaskSelector<'query> {
 
             match self.enter(&dep_task, Some(&config), TaskOrigin::Dependency, true, reqs)? {
                 Entry::Skipped => {}
-                Entry::Existing(instance) | Entry::New(instance, None) => {
+                Entry::Existing(instance) => {
+                    self.link_dependency(frame, dep_index, &dep_task, instance);
+                }
+                Entry::New(instance, None) => {
+                    self.exit_task(instance, vec![], vec![]);
                     self.link_dependency(frame, dep_index, &dep_task, instance);
                 }
                 Entry::New(instance, Some(child)) => {
@@ -560,7 +659,8 @@ impl<'query> TaskSelector<'query> {
         skip_affected: bool,
         reqs: &RunRequirements,
     ) -> miette::Result<Entry> {
-        self.workspace_graph
+        let project = self
+            .workspace_graph
             .get_project(task.target.get_project_id()?)?;
 
         // Abort early if not affected
@@ -625,6 +725,11 @@ impl<'query> TaskSelector<'query> {
             return Ok(Entry::Existing(*index));
         }
 
+        // The owning project is synced before the task is inserted
+        let sync_project = self
+            .walk_sync_project(&project, skip_affected)?
+            .then(|| project.id.clone());
+
         let index = self.instances.len();
         let node = ActionNode::run_task(RunTaskNode {
             args,
@@ -644,6 +749,12 @@ impl<'query> TaskSelector<'query> {
 
         self.instances.push(node);
         self.instance_indices.insert(key, index);
+        self.events.push(Event::EnterTask {
+            instance: index,
+            project,
+            toolchains: task.toolchains.clone(),
+            sync_project,
+        });
 
         if task.deps.is_empty() {
             return Ok(Entry::New(index, None));
@@ -746,21 +857,144 @@ impl<'query> TaskSelector<'query> {
     /// Record the relations of a task, once all of its dependencies have been
     /// visited: its requirements, then its cleanups (which are reversed).
     fn link_dependencies(&mut self, frame: Frame) {
-        for (to, weight) in frame.requirements {
-            self.relations.push(TaskRelation {
-                from: frame.instance,
-                to,
-                weight,
-            });
+        self.exit_task(frame.instance, frame.requirements, frame.cleanups);
+    }
+
+    fn exit_task(
+        &mut self,
+        instance: usize,
+        requirements: Vec<(usize, TaskDependencyType)>,
+        cleanups: Vec<usize>,
+    ) {
+        self.events.push(Event::ExitTask {
+            instance,
+            requirements,
+            cleanups,
+        });
+    }
+
+    // PROJECT SYNCS
+
+    /// Sync the project, and when enabled, the projects it depends on, depth
+    /// first. Returns whether the project is synced. Dependencies are walked
+    /// with an explicit stack, so that deep chains don't overflow the stack.
+    fn walk_sync_project(
+        &mut self,
+        project: &Arc<Project>,
+        skip_affected: bool,
+    ) -> miette::Result<bool> {
+        // The projects on the current path (the stack), which are skipped
+        // as dependencies, so that cycles across scopes are walked once
+        let mut path = FxHashSet::default();
+
+        let frame = match self.enter_sync_project(project, &path, skip_affected)? {
+            SyncEntry::Skipped => return Ok(false),
+            SyncEntry::Existing => return Ok(true),
+            SyncEntry::New(frame) => frame,
+        };
+
+        path.insert(frame.project.id.clone());
+
+        let mut stack = vec![frame];
+
+        while let Some(frame) = stack.last_mut() {
+            let Some(dep_id) = frame.deps.get(frame.next_dep).cloned() else {
+                let frame = stack.pop().unwrap();
+
+                path.remove(&frame.project.id);
+
+                self.events
+                    .push(Event::LinkSyncProject(frame.project.id.clone()));
+
+                continue;
+            };
+
+            frame.next_dep += 1;
+
+            if path.contains(&dep_id) {
+                continue;
+            }
+
+            let dep_project = self.workspace_graph.get_project(&dep_id)?;
+
+            if let SyncEntry::New(child) =
+                self.enter_sync_project(&dep_project, &path, skip_affected)?
+            {
+                path.insert(child.project.id.clone());
+                stack.push(child);
+            }
         }
 
-        for from in frame.cleanups {
-            self.relations.push(TaskRelation {
-                from,
-                to: frame.instance,
-                weight: TaskDependencyType::Cleanup,
-            });
+        Ok(true)
+    }
+
+    fn enter_sync_project(
+        &mut self,
+        project: &Arc<Project>,
+        path: &FxHashSet<Id>,
+        skip_affected: bool,
+    ) -> miette::Result<SyncEntry> {
+        // Explicitly disabled
+        if !self.sync_projects.is_enabled(&project.id) || path.contains(&project.id) {
+            return Ok(SyncEntry::Skipped);
         }
+
+        // Return early if not affected
+        if !self.is_project_affected(project, skip_affected)? {
+            return Ok(SyncEntry::Skipped);
+        }
+
+        self.events.push(Event::SyncWorkspace);
+
+        if !self.synced_project_ids.insert(project.id.clone()) {
+            return Ok(SyncEntry::Existing);
+        }
+
+        self.events.push(Event::AddSyncProject(project.id.clone()));
+        self.synced_projects.push(Arc::clone(project));
+
+        Ok(SyncEntry::New(SyncFrame {
+            project: Arc::clone(project),
+            deps: if self.sync_project_dependencies {
+                self.workspace_graph.projects.dependencies_of(project)
+            } else {
+                vec![]
+            },
+            next_dep: 0,
+        }))
+    }
+
+    fn is_project_affected(
+        &mut self,
+        project: &Project,
+        skip_affected: bool,
+    ) -> miette::Result<bool> {
+        if let Some(affected) = &mut self.affected
+            && !skip_affected
+        {
+            // Short-circuit early if the project is already marked
+            let marked = if !self.affected_depth.is_none() {
+                affected.is_project_marked(project)
+            } else {
+                affected.is_project_marked_ignoring_relations(project)
+            };
+
+            if marked {
+                return Ok(true);
+            }
+
+            // Otherwise run the full affected checks
+            if let Some(mark) = affected.is_project_affected(project) {
+                affected.mark_project_affected(project, mark)?;
+
+                return Ok(true);
+            }
+
+            return Ok(false);
+        }
+
+        // Always affected
+        Ok(true)
     }
 
     fn is_task_affected(&mut self, task: &Task, skip_affected: bool) -> miette::Result<bool> {

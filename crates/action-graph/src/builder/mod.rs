@@ -5,13 +5,11 @@
 //!
 //! Requests are only recorded, and all of the work happens in [`ActionGraphBuilder::build`]:
 //!
-//! 1. Select the task instances that exist, and how they relate ([`select`]).
-//! 2. Resolve the provisioning and sync actions (not implemented yet).
-//! 3. Assemble the nodes and edges, then 4. order and validate ([`assemble`]).
-//!
-//! Until provisioning is implemented, this builder produces the task subgraph
-//! only: the graph that [`crate::ActionGraphBuilder`] produces when every
-//! builder option is disabled.
+//! 1. Select the task instances and project syncs that exist, and how they
+//!    relate, as an event log ([`select`]).
+//! 2. Replay the events to assemble the nodes and edges, resolving each task's
+//!    provisioning actions along the way, then 3. add the edges that depend on
+//!    the whole graph, and 4. freeze it ([`assemble`]).
 
 mod assemble;
 mod select;
@@ -21,14 +19,17 @@ use crate::action_graph_builder::{ActionGraphBuilderOptions, RunPartition, RunRe
 use moon_action_context::{ActionContext, TargetState};
 use moon_affected::{AffectedTracker, Depth};
 use moon_app_context::AppContext;
+use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_exec_plan::{ExecutionPlan, TargetsBlock};
+use moon_project::Project;
 use moon_query::build_query;
 use moon_task::{Target, TargetLocator, Task};
+use moon_toolchain::ToolchainSpec;
 use moon_workspace_graph::WorkspaceGraph;
 use petgraph::graph::NodeIndex;
 use rustc_hash::{FxHashMap, FxHashSet};
-use select::{RequestResult, TaskSelector};
+use select::{ProvisionRequest, RequestResult, TaskSelector};
 use std::sync::Arc;
 use tracing::debug;
 
@@ -36,15 +37,64 @@ use tracing::debug;
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct RequestId(usize);
 
-// Provisioning and sync requests, without the prefix, are added next
-#[allow(clippy::enum_variant_names)]
 #[derive(Debug)]
 enum Request {
+    Provision(ProvisionRequest),
     RunTasks(Vec<TargetLocator>),
     RunTasksWithPlan(TargetsBlock),
     RunTask(Arc<Task>),
     RunTaskByTarget(Target),
     RunTaskByTargetLocator(TargetLocator),
+    SyncProject(Arc<Project>),
+}
+
+/// The spec of a toolchain for a project, which may override its version.
+pub(crate) fn get_spec(
+    app_context: &AppContext,
+    toolchain_id: &Id,
+    project: Option<&Project>,
+) -> Option<ToolchainSpec> {
+    match project {
+        Some(project) => get_project_spec(app_context, toolchain_id, project),
+        None => get_workspace_spec(app_context, toolchain_id),
+    }
+}
+
+/// The spec of a toolchain for a project, which may override its version, or
+/// disable the toolchain.
+pub(crate) fn get_project_spec(
+    app_context: &AppContext,
+    toolchain_id: &Id,
+    project: &Project,
+) -> Option<ToolchainSpec> {
+    if let Some(config) = project.config.toolchains.get_plugin_config(toolchain_id) {
+        if !config.is_enabled() {
+            return None;
+        }
+
+        if let Some(version) = config.get_version() {
+            return Some(ToolchainSpec::new(
+                toolchain_id.to_owned(),
+                version.to_owned(),
+            ));
+        }
+    }
+
+    get_workspace_spec(app_context, toolchain_id)
+}
+
+/// The spec of a configured toolchain.
+pub(crate) fn get_workspace_spec(
+    app_context: &AppContext,
+    toolchain_id: &Id,
+) -> Option<ToolchainSpec> {
+    app_context
+        .toolchains_config
+        .get_plugin_config(toolchain_id)
+        .map(|config| match &config.version {
+            Some(version) => ToolchainSpec::new(toolchain_id.to_owned(), version.to_owned()),
+            None => ToolchainSpec::new_global(toolchain_id.to_owned()),
+        })
 }
 
 /// The result of a build.
@@ -77,10 +127,7 @@ impl BuildReport {
 }
 
 pub struct ActionGraphBuilder {
-    // Read once provisioning is implemented
-    #[allow(dead_code)]
     app_context: Arc<AppContext>,
-    #[allow(dead_code)]
     options: ActionGraphBuilderOptions,
 
     workspace_graph: Arc<WorkspaceGraph>,
@@ -113,6 +160,23 @@ impl ActionGraphBuilder {
             #[cfg(debug_assertions)]
             mocked_affected: None,
         }
+    }
+
+    // SPECS
+
+    /// The spec of a toolchain for the project, or the workspace.
+    pub fn get_spec(&self, toolchain_id: &Id, project: Option<&Project>) -> Option<ToolchainSpec> {
+        get_spec(&self.app_context, toolchain_id, project)
+    }
+
+    /// The spec of a toolchain for the project.
+    pub fn get_project_spec(&self, toolchain_id: &Id, project: &Project) -> Option<ToolchainSpec> {
+        get_project_spec(&self.app_context, toolchain_id, project)
+    }
+
+    /// The spec of a configured toolchain.
+    pub fn get_workspace_spec(&self, toolchain_id: &Id) -> Option<ToolchainSpec> {
+        get_workspace_spec(&self.app_context, toolchain_id)
     }
 
     // SETTINGS
@@ -190,6 +254,58 @@ impl ActionGraphBuilder {
         self.request(Request::RunTaskByTargetLocator(locator.as_ref().to_owned()))
     }
 
+    /// Install the dependencies of each of the project's toolchains (or set
+    /// them up, when they don't install dependencies).
+    pub fn install_dependencies_by_project(&mut self, project: &Project) -> RequestId {
+        self.request(Request::Provision(ProvisionRequest::InstallDependencies(
+            Arc::new(project.to_owned()),
+        )))
+    }
+
+    /// Setup proto itself.
+    pub fn setup_proto(&mut self) -> RequestId {
+        self.request(Request::Provision(ProvisionRequest::SetupProto))
+    }
+
+    /// Setup the toolchain, for the project when provided.
+    pub fn setup_toolchain(
+        &mut self,
+        spec: &ToolchainSpec,
+        project: Option<&Project>,
+    ) -> RequestId {
+        self.request(Request::Provision(ProvisionRequest::SetupToolchain(
+            spec.to_owned(),
+            project.map(|project| Arc::new(project.to_owned())),
+        )))
+    }
+
+    /// Setup the toolchain, and when it inserted a node, its environment in
+    /// the workspace root (like `moon setup`). The report has the toolchain's
+    /// node, when it was inserted.
+    pub fn setup_toolchain_and_environment(&mut self, spec: &ToolchainSpec) -> RequestId {
+        self.request(Request::Provision(
+            ProvisionRequest::SetupToolchainAndEnvironment(spec.to_owned()),
+        ))
+    }
+
+    /// Setup the environment in the workspace root, without an associated
+    /// project, when the located dependencies root is the workspace root.
+    pub fn setup_environment_root(&mut self, spec: &ToolchainSpec) -> RequestId {
+        self.request(Request::Provision(ProvisionRequest::SetupEnvironmentRoot(
+            spec.to_owned(),
+        )))
+    }
+
+    /// Sync the project, and when enabled, the projects it depends on.
+    pub fn sync_project(&mut self, project: &Project) -> RequestId {
+        self.request(Request::SyncProject(Arc::new(project.to_owned())))
+    }
+
+    /// Sync the workspace.
+    pub fn sync_workspace(&mut self) -> RequestId {
+        self.request(Request::Provision(ProvisionRequest::SyncWorkspace))
+    }
+
     // BUILD
 
     /// Build the graph from every request, in the order they were made.
@@ -209,32 +325,44 @@ impl ActionGraphBuilder {
             query.as_ref(),
             affected,
             affected_depth,
+            self.options.sync_projects.clone(),
+            self.options.sync_project_dependencies,
         );
         let reqs = self.requirements.clone();
 
-        for (index, request) in self.requests.iter().enumerate() {
+        for (index, request) in std::mem::take(&mut self.requests).into_iter().enumerate() {
             let id = RequestId(index);
 
             match request {
-                Request::RunTasks(locators) => selector.run_tasks(id, locators, &reqs).await?,
+                Request::Provision(provision) => selector.provision(id, provision),
+                Request::SyncProject(project) => selector.sync_project(id, &project, &reqs)?,
+                Request::RunTasks(locators) => selector.run_tasks(id, &locators, &reqs).await?,
                 Request::RunTasksWithPlan(targets) => {
-                    selector.run_tasks_with_plan(id, targets, &reqs).await?
+                    selector.run_tasks_with_plan(id, &targets, &reqs).await?
                 }
-                Request::RunTask(task) => selector.run_task(id, task, &reqs)?,
+                Request::RunTask(task) => selector.run_task(id, &task, &reqs)?,
                 Request::RunTaskByTarget(target) => {
-                    selector.run_task_by_target(id, target, &reqs)?
+                    selector.run_task_by_target(id, &target, &reqs)?
                 }
                 Request::RunTaskByTargetLocator(locator) => {
-                    selector.run_task_by_target_locator(id, locator, &reqs)?
+                    selector.run_task_by_target_locator(id, &locator, &reqs)?
                 }
             };
         }
 
         let mut plan = selector.finish();
-        let assembled = assemble::assemble(&mut plan)?;
+        let assembled = assemble::assemble(
+            &self.app_context,
+            &self.workspace_graph,
+            &self.options,
+            &mut plan,
+        )
+        .await?;
 
-        // Node indices are the indices of the task instances
-        let mut report = BuildReport::default();
+        let mut report = BuildReport {
+            nodes: assembled.request_nodes,
+            ..BuildReport::default()
+        };
 
         for (id, result) in plan.results {
             match result {
@@ -244,16 +372,31 @@ impl ActionGraphBuilder {
                         RunPartition {
                             targets: targets
                                 .into_iter()
-                                .map(|(index, target)| (NodeIndex::new(index), target))
+                                .map(|(instance, target)| {
+                                    (assembled.instance_nodes[instance], target)
+                                })
                                 .collect(),
                             size,
                         },
                     );
                 }
-                RequestResult::Instances(indices) => {
-                    report
-                        .nodes
-                        .insert(id, indices.into_iter().map(NodeIndex::new).collect());
+                RequestResult::Instances(instances) => {
+                    report.nodes.insert(
+                        id,
+                        instances
+                            .into_iter()
+                            .map(|instance| assembled.instance_nodes[instance])
+                            .collect(),
+                    );
+                }
+                RequestResult::SyncProject(project_id) => {
+                    report.nodes.insert(
+                        id,
+                        project_id
+                            .and_then(|id| assembled.sync_project_nodes.get(&id).copied())
+                            .into_iter()
+                            .collect(),
+                    );
                 }
             };
         }

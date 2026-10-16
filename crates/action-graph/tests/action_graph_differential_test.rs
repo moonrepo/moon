@@ -1,9 +1,8 @@
 //! Differential tests between the current builder (`ActionGraphBuilder`) and the new,
 //! request-based builder (`builder::ActionGraphBuilder`). Both build the same requests,
-//! and must produce the same canonical graph (see `utils::CanonicalActionGraph`).
-//!
-//! The new builder doesn't resolve provisioning or sync actions yet, so the current
-//! builder is built with every option disabled, which produces the task subgraph.
+//! with the same options, and must produce the same canonical graph (see
+//! `utils::CanonicalActionGraph`), except where a decision in
+//! `docs/todo/ACTION_GRAPH_BUILDER.md` says otherwise.
 
 mod utils;
 
@@ -16,29 +15,86 @@ use moon_app_context::AppContext;
 use moon_bench_utils::{create_chained_workspace, create_generated_workspace};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_exec_plan::{ExecutionPlan, TargetsBlock};
+use moon_project::Project;
 use moon_task::{Target, TargetLocator, Task};
 use moon_test_utils::{WorkspaceMockOptions, WorkspaceMocker};
-use moon_workspace_graph::WorkspaceGraph;
+use moon_toolchain::ToolchainSpec;
+use moon_workspace_graph::projects::ScopePartition;
+use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
 use rustc_hash::FxHashSet;
 use starbase_sandbox::create_sandbox;
+use std::collections::BTreeSet;
 use std::env;
 use std::sync::Arc;
 use utils::CanonicalActionGraph;
 
-// Provisioning and sync requests, without the prefix, are added next
-#[allow(clippy::enum_variant_names)]
 #[derive(Clone, Debug)]
 enum Request {
+    InstallDependenciesByProject(Arc<Project>),
     RunTasks(Vec<TargetLocator>),
     RunTasksWithPlan(TargetsBlock),
     RunTask(Arc<Task>),
     RunTaskByTarget(Target),
+    SetupProto,
+    /// Setup the toolchain, and when it inserted a node, its environment in the
+    /// workspace root, like `moon setup`.
+    SetupToolchainAndEnvironment(ToolchainSpec),
+    SyncProject(Arc<Project>),
+    SyncWorkspace,
+}
+
+/// The builder options, modeled on the commands.
+#[derive(Clone, Copy, Debug, Default)]
+enum Profile {
+    /// Every action (`moon run`, `moon ci`, and the pipeline defaults).
+    #[default]
+    All,
+    /// No actions, only tasks (`--no-actions`).
+    None,
+    /// Without workspace sync, project dependency sync, or dependency installs.
+    ActionsDisabled,
+    /// Only toolchain and environment setup (`moon setup`).
+    Setup,
+    /// Only project syncs, with their dependencies (`moon sync projects`).
+    SyncProjects,
+}
+
+impl Profile {
+    fn options(self) -> ActionGraphBuilderOptions {
+        match self {
+            Self::All => ActionGraphBuilderOptions::default(),
+            Self::None => ActionGraphBuilderOptions::new(false),
+            Self::ActionsDisabled => ActionGraphBuilderOptions {
+                install_dependencies: false.into(),
+                sync_project_dependencies: false,
+                sync_workspace: false,
+                ..Default::default()
+            },
+            Self::Setup => ActionGraphBuilderOptions {
+                install_dependencies: false.into(),
+                setup_environment: true.into(),
+                setup_toolchains: true.into(),
+                sync_projects: false.into(),
+                sync_project_dependencies: false,
+                sync_workspace: false,
+            },
+            Self::SyncProjects => ActionGraphBuilderOptions {
+                install_dependencies: false.into(),
+                setup_environment: false.into(),
+                setup_toolchains: false.into(),
+                sync_projects: true.into(),
+                sync_project_dependencies: true,
+                sync_workspace: false,
+            },
+        }
+    }
 }
 
 /// A set of requests, built by both builders.
 #[derive(Clone, Debug, Default)]
 struct Case {
     name: String,
+    options: Profile,
     reqs: RunRequirements,
     affected: Option<(Depth, bool)>,
     changed_files: Vec<String>,
@@ -77,7 +133,7 @@ impl Graphs {
             let mut builder = ActionGraphBuilder::new(
                 Arc::clone(&self.app_context),
                 Arc::clone(&self.workspace_graph),
-                ActionGraphBuilderOptions::new(false),
+                case.options.options(),
             )?;
 
             builder.set_changed_files(get_changed_files(case))?;
@@ -114,6 +170,23 @@ impl Graphs {
                     Request::RunTaskByTarget(target) => {
                         builder.run_task_by_target(target, &case.reqs).await?;
                     }
+                    Request::InstallDependenciesByProject(project) => {
+                        builder.install_dependencies_by_project(project).await?;
+                    }
+                    Request::SetupProto => {
+                        builder.setup_proto().await?;
+                    }
+                    Request::SetupToolchainAndEnvironment(spec) => {
+                        if builder.setup_toolchain(spec, None).await?.is_some() {
+                            builder.setup_environment_root(spec).await?;
+                        }
+                    }
+                    Request::SyncProject(project) => {
+                        builder.sync_project(project, &case.reqs).await?;
+                    }
+                    Request::SyncWorkspace => {
+                        builder.sync_workspace().await?;
+                    }
                 };
             }
 
@@ -131,7 +204,7 @@ impl Graphs {
             let mut builder = NewActionGraphBuilder::new(
                 Arc::clone(&self.app_context),
                 Arc::clone(&self.workspace_graph),
-                ActionGraphBuilderOptions::new(false),
+                case.options.options(),
             );
 
             builder.set_requirements(case.reqs.clone());
@@ -166,6 +239,21 @@ impl Graphs {
                     Request::RunTaskByTarget(target) => {
                         builder.run_task_by_target(target);
                     }
+                    Request::InstallDependenciesByProject(project) => {
+                        builder.install_dependencies_by_project(project);
+                    }
+                    Request::SetupProto => {
+                        builder.setup_proto();
+                    }
+                    Request::SetupToolchainAndEnvironment(spec) => {
+                        builder.setup_toolchain_and_environment(spec);
+                    }
+                    Request::SyncProject(project) => {
+                        builder.sync_project(project);
+                    }
+                    Request::SyncWorkspace => {
+                        builder.sync_workspace();
+                    }
                 };
             }
 
@@ -179,22 +267,139 @@ impl Graphs {
         result.map_err(|error| error.to_string())
     }
 
+    /// Check the edges between project syncs that differ between the builders,
+    /// and remove them from both forms. Project sync edges are linked from the
+    /// full set of synced projects (decision 1), so the new builder may have
+    /// edges that the current one doesn't, which must be direct dependencies.
+    /// Cycles across scopes keep production and peer edges (decision 2), so the
+    /// current builder may have edges that the new one doesn't, which must not
+    /// be production dependencies, and must close a cycle in the new graph.
+    fn check_sync_project_edges(
+        &self,
+        current: &mut CanonicalActionGraph,
+        new: &mut CanonicalActionGraph,
+    ) -> Vec<String> {
+        fn get_project_id(key: &str) -> Option<&str> {
+            key.strip_prefix("SyncProject(")?.strip_suffix(')')
+        }
+
+        fn is_sync_edge(edge: &(String, String, &str)) -> bool {
+            get_project_id(&edge.0).is_some() && get_project_id(&edge.1).is_some()
+        }
+
+        let current_edges = current
+            .edges
+            .iter()
+            .filter(|edge| is_sync_edge(edge))
+            .cloned()
+            .collect::<BTreeSet<_>>();
+        let new_edges = new
+            .edges
+            .iter()
+            .filter(|edge| is_sync_edge(edge))
+            .cloned()
+            .collect::<BTreeSet<_>>();
+        let mut violations = vec![];
+
+        let get_deps = |id: &str, partition: Option<ScopePartition>| {
+            let project = self.workspace_graph.get_project(id).unwrap();
+
+            match partition {
+                Some(partition) => self
+                    .workspace_graph
+                    .projects
+                    .partitioned_dependencies_of(&project, partition),
+                None => self.workspace_graph.projects.dependencies_of(&project),
+            }
+        };
+
+        for edge in new_edges.difference(&current_edges) {
+            let (from, to) = (
+                get_project_id(&edge.0).unwrap(),
+                get_project_id(&edge.1).unwrap(),
+            );
+
+            if !get_deps(from, None).iter().any(|id| id == to) {
+                violations.push(format!(
+                    "! new edge {} -> {} isn't a project dependency",
+                    edge.0, edge.1
+                ));
+            }
+        }
+
+        for edge in current_edges.difference(&new_edges) {
+            let (from, to) = (
+                get_project_id(&edge.0).unwrap(),
+                get_project_id(&edge.1).unwrap(),
+            );
+
+            if get_deps(from, Some(ScopePartition::Production))
+                .iter()
+                .any(|id| id == to)
+            {
+                violations.push(format!(
+                    "! production edge {} -> {} is missing",
+                    edge.0, edge.1
+                ));
+            }
+
+            // Whether `to` reaches `from` through the new graph's sync edges
+            let mut queue = vec![edge.1.clone()];
+            let mut visited = BTreeSet::new();
+            let mut closes_cycle = false;
+
+            while let Some(key) = queue.pop() {
+                if key == edge.0 {
+                    closes_cycle = true;
+                    break;
+                }
+
+                if visited.insert(key.clone()) {
+                    queue.extend(
+                        new_edges
+                            .iter()
+                            .filter(|next| next.0 == key)
+                            .map(|next| next.1.clone()),
+                    );
+                }
+            }
+
+            if !closes_cycle {
+                violations.push(format!(
+                    "! edge {} -> {} is missing, but doesn't close a cycle",
+                    edge.0, edge.1
+                ));
+            }
+        }
+
+        current.edges.retain(|edge| !is_sync_edge(edge));
+        new.edges.retain(|edge| !is_sync_edge(edge));
+
+        violations
+    }
+
     /// Build the case with both builders, and describe how they differ.
     async fn compare(&self, case: &Case) -> Option<String> {
         let current = self.build_current(case).await;
         let new = self.build_new(case).await;
 
         match (current, new) {
-            (Ok(current), Ok(new)) => {
+            (Ok(mut current), Ok(mut new)) => {
+                // Project sync edges differ by design (decisions 1 and 2),
+                // so they're checked against the decisions instead
+                let violations = self.check_sync_project_edges(&mut current, &mut new);
                 let diff = current.diff(&new);
 
-                if diff.is_empty() {
+                if diff.is_empty() && violations.is_empty() {
                     None
                 } else {
                     Some(format!(
                         "{}: graphs differ (- current, + new):\n{}",
                         case.name,
-                        diff.join("\n")
+                        diff.into_iter()
+                            .chain(violations)
+                            .collect::<Vec<_>>()
+                            .join("\n")
                     ))
                 }
             }
@@ -233,7 +438,125 @@ fn ci() -> RunRequirements {
 }
 
 /// The requests that every workspace is built with, modeled on the commands.
-fn create_cases(
+/// The requests that every workspace is built with: the task requests with
+/// every action, and without any action, then the provisioning and sync
+/// requests of the other commands.
+fn create_cases(prefix: &str, graphs: &Graphs, changed_files: &[String], seed: u64) -> Vec<Case> {
+    let mut cases = vec![];
+
+    for case in create_run_cases(prefix, &graphs.workspace_graph, changed_files, seed) {
+        cases.push(Case {
+            name: format!("{}, no actions", case.name),
+            options: Profile::None,
+            ..case.clone()
+        });
+        cases.push(case);
+    }
+
+    cases.extend(create_provision_cases(prefix, graphs));
+    cases
+}
+
+fn create_provision_cases(prefix: &str, graphs: &Graphs) -> Vec<Case> {
+    let workspace_graph = &graphs.workspace_graph;
+    let mut projects = workspace_graph.get_projects().unwrap();
+    let mut tasks = workspace_graph.get_tasks().unwrap();
+
+    projects.sort_by(|a, b| a.id.cmp(&b.id));
+    tasks.sort_by(|a, b| a.target.cmp(&b.target));
+
+    let locators = tasks
+        .iter()
+        .map(|task| TargetLocator::Qualified(task.target.clone()))
+        .collect::<Vec<_>>();
+
+    let case = |name: &str, options: Profile, reqs: RunRequirements, requests: Vec<Request>| Case {
+        name: format!("{prefix}, {name}"),
+        options,
+        reqs,
+        requests,
+        ..Default::default()
+    };
+
+    // The same specs that `moon setup` resolves
+    let spec_builder = NewActionGraphBuilder::new(
+        Arc::clone(&graphs.app_context),
+        Arc::clone(workspace_graph),
+        ActionGraphBuilderOptions::default(),
+    );
+    let specs = graphs
+        .app_context
+        .toolchains_config
+        .plugins
+        .keys()
+        .filter_map(|id| spec_builder.get_workspace_spec(id))
+        .collect::<Vec<_>>();
+
+    let mut sync_requests = vec![Request::SyncWorkspace];
+
+    for project in &projects {
+        sync_requests.push(Request::SyncProject(Arc::clone(project)));
+
+        for task in &tasks {
+            if task.options.run_in_sync_phase
+                && task.target.get_project_id().unwrap() == project.id.as_str()
+            {
+                sync_requests.push(Request::RunTask(Arc::clone(task)));
+            }
+        }
+    }
+
+    vec![
+        // moon ci, which syncs the workspace first
+        case(
+            "ci with workspace sync",
+            Profile::All,
+            ci(),
+            vec![Request::SyncWorkspace, Request::RunTasks(locators.clone())],
+        ),
+        // moon run, with the pipeline's actions disabled in config
+        case(
+            "run with actions disabled",
+            Profile::ActionsDisabled,
+            local(),
+            vec![Request::RunTasks(locators)],
+        ),
+        // moon sync
+        case("sync", Profile::All, local(), sync_requests),
+        // moon sync projects
+        case(
+            "sync projects",
+            Profile::SyncProjects,
+            local(),
+            projects
+                .iter()
+                .map(|project| Request::SyncProject(Arc::clone(project)))
+                .collect(),
+        ),
+        // moon setup
+        case(
+            "setup",
+            Profile::Setup,
+            local(),
+            [Request::SetupProto]
+                .into_iter()
+                .chain(specs.into_iter().map(Request::SetupToolchainAndEnvironment))
+                .collect(),
+        ),
+        // moon docker setup, with every project focused
+        case(
+            "docker setup",
+            Profile::All,
+            local(),
+            projects
+                .iter()
+                .map(|project| Request::InstallDependenciesByProject(Arc::clone(project)))
+                .collect(),
+        ),
+    ]
+}
+
+fn create_run_cases(
     prefix: &str,
     workspace_graph: &WorkspaceGraph,
     changed_files: &[String],
@@ -420,7 +743,7 @@ async fn compare_seeds(shard: u64, shards: u64) {
 
         for case in create_cases(
             &format!("seed {seed}"),
-            &graphs.workspace_graph,
+            &graphs,
             &workspace.changed_files,
             seed,
         ) {
@@ -497,7 +820,7 @@ mod fixtures {
                 workspace_graph: container.create_workspace_graph().await,
             };
 
-            for case in create_cases(fixture, &graphs.workspace_graph, &[], 0) {
+            for case in create_cases(fixture, &graphs, &[], 0) {
                 if let Some(failure) = graphs.compare(&case).await {
                     failures.push(failure);
                 }
@@ -664,8 +987,11 @@ mod deep_chains {
             .map(|task| TargetLocator::Qualified(task.target.clone()))
             .collect::<Vec<_>>();
 
+        let app_context = Arc::new(mocker.mock_app_context());
+
+        // Without actions, only the tasks are walked
         let mut builder = NewActionGraphBuilder::new(
-            Arc::new(mocker.mock_app_context()),
+            Arc::clone(&app_context),
             Arc::clone(&workspace_graph),
             ActionGraphBuilderOptions::new(false),
         );
@@ -675,5 +1001,18 @@ mod deep_chains {
         let output = builder.build().await.unwrap();
 
         assert_eq!(output.graph.get_node_count(), locators.len());
+
+        // With actions, every project's sync, and its dependencies, are walked too
+        let mut builder = NewActionGraphBuilder::new(
+            app_context,
+            Arc::clone(&workspace_graph),
+            ActionGraphBuilderOptions::default(),
+        );
+
+        builder.run_tasks(&locators);
+
+        let output = builder.build().await.unwrap();
+
+        assert!(output.graph.get_node_count() > locators.len() * 2);
     }
 }

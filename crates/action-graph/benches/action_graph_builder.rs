@@ -1,4 +1,5 @@
 use criterion::{BatchSize, BenchmarkId, Criterion, criterion_group, criterion_main};
+use moon_action_graph::builder::ActionGraphBuilder as NewActionGraphBuilder;
 use moon_action_graph::{ActionGraphBuilder, ActionGraphBuilderOptions, RunRequirements};
 use moon_app_context::AppContext;
 use moon_bench_utils::{create_chained_workspace, create_simple_workspace};
@@ -105,6 +106,38 @@ fn bench_run_tasks(c: &mut Criterion, group_name: &str, max: u16, sandbox: Sandb
                         .unwrap();
 
                     builder.build()
+                })
+                .await
+                .unwrap()
+            },
+            BatchSize::SmallInput,
+        )
+    });
+
+    // The same, with the new builder (see docs/todo/ACTION_GRAPH_BUILDER.md)
+    group.bench_function(id(max, "new_run_tasks"), |b| {
+        b.to_async(&runtime).iter_batched(
+            || {
+                (
+                    Arc::clone(&app_context),
+                    Arc::clone(&graph),
+                    locators.clone(),
+                )
+            },
+            |(app_context, graph, locators)| async move {
+                tokio::spawn(async move {
+                    let mut builder = NewActionGraphBuilder::new(
+                        app_context,
+                        graph,
+                        ActionGraphBuilderOptions::default(),
+                    );
+
+                    builder.set_requirements(RunRequirements {
+                        ci: false,
+                        ..Default::default()
+                    });
+                    builder.run_tasks(locators);
+                    builder.build().await.unwrap()
                 })
                 .await
                 .unwrap()

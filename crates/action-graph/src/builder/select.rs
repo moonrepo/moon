@@ -440,12 +440,12 @@ impl<'query> TaskSelector<'query> {
         let mut candidates = self.collect_candidates(tasks, reqs.dependents)?;
 
         // Determine the affected state of each task up front, as marking
-        // lazily while inserting would depend on the order of the targets
+        // lazily while inserting would depend on the order of the targets.
+        // Tasks are tracked even when affected checks are skipped (`--force`),
+        // so that their affected state is still reported
         let affected_depth = self.affected_depth;
 
-        if !reqs.skip_affected
-            && let Some(affected) = &mut self.affected
-        {
+        if let Some(affected) = &mut self.affected {
             // When affected state flows through relations, every task must be
             // tracked, as a task is only marked through a relation when the
             // task on the other side of it has been marked itself
@@ -686,8 +686,9 @@ impl<'query> TaskSelector<'query> {
             .workspace_graph
             .get_project(task.target.get_project_id()?)?;
 
-        // Abort early if not affected
-        if !self.is_task_affected(task, skip_affected)? {
+        // Abort early if not affected. Dependencies are inserted regardless of
+        // affected state, so they're not checked (nor marked)
+        if origin != TaskOrigin::Dependency && !self.is_task_affected(task, skip_affected)? {
             return Ok(Entry::Skipped);
         }
 
@@ -1020,33 +1021,34 @@ impl<'query> TaskSelector<'query> {
         Ok(true)
     }
 
+    /// Whether the task is affected, marking it when it is. When affected
+    /// checks are skipped, the task is still checked and marked, so that its
+    /// affected state is reported, but it's always considered affected.
     fn is_task_affected(&mut self, task: &Task, skip_affected: bool) -> miette::Result<bool> {
-        if let Some(affected) = &mut self.affected
-            && !skip_affected
-        {
-            // Short-circuit early if the task is already marked
-            let marked = if !self.affected_depth.is_none() {
-                affected.is_task_marked(task)
-            } else {
-                affected.is_task_marked_ignoring_relations(task)
-            };
+        let Some(affected) = &mut self.affected else {
+            // Always affected
+            return Ok(true);
+        };
 
-            if marked {
-                return Ok(true);
-            }
+        // Short-circuit early if the task is already marked
+        let marked = if !self.affected_depth.is_none() {
+            affected.is_task_marked(task)
+        } else {
+            affected.is_task_marked_ignoring_relations(task)
+        };
 
-            // Otherwise run the full affected checks
-            if let Some(mark) = affected.is_task_affected(task)? {
-                affected.mark_task_affected(task, mark)?;
-
-                return Ok(true);
-            }
-
-            return Ok(false);
+        if marked {
+            return Ok(true);
         }
 
-        // Always affected
-        Ok(true)
+        // Otherwise run the full affected checks
+        if let Some(mark) = affected.is_task_affected(task)? {
+            affected.mark_task_affected(task, mark)?;
+
+            return Ok(true);
+        }
+
+        Ok(skip_affected)
     }
 
     // RESOLUTION

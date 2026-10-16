@@ -263,6 +263,9 @@
 - Fixed an issue where `moon ci --job` would run every task in a job whose share of the tasks
   started past the end, like the last jobs when there were fewer (affected) tasks than jobs, instead
   of running nothing.
+- Fixed an issue where `--affected --force` would not track which tasks were affected, so they were
+  missing from the run report and the affected tasks output, even though affected files were still
+  passed to them.
 
 #### ⚙️ Internal
 

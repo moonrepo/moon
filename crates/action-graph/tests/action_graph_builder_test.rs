@@ -1979,6 +1979,84 @@ mod action_graph_builder {
 
                 assert_eq!(targets, ["app:deploy", "app:publish"]);
             }
+
+            async fn run_with_changed_files(
+                locators: &[&str],
+                changed_files: &[&str],
+                skip_affected: bool,
+            ) -> (Vec<String>, Vec<String>) {
+                let sandbox = create_sandbox("graph-depth");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                builder.set_changed_files(
+                    changed_files
+                        .iter()
+                        .map(|file| WorkspaceRelativePathBuf::from(*file))
+                        .collect(),
+                );
+                builder.track_affected(Depth::NONE, false);
+
+                builder.set_requirements(RunRequirements {
+                    skip_affected,
+                    ..Default::default()
+                });
+                builder.run_tasks(
+                    locators
+                        .iter()
+                        .map(|locator| TargetLocator::parse(locator).unwrap())
+                        .collect::<Vec<_>>(),
+                );
+
+                let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
+
+                let mut affected = context
+                    .affected
+                    .unwrap()
+                    .tasks
+                    .into_keys()
+                    .map(|target| target.to_string())
+                    .collect::<Vec<_>>();
+                affected.sort();
+
+                (extract_run_task_targets(graph), affected)
+            }
+
+            // Skipping affected checks (`--force`) runs every selected task, but
+            // they're still tracked, so that their affected state is reported
+            #[tokio::test(flavor = "multi_thread")]
+            async fn tracks_affected_tasks_when_skipping_affected_checks() {
+                let (targets, affected) =
+                    run_with_changed_files(&["app:publish", "a:deploy"], &["app/src.txt"], false)
+                        .await;
+
+                assert_eq!(targets, ["app:publish"]);
+                assert_eq!(affected, ["app:publish"]);
+
+                let (targets, affected) =
+                    run_with_changed_files(&["app:publish", "a:deploy"], &["app/src.txt"], true)
+                        .await;
+
+                assert_eq!(targets, ["a:deploy", "app:publish"]);
+                assert_eq!(affected, ["app:publish"]);
+            }
+
+            // Dependencies are inserted regardless of affected state, so they're
+            // never checked (nor marked), whether affected checks are skipped or not
+            #[tokio::test(flavor = "multi_thread")]
+            async fn marks_the_same_tasks_when_skipping_affected_checks() {
+                let changed_files = ["a/src.txt", "b/src.txt"];
+                let (targets, affected) =
+                    run_with_changed_files(&["b:deploy"], &changed_files, false).await;
+                let (forced_targets, forced_affected) =
+                    run_with_changed_files(&["b:deploy"], &changed_files, true).await;
+
+                assert_eq!(targets, ["a:deploy", "b:deploy"]);
+                assert_eq!(forced_targets, targets);
+                assert_eq!(affected, ["b:deploy"]);
+                assert_eq!(forced_affected, affected);
+            }
         }
 
         mod run_in_ci {

@@ -542,13 +542,24 @@ docker and queries, but not for every `moon run`.
      `inherit_from_toolchains`;
    - `moon docker file`'s base image uses the project's enabled toolchains. The action graph keeps
      its raw lists, as the helper already returns `None` for a disabled toolchain.
-1. **Model and builder, no consumers:**
-   - add the `moon_layout_graph` crate, with lazy (`place(pairs)`) and full builds;
-   - add `Session::build_layout_graph()`;
-   - test fixtures on `tc-tier2`, covering a member, a workspace root, a package root, outside,
-     nested and shadowed.
-
-   Remember that `tc-tier2` decides the root from `context.working_dir`.
+1. **Model and builder, no consumers (done):**
+   - `crates/layout-graph` (`moon_layout_graph`): `LayoutGraph` and `LayoutGraphBuilder`, with
+     `place(pairs)` (lazy), `place_project`, `place_all` (full, including task-only toolchains), and
+     `place_workspace` (from the workspace root, for `moon setup`). Locates run concurrently, and
+     bindings are inserted in request order, so root indices are deterministic.
+   - `Session::build_layout_graph()`.
+   - Tests in `crates/layout-graph/tests`, on a `layout` fixture: members, a workspace root, a
+     package root, outside, nested (also matched by the outer globs), no tier 2, disabled, and lazy
+     and full builds agreeing. `tc-tier2` gained an opt-in `testLocateRoots` config, which locates
+     like a real plugin: the closest `tc.lock` from the project, with member globs in that root's
+     `tc.root.cfg`. Without it, `tc-tier2` still decides the root from `context.working_dir`.
+   - Not yet: `delegates` (phase 6), and diagnostics (phase 5).
+   - `owner_project` is found through the workspace graph's sources, so a partial graph that doesn't
+     include the owner leaves it `None`. Only a package root's spec and config depend on the owner.
+     Its owner is the project placed at it, except from `place_workspace`.
+   - For phase 2: from `place_workspace`, a single-package root at the workspace root uses the root
+     project's spec and config when one exists. Today `moon setup` uses the workspace's
+     (`setup_environment_root` passes no project), so phase 2 must choose.
 
 2. **Action graph:**
    - add the placement stage between select and assemble;

@@ -1,0 +1,468 @@
+use moon_common::Id;
+use moon_common::path::WorkspaceRelativePathBuf;
+use moon_config::UnresolvedVersionSpec;
+use moon_layout_graph::*;
+use moon_project::Project;
+use moon_test_utils::WorkspaceMocker;
+use moon_toolchain::{DependenciesWorkspaceRole, ToolchainSpec};
+use moon_workspace_graph::WorkspaceGraph;
+use starbase_sandbox::{Sandbox, create_sandbox};
+use std::sync::Arc;
+
+fn tc() -> Id {
+    Id::raw("tc-tier2")
+}
+
+fn path(value: &str) -> WorkspaceRelativePathBuf {
+    WorkspaceRelativePathBuf::from(value)
+}
+
+fn spec(version: &str) -> ToolchainSpec {
+    ToolchainSpec::new(tc(), UnresolvedVersionSpec::parse(version).unwrap())
+}
+
+fn ids(values: &[&str]) -> Vec<Id> {
+    values.iter().map(|value| Id::raw(*value)).collect()
+}
+
+struct Container {
+    app_context: Arc<moon_app_context::AppContext>,
+    workspace_graph: Arc<WorkspaceGraph>,
+}
+
+impl Container {
+    async fn new(sandbox: &Sandbox) -> Self {
+        let mocker = WorkspaceMocker::new(sandbox.path())
+            .load_default_configs()
+            .with_test_toolchains()
+            .update_toolchains_config(|config| {
+                // Locate roots from each project, instead of the working dir
+                config
+                    .plugins
+                    .get_mut(&tc())
+                    .unwrap()
+                    .config
+                    .insert("testLocateRoots".into(), serde_json::Value::Bool(true));
+            })
+            .with_global_envs();
+
+        Self {
+            app_context: Arc::new(mocker.mock_app_context()),
+            workspace_graph: Arc::new(mocker.mock_workspace_graph().await),
+        }
+    }
+
+    fn builder(&self) -> LayoutGraphBuilder {
+        LayoutGraphBuilder::new(
+            Arc::clone(&self.app_context),
+            Arc::clone(&self.workspace_graph),
+        )
+    }
+
+    fn project(&self, id: &str) -> Arc<Project> {
+        self.workspace_graph.get_project(id).unwrap()
+    }
+
+    async fn place(&self, project_ids: &[&str]) -> LayoutGraph {
+        let mut builder = self.builder();
+
+        builder
+            .place(project_ids.iter().map(|id| (self.project(id), tc())))
+            .await
+            .unwrap();
+
+        builder.build()
+    }
+}
+
+fn get_root<'graph>(graph: &'graph LayoutGraph, root: &str) -> &'graph ToolchainDependenciesRoot {
+    graph.root(
+        graph
+            .find_root(&tc(), &path(root))
+            .unwrap_or_else(|| panic!("Missing root {root:?}")),
+    )
+}
+
+/// The fields of a root that must not depend on which members were placed.
+fn root_fields(
+    root: &ToolchainDependenciesRoot,
+) -> (
+    RootKind,
+    Option<Id>,
+    ToolchainSpec,
+    serde_json::Value,
+    RootFiles,
+    RootCapabilities,
+) {
+    (
+        root.kind.clone(),
+        root.owner_project.clone(),
+        root.spec.clone(),
+        root.config.as_ref().clone(),
+        root.files.clone(),
+        root.capabilities,
+    )
+}
+
+mod place {
+    use super::*;
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn places_members_in_a_workspace_root() {
+        let sandbox = create_sandbox("layout");
+        let container = Container::new(&sandbox).await;
+        let graph = container.place(&["a", "web"]).await;
+
+        let a = graph.binding(&Id::raw("a"), &tc()).unwrap();
+        let web = graph.binding(&Id::raw("web"), &tc()).unwrap();
+
+        assert_eq!(a.role(), Some(DependenciesWorkspaceRole::WorkspaceMember));
+        assert_eq!(web.role(), Some(DependenciesWorkspaceRole::WorkspaceMember));
+        assert_eq!(a.root_index(), web.root_index());
+
+        let root = get_root(&graph, "");
+
+        assert_eq!(root.toolchain, tc());
+        assert_eq!(
+            root.kind,
+            RootKind::Workspace {
+                members: vec!["packages/*".into(), "apps/*".into(), "nested".into()]
+            }
+        );
+        assert_eq!(root.owner_project, Some(Id::raw("root")));
+        assert_eq!(root.spec, ToolchainSpec::new_global(tc()));
+        assert_eq!(root.members, ids(&["a", "web"]));
+        assert_eq!(
+            root.files,
+            RootFiles {
+                lockfiles: vec![path("tc.lock")],
+                manifests: vec![path("tc.root.cfg")],
+                vendor_dir: Some(path("vendor")),
+            }
+        );
+        assert_eq!(
+            root.capabilities,
+            RootCapabilities {
+                install_dependencies: true,
+                setup_environment: false,
+            }
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn uses_workspace_config_for_a_workspace_root() {
+        let sandbox = create_sandbox("layout");
+        let container = Container::new(&sandbox).await;
+        let graph = container.place(&["root"]).await;
+
+        let binding = graph.binding(&Id::raw("root"), &tc()).unwrap();
+        let root = get_root(&graph, "");
+
+        assert_eq!(
+            binding.role(),
+            Some(DependenciesWorkspaceRole::WorkspaceRoot)
+        );
+        assert_eq!(root.owner_project, Some(Id::raw("root")));
+
+        // The root project's override is on its binding, but not on the root
+        assert_eq!(binding.config["rootKey"], serde_json::Value::Bool(true));
+        assert!(root.config.get("rootKey").is_none());
+        assert_eq!(
+            root.config["testLocateRoots"],
+            serde_json::Value::Bool(true)
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn keeps_the_workspace_version_when_a_member_overrides_it() {
+        let sandbox = create_sandbox("layout");
+        let container = Container::new(&sandbox).await;
+        let graph = container.place(&["b"]).await;
+
+        let binding = graph.binding(&Id::raw("b"), &tc()).unwrap();
+
+        assert_eq!(binding.spec, spec("2.0.0"));
+        assert_eq!(binding.config["version"], "2.0.0");
+        assert_eq!(get_root(&graph, "").spec, ToolchainSpec::new_global(tc()));
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn uses_the_owner_version_and_config_for_a_package_root() {
+        let sandbox = create_sandbox("layout");
+        let container = Container::new(&sandbox).await;
+        let graph = container.place(&["standalone"]).await;
+
+        let binding = graph.binding(&Id::raw("standalone"), &tc()).unwrap();
+        let root = get_root(&graph, "standalone");
+
+        assert_eq!(binding.role(), Some(DependenciesWorkspaceRole::PackageRoot));
+        assert_eq!(root.kind, RootKind::Package);
+        assert_eq!(root.owner_project, Some(Id::raw("standalone")));
+        assert_eq!(root.spec, spec("3.0.0"));
+        assert_eq!(root.config["customKey"], "standalone");
+        assert_eq!(root.members, ids(&["standalone"]));
+        assert_eq!(
+            root.files,
+            RootFiles {
+                lockfiles: vec![path("standalone/tc.lock")],
+                manifests: vec![],
+                vendor_dir: None,
+            }
+        );
+
+        // The enclosing workspace isn't involved
+        assert!(graph.find_root(&tc(), &path("")).is_none());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn places_a_nested_workspace_in_its_own_root() {
+        let sandbox = create_sandbox("layout");
+        let container = Container::new(&sandbox).await;
+        let graph = container.place(&["nested", "lib", "a"]).await;
+
+        let nested = graph.binding(&Id::raw("nested"), &tc()).unwrap();
+        let lib = graph.binding(&Id::raw("lib"), &tc()).unwrap();
+        let a = graph.binding(&Id::raw("a"), &tc()).unwrap();
+
+        // Even though the outer workspace's members match `nested`
+        assert_eq!(
+            nested.role(),
+            Some(DependenciesWorkspaceRole::WorkspaceRoot)
+        );
+        assert_eq!(lib.role(), Some(DependenciesWorkspaceRole::WorkspaceMember));
+        assert_eq!(nested.root_index(), lib.root_index());
+        assert_ne!(nested.root_index(), a.root_index());
+
+        let root = get_root(&graph, "nested");
+
+        assert_eq!(
+            root.kind,
+            RootKind::Workspace {
+                members: vec!["lib".into()]
+            }
+        );
+        assert_eq!(root.owner_project, Some(Id::raw("nested")));
+        assert_eq!(root.members, ids(&["lib", "nested"]));
+        assert_eq!(get_root(&graph, "").members, ids(&["a"]));
+        assert_eq!(graph.roots_of(&tc()).count(), 2);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn places_a_non_member_outside_the_root() {
+        let sandbox = create_sandbox("layout");
+        let container = Container::new(&sandbox).await;
+        let graph = container.place(&["tools"]).await;
+
+        assert_eq!(
+            graph.binding(&Id::raw("tools"), &tc()).unwrap().placement,
+            Placement::Outside { root: path("") }
+        );
+
+        // No root is created for it
+        assert_eq!(graph.roots_of(&tc()).count(), 0);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn places_nowhere_without_tier_2() {
+        let sandbox = create_sandbox("layout");
+        let container = Container::new(&sandbox).await;
+        let mut builder = container.builder();
+
+        builder
+            .place([(container.project("plain"), Id::raw("tc-tier1"))])
+            .await
+            .unwrap();
+
+        let graph = builder.build();
+        let binding = graph
+            .binding(&Id::raw("plain"), &Id::raw("tc-tier1"))
+            .unwrap();
+
+        assert_eq!(binding.placement, Placement::None);
+        assert_eq!(binding.spec, ToolchainSpec::new_global(Id::raw("tc-tier1")));
+        assert!(graph.roots().is_empty());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn skips_a_toolchain_disabled_by_the_project() {
+        let sandbox = create_sandbox("layout");
+        let container = Container::new(&sandbox).await;
+        let graph = container.place(&["off"]).await;
+
+        assert!(graph.bindings(&Id::raw("off")).is_empty());
+        assert!(graph.roots().is_empty());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn skips_pairs_that_are_already_placed() {
+        let sandbox = create_sandbox("layout");
+        let container = Container::new(&sandbox).await;
+        let mut builder = container.builder();
+
+        builder
+            .place([
+                (container.project("a"), tc()),
+                (container.project("a"), tc()),
+            ])
+            .await
+            .unwrap();
+        builder
+            .place([(container.project("a"), tc())])
+            .await
+            .unwrap();
+
+        let graph = builder.build();
+
+        assert_eq!(graph.bindings(&Id::raw("a")).len(), 1);
+        assert_eq!(get_root(&graph, "").members, ids(&["a"]));
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn root_fields_dont_depend_on_which_members_are_placed() {
+        let sandbox = create_sandbox("layout");
+        let container = Container::new(&sandbox).await;
+
+        let by_member = container.place(&["b"]).await;
+        let by_owner = container.place(&["root"]).await;
+        let by_all = container.place(&["web", "root", "b", "a"]).await;
+
+        let expected = root_fields(get_root(&by_all, ""));
+
+        assert_eq!(root_fields(get_root(&by_member, "")), expected);
+        assert_eq!(root_fields(get_root(&by_owner, "")), expected);
+        assert_eq!(
+            get_root(&by_all, "").members,
+            ids(&["a", "b", "root", "web"])
+        );
+    }
+}
+
+mod place_project {
+    use super::*;
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn places_toolchains_only_used_by_tasks() {
+        let sandbox = create_sandbox("layout");
+        let container = Container::new(&sandbox).await;
+        let mut builder = container.builder();
+
+        builder
+            .place_project(container.project("tools"))
+            .await
+            .unwrap();
+
+        let graph = builder.build();
+
+        assert_eq!(
+            graph.binding(&Id::raw("tools"), &tc()).unwrap().placement,
+            Placement::Outside { root: path("") }
+        );
+        assert!(!graph.is_complete());
+    }
+}
+
+mod place_all {
+    use super::*;
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn places_every_project() {
+        let sandbox = create_sandbox("layout");
+        let container = Container::new(&sandbox).await;
+        let mut builder = container.builder();
+
+        builder.place_all().await.unwrap();
+
+        let graph = builder.build();
+
+        assert!(graph.is_complete());
+        assert_eq!(
+            graph
+                .roots_of(&tc())
+                .map(|root| root.root.as_str())
+                .collect::<Vec<_>>(),
+            vec!["", "nested", "standalone"]
+        );
+        assert_eq!(
+            get_root(&graph, "").members,
+            ids(&["a", "b", "root", "web"])
+        );
+        assert_eq!(get_root(&graph, "nested").members, ids(&["lib", "nested"]));
+        assert_eq!(get_root(&graph, "standalone").members, ids(&["standalone"]));
+        assert_eq!(
+            graph.binding(&Id::raw("tools"), &tc()).unwrap().placement,
+            Placement::Outside { root: path("") }
+        );
+        assert!(graph.binding(&Id::raw("off"), &tc()).is_none());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn matches_a_lazy_build() {
+        let sandbox = create_sandbox("layout");
+        let container = Container::new(&sandbox).await;
+        let mut builder = container.builder();
+
+        builder.place_all().await.unwrap();
+
+        let full = builder.build();
+        let lazy = container.place(&["web", "lib", "standalone"]).await;
+
+        for root in ["", "nested", "standalone"] {
+            assert_eq!(
+                root_fields(get_root(&lazy, root)),
+                root_fields(get_root(&full, root)),
+                "root {root:?}"
+            );
+        }
+
+        for project_id in ["web", "lib", "standalone"] {
+            let lazy_binding = lazy.binding(&Id::raw(project_id), &tc()).unwrap();
+            let full_binding = full.binding(&Id::raw(project_id), &tc()).unwrap();
+
+            assert_eq!(lazy_binding.spec, full_binding.spec);
+            assert_eq!(lazy_binding.config, full_binding.config);
+            assert_eq!(lazy_binding.role(), full_binding.role());
+        }
+    }
+}
+
+mod place_workspace {
+    use super::*;
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn places_from_the_workspace_root() {
+        let sandbox = create_sandbox("layout");
+        let container = Container::new(&sandbox).await;
+        let mut builder = container.builder();
+
+        builder.place_workspace([tc()]).await.unwrap();
+
+        let graph = builder.build();
+        let binding = graph.workspace_binding(&tc()).unwrap();
+        let root = get_root(&graph, "");
+
+        assert_eq!(
+            binding.role(),
+            Some(DependenciesWorkspaceRole::WorkspaceRoot)
+        );
+        assert_eq!(binding.spec, ToolchainSpec::new_global(tc()));
+        assert_eq!(root.owner_project, Some(Id::raw("root")));
+        assert!(root.config.get("rootKey").is_none());
+
+        // A workspace binding isn't a member
+        assert!(root.members.is_empty());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn skips_unconfigured_toolchains() {
+        let sandbox = create_sandbox("layout");
+        let container = Container::new(&sandbox).await;
+        let mut builder = container.builder();
+
+        builder.place_workspace([Id::raw("unknown")]).await.unwrap();
+
+        let graph = builder.build();
+
+        assert!(graph.workspace_binding(&Id::raw("unknown")).is_none());
+        assert!(graph.roots().is_empty());
+    }
+}

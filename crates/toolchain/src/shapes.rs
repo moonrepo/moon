@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum DependenciesWorkspaceRole {
     // Workspace
     WorkspaceRoot,

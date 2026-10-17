@@ -1,5 +1,5 @@
 use extism_pdk::*;
-use moon_pdk::{get_plugin_id, VirtualPathExt};
+use moon_pdk::{VirtualPathExt, get_plugin_id, locate_root};
 use moon_pdk_api::*;
 use std::fs;
 
@@ -22,6 +22,40 @@ fn is_testing_deps_workspace(path: &VirtualPath) -> bool {
 pub fn locate_dependencies_root(
     Json(input): Json<LocateDependenciesRootInput>,
 ) -> FnResult<Json<LocateDependenciesRootOutput>> {
+    // Like a real plugin, locate the root from the project, by traversing
+    // upwards to the closest `tc.lock`. When the root has a `tc.root.cfg`,
+    // it's a workspace, with a member glob on each line. Tests opt in via
+    // toolchain config, as other tests rely on the working dir below.
+    if input
+        .toolchain_config
+        .get("testLocateRoots")
+        .and_then(|value| value.as_bool())
+        .unwrap_or_default()
+    {
+        let Some(root) = locate_root(&input.starting_dir, "tc.lock") else {
+            return Ok(Json(LocateDependenciesRootOutput::default()));
+        };
+
+        let members_file = root.join("tc.root.cfg");
+        let members = if members_file.exists() {
+            Some(
+                fs::read_to_string(&members_file)?
+                    .lines()
+                    .map(|line| line.trim())
+                    .filter(|line| !line.is_empty())
+                    .map(|line| line.to_owned())
+                    .collect(),
+            )
+        } else {
+            None
+        };
+
+        return Ok(Json(LocateDependenciesRootOutput {
+            members,
+            root: Some(root),
+        }));
+    }
+
     // Working dir is set to the project root.
     let cwd = input.context.working_dir;
 

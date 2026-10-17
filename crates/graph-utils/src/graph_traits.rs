@@ -8,7 +8,11 @@ use std::fmt::Display;
 use std::hash::Hash;
 
 pub trait GraphData<N, E, K> {
-    fn get_graph(&self) -> &DiGraph<NodeIndex, E>;
+    /// The weight of each node in the graph: either the node itself, or the
+    /// node's own index, when nodes are stored separately.
+    type NodeWeight;
+
+    fn get_graph(&self) -> &DiGraph<Self::NodeWeight, E>;
     fn get_nodes(&self) -> FxHashMap<NodeIndex, &N>;
     fn get_node_by_index(&self, index: &NodeIndex) -> &N;
     fn get_node_key(&self, node: &N) -> K;
@@ -24,8 +28,8 @@ pub trait GraphData<N, E, K> {
 /// When `include_seeds` is false, the seeds are marked as visited up front, so
 /// they are never visited themselves. Otherwise they are only visited once
 /// they're reached through an edge (e.g. in a cycle).
-fn walk_indices<E>(
-    graph: &DiGraph<NodeIndex, E>,
+fn walk_indices<W, E>(
+    graph: &DiGraph<W, E>,
     seeds: &[NodeIndex],
     direction: Direction,
     depth: Depth,
@@ -80,8 +84,8 @@ fn walk_indices<E>(
     }
 }
 
-fn indices_within<E>(
-    graph: &DiGraph<NodeIndex, E>,
+fn indices_within<W, E>(
+    graph: &DiGraph<W, E>,
     seeds: &[NodeIndex],
     direction: Direction,
     depth: Depth,
@@ -287,9 +291,8 @@ pub trait GraphConnections<N, E, K: Hash + Eq>: GraphData<N, E, K> {
     /// Return a list of keys for all nodes currently within the graph.
     fn get_node_keys(&self) -> Vec<K> {
         self.get_graph()
-            .raw_nodes()
-            .iter()
-            .map(|ni| self.get_node_key(self.get_node_by_index(&ni.weight)))
+            .node_indices()
+            .map(|index| self.get_node_key(self.get_node_by_index(&index)))
             .collect()
     }
 }
@@ -306,7 +309,8 @@ pub trait GraphConversions<N: Clone + Display, E: Clone + Display, K: Hash + Eq>
     }
 
     /// Return the graph focused for the provided node, which includes all of
-    /// its dependencies, and its dependents within the provided depth.
+    /// its dependencies, and its dependents within the provided depth. Node
+    /// weights are the indices of the nodes in this graph.
     fn to_focused_graph(&self, focus_node: &N, dependents: Depth) -> DiGraph<NodeIndex, E> {
         let graph = self.get_graph();
         let focus_index = self.get_node_index(focus_node);
@@ -344,7 +348,7 @@ pub trait GraphConversions<N: Clone + Display, E: Clone + Display, K: Hash + Eq>
         );
 
         graph.filter_map(
-            |index, node| included.contains(&index).then(|| node.to_owned()),
+            |index, _| included.contains(&index).then_some(index),
             |_, edge| Some(edge.to_owned()),
         )
     }
@@ -399,6 +403,8 @@ mod tests {
     }
 
     impl GraphData<String, TestEdge, String> for TestGraph {
+        type NodeWeight = NodeIndex;
+
         fn get_graph(&self) -> &DiGraph<NodeIndex, TestEdge> {
             &self.graph
         }

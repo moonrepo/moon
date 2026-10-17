@@ -550,7 +550,7 @@ impl ExecWorkflow {
             partition.targets.len()
         ))?;
 
-        for target in partition.targets.values() {
+        for (_, target) in &partition.targets {
             self.print(format!("\t<id>{}</id>", target.as_str()))?;
         }
 

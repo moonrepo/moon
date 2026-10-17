@@ -92,7 +92,7 @@ pub enum Event {
     EnterTask {
         instance: usize,
         project: Arc<Project>,
-        toolchains: Vec<Id>,
+        task: Arc<Task>,
         sync_project: Option<Id>,
     },
     /// A task instance whose dependencies have been visited: link its setup
@@ -150,14 +150,20 @@ pub struct TaskPlan {
     pub results: FxHashMap<RequestId, RequestResult>,
 }
 
+/// The tasks that a dependency target resolves to, shared by every task
+/// that depends on it.
+type DependencyTasks = Arc<[Arc<Task>]>;
+
 /// A task whose dependencies are being visited.
 struct Frame {
     instance: usize,
     parallel: bool,
-    deps: Vec<TaskDependencyConfig>,
+    task: Arc<Task>,
+    /// Only these dependencies of the task are visited, instead of all of them.
+    only_deps: Option<Vec<TaskDependencyConfig>>,
     next_dep: usize,
     /// The dependency being visited, its resolved tasks, and the next one.
-    current: Option<(usize, Vec<Arc<Task>>, usize)>,
+    current: Option<(usize, DependencyTasks, usize)>,
     /// A dependency instance that was just created, and is linked once its own
     /// dependencies have been visited (when its frame is popped).
     pending: Option<(usize, Arc<Task>, usize)>,
@@ -165,6 +171,12 @@ struct Frame {
     previous_standard: Option<usize>,
     requirements: Vec<(usize, TaskDependencyType)>,
     cleanups: Vec<usize>,
+}
+
+impl Frame {
+    fn deps(&self) -> &[TaskDependencyConfig] {
+        self.only_deps.as_deref().unwrap_or(&self.task.deps)
+    }
 }
 
 enum Entry {
@@ -209,6 +221,9 @@ pub struct TaskSelector<'query> {
     primary_targets: FxHashSet<Target>,
     wait_targets: FxHashSet<Target>,
     results: FxHashMap<RequestId, RequestResult>,
+
+    /// The tasks of each dependency target, which are resolved once.
+    dependency_tasks: FxHashMap<Target, DependencyTasks>,
 }
 
 impl<'query> TaskSelector<'query> {
@@ -239,6 +254,7 @@ impl<'query> TaskSelector<'query> {
             primary_targets: FxHashSet::default(),
             wait_targets: FxHashSet::default(),
             results: FxHashMap::default(),
+            dependency_tasks: FxHashMap::default(),
         }
     }
 
@@ -310,18 +326,6 @@ impl<'query> TaskSelector<'query> {
                 let (Some(job_index), Some(job_total)) = (reqs.job, reqs.job_total) else {
                     return Err(ActionGraphError::InvalidPlanJobs.into());
                 };
-
-                if job_total == 0 {
-                    return Err(ActionGraphError::InvalidPlanJobs.into());
-                }
-
-                if job_index > job_total - 1 {
-                    return Err(ActionGraphError::InvalidJobIndex {
-                        index: job_index,
-                        total: job_total,
-                    }
-                    .into());
-                }
 
                 if jobs.len() != job_total {
                     return Err(ActionGraphError::MismatchedPlanJobTotals {
@@ -404,7 +408,7 @@ impl<'query> TaskSelector<'query> {
         target: &Target,
         reqs: &RunRequirements,
     ) -> miette::Result<()> {
-        let tasks = self.resolve_tasks_from_target(target, false)?;
+        let tasks = self.resolve_tasks_from_target(target, TaskOrigin::Requested)?;
 
         self.run_primary_tasks(id, tasks, reqs)
     }
@@ -416,7 +420,7 @@ impl<'query> TaskSelector<'query> {
         locator: &TargetLocator,
         reqs: &RunRequirements,
     ) -> miette::Result<()> {
-        let tasks = self.resolve_tasks_from_target_locator(locator, false)?;
+        let tasks = self.resolve_tasks_from_target_locator(locator)?;
 
         self.run_primary_tasks(id, tasks, reqs)
     }
@@ -431,7 +435,7 @@ impl<'query> TaskSelector<'query> {
         let mut tasks = vec![];
 
         for locator in locators {
-            tasks.extend(self.resolve_tasks_from_target_locator(locator, false)?);
+            tasks.extend(self.resolve_tasks_from_target_locator(locator)?);
         }
 
         // Expand the selection with the dependents of the selected tasks up
@@ -440,12 +444,12 @@ impl<'query> TaskSelector<'query> {
         let mut candidates = self.collect_candidates(tasks, reqs.dependents)?;
 
         // Determine the affected state of each task up front, as marking
-        // lazily while inserting would depend on the order of the targets
+        // lazily while inserting would depend on the order of the targets.
+        // Tasks are tracked even when affected checks are skipped (`--force`),
+        // so that their affected state is still reported
         let affected_depth = self.affected_depth;
 
-        if !reqs.skip_affected
-            && let Some(affected) = &mut self.affected
-        {
+        if let Some(affected) = &mut self.affected {
             // When affected state flows through relations, every task must be
             // tracked, as a task is only marked through a relation when the
             // task on the other side of it has been marked itself
@@ -469,14 +473,6 @@ impl<'query> TaskSelector<'query> {
             && let Some(job_total) = reqs.job_total
             && job_total > 0
         {
-            if job_index > job_total - 1 {
-                return Err(ActionGraphError::InvalidJobIndex {
-                    index: job_index,
-                    total: job_total,
-                }
-                .into());
-            }
-
             // Filter based on affected state before partitioning
             if !reqs.skip_affected {
                 let mut affected_candidates = vec![];
@@ -491,21 +487,19 @@ impl<'query> TaskSelector<'query> {
             }
 
             let job_size = candidates.len().div_ceil(job_total);
-            let (start, stop) = if job_index == 0 {
-                (0, job_size)
-            } else if job_index == job_total - 1 {
-                (job_size * job_index, candidates.len())
-            } else {
-                (job_size * job_index, job_size * (job_index + 1))
-            };
 
-            if candidates.get(start).is_some() {
-                if candidates.get(stop).is_some() {
-                    candidates = candidates[start..stop].to_vec();
-                } else {
-                    candidates = candidates[start..].to_vec();
-                }
-            }
+            // The last jobs can start past the end (10 candidates over 6 jobs
+            // leaves the last one empty), and must then run nothing, instead of
+            // every candidate
+            let stop = if job_index == job_total - 1 {
+                candidates.len()
+            } else {
+                (job_size * (job_index + 1)).min(candidates.len())
+            };
+            let start = (job_size * job_index).min(stop);
+
+            candidates.truncate(stop);
+            candidates.drain(..start);
 
             size = Some(job_size);
         }
@@ -628,11 +622,11 @@ impl<'query> TaskSelector<'query> {
                     frame.current = None;
                 }
 
-                let Some(dep) = frame.deps.get(frame.next_dep) else {
+                let Some(dep) = frame.deps().get(frame.next_dep) else {
                     break None;
                 };
 
-                let dep_tasks = self.resolve_tasks_from_target(&dep.target, true)?;
+                let dep_tasks = self.resolve_dependency_tasks(&dep.target)?;
 
                 frame.current = Some((frame.next_dep, dep_tasks, 0));
                 frame.next_dep += 1;
@@ -653,9 +647,13 @@ impl<'query> TaskSelector<'query> {
             };
 
             // Dependencies are inserted regardless of affected state
-            let config = frame.deps[dep_index].clone();
-
-            match self.enter(&dep_task, Some(&config), TaskOrigin::Dependency, true, reqs)? {
+            match self.enter(
+                &dep_task,
+                Some(&frame.deps()[dep_index]),
+                TaskOrigin::Dependency,
+                true,
+                reqs,
+            )? {
                 Entry::Skipped => {}
                 Entry::Existing(instance) => {
                     self.link_dependency(frame, dep_index, &dep_task, instance);
@@ -688,8 +686,9 @@ impl<'query> TaskSelector<'query> {
             .workspace_graph
             .get_project(task.target.get_project_id()?)?;
 
-        // Abort early if not affected
-        if !self.is_task_affected(task, skip_affected)? {
+        // Abort early if not affected. Dependencies are inserted regardless of
+        // affected state, so they're not checked (nor marked)
+        if origin != TaskOrigin::Dependency && !self.is_task_affected(task, skip_affected)? {
             return Ok(Entry::Skipped);
         }
 
@@ -767,8 +766,8 @@ impl<'query> TaskSelector<'query> {
         });
 
         debug!(
-            index,
-            "Adding {} to graph",
+            instance = index,
+            "Selecting {} for the graph",
             color::muted_light(node.label())
         );
 
@@ -777,7 +776,7 @@ impl<'query> TaskSelector<'query> {
         self.events.push(Event::EnterTask {
             instance: index,
             project,
-            toolchains: task.toolchains.clone(),
+            task: Arc::clone(task),
             sync_project,
         });
 
@@ -785,7 +784,7 @@ impl<'query> TaskSelector<'query> {
             return Ok(Entry::New(index, None));
         }
 
-        let deps = if reqs.no_dependencies {
+        let only_deps = if reqs.no_dependencies {
             // Dependencies that weren't selected are not inserted, but the
             // ones that exist are still linked once every request has been
             // selected. Cleanup dependencies must always run after the task,
@@ -799,9 +798,9 @@ impl<'query> TaskSelector<'query> {
             self.no_dependencies_tasks
                 .insert(task.target.clone(), others);
 
-            cleanups
+            Some(cleanups)
         } else {
-            task.deps.clone()
+            None
         };
 
         Ok(Entry::New(
@@ -809,7 +808,8 @@ impl<'query> TaskSelector<'query> {
             Some(Frame {
                 instance: index,
                 parallel: task.options.run_deps_in_parallel,
-                deps,
+                task: Arc::clone(task),
+                only_deps,
                 next_dep: 0,
                 current: None,
                 pending: None,
@@ -829,7 +829,7 @@ impl<'query> TaskSelector<'query> {
         dep_task: &Task,
         instance: usize,
     ) {
-        let type_of = frame.deps[dep_index].type_of;
+        let type_of = frame.deps()[dep_index].type_of;
 
         // Cleanup dependencies run *after* the task, so the relation is
         // reversed, and they take no part in the serial chain
@@ -1022,33 +1022,34 @@ impl<'query> TaskSelector<'query> {
         Ok(true)
     }
 
+    /// Whether the task is affected, marking it when it is. When affected
+    /// checks are skipped, the task is still checked and marked, so that its
+    /// affected state is reported, but it's always considered affected.
     fn is_task_affected(&mut self, task: &Task, skip_affected: bool) -> miette::Result<bool> {
-        if let Some(affected) = &mut self.affected
-            && !skip_affected
-        {
-            // Short-circuit early if the task is already marked
-            let marked = if !self.affected_depth.is_none() {
-                affected.is_task_marked(task)
-            } else {
-                affected.is_task_marked_ignoring_relations(task)
-            };
+        let Some(affected) = &mut self.affected else {
+            // Always affected
+            return Ok(true);
+        };
 
-            if marked {
-                return Ok(true);
-            }
+        // Short-circuit early if the task is already marked
+        let marked = if !self.affected_depth.is_none() {
+            affected.is_task_marked(task)
+        } else {
+            affected.is_task_marked_ignoring_relations(task)
+        };
 
-            // Otherwise run the full affected checks
-            if let Some(mark) = affected.is_task_affected(task)? {
-                affected.mark_task_affected(task, mark)?;
-
-                return Ok(true);
-            }
-
-            return Ok(false);
+        if marked {
+            return Ok(true);
         }
 
-        // Always affected
-        Ok(true)
+        // Otherwise run the full affected checks
+        if let Some(mark) = affected.is_task_affected(task)? {
+            affected.mark_task_affected(task, mark)?;
+
+            return Ok(true);
+        }
+
+        Ok(skip_affected)
     }
 
     // RESOLUTION
@@ -1056,9 +1057,27 @@ impl<'query> TaskSelector<'query> {
     /// Resolve the dependents of the provided tasks, up to the depth, in
     /// breadth-first order. The provided tasks are excluded. When a query has
     /// been set, dependents in projects that don't match it are not added,
-    /// nor walked through.
+    /// nor walked through. Internal dependents are walked through, but not
+    /// added, as they only run as a dependency of another task.
     fn resolve_dependents(&self, tasks: &[&Task], depth: Depth) -> miette::Result<Vec<Arc<Task>>> {
         if depth.is_none() || tasks.is_empty() {
+            return Ok(vec![]);
+        }
+
+        // A task that isn't in the task graph (like one constructed for a
+        // request) has no dependents in it
+        let tasks = tasks
+            .iter()
+            .copied()
+            .filter(|task| {
+                self.workspace_graph
+                    .tasks
+                    .get_unexpanded(&task.target)
+                    .is_ok()
+            })
+            .collect::<Vec<_>>();
+
+        if tasks.is_empty() {
             return Ok(vec![]);
         }
 
@@ -1079,7 +1098,7 @@ impl<'query> TaskSelector<'query> {
         // after the task, but they're always linked through the task itself,
         // so those edges are never followed
         self.workspace_graph.tasks.traverse_within_filtered_nodes(
-            tasks,
+            &tasks,
             Direction::Incoming,
             depth,
             |edge| !matches!(edge, TaskDependencyType::Cleanup),
@@ -1091,25 +1110,48 @@ impl<'query> TaskSelector<'query> {
                 })
             },
             |task, _, _| {
-                targets.push(task.target.clone());
+                if !task.is_internal() {
+                    targets.push(task.target.clone());
+                }
             },
         );
 
         let mut dep_tasks = vec![];
 
         for target in targets {
-            dep_tasks.extend(self.resolve_tasks_from_target(&target, true)?);
+            dep_tasks.extend(self.resolve_tasks_from_target(&target, TaskOrigin::Dependent)?);
         }
 
         Ok(dep_tasks)
     }
 
+    /// Resolve the tasks of a dependency target, once.
+    fn resolve_dependency_tasks(&mut self, target: &Target) -> miette::Result<DependencyTasks> {
+        if let Some(tasks) = self.dependency_tasks.get(target) {
+            return Ok(Arc::clone(tasks));
+        }
+
+        let tasks: DependencyTasks = self
+            .resolve_tasks_from_target(target, TaskOrigin::Dependency)?
+            .into();
+
+        self.dependency_tasks
+            .insert(target.to_owned(), Arc::clone(&tasks));
+
+        Ok(tasks)
+    }
+
+    /// Resolve the tasks of a target. Requested tasks exclude internal tasks,
+    /// and `:task` targets are bounded by the query. Dependents and dependencies
+    /// are neither, as internal tasks can be depended on, and dependencies are
+    /// always inserted.
     fn resolve_tasks_from_target(
         &self,
         target: &Target,
-        allow_internal: bool,
+        origin: TaskOrigin,
     ) -> miette::Result<Vec<Arc<Task>>> {
         let mut tasks = vec![];
+        let requested = origin == TaskOrigin::Requested;
 
         // First, find all projects based on the target scope
         let (scope, scope_value) = target.get_project_scope();
@@ -1118,8 +1160,8 @@ impl<'query> TaskSelector<'query> {
             // :task
             TargetProjectScope::All => {
                 let projects = match self.query {
-                    Some(query) => self.workspace_graph.query_projects(query)?,
-                    None => self.workspace_graph.get_projects()?,
+                    Some(query) if requested => self.workspace_graph.query_projects(query)?,
+                    _ => self.workspace_graph.get_projects()?,
                 };
 
                 (projects, false)
@@ -1171,7 +1213,7 @@ impl<'query> TaskSelector<'query> {
             };
 
             for project_task in project_tasks {
-                if !allow_internal && project_task.is_internal() {
+                if requested && project_task.is_internal() {
                     if bubble_error {
                         return Err(ProjectError::UnknownTask {
                             task_id: project_task.id.to_string(),
@@ -1193,7 +1235,6 @@ impl<'query> TaskSelector<'query> {
     fn resolve_tasks_from_target_locator(
         &self,
         locator: &TargetLocator,
-        allow_internal: bool,
     ) -> miette::Result<Vec<Arc<Task>>> {
         let mut tasks = vec![];
 
@@ -1246,7 +1287,7 @@ impl<'query> TaskSelector<'query> {
                     }
 
                     for task in self.workspace_graph.query_tasks(build_query(&query)?)? {
-                        if !allow_internal && task.is_internal() {
+                        if task.is_internal() {
                             continue;
                         }
 
@@ -1267,7 +1308,7 @@ impl<'query> TaskSelector<'query> {
                     target.to_owned()
                 };
 
-                tasks.extend(self.resolve_tasks_from_target(&target, allow_internal)?);
+                tasks.extend(self.resolve_tasks_from_target(&target, TaskOrigin::Requested)?);
             }
             TargetLocator::DefaultProject(task_id) => {
                 let project = self.workspace_graph.get_default_project().map_err(|_| {
@@ -1278,7 +1319,7 @@ impl<'query> TaskSelector<'query> {
 
                 let target = Target::new(&project.id, task_id)?;
 
-                tasks.extend(self.resolve_tasks_from_target(&target, allow_internal)?);
+                tasks.extend(self.resolve_tasks_from_target(&target, TaskOrigin::Requested)?);
             }
         };
 

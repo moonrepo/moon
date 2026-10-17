@@ -114,6 +114,10 @@ dependents must also be affected to run.
 When `--query` is passed, it also bounds which dependents are added: dependents in projects that do
 not match the query are not added, and are not traversed through to reach their own dependents.
 
+[Internal tasks](./task#internal-only) are never added as dependents, as they only run as a
+dependency of another task, but they're traversed through, so their own dependents are still added
+(and those run the internal task as a dependency).
+
 ### Dependencies<VersionLabel version="3.0.0" />
 
 The transitive [`deps`](../config/project#deps) of a target are _always_ inserted into the graph:

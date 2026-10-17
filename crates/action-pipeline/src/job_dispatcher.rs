@@ -1,9 +1,9 @@
 use crate::job_context::{CompletedJob, JobContext};
 use moon_action::ActionNode;
-use moon_action_graph::ActionGraph;
+use moon_action_graph::{ActionGraph, ActionGraphType};
 use moon_config::TaskDependencyType;
 use petgraph::prelude::*;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashSet;
 use std::collections::BTreeMap;
 use tokio::sync::mpsc::UnboundedReceiver;
 use tracing::debug;
@@ -43,7 +43,7 @@ impl Relation {
 pub struct JobDispatcher<'graph> {
     context: JobContext,
     completed_queue: UnboundedReceiver<CompletedJob>,
-    nodes: &'graph FxHashMap<NodeIndex, ActionNode>,
+    graph: &'graph ActionGraphType,
     groups: BTreeMap<u8, Vec<NodeIndex>>, // topo
 
     /// Nodes that clean up after the nodes they depend on, and can
@@ -101,7 +101,7 @@ impl<'graph> JobDispatcher<'graph> {
         groups: BTreeMap<u8, Vec<NodeIndex>>,
         completed_queue: UnboundedReceiver<CompletedJob>,
     ) -> Self {
-        let graph = action_graph.get_inner_graph().graph();
+        let graph = action_graph.get_inner_graph();
         let total_nodes = graph.node_count();
 
         let mut dependencies = vec![Vec::new(); total_nodes];
@@ -148,7 +148,7 @@ impl<'graph> JobDispatcher<'graph> {
         Self {
             context,
             completed_queue,
-            nodes: action_graph.get_inner_nodes(),
+            graph,
             groups,
             cleanups: action_graph.get_cleanup_indices(),
             dependencies,
@@ -239,12 +239,12 @@ impl<'graph> JobDispatcher<'graph> {
     }
 
     fn is_task(&self, index: &NodeIndex) -> bool {
-        matches!(self.nodes.get(index), Some(ActionNode::RunTask(_)))
+        matches!(self.graph.node_weight(*index), Some(ActionNode::RunTask(_)))
     }
 
     /// The ID of an action that must not run in parallel with itself.
     fn get_exclusive_id(&self, index: &NodeIndex) -> Option<u64> {
-        self.nodes.get(index).and_then(|node| {
+        self.graph.node_weight(*index).and_then(|node| {
             let id = node.get_id();
 
             (id > 0 && node.is_standard()).then_some(id)
@@ -616,7 +616,7 @@ impl JobDispatcher<'_> {
                     continue;
                 }
 
-                if let Some(node) = self.nodes.get(&index) {
+                if let Some(node) = self.graph.node_weight(index) {
                     let id = node.get_id();
 
                     // If the same exact action is currently running,
@@ -686,7 +686,6 @@ mod tests {
     use crate::abort_state::AbortState;
     use crate::event_emitter::EventEmitter;
     use moon_action::{Action, ActionNode, RunTaskNode, SyncProjectNode};
-    use moon_action_graph::{ActionGraph, ActionGraphType};
     use moon_common::Id;
     use moon_config::TaskDependencyType;
     use moon_task::Target;
@@ -730,10 +729,7 @@ mod tests {
 
     fn create_dense_sync_graph(depth: usize, width: usize) -> ActionGraph {
         let mut graph = ActionGraphType::new();
-        let mut nodes = FxHashMap::default();
-
-        let root = graph.add_node(NodeIndex::new(0));
-        nodes.insert(root, ActionNode::sync_workspace());
+        let root = graph.add_node(ActionNode::sync_workspace());
 
         let mut layers = vec![];
 
@@ -741,13 +737,9 @@ mod tests {
             let mut indices = vec![];
 
             for node in 0..width {
-                let index = graph.add_node(NodeIndex::new(graph.node_count()));
-                nodes.insert(
-                    index,
-                    ActionNode::sync_project(SyncProjectNode {
-                        project_id: Id::raw(format!("p{layer}-{node}")),
-                    }),
-                );
+                let index = graph.add_node(ActionNode::sync_project(SyncProjectNode {
+                    project_id: Id::raw(format!("p{layer}-{node}")),
+                }));
                 indices.push(index);
             }
 
@@ -757,36 +749,28 @@ mod tests {
         for (layer_index, layer) in layers.iter().enumerate() {
             if layer_index == depth - 1 {
                 for index in layer {
-                    graph
-                        .add_edge(*index, root, TaskDependencyType::Required)
-                        .unwrap();
+                    graph.add_edge(*index, root, TaskDependencyType::Required);
                 }
             }
 
             if let Some(next_layer) = layers.get(layer_index + 1) {
                 for index in layer {
                     for next_index in next_layer {
-                        graph
-                            .add_edge(*index, *next_index, TaskDependencyType::Required)
-                            .unwrap();
+                        graph.add_edge(*index, *next_index, TaskDependencyType::Required);
                     }
                 }
             }
         }
 
-        let run_task = graph.add_node(NodeIndex::new(graph.node_count()));
-        nodes.insert(
-            run_task,
-            ActionNode::run_task(RunTaskNode::new(Target::parse("root:noop").unwrap())),
-        );
+        let run_task = graph.add_node(ActionNode::run_task(RunTaskNode::new(
+            Target::parse("root:noop").unwrap(),
+        )));
 
         for index in &layers[0] {
-            graph
-                .add_edge(run_task, *index, TaskDependencyType::Required)
-                .unwrap();
+            graph.add_edge(run_task, *index, TaskDependencyType::Required);
         }
 
-        ActionGraph::new(graph, nodes)
+        ActionGraph::new(graph)
     }
 
     /// Create a graph of `root:*` task nodes (or a project sync node for `sync`),
@@ -797,37 +781,31 @@ mod tests {
         edges: &[(usize, usize, TaskDependencyType)],
     ) -> ActionGraph {
         let mut graph = ActionGraphType::new();
-        let mut nodes = FxHashMap::default();
         let mut cleanups = FxHashSet::default();
 
         for id in ids {
-            let index = graph.add_node(NodeIndex::new(graph.node_count()));
-
-            nodes.insert(
-                index,
-                if *id == "sync" {
-                    ActionNode::sync_project(SyncProjectNode {
-                        project_id: Id::raw("root"),
-                    })
-                } else {
-                    ActionNode::run_task(RunTaskNode::new(
-                        Target::parse(&format!("root:{id}")).unwrap(),
-                    ))
-                },
-            );
+            graph.add_node(if *id == "sync" {
+                ActionNode::sync_project(SyncProjectNode {
+                    project_id: Id::raw("root"),
+                })
+            } else {
+                ActionNode::run_task(RunTaskNode::new(
+                    Target::parse(&format!("root:{id}")).unwrap(),
+                ))
+            });
         }
 
         for (from, to, edge) in edges {
             let from = NodeIndex::new(*from);
 
-            graph.add_edge(from, NodeIndex::new(*to), *edge).unwrap();
+            graph.add_edge(from, NodeIndex::new(*to), *edge);
 
             if matches!(edge, TaskDependencyType::Cleanup) {
                 cleanups.insert(from);
             }
         }
 
-        ActionGraph::new_with_cleanups(graph, nodes, cleanups)
+        ActionGraph::new_with_cleanups(graph, cleanups)
     }
 
     fn indexes(list: &[usize]) -> Vec<NodeIndex> {

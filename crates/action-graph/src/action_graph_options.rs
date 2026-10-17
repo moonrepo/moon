@@ -3,7 +3,6 @@ use moon_common::is_ci;
 use moon_config::PipelineActionSwitch;
 use moon_task::Target;
 use petgraph::graph::NodeIndex;
-use rustc_hash::FxHashMap;
 
 #[derive(Clone, Debug)]
 pub struct RunRequirements {
@@ -36,7 +35,9 @@ impl Default for RunRequirements {
 
 #[derive(Debug, Default)]
 pub struct RunPartition {
-    pub targets: FxHashMap<NodeIndex, Target>,
+    /// The node of each primary target, in the order they were selected:
+    /// requested targets first, then their dependents.
+    pub targets: Vec<(NodeIndex, Target)>,
     pub size: Option<usize>,
 }
 

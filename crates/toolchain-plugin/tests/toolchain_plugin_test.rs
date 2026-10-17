@@ -290,6 +290,54 @@ mod toolchain_plugin {
             );
         }
 
+        // The compiled member globs are cached by their list of members, so
+        // workspaces with different members must still match their own
+        #[tokio::test(flavor = "multi_thread")]
+        async fn matches_each_workspaces_own_members() {
+            let (_sandbox, ws) = create_workspace();
+            let registry = ws.mock_toolchain_registry();
+            let toolchain = registry.load("tc-tier1").await.unwrap();
+
+            let packages = DependenciesWorkspace {
+                root: ws.workspace_root.clone(),
+                members: Some(vec!["packages/*".into()]),
+            };
+            let apps = DependenciesWorkspace {
+                root: ws.workspace_root.clone(),
+                members: Some(vec!["apps/*".into()]),
+            };
+
+            for _ in 0..2 {
+                assert_eq!(
+                    toolchain
+                        .in_dependencies_workspace(
+                            &packages,
+                            &ws.workspace_root.join("packages/foo")
+                        )
+                        .unwrap(),
+                    Some(DependenciesWorkspaceRole::WorkspaceMember)
+                );
+                assert_eq!(
+                    toolchain
+                        .in_dependencies_workspace(&packages, &ws.workspace_root.join("apps/foo"))
+                        .unwrap(),
+                    None
+                );
+                assert_eq!(
+                    toolchain
+                        .in_dependencies_workspace(&apps, &ws.workspace_root.join("apps/foo"))
+                        .unwrap(),
+                    Some(DependenciesWorkspaceRole::WorkspaceMember)
+                );
+                assert_eq!(
+                    toolchain
+                        .in_dependencies_workspace(&apps, &ws.workspace_root.join("packages/foo"))
+                        .unwrap(),
+                    None
+                );
+            }
+        }
+
         #[tokio::test(flavor = "multi_thread")]
         async fn empty_members_only_matches_the_root() {
             let (_sandbox, ws) = create_workspace();

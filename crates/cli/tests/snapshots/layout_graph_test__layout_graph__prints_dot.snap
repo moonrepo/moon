@@ -1,0 +1,29 @@
+---
+source: crates/cli/tests/layout_graph_test.rs
+expression: assert.output()
+---
+
+digraph {
+    0 [ label="(workspace)"]
+    1 [ label="tc-tier2 @ ."]
+    2 [ label="tc-tier2 @ nested"]
+    3 [ label="tc-tier2 @ standalone"]
+    4 [ label="a"]
+    5 [ label="b"]
+    6 [ label="lib"]
+    7 [ label="nested"]
+    8 [ label="plain"]
+    9 [ label="root"]
+    10 [ label="standalone"]
+    11 [ label="tools"]
+    12 [ label="web"]
+    0 -> 1 [ label="workspace-root"]
+    4 -> 1 [ label="workspace-member"]
+    5 -> 1 [ label="workspace-member"]
+    6 -> 2 [ label="workspace-member"]
+    7 -> 2 [ label="workspace-root"]
+    9 -> 1 [ label="workspace-root"]
+    10 -> 3 [ label="package-root"]
+    11 -> 1 [ label="outside"]
+    12 -> 1 [ label="workspace-member"]
+}

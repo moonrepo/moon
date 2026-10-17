@@ -2,11 +2,35 @@ use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_toolchain::{DependenciesWorkspaceRole, ToolchainSpec};
 use rustc_hash::FxHashMap;
+use serde::{Serialize, Serializer};
 use serde_json::Value as JsonValue;
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
+// `Arc` is only serializable with serde's `rc` feature
+fn serialize_config<S: Serializer>(
+    config: &Arc<JsonValue>,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    config.as_ref().serialize(serializer)
+}
+
+/// A label for a toolchain's root, like `node @ apps/web`, where the
+/// workspace root is `.`.
+pub fn get_root_label(toolchain: &Id, root: &WorkspaceRelativePathBuf) -> String {
+    format!(
+        "{toolchain} @ {}",
+        if root.as_str().is_empty() {
+            "."
+        } else {
+            root.as_str()
+        }
+    )
+}
+
 /// Identifies a toolchain dependencies root within a layout graph.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize)]
+#[serde(transparent)]
 pub struct RootIndex(pub(crate) u32);
 
 impl RootIndex {
@@ -15,7 +39,8 @@ impl RootIndex {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase", tag = "type")]
 pub enum RootKind {
     /// A workspace, with member globs relative to the root. The globs are kept,
     /// even though members are resolved to projects, as a dependencies workspace
@@ -27,7 +52,8 @@ pub enum RootKind {
 }
 
 /// Files that exist in a root, probed from the toolchain's registered names.
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RootFiles {
     /// Every registered lockfile name that exists, as more than one can.
     pub lockfiles: Vec<WorkspaceRelativePathBuf>,
@@ -36,7 +62,8 @@ pub struct RootFiles {
 }
 
 /// Functions that the toolchain's plugin supports for its roots.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RootCapabilities {
     pub install_dependencies: bool,
     pub setup_environment: bool,
@@ -44,7 +71,8 @@ pub struct RootCapabilities {
 
 /// A directory located by a toolchain's `locate_dependencies_root`, which is
 /// identified by the toolchain and its path.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ToolchainDependenciesRoot {
     /// The toolchain that located this root.
     pub toolchain: Id,
@@ -59,6 +87,7 @@ pub struct ToolchainDependenciesRoot {
     /// project's (including an overridden version) for a package, otherwise
     /// the workspace's.
     pub spec: ToolchainSpec,
+    #[serde(serialize_with = "serialize_config")]
     pub config: Arc<JsonValue>,
 
     pub files: RootFiles,
@@ -68,8 +97,15 @@ pub struct ToolchainDependenciesRoot {
     pub members: Vec<Id>,
 }
 
+impl ToolchainDependenciesRoot {
+    pub fn label(&self) -> String {
+        get_root_label(&self.toolchain, &self.root)
+    }
+}
+
 /// Where a binding's project lives for its toolchain.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase", tag = "type")]
 pub enum Placement {
     /// In a dependencies root, with a role.
     Root {
@@ -85,7 +121,8 @@ pub enum Placement {
 }
 
 /// A toolchain of a project (or of the workspace, without a project).
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Binding {
     pub toolchain: Id,
 
@@ -94,6 +131,7 @@ pub struct Binding {
     pub spec: ToolchainSpec,
 
     /// The workspace's config, merged with the project's.
+    #[serde(serialize_with = "serialize_config")]
     pub config: Arc<JsonValue>,
 
     pub placement: Placement,
@@ -115,13 +153,16 @@ impl Binding {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct LayoutGraph {
     pub(crate) roots: Vec<ToolchainDependenciesRoot>,
+
+    #[serde(skip)]
     pub(crate) root_keys: FxHashMap<(Id, WorkspaceRelativePathBuf), RootIndex>,
 
     /// Per project, sorted by toolchain.
-    pub(crate) bindings: FxHashMap<Id, Vec<Binding>>,
+    pub(crate) bindings: BTreeMap<Id, Vec<Binding>>,
 
     /// Located from the workspace root without a project, sorted by toolchain.
     pub(crate) workspace_bindings: Vec<Binding>,
@@ -193,6 +234,18 @@ impl LayoutGraph {
         self.roots
             .iter()
             .filter(move |root| &root.toolchain == toolchain_id)
+    }
+
+    /// Every project's bindings, by project ID.
+    pub fn iter_bindings(&self) -> impl Iterator<Item = (&Id, &[Binding])> {
+        self.bindings
+            .iter()
+            .map(|(id, bindings)| (id, bindings.as_slice()))
+    }
+
+    /// Every binding of the workspace, without a project, sorted by toolchain.
+    pub fn workspace_bindings(&self) -> &[Binding] {
+        &self.workspace_bindings
     }
 
     /// Whether every project was placed, so that root members are complete.

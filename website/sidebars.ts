@@ -157,6 +157,7 @@ const sidebars: SidebarsConfig = {
 				'commands/generate',
 				'commands/hash',
 				'commands/init',
+				'commands/layout-graph',
 				'commands/mcp',
 				'commands/project',
 				'commands/projects',

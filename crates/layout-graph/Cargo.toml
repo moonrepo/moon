@@ -11,6 +11,7 @@ publish = false
 [dependencies]
 moon_app_context = { path = "../app-context" }
 moon_common = { path = "../common" }
+moon_graph_utils = { path = "../graph-utils" }
 moon_pdk_api = { path = "../pdk-api" }
 moon_project = { path = "../project" }
 moon_toolchain = { path = "../toolchain" }
@@ -19,7 +20,9 @@ moon_workspace_graph = { path = "../workspace-graph" }
 futures = { workspace = true }
 indexmap = { workspace = true }
 miette = { workspace = true }
+petgraph = { workspace = true }
 rustc-hash = { workspace = true }
+serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }

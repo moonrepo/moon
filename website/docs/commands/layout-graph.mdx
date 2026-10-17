@@ -1,0 +1,62 @@
+---
+title: layout-graph
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="3.0.0" header />
+
+The `moon layout-graph [id]` (or `moon lg`) command will display the dependencies roots that
+toolchains locate, like a package manager's workspace or a standalone package, and which projects
+belong to each root. For each root, it includes its kind (workspace or package), member globs, owner
+project, the version that its environment setup and dependency installs run with, its lockfiles,
+manifests, and vendor directory, and its projects with their role.
+
+Projects that use a toolchain without belonging to one of its roots, like a project that isn't a
+member of the workspace that it's located in, are listed separately.
+
+```shell
+# Display every root
+$ moon layout-graph
+
+# Only place a single project, like a run would
+$ moon layout-graph app
+
+# Export to DOT format
+$ moon layout-graph --dot > graph.dot
+
+# Export to JSON format
+$ moon layout-graph --json
+```
+
+### Arguments
+
+- `[id]` - Optional ID or alias of a project to _only_ place, as defined in
+  [`projects`](../config/workspace#projects). Roots then only list the projects that were placed.
+
+### Options
+
+- `--dot` - Print the graph in DOT format.
+- `--json` - Print the graph in JSON format.
+
+### Configuration
+
+- [`projects`](../config/workspace#projects) in `.moon/workspace.*`
+- [`toolchains`](../config/toolchain) in `.moon/toolchains.*`
+
+## Example output
+
+The following output is an example of the graph in DOT format, where projects link to the root that
+they belong to, labeled with their role.
+
+```dot
+digraph {
+    0 [ label="(workspace)"]
+    1 [ label="javascript @ ."]
+    2 [ label="app"]
+    3 [ label="tools"]
+    0 -> 1 [ label="workspace-root"]
+    2 -> 1 [ label="workspace-member"]
+    3 -> 1 [ label="outside"]
+}
+```

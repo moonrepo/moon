@@ -518,8 +518,12 @@ docker and queries, but not for every `moon run`.
   a later PDK change.
 - **Install action:** keeps walking member globs for manifest hashing, as non-project packages
   matter. It can take `packages` from members when installs are scoped (docker today).
-- **Introspection:** a `moon layout-graph` command (DOT and JSON, like `moon project-graph`), and
-  the diagnostics in `moon toolchain info` or `moon check`.
+- **Introspection (done, ahead of phase 5):** `moon layout-graph [id]` (`moon lg`) prints every root
+  with its fields and members, the bindings that aren't in a root, and the workspace bindings.
+  `--dot` renders projects (and the workspace) linking to roots, labeled with their role, and
+  `--json` serializes the `LayoutGraph` itself. The browser visualizer isn't supported, as it only
+  knows project, task, and action nodes. Diagnostics can go in `moon toolchain info` or `moon check`
+  later.
 
 ## Relationship to TOOLCHAIN_REQS.md
 
@@ -572,7 +576,7 @@ docker and queries, but not for every `moon run`.
    - benchmark against the generated workspaces in ACTION_GRAPH_BUILDER.md.
 3. **Pipeline consumers:** the hasher and the command env read the frozen layout from `BuildOutput`.
 4. **Docker:** prune and scaffold on a full layout, with a tier 2 prune fixture.
-5. **Diagnostics and introspection:** outside, shadowed and divergent, and `moon layout-graph`.
+5. **Diagnostics:** outside, shadowed and divergent, also shown by `moon layout-graph`.
 6. **TOOLCHAIN_REQS phases 3–4** on top: `delegates`, and reverse inference via the layout.
 7. **Perf:** batch locate, persisted layout, daemon watching.
 

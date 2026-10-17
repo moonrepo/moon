@@ -6577,6 +6577,7 @@ dependencies = [
  "moon_project",
  "moon_task",
  "moon_test_utils",
+ "moon_toolchain",
  "moon_toolchain_plugin",
  "moon_vcs",
  "rustc-hash",

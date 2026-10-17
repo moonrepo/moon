@@ -285,6 +285,13 @@
   index.
 - Fixed an issue where a toolchain that required an invalid toolchain ID (from its plugin's
   `define_requirements`) would error without naming the toolchain.
+- Fixed an issue where a project's toolchain `version` override, or a toolchain disabled by a
+  project, was ignored by a task's command environment when the project referenced the toolchain by
+  its stable ID, while the workspace configured its unstable ID (or vice versa). Project toolchain
+  versions are now resolved the same way by the action graph, the task hasher, and the command
+  environment.
+- Fixed an issue where `moon docker file` could pick the default base image of a toolchain that the
+  project disabled.
 
 #### ⚙️ Internal
 

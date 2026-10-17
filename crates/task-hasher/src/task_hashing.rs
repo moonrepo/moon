@@ -14,6 +14,7 @@ use moon_pdk_api::{
 };
 use moon_project::{Project, ProjectFragment};
 use moon_task::{Task, TaskFragment};
+use moon_toolchain::get_toolchain_spec;
 use moon_toolchain_plugin::ToolchainPlugin;
 use starbase_utils::json::JsonValue;
 use std::collections::BTreeMap;
@@ -192,22 +193,15 @@ async fn apply_toolchain(
         version: None,
     };
 
-    // Has a version override
-    if let Some(version) = project_config
-        .toolchains
-        .get_plugin_config(toolchain.id.as_str())
-        .and_then(|config| config.get_version())
+    // Has a version override, or an inherited version
+    if let Some(version) = get_toolchain_spec(
+        &app_context.toolchains_config,
+        &toolchain.id,
+        Some(&*project_config),
+    )
+    .and_then(|spec| spec.req)
     {
-        fingerprint.version = Some(version.to_owned());
-        inject = true;
-    }
-    // Or an inherited version
-    else if let Some(version) = app_context
-        .toolchains_config
-        .get_plugin_config(toolchain.id.as_str())
-        .and_then(|config| config.version.as_ref())
-    {
-        fingerprint.version = Some(version.to_owned());
+        fingerprint.version = Some(version);
         inject = true;
     }
 

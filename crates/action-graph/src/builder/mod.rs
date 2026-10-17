@@ -26,7 +26,7 @@ use moon_exec_plan::{ExecutionPlan, TargetsBlock};
 use moon_project::Project;
 use moon_query::build_query;
 use moon_task::{Target, TargetLocator, Task};
-use moon_toolchain::ToolchainSpec;
+use moon_toolchain::{ToolchainSpec, get_toolchain_spec};
 use moon_workspace_graph::WorkspaceGraph;
 use petgraph::graph::NodeIndex;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -57,10 +57,11 @@ pub(crate) fn get_spec(
     toolchain_id: &Id,
     project: Option<&Project>,
 ) -> Option<ToolchainSpec> {
-    match project {
-        Some(project) => get_project_spec(app_context, toolchain_id, project),
-        None => get_workspace_spec(app_context, toolchain_id),
-    }
+    get_toolchain_spec(
+        &app_context.toolchains_config,
+        toolchain_id,
+        project.map(|project| &project.config),
+    )
 }
 
 /// The spec of a toolchain for a project, which may override its version, or
@@ -70,20 +71,7 @@ pub(crate) fn get_project_spec(
     toolchain_id: &Id,
     project: &Project,
 ) -> Option<ToolchainSpec> {
-    if let Some(config) = project.config.toolchains.get_plugin_config(toolchain_id) {
-        if !config.is_enabled() {
-            return None;
-        }
-
-        if let Some(version) = config.get_version() {
-            return Some(ToolchainSpec::new(
-                toolchain_id.to_owned(),
-                version.to_owned(),
-            ));
-        }
-    }
-
-    get_workspace_spec(app_context, toolchain_id)
+    get_spec(app_context, toolchain_id, Some(project))
 }
 
 /// The spec of a configured toolchain.
@@ -91,13 +79,7 @@ pub(crate) fn get_workspace_spec(
     app_context: &AppContext,
     toolchain_id: &Id,
 ) -> Option<ToolchainSpec> {
-    app_context
-        .toolchains_config
-        .get_plugin_config(toolchain_id)
-        .map(|config| match &config.version {
-            Some(version) => ToolchainSpec::new(toolchain_id.to_owned(), version.to_owned()),
-            None => ToolchainSpec::new_global(toolchain_id.to_owned()),
-        })
+    get_spec(app_context, toolchain_id, None)
 }
 
 /// The result of a build.

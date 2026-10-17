@@ -536,10 +536,12 @@ docker and queries, but not for every `moon run`.
 
 ## Phases
 
-0. **Prep, independent:**
-   - one `toolchain_spec_for(app_context, id, project)` helper in `moon_toolchain`, used by the
-     builder, the hasher and `inherit_from_toolchains`;
-   - make the toolchain lists consistent (enabled everywhere).
+0. **Prep, independent (done):**
+   - one `get_toolchain_spec(toolchains_config, id, project_config)` helper in `moon_toolchain`
+     (`crates/toolchain/src/spec.rs`), used by the builder, the hasher and
+     `inherit_from_toolchains`;
+   - `moon docker file`'s base image uses the project's enabled toolchains. The action graph keeps
+     its raw lists, as the helper already returns `None` for a disabled toolchain.
 1. **Model and builder, no consumers:**
    - add the `moon_layout_graph` crate, with lazy (`place(pairs)`) and full builds;
    - add `Session::build_layout_graph()`;

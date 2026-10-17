@@ -3,3 +3,7 @@ projects:
   a: 'packages/a'
   b: 'packages/b'
   c: 'packages/c'
+  # A package root, within the workspace's directory, but not a member
+  standalone: 'standalone'
+  # Not a member, and not a package root, so it's in no root
+  tools: 'tools'

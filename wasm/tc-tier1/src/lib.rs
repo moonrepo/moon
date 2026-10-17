@@ -3,6 +3,51 @@ use moon_pdk::get_plugin_id;
 use moon_pdk_api::*;
 use std::fs;
 
+/// When a test opts in via toolchain config (`testRecordInputs`), record the
+/// input of a function call, at `.moon/cache/tcInputs/<plugin>/<func>/<key>.json`
+/// in the workspace, so that tests can assert what moon passes to plugins.
+pub fn record_input(
+    context: &MoonContext,
+    toolchain_config: &json::Value,
+    func: &str,
+    key: &str,
+    input: json::Value,
+) -> FnResult<()> {
+    if !toolchain_config
+        .get("testRecordInputs")
+        .and_then(|value| value.as_bool())
+        .unwrap_or_default()
+    {
+        return Ok(());
+    }
+
+    let key = key
+        .chars()
+        .map(|ch| {
+            if ch.is_ascii_alphanumeric() || ch == '.' || ch == '-' {
+                ch
+            } else {
+                '_'
+            }
+        })
+        .collect::<String>();
+
+    let file = context
+        .workspace_root
+        .join(".moon/cache/tcInputs")
+        .join(get_plugin_id()?.as_str())
+        .join(func)
+        .join(format!("{key}.json"));
+
+    if let Some(parent) = file.parent() {
+        fs::create_dir_all(&parent)?;
+    }
+
+    fs::write(&file, json::to_string_pretty(&input)?)?;
+
+    Ok(())
+}
+
 #[plugin_fn]
 pub fn register_toolchain(
     Json(input): Json<RegisterToolchainInput>,

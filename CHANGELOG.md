@@ -306,6 +306,9 @@
   own version for its tasks.
 - Fixed an issue where a member project's override of a required toolchain's version (like Node.js
   for JavaScript) made a dependencies workspace's install wait on that version.
+- Fixed an issue where setting up a toolchain version that a project overrides passed the
+  workspace's version in the plugin's `toolchain_config` (`SetupToolchainInput`), which conflicted
+  with its `configured_version`.
 - Fixed an issue where a project's toolchain `version` override, or a toolchain disabled by a
   project, was ignored by a task's command environment when the project referenced the toolchain by
   its stable ID, while the workspace configured its unstable ID (or vice versa). Project toolchain

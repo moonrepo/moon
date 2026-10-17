@@ -402,6 +402,33 @@ time.
 Install-affecting config (like `javascript.packageManager` in a member) can also diverge, but moon
 can't tell which keys matter. That would need a plugin hook, so it's out of scope here.
 
+### Plugin inputs
+
+What the provisioning actions pass to their plugin, for each kind of root, which follows from the
+rules above. The `plugin_inputs` pipeline tests record these inputs in the test plugins
+(`testRecordInputs`), and assert them for each case.
+
+| Input                                                               | Dependencies workspace                                 | Package root                                | No root       |
+| :------------------------------------------------------------------ | :----------------------------------------------------- | :------------------------------------------ | :------------ |
+| `SetupEnvironmentInput.project`, `InstallDependenciesInput.project` | none                                                   | the owner project                           | no action     |
+| `.root`                                                             | the root                                               | the project's root                          | no action     |
+| `.toolchain_config`                                                 | the workspace's, with its `version`                    | the owner's merged config, with its version | no action     |
+| `SetupToolchainInput.configured_version`                            | the node's spec: the workspace's, or a member's own    | the owner's                                 | the project's |
+| `SetupToolchainInput.toolchain_config`                              | the workspace's, with `version` set to the node's spec | the same                                    | the same      |
+
+A `SetupToolchain` node is shared by every project that needs its spec, so its config is the
+workspace's, but its `version` is aligned with the node's spec. Before that fix, a member's version
+was setup with `configured_version: 1.99.0`, while its config's `version` was the workspace's 1.2.3.
+
+The commands that environment setup and installs return run with the same project, so they get the
+same versions (`PROTO_<ID>_VERSION`): the workspace's without a project, and the owner's for a
+package root.
+
+The action graph's `dependencies_roots` tests cover the actions and edges of each case: dependencies
+workspace (without overrides, with overrides, a member running alone, the root project's override,
+and a required toolchain's override), package root (without and with an override, and from
+`moon setup`), and no root (without and with an override, and with installs disabled).
+
 ## Toolchain metadata per root
 
 | Field            | Source                                                                                       | Consumers                                                                    |

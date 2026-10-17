@@ -85,6 +85,14 @@ pub fn install_dependencies(
 ) -> FnResult<Json<InstallDependenciesOutput>> {
     let mut output = InstallDependenciesOutput::default();
 
+    record_input(
+        &input.context,
+        &input.toolchain_config,
+        "install_dependencies",
+        &input.root.to_string_lossy(),
+        json::to_value(&input)?,
+    )?;
+
     // Write a marker file so that tests can detect if/when this function
     // was called, primarily for pipeline abort/dispatch scenarios
     if input

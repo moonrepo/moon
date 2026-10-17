@@ -5785,16 +5785,33 @@ mod action_graph_builder {
         }
     }
 
-    mod shared_root_versions {
+    // How dependencies roots compose actions, for each kind of root, with
+    // and without a project overriding the toolchain's version. The
+    // `shared-root` fixture is a dependencies workspace at the root (with
+    // `packages/*` members), a `standalone` package root, and `tools`, which
+    // is in no root. The workspace configures version 1.2.3 for tier 3.
+    mod dependencies_roots {
         use super::*;
         use starbase_sandbox::Sandbox;
 
-        // Each crate of a dependencies workspace (`tc.lock` at the root, with
-        // `packages/*` members), with the toolchains config of its `moon.yml`
-        fn write_project(sandbox: &Sandbox, id: &str, toolchains: &str) {
+        const TC: &str = "tc-tier3-setup-env";
+
+        fn write_project(sandbox: &Sandbox, source: &str, toolchains: &str) {
             sandbox.create_file(
-                format!("packages/{id}/moon.yml"),
+                format!("{source}/moon.yml"),
                 format!("{toolchains}\ntasks:\n  build:\n    command: 'build'\n"),
+            );
+        }
+
+        fn uses_toolchain(sandbox: &Sandbox, source: &str) {
+            write_project(sandbox, source, &format!("toolchains:\n  default: '{TC}'"));
+        }
+
+        fn overrides_version(sandbox: &Sandbox, source: &str) {
+            write_project(
+                sandbox,
+                source,
+                &format!("toolchains:\n  default: '{TC}'\n  {TC}:\n    version: '1.99.0'"),
             );
         }
 
@@ -5812,6 +5829,17 @@ mod action_graph_builder {
             container
         }
 
+        async fn build_tasks(container: &mut ActionGraphContainer, ids: &[&str]) -> ActionGraph {
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg).await;
+
+            for id in ids {
+                builder.run_task_by_target(Target::parse(&format!("{id}:build")).unwrap());
+            }
+
+            builder.build().await.unwrap().graph
+        }
+
         fn find_node(graph: &ActionGraph, label: &str) -> NodeIndex {
             graph
                 .get_inner_graph()
@@ -5824,164 +5852,323 @@ mod action_graph_builder {
             graph.get_nodes().iter().any(|node| node.label() == label)
         }
 
+        // The dependencies of a node, without project syncs, which are
+        // linked by tasks whatever their toolchains
         fn dependency_labels(graph: &ActionGraph, label: &str) -> Vec<String> {
             let mut labels = graph
                 .get_inner_graph()
                 .neighbors_directed(find_node(graph, label), petgraph::Direction::Outgoing)
                 .map(|index| graph.get_node_from_index(&index).unwrap().label())
+                .filter(|label| !label.starts_with("SyncProject"))
                 .collect::<Vec<_>>();
             labels.sort();
             labels.dedup();
             labels
         }
 
-        #[tokio::test(flavor = "multi_thread")]
-        async fn root_actions_use_the_workspace_version() {
-            let sandbox = create_sandbox("shared-root");
+        // Only the dependencies of the toolchain under test, as a project
+        // with a `tc.lock` is also detected to use the other test toolchains
+        fn toolchain_dependency_labels(graph: &ActionGraph, label: &str) -> Vec<String> {
+            dependency_labels(graph, label)
+                .into_iter()
+                .filter(|label| label.contains(TC))
+                .collect()
+        }
 
-            // The workspace uses 1.2.3, while `a` overrides it
-            write_project(
-                &sandbox,
-                "a",
-                "toolchains:\n  default: 'tc-tier3-setup-env'\n  tc-tier3-setup-env:\n    version: '1.99.0'",
-            );
-            write_project(
-                &sandbox,
-                "b",
-                "toolchains:\n  default: 'tc-tier3-setup-env'",
-            );
-            write_project(
-                &sandbox,
-                "c",
-                "toolchains:\n  default: 'tc-tier3-setup-env'",
-            );
+        fn setup_toolchain(version: &str) -> String {
+            format!("SetupToolchain({TC}:{version})")
+        }
 
-            let mut container = create_container(&sandbox, "tc-tier3-setup-env");
-            let wg = container.create_workspace_graph().await;
-            let mut builder = container.create_builder(wg.clone()).await;
+        mod workspace {
+            use super::*;
 
-            for id in ["a", "b", "c"] {
-                builder.run_task_by_target(Target::parse(&format!("{id}:build")).unwrap());
+            // 0 -> 1 -> 2 -> 3, all with the workspace version
+            #[tokio::test(flavor = "multi_thread")]
+            async fn without_overrides() {
+                let sandbox = create_sandbox("shared-root");
+
+                uses_toolchain(&sandbox, "packages/a");
+                uses_toolchain(&sandbox, "packages/b");
+
+                let mut container = create_container(&sandbox, TC);
+                let graph = build_tasks(&mut container, &["a", "b"]).await;
+
+                for id in ["a", "b"] {
+                    assert_eq!(
+                        dependency_labels(&graph, &format!("RunTask({id}:build)")),
+                        vec![format!("InstallDependencies({TC})")]
+                    );
+                }
+
+                assert_eq!(
+                    dependency_labels(&graph, &format!("InstallDependencies({TC})")),
+                    vec![format!("SetupEnvironment({TC})")]
+                );
+                assert_eq!(
+                    dependency_labels(&graph, &format!("SetupEnvironment({TC})")),
+                    vec![setup_toolchain("1.2.3"), "SyncWorkspace".into()]
+                );
             }
 
-            let graph = builder.build().await.unwrap().graph;
+            // 0 -> 1 -> 2 -> 3 with the workspace version, and 0 -> 4 with
+            // the project's version, only for running the task
+            #[tokio::test(flavor = "multi_thread")]
+            async fn with_overrides() {
+                let sandbox = create_sandbox("shared-root");
 
-            assert_eq!(
-                dependency_labels(&graph, "InstallDependencies(tc-tier3-setup-env)"),
-                vec!["SetupEnvironment(tc-tier3-setup-env)"]
-            );
-            assert_eq!(
-                dependency_labels(&graph, "SetupEnvironment(tc-tier3-setup-env)"),
-                vec!["SetupToolchain(tc-tier3-setup-env:1.2.3)", "SyncWorkspace"]
-            );
+                overrides_version(&sandbox, "packages/a");
+                uses_toolchain(&sandbox, "packages/b");
+                uses_toolchain(&sandbox, "packages/c");
 
-            // Only `a` waits on its own version, as the others use the root's
-            let a = dependency_labels(&graph, "RunTask(a:build)");
+                let mut container = create_container(&sandbox, TC);
+                let graph = build_tasks(&mut container, &["a", "b", "c"]).await;
 
-            assert!(a.contains(&"InstallDependencies(tc-tier3-setup-env)".to_owned()));
-            assert!(a.contains(&"SetupToolchain(tc-tier3-setup-env:1.99.0)".to_owned()));
+                assert_eq!(
+                    dependency_labels(&graph, "RunTask(a:build)"),
+                    vec![
+                        format!("InstallDependencies({TC})"),
+                        setup_toolchain("1.99.0")
+                    ]
+                );
 
-            for id in ["b", "c"] {
-                let deps = dependency_labels(&graph, &format!("RunTask({id}:build)"));
+                for id in ["b", "c"] {
+                    assert_eq!(
+                        dependency_labels(&graph, &format!("RunTask({id}:build)")),
+                        vec![format!("InstallDependencies({TC})")]
+                    );
+                }
 
-                assert!(deps.contains(&"InstallDependencies(tc-tier3-setup-env)".to_owned()));
-                assert!(!deps.iter().any(|dep| dep.starts_with("SetupToolchain")));
+                assert_eq!(
+                    dependency_labels(&graph, &format!("InstallDependencies({TC})")),
+                    vec![format!("SetupEnvironment({TC})")]
+                );
+                assert_eq!(
+                    dependency_labels(&graph, &format!("SetupEnvironment({TC})")),
+                    vec![setup_toolchain("1.2.3"), "SyncWorkspace".into()]
+                );
+            }
+
+            // The workspace version is setup for the root's actions, even
+            // when no project in the run uses it
+            #[tokio::test(flavor = "multi_thread")]
+            async fn with_overrides_when_running_alone() {
+                let sandbox = create_sandbox("shared-root");
+
+                overrides_version(&sandbox, "packages/a");
+
+                let mut container = create_container(&sandbox, TC);
+                let graph = build_tasks(&mut container, &["a"]).await;
+
+                assert_eq!(
+                    dependency_labels(&graph, "RunTask(a:build)"),
+                    vec![
+                        format!("InstallDependencies({TC})"),
+                        setup_toolchain("1.99.0")
+                    ]
+                );
+                assert_eq!(
+                    dependency_labels(&graph, &format!("SetupEnvironment({TC})")),
+                    vec![setup_toolchain("1.2.3"), "SyncWorkspace".into()]
+                );
+            }
+
+            // The root project of a workspace is treated like a member
+            #[tokio::test(flavor = "multi_thread")]
+            async fn with_an_override_in_the_root_project() {
+                let sandbox = create_sandbox("shared-root");
+
+                overrides_version(&sandbox, ".");
+
+                let mut container = create_container(&sandbox, TC);
+                let graph = build_tasks(&mut container, &["root"]).await;
+
+                let deps = dependency_labels(&graph, "RunTask(root:build)");
+
+                assert!(deps.contains(&format!("InstallDependencies({TC})")));
+                assert!(deps.contains(&setup_toolchain("1.99.0")));
+                assert_eq!(
+                    dependency_labels(&graph, &format!("SetupEnvironment({TC})")),
+                    vec![setup_toolchain("1.2.3"), "SyncWorkspace".into()]
+                );
+            }
+
+            // Like JavaScript requiring Node.js, which `a` overrides: the
+            // root's toolchain setup requires the workspace version, while
+            // `a` sets up its own through its own `tc-tier3` toolchain
+            #[tokio::test(flavor = "multi_thread")]
+            async fn with_overrides_of_required_toolchains() {
+                let sandbox = create_sandbox("shared-root");
+
+                write_project(
+                    &sandbox,
+                    "packages/a",
+                    "toolchains:\n  default: ['tc-tier2-reqs', 'tc-tier3']\n  tc-tier3:\n    version: '4.5.6'",
+                );
+                write_project(
+                    &sandbox,
+                    "packages/b",
+                    "toolchains:\n  default: ['tc-tier2-reqs', 'tc-tier3']",
+                );
+
+                let mut container = create_container(&sandbox, "tc-tier2-reqs");
+                let graph = build_tasks(&mut container, &["a", "b"]).await;
+                let requirements = dependency_labels(&graph, "SetupToolchain(tc-tier2-reqs)");
+
+                assert!(requirements.contains(&"SetupToolchain(tc-tier3:1.2.3)".to_owned()));
+                assert!(!requirements.contains(&"SetupToolchain(tc-tier3:4.5.6)".to_owned()));
+                assert!(
+                    dependency_labels(&graph, "RunTask(a:build)")
+                        .contains(&"SetupToolchain(tc-tier3:4.5.6)".to_owned())
+                );
             }
         }
 
-        #[tokio::test(flavor = "multi_thread")]
-        async fn root_actions_use_the_workspace_version_when_a_member_runs_alone() {
-            let sandbox = create_sandbox("shared-root");
+        mod package {
+            use super::*;
 
-            write_project(
-                &sandbox,
-                "a",
-                "toolchains:\n  default: 'tc-tier3-setup-env'\n  tc-tier3-setup-env:\n    version: '1.99.0'",
-            );
+            // 0 -> 1 -> 2 -> 3, all with the workspace version, which is the
+            // project's version
+            #[tokio::test(flavor = "multi_thread")]
+            async fn without_override() {
+                let sandbox = create_sandbox("shared-root");
 
-            let mut container = create_container(&sandbox, "tc-tier3-setup-env");
-            let wg = container.create_workspace_graph().await;
-            let mut builder = container.create_builder(wg.clone()).await;
+                uses_toolchain(&sandbox, "standalone");
 
-            builder.run_task_by_target(Target::parse("a:build").unwrap());
+                let mut container = create_container(&sandbox, TC);
+                let graph = build_tasks(&mut container, &["standalone"]).await;
+                let install = format!("InstallDependencies({TC}, standalone)");
+                let env = format!("SetupEnvironment({TC}, standalone)");
 
-            let graph = builder.build().await.unwrap().graph;
+                assert_eq!(
+                    toolchain_dependency_labels(&graph, "RunTask(standalone:build)"),
+                    vec![install.clone()]
+                );
+                assert_eq!(dependency_labels(&graph, &install), vec![env.clone()]);
+                assert_eq!(
+                    dependency_labels(&graph, &env),
+                    vec![setup_toolchain("1.2.3"), "SyncWorkspace".into()]
+                );
+            }
 
-            // The root's actions run with the workspace version, so it's setup
-            assert_eq!(
-                dependency_labels(&graph, "SetupEnvironment(tc-tier3-setup-env)"),
-                vec!["SetupToolchain(tc-tier3-setup-env:1.2.3)", "SyncWorkspace"]
-            );
-            assert!(
-                dependency_labels(&graph, "RunTask(a:build)")
-                    .contains(&"SetupToolchain(tc-tier3-setup-env:1.99.0)".to_owned())
-            );
+            // 0 -> 1 -> 2 -> 3, all with the project's version, and the
+            // workspace version isn't setup at all
+            #[tokio::test(flavor = "multi_thread")]
+            async fn with_override() {
+                let sandbox = create_sandbox("shared-root");
+
+                overrides_version(&sandbox, "standalone");
+
+                let mut container = create_container(&sandbox, TC);
+                let graph = build_tasks(&mut container, &["standalone"]).await;
+                let install = format!("InstallDependencies({TC}, standalone)");
+                let env = format!("SetupEnvironment({TC}, standalone)");
+
+                assert_eq!(
+                    toolchain_dependency_labels(&graph, "RunTask(standalone:build)"),
+                    vec![install.clone()]
+                );
+                assert_eq!(dependency_labels(&graph, &install), vec![env.clone()]);
+                assert_eq!(
+                    dependency_labels(&graph, &env),
+                    vec![setup_toolchain("1.99.0"), "SyncWorkspace".into()]
+                );
+                assert!(!has_node(&graph, &setup_toolchain("1.2.3")));
+            }
+
+            // `moon setup` places the workspace root, so a single package at
+            // the root uses the version of the project that owns it
+            #[tokio::test(flavor = "multi_thread")]
+            async fn with_override_from_the_workspace_root() {
+                let sandbox = create_sandbox("shared-root");
+
+                std::fs::remove_file(sandbox.path().join("tc.root.cfg")).unwrap();
+                overrides_version(&sandbox, ".");
+
+                let mut container = create_container(&sandbox, TC);
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                builder.setup_toolchain_and_environment(&create_tier_spec_with_name(TC));
+
+                let graph = builder.build().await.unwrap().graph;
+
+                assert!(has_node(&graph, &setup_toolchain("1.2.3")));
+                assert_eq!(
+                    dependency_labels(&graph, &format!("SetupEnvironment({TC})")),
+                    vec![setup_toolchain("1.99.0"), "SyncWorkspace".into()]
+                );
+                assert!(graph.get_nodes().iter().any(|node| matches!(
+                    node,
+                    ActionNode::SetupEnvironment(inner) if inner.project_id == Some(Id::raw("root"))
+                )));
+            }
         }
 
-        #[tokio::test(flavor = "multi_thread")]
-        async fn root_actions_use_the_workspace_version_of_required_toolchains() {
-            let sandbox = create_sandbox("shared-root");
+        mod no_deps {
+            use super::*;
 
-            // Like JavaScript requiring Node.js, which `a` overrides
-            write_project(
-                &sandbox,
-                "a",
-                "toolchains:\n  default: ['tc-tier2-reqs', 'tc-tier3']\n  tc-tier3:\n    version: '4.5.6'",
-            );
-            write_project(
-                &sandbox,
-                "b",
-                "toolchains:\n  default: ['tc-tier2-reqs', 'tc-tier3']",
-            );
+            // 0 -> 1, with the workspace version
+            #[tokio::test(flavor = "multi_thread")]
+            async fn without_override() {
+                let sandbox = create_sandbox("shared-root");
 
-            let mut container = create_container(&sandbox, "tc-tier2-reqs");
-            let wg = container.create_workspace_graph().await;
-            let mut builder = container.create_builder(wg.clone()).await;
+                uses_toolchain(&sandbox, "tools");
 
-            builder.run_task_by_target(Target::parse("a:build").unwrap());
-            builder.run_task_by_target(Target::parse("b:build").unwrap());
+                let mut container = create_container(&sandbox, TC);
+                let graph = build_tasks(&mut container, &["tools"]).await;
 
-            let graph = builder.build().await.unwrap().graph;
-            let requirements = dependency_labels(&graph, "SetupToolchain(tc-tier2-reqs)");
+                assert_eq!(
+                    dependency_labels(&graph, "RunTask(tools:build)"),
+                    vec![setup_toolchain("1.2.3")]
+                );
+                assert!(!has_node(&graph, &format!("InstallDependencies({TC})")));
+                assert!(!has_node(&graph, &format!("SetupEnvironment({TC})")));
+            }
 
-            assert!(requirements.contains(&"SetupToolchain(tc-tier3:1.2.3)".to_owned()));
-            assert!(!requirements.contains(&"SetupToolchain(tc-tier3:4.5.6)".to_owned()));
-            assert!(
-                dependency_labels(&graph, "RunTask(a:build)")
-                    .contains(&"SetupToolchain(tc-tier3:4.5.6)".to_owned())
-            );
-        }
+            // 0 -> 1, with the project's version
+            #[tokio::test(flavor = "multi_thread")]
+            async fn with_override() {
+                let sandbox = create_sandbox("shared-root");
 
-        #[tokio::test(flavor = "multi_thread")]
-        async fn package_root_uses_its_project_version() {
-            let sandbox = create_sandbox("shared-root");
+                overrides_version(&sandbox, "tools");
 
-            // A single package at the workspace root, which is also a project
-            std::fs::remove_file(sandbox.path().join("tc.root.cfg")).unwrap();
-            sandbox.create_file(
-                "moon.yml",
-                "toolchains:\n  tc-tier3-setup-env:\n    version: '1.99.0'\n",
-            );
+                let mut container = create_container(&sandbox, TC);
+                let graph = build_tasks(&mut container, &["tools"]).await;
 
-            let mut container = create_container(&sandbox, "tc-tier3-setup-env");
-            let wg = container.create_workspace_graph().await;
-            let mut builder = container.create_builder(wg.clone()).await;
+                assert_eq!(
+                    dependency_labels(&graph, "RunTask(tools:build)"),
+                    vec![setup_toolchain("1.99.0")]
+                );
+                assert!(!has_node(&graph, &setup_toolchain("1.2.3")));
+                assert!(!has_node(&graph, &format!("InstallDependencies({TC})")));
+            }
 
-            // Like `moon setup`
-            builder
-                .setup_toolchain_and_environment(&create_tier_spec_with_name("tc-tier3-setup-env"));
+            // A member whose toolchain doesn't install dependencies is in no
+            // root, so it's like a project outside of one
+            #[tokio::test(flavor = "multi_thread")]
+            async fn with_override_when_installs_are_disabled() {
+                let sandbox = create_sandbox("shared-root");
 
-            let graph = builder.build().await.unwrap().graph;
+                overrides_version(&sandbox, "packages/a");
 
-            assert!(has_node(&graph, "SetupToolchain(tc-tier3-setup-env:1.2.3)"));
-            assert_eq!(
-                dependency_labels(&graph, "SetupEnvironment(tc-tier3-setup-env)"),
-                vec!["SetupToolchain(tc-tier3-setup-env:1.99.0)", "SyncWorkspace"]
-            );
-            assert!(graph.get_nodes().iter().any(|node| matches!(
-                node,
-                ActionNode::SetupEnvironment(inner) if inner.project_id == Some(Id::raw("root"))
-            )));
+                let mut container = create_container(&sandbox, TC);
+
+                container.mocker = container.mocker.update_toolchains_config(|cfg| {
+                    cfg.plugins
+                        .get_mut(&Id::raw(TC))
+                        .unwrap()
+                        .install_dependencies = false;
+                });
+
+                let graph = build_tasks(&mut container, &["a"]).await;
+
+                assert_eq!(
+                    dependency_labels(&graph, "RunTask(a:build)"),
+                    vec![setup_toolchain("1.99.0")]
+                );
+                assert!(!has_node(&graph, &format!("InstallDependencies({TC})")));
+                assert!(!has_node(&graph, &format!("SetupEnvironment({TC})")));
+            }
         }
     }
 

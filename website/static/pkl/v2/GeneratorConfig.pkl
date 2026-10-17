@@ -5,4 +5,4 @@ module GeneratorConfig
 
 /// The list of file paths, relative from the workspace root,
 /// in which to locate templates.
-templates: (*Listing<String> | List<String> | Set<String>)?
+templates: Listing<String>?

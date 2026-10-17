@@ -3,8 +3,6 @@
 /// Configures all extensions.
 open module ExtensionsConfig
 
-import "ExtendsFrom.pkl"
-
 // Any other setting is collected by `plugins`. It's accepted wherever this is
 // used, as a `Dynamic`, or by a module that extends this one.
 
@@ -12,5 +10,7 @@ $schema: String?
 
 /// Extends one or many extensions configuration files.
 /// Supports a relative file path or a secure URL.
-/// @since 2.0.0
-`extends`: ExtendsFrom.ExtendsFrom?
+@Since { version = "2.0.0" }
+`extends`: ExtendsFrom?
+
+typealias ExtendsFrom = String | Listing<String>

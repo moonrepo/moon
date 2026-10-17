@@ -19,7 +19,6 @@ use proto_core::{
     UnresolvedVersionSpec, locate_plugin,
 };
 use proto_pdk_api::{ActivateEnvironmentInput, ActivateEnvironmentOutput, InstallStrategy};
-use scc::hash_map::Entry;
 use starbase_utils::glob::{self, GlobSet};
 use std::fmt;
 use std::ops::Deref;
@@ -42,6 +41,10 @@ pub struct ToolchainPlugin {
 
     globals_cache: scc::HashMap<UnresolvedVersionSpec, Option<PathBuf>>,
     locations_cache: scc::HashMap<UnresolvedVersionSpec, (ToolSpec, LocatorResponse)>,
+
+    // Every project in a dependencies workspace is matched against its member
+    // globs, so they're compiled once per list of members
+    members_globs_cache: scc::HashMap<Vec<String>, Arc<GlobSet<'static>>>,
 }
 
 #[async_trait]
@@ -77,6 +80,7 @@ impl Plugin for ToolchainPlugin {
             locator: registration.locator,
             globals_cache: scc::HashMap::new(),
             locations_cache: scc::HashMap::new(),
+            members_globs_cache: scc::HashMap::new(),
             setup: AtomicBool::new(false),
             metadata,
             plugin,
@@ -113,24 +117,32 @@ impl ToolchainPlugin {
         }
     }
 
+    // These caches are read for every task that runs, so read them with a shared
+    // lock first. Locating is not held under a map lock, as it awaits, so concurrent
+    // misses may locate more than once, which is harmless as the result is the same.
+
     async fn cache_globals_dir(&self) -> miette::Result<Option<PathBuf>> {
         if let Some(tool) = &self.tool {
-            return match self
+            let version = UnresolvedVersionSpec::default();
+
+            if let Some(locations) = self
                 .globals_cache
-                .entry_async(UnresolvedVersionSpec::default())
+                .read_async(&version, |_, locations| locations.to_owned())
                 .await
             {
-                Entry::Occupied(entry) => Ok(entry.get().to_owned()),
-                Entry::Vacant(entry) => {
-                    let tool = tool.read().await;
-                    let spec = ToolSpec::default();
-                    let locations = Locator::new(&tool, &spec).locate_globals_dir().await?;
+                return Ok(locations);
+            }
 
-                    entry.insert_entry(locations.clone());
+            let tool = tool.read().await;
+            let spec = ToolSpec::default();
+            let locations = Locator::new(&tool, &spec).locate_globals_dir().await?;
 
-                    Ok(locations)
-                }
-            };
+            let _ = self
+                .globals_cache
+                .insert_async(version, locations.clone())
+                .await;
+
+            return Ok(locations);
         }
 
         Ok(None)
@@ -141,24 +153,47 @@ impl ToolchainPlugin {
         version: &UnresolvedVersionSpec,
     ) -> miette::Result<Option<(ToolSpec, LocatorResponse)>> {
         if let Some(tool) = &self.tool {
-            return match self.locations_cache.entry_async(version.to_owned()).await {
-                Entry::Occupied(entry) => Ok(Some(entry.get().to_owned())),
-                Entry::Vacant(entry) => {
-                    let tool = tool.read().await;
-                    let mut spec = ToolSpec::new(version.to_owned());
+            if let Some(cached) = self
+                .locations_cache
+                .read_async(version, |_, cached| cached.to_owned())
+                .await
+            {
+                return Ok(Some(cached));
+            }
 
-                    Resolver::resolve(&tool, &mut spec, false).await?;
+            let tool = tool.read().await;
+            let mut spec = ToolSpec::new(version.to_owned());
 
-                    let locations = Locator::locate(&tool, &spec).await?;
+            Resolver::resolve(&tool, &mut spec, false).await?;
 
-                    entry.insert_entry((spec.clone(), locations.clone()));
+            let locations = Locator::locate(&tool, &spec).await?;
 
-                    Ok(Some((spec, locations)))
-                }
-            };
+            let _ = self
+                .locations_cache
+                .insert_async(version.to_owned(), (spec.clone(), locations.clone()))
+                .await;
+
+            return Ok(Some((spec, locations)));
         }
 
         Ok(None)
+    }
+
+    fn get_members_globset(&self, members: &[String]) -> miette::Result<Arc<GlobSet<'static>>> {
+        if let Some(globset) = self
+            .members_globs_cache
+            .read_sync(members, |_, globset| Arc::clone(globset))
+        {
+            return Ok(globset);
+        }
+
+        let globset = Arc::new(GlobSet::new_owned(members)?);
+
+        let _ = self
+            .members_globs_cache
+            .insert_sync(members.to_vec(), Arc::clone(&globset));
+
+        Ok(globset)
     }
 
     pub fn in_dependencies_workspace(
@@ -177,7 +212,7 @@ impl ToolchainPlugin {
             }
             // Match against the provided member globs
             else if let Some(members) = &workspace.members {
-                GlobSet::new(members)?
+                self.get_members_globset(members)?
                     .matches(path.strip_prefix(&workspace.root).unwrap_or(path))
                     .then_some(DependenciesWorkspaceRole::WorkspaceMember)
             }

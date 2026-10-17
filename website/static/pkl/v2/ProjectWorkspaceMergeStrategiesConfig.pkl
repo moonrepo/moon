@@ -4,14 +4,15 @@
 /// workspace-level settings.
 module ProjectWorkspaceMergeStrategiesConfig
 
-import "MergeStrategy.pkl"
-
 /// The strategy to use when merging `env` with inherited
 /// environment variables, applied to the entire map.
-/// @since 2.5.0
-env: MergeStrategy.MergeStrategy?
+@Since { version = "2.5.0" }
+env: MergeStrategy?
 
 /// The strategy to use when merging `fileGroups` with
 /// inherited file groups, applied per group.
-/// @since 2.5.0
-fileGroups: MergeStrategy.MergeStrategy?
+@Since { version = "2.5.0" }
+fileGroups: MergeStrategy?
+
+/// The strategy in which to merge two configuration values.
+typealias MergeStrategy = *"append" | "prepend" | "preserve" | "replace"

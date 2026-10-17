@@ -6,7 +6,10 @@ module TaskCheckFingerprintConfig
 check: "fingerprint"
 
 /// The content hashing strategy.
-hash: Boolean | "exit-code" | "stderr" | "stdout"
+hash: TaskCheckFingerprint
 
 /// The shell script to execute.
 script: String
+
+/// The fingerprinting strategy for hashing a task check.
+typealias TaskCheckFingerprint = "exit-code" | "stderr" | "stdout" | *Boolean

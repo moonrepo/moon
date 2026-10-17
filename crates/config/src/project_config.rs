@@ -2,7 +2,7 @@ use crate::project::*;
 use crate::shapes::Input;
 use crate::task_config::{EnvMap, TaskConfig};
 use crate::task_options_config::{PartialTaskOptionsConfig, TaskOptionsConfig};
-use crate::{config_enum, config_struct, config_unit_enum};
+use crate::{config_struct, config_unit_enum, config_untagged_enum};
 use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{Config, ConfigEnum, ValidateError};
@@ -23,7 +23,7 @@ fn validate_channel<D, C>(
 
 config_unit_enum!(
     /// The technology stack of the project, for categorizing.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum StackType {
         Backend,
         Data,
@@ -37,7 +37,7 @@ config_unit_enum!(
 
 config_unit_enum!(
     /// The layer within the technology stack, for categorizing.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum LayerType {
         Application,
         Automation,
@@ -69,7 +69,6 @@ config_struct!(
         pub owner: Option<String>,
 
         /// The individual maintainers of the project. The format is unspecified.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub maintainers: Vec<String>,
 
         /// The Slack, Discord, IRC, etc, channel to discuss the project.
@@ -84,10 +83,9 @@ config_struct!(
     }
 );
 
-config_enum!(
+config_untagged_enum!(
     /// Expanded information about a project dependency.
     #[derive(Config)]
-    #[serde(untagged)]
     pub enum ProjectDependsOn {
         /// A project referenced by identifier.
         String(Id),
@@ -108,7 +106,7 @@ config_struct!(
 
         /// Other projects that this project depends on.
         #[setting(nested)]
-        #[serde(default, alias = "deps", skip_serializing_if = "Vec::is_empty")]
+        #[serde(alias = "deps")]
         pub depends_on: Vec<ProjectDependsOn>,
 
         /// Configures Docker integration for this project.
@@ -118,12 +116,10 @@ config_struct!(
 
         /// A map of environment variables that will be inherited by
         /// all tasks within the project.
-        #[serde(default, skip_serializing_if = "EnvMap::is_empty")]
         pub env: EnvMap,
 
         /// A map of group identifiers to a list of file paths, globs, and
         /// environment variables, that can be referenced from tasks.
-        #[serde(default, skip_serializing_if = "FxHashMap::is_empty")]
         pub file_groups: FxHashMap<Id, Vec<Input>>,
 
         /// Overrides the identifier within the project graph, as defined in
@@ -155,19 +151,17 @@ config_struct!(
 
         /// A list of tags that this project belongs to, for categorizing,
         /// boundary enforcement, and task inheritance.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub tags: Vec<Id>,
 
         /// A map of identifiers to task objects. Tasks represent the work-unit
         /// of a project, and can be ran in the action pipeline.
         #[setting(nested)]
-        #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
         pub tasks: BTreeMap<Id, TaskConfig>,
 
         /// Shared task options for all tasks. Can be overriden per task.
         /// @since 2.4.0
         #[setting(nested)]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub task_options: Option<TaskOptionsConfig>,
 
         /// Overrides top-level toolchain settings, scoped to this project.

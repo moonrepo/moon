@@ -26,6 +26,7 @@ use std::sync::{Arc, OnceLock};
 
 #[derive(Debug, Default)]
 pub struct WorkspaceMocker {
+    pub command_line_cache: Arc<CommandLineCache>,
     pub config_dir: PathBuf,
     pub config_loader: ConfigLoader,
     pub inherited_tasks: InheritedTasksManager,
@@ -236,6 +237,7 @@ impl WorkspaceMocker {
             &id,
             &source,
             ProjectBuilderContext {
+                command_line_cache: Arc::clone(&self.command_line_cache),
                 config_loader: &self.config_loader,
                 enabled_toolchains: &enabled_toolchains,
                 monorepo: self.monorepo,
@@ -278,6 +280,7 @@ impl WorkspaceMocker {
             &project.source,
             &project.toolchains,
             TasksBuilderContext {
+                command_line_cache: Arc::clone(&self.command_line_cache),
                 config_loader: &self.config_loader,
                 enabled_toolchains: &enabled_toolchains,
                 monorepo: self.monorepo,
@@ -318,13 +321,12 @@ impl WorkspaceMocker {
         builder.build().await.unwrap()
     }
 
-    pub async fn create_action_graph(&self) -> ActionGraphBuilder<'_> {
+    pub async fn create_action_graph(&self) -> ActionGraphBuilder {
         ActionGraphBuilder::new(
             self.mock_app_context().into(),
             self.mock_workspace_graph().await.into(),
             Default::default(),
         )
-        .unwrap()
     }
 
     pub async fn mock_action_pipeline(&self) -> ActionPipeline {
@@ -467,12 +469,7 @@ impl WorkspaceMocker {
             .take()
             .unwrap_or_else(|| self.mock_workspace_builder_context());
 
-        // Mirror how the session decides which builder to use
-        let workspace_graph = if self.workspace_config.experiments.async_graph_building {
-            self.build_workspace_async(context, &options).await
-        } else {
-            self.build_workspace_sync(context, &options).await
-        };
+        let workspace_graph = self.build_workspace(context, &options).await;
 
         if options.ids.is_empty() {
             workspace_graph.projects.get_all().unwrap();
@@ -485,17 +482,15 @@ impl WorkspaceMocker {
         workspace_graph
     }
 
-    async fn build_workspace_async(
+    async fn build_workspace(
         &self,
         context: WorkspaceBuilderContext,
         options: &WorkspaceMockOptions,
     ) -> WorkspaceGraph {
         let mut builder = if options.cache {
-            WorkspaceBuilderAsync::new_with_cache(context)
-                .await
-                .unwrap()
+            WorkspaceBuilder::new_with_cache(context).await.unwrap()
         } else {
-            WorkspaceBuilderAsync::new(context).await.unwrap()
+            WorkspaceBuilder::new(context).await.unwrap()
         };
 
         if options.ids.is_empty() {
@@ -507,34 +502,6 @@ impl WorkspaceMocker {
                 .unwrap();
         }
 
-        builder.build().await.unwrap()
-    }
-
-    async fn build_workspace_sync(
-        &self,
-        context: WorkspaceBuilderContext,
-        options: &WorkspaceMockOptions,
-    ) -> WorkspaceGraph {
-        let mut builder = if options.cache {
-            WorkspaceBuilder::new_with_cache(context).await.unwrap()
-        } else {
-            let mut builder = WorkspaceBuilder::new(context).await.unwrap();
-
-            // The cached flow above extends internally, so only
-            // extend for the uncached flow
-            builder.extend_projects_from_plugins().await.unwrap();
-            builder
-        };
-
-        if options.ids.is_empty() {
-            builder.load_projects().await.unwrap();
-        } else {
-            for id in &options.ids {
-                builder.load_project(id).await.unwrap();
-            }
-        }
-
-        builder.load_tasks().await.unwrap();
         builder.build().await.unwrap()
     }
 }

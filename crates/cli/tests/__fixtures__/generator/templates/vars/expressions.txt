@@ -28,7 +28,7 @@ objectReqNotEmpty['key'] = {{ objectReqNotEmpty['key'] }}
 
 array = {{ array }}
 arrayNotEmpty = {{ arrayNotEmpty }}
-arrayNotEmpty.0 = {{ arrayNotEmpty.0 }}
+arrayNotEmpty[0] = {{ arrayNotEmpty[0] }}
 arrayReq = {{ arrayReq }}
 arrayReqNotEmpty = {{ arrayReqNotEmpty }}
 arrayReqNotEmpty[0] = {{ arrayReqNotEmpty[0] }}

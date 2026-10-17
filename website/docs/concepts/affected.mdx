@@ -2,6 +2,8 @@
 title: Affected
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 Affected is a term to describe when a project or task is _affected by a change_ in the environment
 (workspace). This is a core concept in moon, and is the basis for many of our features, such as task
 running, incremental builds, and more.
@@ -35,35 +37,154 @@ For a task, any changed environment variable that is configured within the task'
 
 ### Graph relations
 
-A relation is considered changed if a project or task that is depended on, or depends on, is
-affected by a changed file or environment variable. This is determined by the project and task
-graph, which is built from the workspace configuration.
+A relation is considered changed when something the project or task depends on is affected.
+Affected state only flows in one direction, from an affected project or task to its _dependents_
+(what depends on it), and never from a dependent back to its dependencies. This is determined by the
+project and task graph, which is built from the workspace configuration.
 
-For a project, affected dependency/dependent projects of the project (via
-[`dependsOn`](../config/project#dependson)), or affected tasks within the project, triggers
+For a project, a changed file within the project, an affected task within the project, or an
+affected project that it depends on (via [`dependsOn`](../config/project#dependson)), triggers
 affected.
 
-For a task, affected dependency/dependent tasks of the task (via [`deps`](../config/project#deps))
-triggers affected.
+For a task, a changed file or environment variable within its [`inputs`](../config/project#inputs),
+or an affected task that it depends on (via [`deps`](../config/project#deps)), triggers affected.
 
-:::info
-
-This check is conditionally enabled. For [`moon query`](../commands/query), it is always enabled.
-For exec-based commands, it is not enabled by default and the `--include-relations` flag must be
-passed.
-
-:::
+How far this propagation reaches is controlled by the [affected depth](#affected-depth).
 
 ## Graph depth
 
-When determining affected state based on graph relations, the depth of traversal can be configured
-with the `--upstream` (`--dependencies`) and `--downstream` (`--dependents`) options. These options
-can be set to one of the following values:
+Graph traversal is split into 3 independent concepts, all named from the point of view of the
+target: _dependencies_ are what the target needs, and _dependents_ are what needs the target.
 
-- `none` - Do not include any relations.
-- `direct` - Include only direct relations.
-- `deep` - Include all relations.
+| Concept                           | Option              | Controls                                                      |
+| :-------------------------------- | :------------------ | :------------------------------------------------------------ |
+| [Affected depth](#affected-depth) | `--affected-depth`  | Which of the selected tasks count as affected.                |
+| [Dependents](#dependents)         | `--dependents`      | Which dependent tasks are added to the selected targets.      |
+| [Dependencies](#dependencies)     | `--no-dependencies` | Whether dependency tasks are inserted into the graph and ran. |
 
-For exec-based commands, the default is `--upstream=deep` and `--downstream=none`, meaning all
-dependencies are included, but no dependents are included. For query and other commands, the default
-is `none` for both.
+Options that accept a depth support the following values:
+
+- `none` - Do not traverse any relations (0 hops).
+- `direct` - Traverse only direct relations (1 hop).
+- `deep` - Traverse all relations (unbounded).
+- `<N>` - Any unsigned integer, to traverse up to N hops.
+
+### Affected depth<VersionLabel version="3.0.0" />
+
+The `--affected-depth <DEPTH>` (`-d`) option, supported by [`moon run`](../commands/run),
+[`moon exec`](../commands/exec), [`moon ci`](../commands/ci), and [`moon check`](../commands/check),
+bounds how far affected state propagates through [graph relations](#graph-relations). The distance
+is the minimum number of hops from any affected project or task. Defaults to `deep`.
+
+```shell
+# Only tasks whose own inputs changed are affected
+$ moon run :build --affected --affected-depth none
+
+# Tasks whose inputs changed, and their dependents up to 2 hops away
+$ moon run :build --affected --affected-depth 2
+```
+
+This option only changes _which_ tasks count as affected. It never adds tasks that were not matched
+by the target locators. The "Tracking affected tasks" step will always print why a task is affected,
+including `affected by dependency task <target>` for tasks that were affected through a dependency,
+followed by how many hops away from a directly affected task they are (when more than 1). The same
+distance is available in the `distance` field of
+[`moon query affected`](../commands/query/affected).
+
+### Dependents<VersionLabel version="3.0.0" />
+
+The `--dependents <DEPTH>` option, supported by [`moon run`](../commands/run),
+[`moon exec`](../commands/exec), [`moon ci`](../commands/ci), [`moon check`](../commands/check), and
+[`moon action-graph`](../commands/action-graph), adds the dependents of every selected target as
+primary targets, bounded by the depth. Defaults to `none` for all commands.
+
+The [`moon project-graph`](../commands/project-graph) and
+[`moon task-graph`](../commands/task-graph) commands also support `--dependents <DEPTH>`, which
+includes the dependents of the focused project or task in the graph, bounded by the depth. Defaults
+to `none`.
+
+```shell
+# Build `lib`, and every task that directly depends on it
+$ moon run lib:build --dependents direct
+```
+
+When [`--affected`](../run-task#running-based-on-affected-files-only) is active, the added
+dependents must also be affected to run.
+
+When `--query` is passed, it also bounds which dependents are added: dependents in projects that do
+not match the query are not added, and are not traversed through to reach their own dependents.
+
+[Internal tasks](./task#internal-only) are never added as dependents, as they only run as a
+dependency of another task, but they're traversed through, so their own dependents are still added
+(and those run the internal task as a dependency).
+
+### Dependencies<VersionLabel version="3.0.0" />
+
+The transitive [`deps`](../config/project#deps) of a target are _always_ inserted into the graph:
+`required` and `optional` dependencies run first, `wait` dependencies run alongside, and `cleanup`
+dependencies run after, based on their [`type`](../config/project#type). There is no depth control
+for dependencies.
+
+As an escape hatch, the `--no-dependencies` flag, supported by [`moon run`](../commands/run),
+[`moon exec`](../commands/exec), [`moon ci`](../commands/ci), and [`moon check`](../commands/check),
+will not insert dependency tasks that were not selected themselves. The ordering between tasks that
+_are_ in the graph is still linked, and `cleanup` dependencies still run after their owner. For
+example, the following runs the affected `deploy` tasks in dependency order, without redeploying the
+unchanged dependencies:
+
+```shell
+$ moon ci :deploy --no-dependencies
+```
+
+:::caution
+
+When a dependency's outputs are stale or missing, `--no-dependencies` can produce incorrect builds,
+as the dependency will not be ran to update them. Similar to `--only` in Turborepo, or
+`--excludeTaskDependencies` in Nx. Skipped dependencies are also excluded from the task's hash, so a
+task ran with `--no-dependencies` never shares a cache entry with a normal run of the same task.
+
+:::
+
+### Defaults
+
+| Command                                                                                                                      | `--affected` | `--affected-depth` | `--dependents`                                                     | Dependencies                     |
+| :--------------------------------------------------------------------------------------------------------------------------- | :----------- | :----------------- | :----------------------------------------------------------------- | :------------------------------- |
+| [`run`](../commands/run), [`exec`](../commands/exec), [`check`](../commands/check)                                           | off          | `deep`             | `none`                                                             | full, unless `--no-dependencies` |
+| [`ci`](../commands/ci)                                                                                                       | on           | `deep`             | `none`                                                             | full, unless `--no-dependencies` |
+| [`query projects`](../commands/query/projects), [`tasks`](../commands/query/tasks), [`affected`](../commands/query/affected) | off          | n/a                | `none` (`--dependencies` also `none`, except for `query affected`) | n/a                              |
+
+### Querying
+
+The [`moon query projects`](../commands/query/projects) and
+[`moon query tasks`](../commands/query/tasks) commands support the `--dependencies <DEPTH>` and
+`--dependents <DEPTH>` options, which include the dependencies and dependents of the affected
+projects and tasks in the output. The [`moon query affected`](../commands/query/affected) command
+only supports `--dependents <DEPTH>`, as its output can only contain affected projects and tasks,
+and dependents are marked as affected by the dependency they were reached through.
+
+```shell
+$ moon query affected --dependents deep
+```
+
+## Migrating from v2
+
+In v2, the `--upstream` (`--dependencies`) and `--downstream` (`--dependents`) options controlled
+both how far affected state propagated, and which dependency and dependent tasks were ran. In v3,
+these have been split into the options above. The old options and execution plan fields have been
+removed, with no aliases or deprecation period, so they must be migrated as follows:
+
+- `--include-relations` (`-g`) &rarr; `--affected-depth deep`, which is now the default.
+- `--downstream <DEPTH>` &rarr; `--dependents <DEPTH>`.
+- `--upstream deep` &rarr; remove it, as it's now the only behavior. `--upstream none` or
+  `--upstream direct` &rarr; `--no-dependencies`, if the intent was to not run unchanged
+  dependencies.
+- For `moon query projects` and `tasks`, `--upstream` &rarr; `--dependencies`, and `--downstream`
+  &rarr; `--dependents`. For `moon query affected`, only `--downstream` &rarr; `--dependents` is
+  supported.
+- For [execution plans](../guides/exec-plan), `affected.includeRelations` &rarr; `affected.depth`,
+  `graph.downstream` &rarr; `graph.dependents`, and `graph.upstream` &rarr;
+  `graph.noDependencies`. Plans that use the old fields fail to parse.
+- `moon project-graph --dependents` and `moon task-graph --dependents` &rarr;
+  `--dependents deep`.
+- [`moon ci`](../commands/ci) no longer runs the direct dependents of affected tasks by default.
+  Pass `--dependents direct` to restore the previous behavior.

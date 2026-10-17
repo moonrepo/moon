@@ -27,7 +27,7 @@ use moon_project_graph::ProjectGraph;
 use moon_task_graph::TaskGraph;
 use moon_toolchain_plugin::*;
 use moon_vcs::{BoxedVcs, git::Git};
-use moon_workspace::{WorkspaceBuilder, WorkspaceBuilderAsync, WorkspaceBuilderContext};
+use moon_workspace::{WorkspaceBuilder, WorkspaceBuilderContext};
 use moon_workspace_graph::WorkspaceGraph;
 use proto_core::ProtoEnvironment;
 use starbase::{AppExitCode, AppResult, AppSession};
@@ -106,7 +106,7 @@ impl MoonSession {
         }
     }
 
-    pub async fn build_action_graph<'graph>(&self) -> miette::Result<ActionGraphBuilder<'graph>> {
+    pub async fn build_action_graph(&self) -> miette::Result<ActionGraphBuilder> {
         let config = &self.workspace_config.pipeline;
 
         self.build_action_graph_with_options(ActionGraphBuilderOptions {
@@ -120,14 +120,18 @@ impl MoonSession {
         .await
     }
 
-    pub async fn build_action_graph_with_options<'graph>(
+    pub async fn build_action_graph_with_options(
         &self,
         options: ActionGraphBuilderOptions,
-    ) -> miette::Result<ActionGraphBuilder<'graph>> {
+    ) -> miette::Result<ActionGraphBuilder> {
         let app_context = self.get_app_context().await?;
         let workspace_graph = self.get_workspace_graph().await?;
 
-        ActionGraphBuilder::new(app_context, workspace_graph, options)
+        Ok(ActionGraphBuilder::new(
+            app_context,
+            workspace_graph,
+            options,
+        ))
     }
 
     pub fn build_code_generator(&self) -> CodeGenerator<'_> {
@@ -233,9 +237,7 @@ impl MoonSession {
             let mut engine = CacheEngine::new(context.clone())?;
 
             // Always register the local backend: it's the home for hash
-            // manifests, which every run depends on regardless of whether task
-            // outputs are cached here. Using it for task outputs stays gated on
-            // the experiment (see `TaskRunState::local_cas_enabled`).
+            // manifests and task outputs, which every run depends on.
             engine.storage.add_local_backend(LocalStorage::new(
                 context.clone(),
                 context
@@ -392,17 +394,12 @@ impl MoonSession {
     async fn load_workspace_graph(&self) -> miette::Result<Arc<WorkspaceGraph>> {
         let context = self.create_workspace_graph_context().await?;
 
-        let workspace_graph = Arc::new(if self.workspace_config.experiments.async_graph_building {
-            WorkspaceBuilderAsync::new_with_cache(context)
-                .await?
-                .build()
-                .await?
-        } else {
+        let workspace_graph = Arc::new(
             WorkspaceBuilder::new_with_cache(context)
                 .await?
                 .build()
-                .await?
-        });
+                .await?,
+        );
 
         // Update the plugin registries with the graph
         let extensions = self.get_extension_registry().await?;

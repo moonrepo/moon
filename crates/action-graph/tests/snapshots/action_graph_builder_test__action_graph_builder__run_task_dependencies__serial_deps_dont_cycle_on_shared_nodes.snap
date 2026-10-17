@@ -1,5 +1,6 @@
 ---
 source: crates/action-graph/tests/action_graph_builder_test.rs
+assertion_line: 3632
 expression: graph.to_dot()
 ---
 digraph {
@@ -15,19 +16,19 @@ digraph {
     1 -> 0 [ label="required"]
     2 -> 1 [ label="required"]
     3 -> 0 [ label="required"]
-    3 -> 1 [ label="required"]
     4 -> 3 [ label="required"]
     4 -> 2 [ label="required"]
     5 -> 0 [ label="required"]
-    5 -> 3 [ label="required"]
-    5 -> 1 [ label="required"]
     6 -> 5 [ label="required"]
     6 -> 2 [ label="required"]
     6 -> 4 [ label="required"]
     7 -> 0 [ label="required"]
-    7 -> 3 [ label="required"]
-    7 -> 5 [ label="required"]
     8 -> 7 [ label="required"]
     8 -> 6 [ label="required"]
     8 -> 4 [ label="required"]
+    7 -> 3 [ label="required"]
+    7 -> 5 [ label="required"]
+    3 -> 1 [ label="required"]
+    5 -> 1 [ label="required"]
+    5 -> 3 [ label="required"]
 }

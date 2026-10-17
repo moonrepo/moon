@@ -6,4 +6,4 @@ tasks:
     command: exit 1
     toolchain: system
     options:
-      allowFailure: true
+      onFailure: allow

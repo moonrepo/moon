@@ -5,6 +5,7 @@ edition = "2024"
 publish = false
 
 [dependencies]
+moon_async_utils = { path = "../async-utils" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 miette = { workspace = true }
@@ -12,6 +13,8 @@ petgraph = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 starbase_utils = { workspace = true, features = ["json"] }
+thiserror = { workspace = true }
+tracing = { workspace = true }
 
 [lints]
 workspace = true

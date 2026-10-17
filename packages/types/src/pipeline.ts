@@ -1,5 +1,5 @@
 import type { Duration, GraphContainer, Id, ToolchainSpec } from './common';
-import type { TaskDependencyType } from './tasks-config';
+import type { TaskDependencyType, TaskOutputStyle } from './tasks-config';
 
 export type ActionPipelineStatus =
 	| 'aborted'
@@ -117,17 +117,16 @@ export interface TargetState {
 export interface AffectedProjectState {
 	files?: string[];
 	tasks?: string[];
-	upstream?: Id[];
-	downstream?: Id[];
+	dependencies?: Id[];
+	distance: number;
 	other: boolean;
 }
 
 export interface AffectedTaskState {
 	env?: string[];
 	files?: string[];
-	projects?: string[];
-	upstream?: Id[];
-	downstream?: Id[];
+	dependencies?: string[];
+	distance: number;
 	other: boolean;
 }
 
@@ -140,7 +139,9 @@ export interface Affected {
 export interface ActionContext {
 	affected?: Affected | null;
 	changedFiles: string[];
+	ignoredDependencies: Record<string, string[]>;
 	initialTargets: string[];
+	outputStyle: TaskOutputStyle | null;
 	passthroughArgs: string[];
 	primaryTargets: string[];
 	profile: 'cpu' | 'heap' | null;

@@ -466,3 +466,45 @@ mod place_workspace {
         assert!(graph.roots().is_empty());
     }
 }
+
+mod formats {
+    use super::*;
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn formats_for_the_visualizer() {
+        let sandbox = create_sandbox("layout");
+        let container = Container::new(&sandbox).await;
+        let mut builder = container.builder();
+
+        builder
+            .place([
+                (container.project("a"), tc()),
+                (container.project("tools"), tc()),
+            ])
+            .await
+            .unwrap();
+        builder.place_workspace([tc()]).await.unwrap();
+
+        let graph = builder.build();
+        let json: serde_json::Value =
+            serde_json::from_str(&graph.to_visualizer_json().unwrap()).unwrap();
+
+        assert_eq!(
+            json["nodes"],
+            serde_json::json!([
+                { "id": 0, "label": "(workspace)", "type": "layout-workspace" },
+                { "id": 1, "label": "tc-tier2 @ .", "type": "layout-root" },
+                { "id": 2, "label": "a", "type": "layout-project" },
+                { "id": 3, "label": "tools", "type": "layout-project" },
+            ])
+        );
+        assert_eq!(
+            json["edges"],
+            serde_json::json!([
+                { "id": "0 -> 1", "source": 0, "target": 1, "label": "workspace-root" },
+                { "id": "2 -> 1", "source": 2, "target": 1, "label": "workspace-member" },
+                { "id": "3 -> 1", "source": 3, "target": 1, "label": "outside" },
+            ])
+        );
+    }
+}

@@ -141,7 +141,7 @@ pub enum Commands {
     #[command(
         alias = "lg",
         name = "layout-graph",
-        about = "Display the toolchain dependencies roots that each project belongs to."
+        about = "Display an interactive graph of toolchain dependencies roots and their projects."
     )]
     LayoutGraph(LayoutGraphArgs),
 

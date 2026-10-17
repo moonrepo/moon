@@ -1,3 +1,4 @@
+use crate::commands::graph::run_server;
 use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use iocraft::prelude::{View, element};
@@ -14,8 +15,30 @@ pub struct LayoutGraphArgs {
     #[arg(help = "Project ID to *only* place, like a run would")]
     id: Option<Id>,
 
+    #[arg(
+        long,
+        help = "The host address",
+        env = "MOON_HOST",
+        default_value = "127.0.0.1"
+    )]
+    host: String,
+
+    #[arg(
+        long,
+        help = "The port to bind to",
+        env = "MOON_PORT",
+        default_value = "0"
+    )]
+    port: u16,
+
     #[arg(long, help = "Print the graph in DOT format")]
     dot: bool,
+
+    #[arg(
+        long,
+        help = "Print information about each root and its projects, instead of serving the graph"
+    )]
+    info: bool,
 
     #[arg(long, help = "Print the graph in JSON format")]
     json: bool,
@@ -60,7 +83,19 @@ pub async fn layout_graph(session: MoonSession, args: LayoutGraphArgs) -> Sessio
         return Ok(None);
     }
 
-    render_graph(&session, &graph)?;
+    if args.info {
+        render_graph(&session, &graph)?;
+
+        return Ok(None);
+    }
+
+    run_server(
+        "Layout graph",
+        graph.to_visualizer_json()?,
+        args.host,
+        args.port,
+    )
+    .await?;
 
     Ok(None)
 }

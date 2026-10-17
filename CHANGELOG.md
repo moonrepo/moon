@@ -166,10 +166,11 @@
   - The `cache.unstable_sharedWorktreeCache` setting no longer requires the `casOutputsCache`
     experiment, as task outputs are now always stored in the local content-addressable store.
 - **CLI**
-  - Added a `moon layout-graph` (`moon lg`) command, that displays the dependencies roots (like a
-    package manager workspace) that toolchains locate, and which projects belong to each, with their
-    role, version, and files. Supports `--dot` and `--json` output, and placing a single project,
-    like a run would.
+  - Added a `moon layout-graph` (`moon lg`) command, that serves an interactive graph of the
+    dependencies roots (like a package manager workspace) that toolchains locate, and the projects
+    that belong to each, with their role. Pass `--info` to print each root's version, files, and
+    projects instead. Also supports `--dot` and `--json` output, and placing a single project, like
+    a run would.
 - **Configuration**
   - Stabilized the `cache.unstable_sharedWorktreeCache` setting in `.moon/workspace.config`. Use
     `cache.sharedWorktreeCache` instead.

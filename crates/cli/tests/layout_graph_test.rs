@@ -10,7 +10,7 @@ mod layout_graph {
         let sandbox = create_empty_moon_sandbox();
 
         let assert = sandbox.run_bin(|cmd| {
-            cmd.arg("layout-graph");
+            cmd.arg("layout-graph").arg("--info");
         });
 
         assert_snapshot!(assert.output());
@@ -21,7 +21,7 @@ mod layout_graph {
         let sandbox = create_moon_sandbox("layout");
 
         let assert = sandbox.run_bin(|cmd| {
-            cmd.arg("layout-graph");
+            cmd.arg("layout-graph").arg("--info");
         });
 
         assert_snapshot!(assert.output());
@@ -32,7 +32,7 @@ mod layout_graph {
         let sandbox = create_moon_sandbox("layout");
 
         let assert = sandbox.run_bin(|cmd| {
-            cmd.arg("layout-graph").arg("b");
+            cmd.arg("layout-graph").arg("b").arg("--info");
         });
 
         assert_snapshot!(assert.output());
@@ -84,7 +84,7 @@ mod layout_graph {
         let sandbox = create_moon_sandbox("layout");
 
         let assert = sandbox.run_bin(|cmd| {
-            cmd.arg("layout-graph").arg("unknown");
+            cmd.arg("layout-graph").arg("unknown").arg("--info");
         });
 
         assert.failure();

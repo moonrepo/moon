@@ -6,6 +6,8 @@ export type GraphInfo = GraphInfoV1 | GraphInfoV2;
 export interface GraphNodeV1 {
 	id: number;
 	label: string;
+	// The type to style the node by, otherwise derived from the label
+	type?: string;
 }
 
 export interface GraphEdgeV1 {

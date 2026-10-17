@@ -5,7 +5,9 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_graph_utils::{GraphConnections, GraphConversions, GraphData, GraphToDot};
 use moon_toolchain::DependenciesWorkspaceRole;
 use petgraph::graph::{DiGraph, NodeIndex};
+use petgraph::visit::EdgeRef;
 use rustc_hash::FxHashMap;
+use serde::Serialize;
 use std::fmt;
 
 /// A node of the layout graph, when it's rendered as a graph.
@@ -18,6 +20,17 @@ pub enum LayoutNode {
         root: WorkspaceRelativePathBuf,
     },
     Project(Id),
+}
+
+impl LayoutNode {
+    /// The type of the node, which the visualizer styles nodes by.
+    pub fn get_type(&self) -> &'static str {
+        match self {
+            Self::Workspace => "layout-workspace",
+            Self::Root { .. } => "layout-root",
+            Self::Project(_) => "layout-project",
+        }
+    }
 }
 
 impl fmt::Display for LayoutNode {
@@ -95,6 +108,30 @@ impl GraphConversions<LayoutNode, LayoutEdge, String> for LayoutGraphView {}
 
 impl GraphToDot<LayoutNode, LayoutEdge, String> for LayoutGraphView {}
 
+/// A node in the visualizer's labeled graph format.
+#[derive(Serialize)]
+struct VisualizerNode {
+    id: usize,
+    label: String,
+    #[serde(rename = "type")]
+    type_of: &'static str,
+}
+
+/// An edge in the visualizer's labeled graph format.
+#[derive(Serialize)]
+struct VisualizerEdge {
+    id: String,
+    source: usize,
+    target: usize,
+    label: String,
+}
+
+#[derive(Serialize)]
+struct VisualizerGraph {
+    nodes: Vec<VisualizerNode>,
+    edges: Vec<VisualizerEdge>,
+}
+
 impl LayoutGraph {
     /// Render the layout as a graph of projects and roots, where each edge
     /// is a binding, labeled with its role.
@@ -145,6 +182,38 @@ impl LayoutGraph {
     /// Format the layout as a DOT graph.
     pub fn to_dot(&self) -> String {
         self.to_view().to_dot()
+    }
+
+    /// Format the layout for the visualizer, as nodes and edges with labels,
+    /// where each node has a type to style it by.
+    pub fn to_visualizer_json(&self) -> miette::Result<String> {
+        let view = self.to_view();
+        let graph = view.get_graph();
+
+        serde_json::to_string(&VisualizerGraph {
+            nodes: graph
+                .node_indices()
+                .map(|index| {
+                    let node = &graph[index];
+
+                    VisualizerNode {
+                        id: index.index(),
+                        label: node.to_string(),
+                        type_of: node.get_type(),
+                    }
+                })
+                .collect(),
+            edges: graph
+                .edge_references()
+                .map(|edge| VisualizerEdge {
+                    id: format!("{} -> {}", edge.source().index(), edge.target().index()),
+                    source: edge.source().index(),
+                    target: edge.target().index(),
+                    label: edge.weight().to_string(),
+                })
+                .collect(),
+        })
+        .into_diagnostic()
     }
 
     /// Format the layout as JSON, with every root and binding.

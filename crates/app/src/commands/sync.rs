@@ -3,6 +3,7 @@ use crate::session::{MoonSession, SessionResult};
 use iocraft::prelude::element;
 use moon_action_graph::{ActionGraphBuilderOptions, BuildOutput, RunRequirements};
 use moon_console::ui::{Container, Notice, StyledText, Variant};
+use std::sync::Arc;
 
 pub use crate::commands::syncs::SyncCommands;
 
@@ -16,11 +17,11 @@ pub async fn sync(session: MoonSession) -> SessionResult {
     action_graph_builder.sync_workspace();
 
     for project in workspace_graph.get_projects()? {
-        action_graph_builder.sync_project(&project);
+        action_graph_builder.sync_project(Arc::clone(&project));
 
         for task in workspace_graph.get_tasks_from_project(&project.id)? {
             if task.options.run_in_sync_phase {
-                action_graph_builder.run_task(task.as_ref());
+                action_graph_builder.run_task(task);
             }
         }
     }

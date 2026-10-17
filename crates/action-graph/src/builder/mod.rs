@@ -15,6 +15,7 @@ mod assemble;
 mod select;
 
 use crate::action_graph::ActionGraph;
+use crate::action_graph_error::ActionGraphError;
 use crate::action_graph_options::{ActionGraphBuilderOptions, RunPartition, RunRequirements};
 use moon_action_context::{ActionContext, TargetState};
 use moon_affected::{AffectedTracker, Depth};
@@ -246,9 +247,10 @@ impl ActionGraphBuilder {
     }
 
     /// Run the provided task as a primary target, and when requested, its
-    /// dependents (up to the depth) as primary targets as well.
-    pub fn run_task(&mut self, task: &Task) -> RequestId {
-        self.request(Request::RunTask(Arc::new(task.to_owned())))
+    /// dependents (up to the depth) as primary targets as well. Takes the
+    /// task's `Arc` (or an owned task), so that it's not cloned.
+    pub fn run_task(&mut self, task: impl Into<Arc<Task>>) -> RequestId {
+        self.request(Request::RunTask(task.into()))
     }
 
     /// Run the tasks of the provided target (and their dependents).
@@ -263,18 +265,25 @@ impl ActionGraphBuilder {
 
     /// Install the dependencies of the toolchain for the project, in the
     /// closest root (or set it up, when it doesn't install dependencies).
-    pub fn install_dependencies(&mut self, spec: &ToolchainSpec, project: &Project) -> RequestId {
+    pub fn install_dependencies(
+        &mut self,
+        spec: &ToolchainSpec,
+        project: impl Into<Arc<Project>>,
+    ) -> RequestId {
         self.request(Request::Provision(ProvisionRequest::InstallDependencies(
             spec.to_owned(),
-            Arc::new(project.to_owned()),
+            project.into(),
         )))
     }
 
     /// Install the dependencies of each of the project's toolchains (or set
     /// them up, when they don't install dependencies).
-    pub fn install_dependencies_by_project(&mut self, project: &Project) -> RequestId {
+    pub fn install_dependencies_by_project(
+        &mut self,
+        project: impl Into<Arc<Project>>,
+    ) -> RequestId {
         self.request(Request::Provision(
-            ProvisionRequest::InstallDependenciesByProject(Arc::new(project.to_owned())),
+            ProvisionRequest::InstallDependenciesByProject(project.into()),
         ))
     }
 
@@ -292,12 +301,12 @@ impl ActionGraphBuilder {
         &mut self,
         spec: &ToolchainSpec,
         root: &WorkspaceRelativePathBuf,
-        project: &Project,
+        project: impl Into<Arc<Project>>,
     ) -> RequestId {
         self.request(Request::Provision(ProvisionRequest::SetupEnvironment(
             spec.to_owned(),
             root.to_owned(),
-            Arc::new(project.to_owned()),
+            project.into(),
         )))
     }
 
@@ -335,9 +344,10 @@ impl ActionGraphBuilder {
         )))
     }
 
-    /// Sync the project, and when enabled, the projects it depends on.
-    pub fn sync_project(&mut self, project: &Project) -> RequestId {
-        self.request(Request::SyncProject(Arc::new(project.to_owned())))
+    /// Sync the project, and when enabled, the projects it depends on. Takes
+    /// the project's `Arc` (or an owned project), so that it's not cloned.
+    pub fn sync_project(&mut self, project: impl Into<Arc<Project>>) -> RequestId {
+        self.request(Request::SyncProject(project.into()))
     }
 
     /// Sync the workspace.
@@ -350,6 +360,13 @@ impl ActionGraphBuilder {
     /// Build the graph from every request, in the order they were made.
     pub async fn build(mut self) -> miette::Result<BuildOutput> {
         debug!("Building action graph");
+
+        // Validate the job up front, before any work is done
+        if let (Some(index), Some(total)) = (self.requirements.job, self.requirements.job_total)
+            && index >= total
+        {
+            return Err(ActionGraphError::InvalidJobIndex { index, total }.into());
+        }
 
         let changed_files = self.changed_files.take();
         let (affected, affected_depth) = self.create_affected_tracker(&changed_files).await?;
@@ -492,12 +509,11 @@ impl ActionGraphBuilder {
             self.workspace_graph.get_tasks_with_internal()?;
         }
 
-        let mut affected = AffectedTracker::new(
-            Arc::clone(&self.workspace_graph),
-            changed_files
-                .clone()
-                .expect("Changed files are required for affected tracking."),
-        );
+        let Some(changed_files) = changed_files.clone() else {
+            return Err(ActionGraphError::MissingChangedFiles.into());
+        };
+
+        let mut affected = AffectedTracker::new(Arc::clone(&self.workspace_graph), changed_files);
 
         affected.set_ci_check(ci_check);
         affected.set_depth(depth);
@@ -515,10 +531,9 @@ impl ActionGraphBuilder {
     /// Track affected state for the changed files, without tracking projects
     /// up front, so that tasks and projects are only checked when inserted.
     pub fn set_affected(&mut self) -> miette::Result<()> {
-        let changed_files = self
-            .changed_files
-            .clone()
-            .expect("Changed files are required for affected tracking.");
+        let Some(changed_files) = self.changed_files.clone() else {
+            return Err(ActionGraphError::MissingChangedFiles.into());
+        };
 
         self.mocked_affected = Some((
             AffectedTracker::new(Arc::clone(&self.workspace_graph), changed_files),

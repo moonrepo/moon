@@ -270,6 +270,8 @@ impl TaskLookup for TaskGraph {
 }
 
 impl GraphData<Task, TaskDependencyType, Target> for TaskGraph {
+    type NodeWeight = NodeIndex;
+
     fn get_graph(&self) -> &DiGraph<NodeIndex, TaskDependencyType> {
         &self.graph
     }

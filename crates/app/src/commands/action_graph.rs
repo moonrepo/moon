@@ -60,7 +60,7 @@ pub async fn action_graph(session: MoonSession, args: ActionGraphArgs) -> Sessio
     // Show all targets and actions
     else {
         for task in workspace_graph.get_tasks()? {
-            action_graph_builder.run_task(&task);
+            action_graph_builder.run_task(task);
         }
     }
 

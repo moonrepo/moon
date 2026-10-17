@@ -115,13 +115,13 @@ impl SyncProjectsTool {
             let projects = workspace_graph.get_projects().map_err(map_miette_error)?;
 
             for project in projects {
-                action_graph.sync_project(&project);
+                action_graph.sync_project(project);
             }
         } else {
             for id in &self.ids {
                 let project = workspace_graph.get_project(id).map_err(map_miette_error)?;
 
-                action_graph.sync_project(&project);
+                action_graph.sync_project(project);
             }
         }
 

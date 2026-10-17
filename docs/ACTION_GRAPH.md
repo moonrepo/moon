@@ -25,9 +25,11 @@ Source files:
 
 ## Model
 
-The graph is a `Dag<ActionNode, TaskDependencyType>`
-([action_graph.rs:12](../crates/action-graph/src/action_graph.rs#L12)). Edges are rejected on
-insertion if they would form a cycle.
+The graph is a `DiGraph<ActionNode, TaskDependencyType>`
+([action_graph.rs:12](../crates/action-graph/src/action_graph.rs#L12)). The builder adds edges with
+`add_acyclic_edge` and `add_acyclic_edges`
+([graph_cycle.rs](../crates/graph-utils/src/graph_cycle.rs)), so edges are rejected on insertion if
+they would form a cycle.
 
 **Edge direction.** Every edge points from the node that runs later to the node that runs earlier:
 `A → B` means A waits on B. This holds for all edge weights, including cleanup edges (the cleanup
@@ -311,10 +313,11 @@ re-evaluating edges or dependencies.
 
 ## Task dependency edges
 
-A task's `deps` are expanded in the task graph before the action graph sees them, so every
-`dep.target` is scoped to a project id, all projects (`:task`), or a project tag (`#tag:task`); the
-`^:` and `~:` scopes error here. Each target resolves to one or more tasks, and internal tasks are
-allowed. [link_dependency](../crates/action-graph/src/builder/select.rs#L825).
+A task's `deps` are expanded when tasks are built, before the action graph sees them, so every
+`dep.target` is a `project:task` target: `:task` dependencies are rejected, and `#tag:task`,
+`^:task`, and `~:task` dependencies are expanded into a target for each task. Internal tasks are
+allowed, and `--query` never bounds dependencies, as they're always inserted.
+[link_dependency](../crates/action-graph/src/builder/select.rs#L825).
 
 Each resolved dependency task is inserted through the same `RunTask` path, with:
 
@@ -421,11 +424,16 @@ Which tasks become primary `RunTask` nodes is decided before any edges are linke
 2. Deduplicate, then append dependents of the selected tasks up to `--dependents` depth
    ([resolve_dependents](../crates/action-graph/src/builder/select.rs#L1060)). The walk follows
    incoming task graph edges, **except** `cleanup` edges, and skips projects that don't match
-   `--query`. A task that was both selected and reached as a dependent counts as requested.
+   `--query`. Internal tasks aren't added, as they only run as a dependency of another task, but the
+   walk continues through them, so the dependents beyond them are added (and those insert the
+   internal task as a dependency). A task that was both selected and reached as a dependent counts
+   as requested.
 3. Track affected state for every candidate (or every task, when affected state flows through
    relations).
 4. When partitioning into jobs (`--job`/`--job-total`, or an execution plan's partitioned jobs),
-   drop unaffected candidates, then keep this job's slice.
+   drop unaffected candidates, then keep this job's slice. A job index that isn't below the job
+   total errors before anything is selected. The primary targets of the slice are kept in the order
+   they were selected.
 5. Insert each remaining candidate through the `RunTask` path, with origin `Requested` or
    `Dependent`. Every candidate that produces a node is recorded as a primary target.
 

@@ -225,7 +225,7 @@ impl GeneratedGraphs {
                 builder.set_requirements(local);
 
                 for task in self.workspace_graph.get_tasks()? {
-                    builder.run_task(&task);
+                    builder.run_task(task.clone());
                 }
             }
             Scenario::Sync => {
@@ -233,7 +233,7 @@ impl GeneratedGraphs {
                 builder.sync_workspace();
 
                 for project in self.workspace_graph.get_projects()? {
-                    builder.sync_project(&project);
+                    builder.sync_project(project.clone());
                 }
             }
             Scenario::Setup => {
@@ -247,7 +247,7 @@ impl GeneratedGraphs {
             }
             Scenario::DockerSetup => {
                 for project in self.workspace_graph.get_projects()? {
-                    builder.install_dependencies_by_project(&project);
+                    builder.install_dependencies_by_project(project.clone());
                 }
             }
         };
@@ -542,7 +542,7 @@ mod canonical_form {
         // Both depend on the teardown as a cleanup, once with args
         for id in ["base", "args-parent"] {
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&wg.get_task_from_project("proj", id).unwrap());
+            builder.run_task(wg.get_task_from_project("proj", id).unwrap());
         }
 
         let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
@@ -583,7 +583,7 @@ mod canonical_form {
             let mut builder = container.create_builder(wg.clone()).await;
 
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&wg.get_task_from_project("proj", id).unwrap());
+            builder.run_task(wg.get_task_from_project("proj", id).unwrap());
 
             let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 

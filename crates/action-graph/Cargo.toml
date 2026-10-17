@@ -43,6 +43,7 @@ moon_test_utils = { path = "../test-utils" }
 criterion = { workspace = true }
 serde_json = { workspace = true }
 starbase_sandbox = { workspace = true }
+warpgate_api = { workspace = true }
 
 [lints]
 workspace = true

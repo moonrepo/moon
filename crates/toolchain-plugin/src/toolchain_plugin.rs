@@ -41,6 +41,10 @@ pub struct ToolchainPlugin {
 
     globals_cache: scc::HashMap<UnresolvedVersionSpec, Option<PathBuf>>,
     locations_cache: scc::HashMap<UnresolvedVersionSpec, (ToolSpec, LocatorResponse)>,
+
+    // Every project in a dependencies workspace is matched against its member
+    // globs, so they're compiled once per list of members
+    members_globs_cache: scc::HashMap<Vec<String>, Arc<GlobSet<'static>>>,
 }
 
 #[async_trait]
@@ -76,6 +80,7 @@ impl Plugin for ToolchainPlugin {
             locator: registration.locator,
             globals_cache: scc::HashMap::new(),
             locations_cache: scc::HashMap::new(),
+            members_globs_cache: scc::HashMap::new(),
             setup: AtomicBool::new(false),
             metadata,
             plugin,
@@ -174,6 +179,23 @@ impl ToolchainPlugin {
         Ok(None)
     }
 
+    fn get_members_globset(&self, members: &[String]) -> miette::Result<Arc<GlobSet<'static>>> {
+        if let Some(globset) = self
+            .members_globs_cache
+            .read_sync(members, |_, globset| Arc::clone(globset))
+        {
+            return Ok(globset);
+        }
+
+        let globset = Arc::new(GlobSet::new_owned(members)?);
+
+        let _ = self
+            .members_globs_cache
+            .insert_sync(members.to_vec(), Arc::clone(&globset));
+
+        Ok(globset)
+    }
+
     pub fn in_dependencies_workspace(
         &self,
         workspace: &DependenciesWorkspace,
@@ -190,7 +212,7 @@ impl ToolchainPlugin {
             }
             // Match against the provided member globs
             else if let Some(members) = &workspace.members {
-                GlobSet::new(members)?
+                self.get_members_globset(members)?
                     .matches(path.strip_prefix(&workspace.root).unwrap_or(path))
                     .then_some(DependenciesWorkspaceRole::WorkspaceMember)
             }

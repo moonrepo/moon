@@ -92,7 +92,7 @@ pub enum Event {
     EnterTask {
         instance: usize,
         project: Arc<Project>,
-        toolchains: Vec<Id>,
+        task: Arc<Task>,
         sync_project: Option<Id>,
     },
     /// A task instance whose dependencies have been visited: link its setup
@@ -150,14 +150,20 @@ pub struct TaskPlan {
     pub results: FxHashMap<RequestId, RequestResult>,
 }
 
+/// The tasks that a dependency target resolves to, shared by every task
+/// that depends on it.
+type DependencyTasks = Arc<[Arc<Task>]>;
+
 /// A task whose dependencies are being visited.
 struct Frame {
     instance: usize,
     parallel: bool,
-    deps: Vec<TaskDependencyConfig>,
+    task: Arc<Task>,
+    /// Only these dependencies of the task are visited, instead of all of them.
+    only_deps: Option<Vec<TaskDependencyConfig>>,
     next_dep: usize,
     /// The dependency being visited, its resolved tasks, and the next one.
-    current: Option<(usize, Vec<Arc<Task>>, usize)>,
+    current: Option<(usize, DependencyTasks, usize)>,
     /// A dependency instance that was just created, and is linked once its own
     /// dependencies have been visited (when its frame is popped).
     pending: Option<(usize, Arc<Task>, usize)>,
@@ -165,6 +171,12 @@ struct Frame {
     previous_standard: Option<usize>,
     requirements: Vec<(usize, TaskDependencyType)>,
     cleanups: Vec<usize>,
+}
+
+impl Frame {
+    fn deps(&self) -> &[TaskDependencyConfig] {
+        self.only_deps.as_deref().unwrap_or(&self.task.deps)
+    }
 }
 
 enum Entry {
@@ -209,6 +221,9 @@ pub struct TaskSelector<'query> {
     primary_targets: FxHashSet<Target>,
     wait_targets: FxHashSet<Target>,
     results: FxHashMap<RequestId, RequestResult>,
+
+    /// The tasks of each dependency target, which are resolved once.
+    dependency_tasks: FxHashMap<Target, DependencyTasks>,
 }
 
 impl<'query> TaskSelector<'query> {
@@ -239,6 +254,7 @@ impl<'query> TaskSelector<'query> {
             primary_targets: FxHashSet::default(),
             wait_targets: FxHashSet::default(),
             results: FxHashMap::default(),
+            dependency_tasks: FxHashMap::default(),
         }
     }
 
@@ -626,12 +642,11 @@ impl<'query> TaskSelector<'query> {
                     frame.current = None;
                 }
 
-                let Some(dep) = frame.deps.get(frame.next_dep) else {
+                let Some(dep) = frame.deps().get(frame.next_dep) else {
                     break None;
                 };
 
-                let dep_tasks =
-                    self.resolve_tasks_from_target(&dep.target, TaskOrigin::Dependency)?;
+                let dep_tasks = self.resolve_dependency_tasks(&dep.target)?;
 
                 frame.current = Some((frame.next_dep, dep_tasks, 0));
                 frame.next_dep += 1;
@@ -652,9 +667,13 @@ impl<'query> TaskSelector<'query> {
             };
 
             // Dependencies are inserted regardless of affected state
-            let config = frame.deps[dep_index].clone();
-
-            match self.enter(&dep_task, Some(&config), TaskOrigin::Dependency, true, reqs)? {
+            match self.enter(
+                &dep_task,
+                Some(&frame.deps()[dep_index]),
+                TaskOrigin::Dependency,
+                true,
+                reqs,
+            )? {
                 Entry::Skipped => {}
                 Entry::Existing(instance) => {
                     self.link_dependency(frame, dep_index, &dep_task, instance);
@@ -777,7 +796,7 @@ impl<'query> TaskSelector<'query> {
         self.events.push(Event::EnterTask {
             instance: index,
             project,
-            toolchains: task.toolchains.clone(),
+            task: Arc::clone(task),
             sync_project,
         });
 
@@ -785,7 +804,7 @@ impl<'query> TaskSelector<'query> {
             return Ok(Entry::New(index, None));
         }
 
-        let deps = if reqs.no_dependencies {
+        let only_deps = if reqs.no_dependencies {
             // Dependencies that weren't selected are not inserted, but the
             // ones that exist are still linked once every request has been
             // selected. Cleanup dependencies must always run after the task,
@@ -799,9 +818,9 @@ impl<'query> TaskSelector<'query> {
             self.no_dependencies_tasks
                 .insert(task.target.clone(), others);
 
-            cleanups
+            Some(cleanups)
         } else {
-            task.deps.clone()
+            None
         };
 
         Ok(Entry::New(
@@ -809,7 +828,8 @@ impl<'query> TaskSelector<'query> {
             Some(Frame {
                 instance: index,
                 parallel: task.options.run_deps_in_parallel,
-                deps,
+                task: Arc::clone(task),
+                only_deps,
                 next_dep: 0,
                 current: None,
                 pending: None,
@@ -829,7 +849,7 @@ impl<'query> TaskSelector<'query> {
         dep_task: &Task,
         instance: usize,
     ) {
-        let type_of = frame.deps[dep_index].type_of;
+        let type_of = frame.deps()[dep_index].type_of;
 
         // Cleanup dependencies run *after* the task, so the relation is
         // reversed, and they take no part in the serial chain
@@ -1106,6 +1126,22 @@ impl<'query> TaskSelector<'query> {
         }
 
         Ok(dep_tasks)
+    }
+
+    /// Resolve the tasks of a dependency target, once.
+    fn resolve_dependency_tasks(&mut self, target: &Target) -> miette::Result<DependencyTasks> {
+        if let Some(tasks) = self.dependency_tasks.get(target) {
+            return Ok(Arc::clone(tasks));
+        }
+
+        let tasks: DependencyTasks = self
+            .resolve_tasks_from_target(target, TaskOrigin::Dependency)?
+            .into();
+
+        self.dependency_tasks
+            .insert(target.to_owned(), Arc::clone(&tasks));
+
+        Ok(tasks)
     }
 
     /// Resolve the tasks of a target. Requested tasks exclude internal tasks,

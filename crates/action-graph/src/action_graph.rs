@@ -109,31 +109,8 @@ impl ActionGraph {
     }
 
     pub fn sort_topological(&self) -> miette::Result<Vec<NodeIndex>> {
-        // Detect any cycles first
-        let mut cycle: Vec<NodeIndex> = vec![];
-
-        self.graph.visit_cycles(|_, c| {
-            cycle.extend(c);
-            std::ops::ControlFlow::Break(())
-        });
-
-        if !cycle.is_empty() {
-            return Err(ActionGraphError::CycleDetected(
-                cycle
-                    .into_iter()
-                    .map(|index| {
-                        self.graph
-                            .node_weight(index)
-                            .map(|node| node.label())
-                            .unwrap_or_else(|| "(unknown)".into())
-                    })
-                    .collect::<Vec<_>>()
-                    .join(" → "),
-            )
-            .into());
-        }
-
-        // Then sort topologically
+        // The builder never links an edge that closes a cycle, so sort first,
+        // and only search for the cycle to report when sorting fails
         match petgraph::algo::toposort(&self.graph, None) {
             Ok(mut indices) => {
                 indices.reverse();
@@ -145,15 +122,33 @@ impl ActionGraph {
 
                 Ok(indices)
             }
-            // For some reason the topo sort can detect a cycle,
-            // that wasn't previously detected, so error...
-            Err(cycle) => Err(ActionGraphError::CycleDetected(
-                self.graph
-                    .node_weight(cycle.node_id())
-                    .map(|node| node.label())
-                    .unwrap_or_else(|| "(unknown)".into()),
-            )
-            .into()),
+            Err(cycle) => {
+                let mut indices: Vec<NodeIndex> = vec![];
+
+                self.graph.visit_cycles(|_, found| {
+                    indices.extend(found);
+                    std::ops::ControlFlow::Break(())
+                });
+
+                // Fallback to the node that the sort detected the cycle at
+                if indices.is_empty() {
+                    indices.push(cycle.node_id());
+                }
+
+                Err(ActionGraphError::CycleDetected(
+                    indices
+                        .into_iter()
+                        .map(|index| {
+                            self.graph
+                                .node_weight(index)
+                                .map(|node| node.label())
+                                .unwrap_or_else(|| "(unknown)".into())
+                        })
+                        .collect::<Vec<_>>()
+                        .join(" → "),
+                )
+                .into())
+            }
         }
     }
 }

@@ -130,6 +130,16 @@
       scopes (like production one way, and development the other), the production and peer
       dependencies are kept.
     - Errors for actions that would depend on each other now describe the whole cycle.
+  - Improved the performance of building the action graph further:
+    - Tasks that run in a toolchain no longer resolve the toolchain's setup and dependency install
+      actions for every task, only once for each toolchain and project. Building takes 57% less time
+      in our benchmarks.
+    - Serial dependencies (`runDepsInParallel: false`) no longer walk, and check for cycles and
+      existing edges, every task below them again for each ordering edge, which grew cubically with
+      the depth of the dependency chain. A chain of 1,000 serial dependencies now builds in 82ms,
+      instead of 24s.
+    - Projects in a dependencies workspace (like a JavaScript monorepo) no longer compile the
+      workspace's member globs again for every project.
 - **Action pipeline**
   - Reading the states of task dependencies, while hashing and running tasks, no longer takes an
     exclusive lock, which serialized tasks running concurrently.

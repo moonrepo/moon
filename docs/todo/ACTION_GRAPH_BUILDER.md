@@ -635,6 +635,68 @@ map of every node, which is probably most of it:
 | `chained/run_tasks/100`  |  441 µs |  428 µs |    -3% |
 | `chained/run_tasks/1000` | 4.19 ms | 4.04 ms |    -3% |
 
+## Audit performance fixes
+
+Done on 2026-10-16, after an audit of the crate found a few performance issues that the existing
+benchmarks couldn't see. Two benchmark cases were added for them:
+
+- `toolchain`: the simple workspace, but every task runs in the `tc-tier3` test toolchain, so it
+  resolves the toolchain's install slot. The test plugin locates the dependencies root at the
+  workspace root, without members, so no project is in it, and every task falls back to setting up
+  the toolchain: this measures resolving that (the toolchain's requirements and supported tiers, and
+  locating the root), but not install or environment actions, nor matching workspace members. The
+  test plugin is located in `CARGO_TARGET_DIR` or `WARPGATE_PLUGINS_DIR` (or their `target`
+  directory), as built by `just build-wasm`, and the case is skipped, with a message, when it isn't
+  found.
+- `serial`: the chained workspace, but every `build` task runs its dependencies serially (its own
+  `test` task, then the dependency project's `build` task), so the chain below each one is ordered
+  after a `test` task. The graph is quadratic by design (about 1M edges for 1,000 projects).
+
+The fixes:
+
+- **Install slots** (and toolchain setups) are resolved once per toolchain and project, instead of
+  once per task. Resolving one again returns the same node, and only links edges that already exist
+  (or that would still close a cycle), but called the toolchain's plugin functions again (memoized,
+  but they still merged configs and serialized inputs), and compiled the dependencies workspace's
+  member globs again. The toolchain plugin now also caches the compiled member globs.
+- **Serial ordering** was cubic in the depth of the chain: every ordering edge searched for a path,
+  every walk iterated each task's edges (lower tasks gain a serial edge for every link above them),
+  and every edge checked for an existing one by scanning the task's edges. The real dependency edges
+  between tasks are now collected once (they're all linked before any serial edge, which the walk
+  never follows), what the anchor reaches is found once per link (an edge into the anchor never
+  changes what it reaches), and the nodes that already require the anchor are found once per link.
+  When a link orders tasks against both anchors (persistent and not), each edge is still checked on
+  its own, as an edge into one anchor can change what the other reaches.
+- **Task requirements** are no longer checked against the task's edges, which was quadratic for
+  tasks with many dependencies. Before its requirements, a task only links to setup and sync
+  actions, and to the tasks it's a cleanup of (with a cleanup edge, which a requirement never is),
+  so a requirement is only linked already when it's listed more than once.
+- **Topological sort** runs before the cycle search, which only runs when the sort fails.
+- **Clones**: requests take the task's or project's `Arc`, task instances are moved into the graph,
+  frames read the task's dependencies instead of cloning them, and dependency targets are resolved
+  once.
+
+Every snapshot is unchanged, and a test now covers the per-edge fallback of serial ordering, which
+no test reached before. Measured against `3.0-ag-new2` before the fixes, on 2026-10-16, with the
+changes computed from the times shown. The first runs of the existing cases were noisy (12.7ms in
+earlier runs for `run_tasks/1000`), so those are also compared with the
+[Phase 6 results](#phase-6-results):
+
+| Case                       |  Before |   After | Change | vs phase 6 |
+| :------------------------- | ------: | ------: | -----: | ---------: |
+| `run_tasks/10`             |  142 µs |  130 µs |    -9% |        -6% |
+| `run_tasks/100`            | 1.19 ms | 1.07 ms |   -10% |        -6% |
+| `run_tasks/1000`           | 25.5 ms | 12.5 ms |   -51% |        -2% |
+| `chained/run_tasks/10`     |   68 µs |   60 µs |   -12% |        -3% |
+| `chained/run_tasks/100`    |  480 µs |  409 µs |   -15% |        -5% |
+| `chained/run_tasks/1000`   | 4.99 ms | 3.94 ms |   -21% |        -3% |
+| `toolchain/run_tasks/10`   |  670 µs |  271 µs |   -60% |            |
+| `toolchain/run_tasks/100`  | 5.67 ms | 2.38 ms |   -58% |            |
+| `toolchain/run_tasks/1000` | 60.1 ms | 25.9 ms |   -57% |            |
+| `serial/run_tasks/10`      |  164 µs |  107 µs |   -34% |            |
+| `serial/run_tasks/100`     | 19.5 ms | 1.45 ms |   -93% |            |
+| `serial/run_tasks/1000`    |  24.2 s | 81.8 ms | -99.7% |            |
+
 ## Risks
 
 - **Hidden order dependence that users rely on.** Graphs that differ only in conflict cases

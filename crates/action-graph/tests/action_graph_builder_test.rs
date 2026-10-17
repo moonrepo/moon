@@ -96,7 +96,7 @@ mod action_graph_builder {
             let spec = create_tier_spec(1);
 
             let project = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &project);
+            builder.install_dependencies(&spec, project.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -117,7 +117,7 @@ mod action_graph_builder {
             let spec = create_tier_spec(2);
 
             let project = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &project);
+            builder.install_dependencies(&spec, project.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -149,7 +149,7 @@ mod action_graph_builder {
             let spec = create_tier_spec(3);
 
             let project = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &project);
+            builder.install_dependencies(&spec, project.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -188,8 +188,8 @@ mod action_graph_builder {
             spec2.req = Some(create_unresolved_version(Version::new(4, 5, 6)));
 
             let project = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec1, &project);
-            builder.install_dependencies(&spec2, &project);
+            builder.install_dependencies(&spec1, project.clone());
+            builder.install_dependencies(&spec2, project.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -237,8 +237,8 @@ mod action_graph_builder {
             // Both versions resolve to the same environment, like projects that
             // share a dependencies root while overriding the toolchain's version
             let project = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec1, &project);
-            builder.install_dependencies(&spec2, &project);
+            builder.install_dependencies(&spec1, project.clone());
+            builder.install_dependencies(&spec2, project.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -276,7 +276,7 @@ mod action_graph_builder {
                 &builder
                     .get_project_spec(&Id::raw("rust"), &project)
                     .unwrap(),
-                &project,
+                project.clone(),
             );
 
             let project = wg.get_project("qux").unwrap();
@@ -284,7 +284,7 @@ mod action_graph_builder {
                 &builder
                     .get_project_spec(&Id::raw("rust"), &project)
                     .unwrap(),
-                &project,
+                project.clone(),
             );
 
             let graph = builder.build().await.unwrap().graph;
@@ -326,7 +326,7 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let project = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &project);
+            builder.install_dependencies(&spec, project.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -372,7 +372,7 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let project = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &project);
+            builder.install_dependencies(&spec, project.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -424,7 +424,7 @@ mod action_graph_builder {
             let spec = create_tier_spec(2);
 
             let project = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &project);
+            builder.install_dependencies(&spec, project.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -451,7 +451,7 @@ mod action_graph_builder {
             let mut builder = container.create_builder(wg.clone()).await;
 
             let project = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &project);
+            builder.install_dependencies(&spec, project.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -480,7 +480,7 @@ mod action_graph_builder {
             let spec = create_tier_spec(2);
 
             let project = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &project);
+            builder.install_dependencies(&spec, project.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -511,7 +511,7 @@ mod action_graph_builder {
             let spec = create_tier_spec(3);
 
             let project = wg.get_project("bar").unwrap();
-            let index = builder.install_dependencies(&spec, &project);
+            let index = builder.install_dependencies(&spec, project.clone());
 
             let output = builder.build().await.unwrap();
             let graph = output.graph;
@@ -548,7 +548,7 @@ mod action_graph_builder {
             let mut builder = container.create_builder(wg.clone()).await;
 
             let project = wg.get_project("bar").unwrap();
-            let index = builder.install_dependencies(&spec, &project);
+            let index = builder.install_dependencies(&spec, project.clone());
 
             let output = builder.build().await.unwrap();
             let graph = output.graph;
@@ -587,7 +587,7 @@ mod action_graph_builder {
             let spec = create_tier_spec(2);
 
             let project = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &project);
+            builder.install_dependencies(&spec, project.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -619,7 +619,7 @@ mod action_graph_builder {
             let spec = create_tier_spec(2);
 
             let project = wg.get_project("isolated").unwrap();
-            builder.install_dependencies(&spec, &project);
+            builder.install_dependencies(&spec, project.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -654,7 +654,7 @@ mod action_graph_builder {
             // and provisioning one here would clobber the workspace's environment,
             // since the package manager resolves upwards to the same root
             let project = wg.get_project("out").unwrap();
-            let index = builder.install_dependencies(&spec, &project);
+            let index = builder.install_dependencies(&spec, project.clone());
 
             let output = builder.build().await.unwrap();
             let graph = output.graph;
@@ -677,7 +677,7 @@ mod action_graph_builder {
             // There's no workspace, so the located root is the only package,
             // and this project isn't it
             let project = wg.get_project("bar").unwrap();
-            let index = builder.install_dependencies(&spec, &project);
+            let index = builder.install_dependencies(&spec, project.clone());
 
             let output = builder.build().await.unwrap();
             let graph = output.graph;
@@ -702,7 +702,7 @@ mod action_graph_builder {
             let spec = create_tier_spec(3);
 
             let project = wg.get_project("out").unwrap();
-            let index = builder.install_dependencies(&spec, &project);
+            let index = builder.install_dependencies(&spec, project.clone());
 
             let output = builder.build().await.unwrap();
             let graph = output.graph;
@@ -732,7 +732,7 @@ mod action_graph_builder {
             let spec = create_tier_spec(2);
 
             let project = wg.get_project("in").unwrap();
-            builder.install_dependencies(&spec, &project);
+            builder.install_dependencies(&spec, project.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -763,7 +763,7 @@ mod action_graph_builder {
             let spec = create_tier_spec(2);
 
             let project = wg.get_project("root").unwrap();
-            builder.install_dependencies(&spec, &project);
+            builder.install_dependencies(&spec, project.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -928,7 +928,7 @@ mod action_graph_builder {
             let spec = create_tier_spec(2);
 
             let project = wg.get_project("in").unwrap();
-            let project_index = builder.install_dependencies(&spec, &project);
+            let project_index = builder.install_dependencies(&spec, project.clone());
             let root_index = builder.install_dependencies_root(&spec);
 
             let output = builder.build().await.unwrap();
@@ -1089,7 +1089,7 @@ mod action_graph_builder {
             let task = create_task("bar", "build");
 
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -1128,7 +1128,7 @@ mod action_graph_builder {
             task.toolchains = vec![Id::raw("tc-tier3")];
 
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -1160,11 +1160,11 @@ mod action_graph_builder {
             let task = create_task("bar", "build");
 
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -1196,7 +1196,7 @@ mod action_graph_builder {
             task.options.interactive = true;
 
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -1224,7 +1224,7 @@ mod action_graph_builder {
                 interactive: true,
                 ..Default::default()
             });
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -1250,7 +1250,7 @@ mod action_graph_builder {
             task.options.persistent = true;
 
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -1276,9 +1276,9 @@ mod action_graph_builder {
 
             // Test collapsing
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             // Separate nodes
             builder.set_requirements(RunRequirements::default());
@@ -1436,9 +1436,9 @@ mod action_graph_builder {
 
             // Test collapsing
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             // Separate nodes
             builder.set_requirements(RunRequirements::default());
@@ -1547,9 +1547,9 @@ mod action_graph_builder {
 
             // Test collapsing
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             // Separate nodes
             builder.set_requirements(RunRequirements::default());
@@ -1635,7 +1635,7 @@ mod action_graph_builder {
                 builder.set_affected().unwrap();
 
                 builder.set_requirements(RunRequirements::default());
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let graph = builder.build().await.unwrap().graph;
 
@@ -1669,7 +1669,7 @@ mod action_graph_builder {
                 });
 
                 builder.set_requirements(RunRequirements::default());
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let graph = builder.build().await.unwrap().graph;
 
@@ -1700,7 +1700,7 @@ mod action_graph_builder {
                     dependents: Depth::Deep,
                     ..Default::default()
                 });
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let graph = builder.build().await.unwrap().graph;
 
@@ -2078,7 +2078,7 @@ mod action_graph_builder {
                     ci_check: true,
                     ..Default::default()
                 });
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
@@ -2102,7 +2102,7 @@ mod action_graph_builder {
                     dependents: Depth::Deep,
                     ..RunRequirements::default()
                 });
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let graph = builder.build().await.unwrap().graph;
 
@@ -2125,7 +2125,7 @@ mod action_graph_builder {
                     dependents: Depth::Deep,
                     ..RunRequirements::default()
                 });
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let graph = builder.build().await.unwrap().graph;
 
@@ -2152,7 +2152,7 @@ mod action_graph_builder {
                     ci_check: true,
                     ..Default::default()
                 });
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
@@ -2183,7 +2183,7 @@ mod action_graph_builder {
                     ci_check: true,
                     ..Default::default()
                 });
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
@@ -2214,7 +2214,7 @@ mod action_graph_builder {
                     ci_check: false,
                     ..Default::default()
                 });
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
@@ -2238,7 +2238,7 @@ mod action_graph_builder {
                     ci_check: false,
                     ..Default::default()
                 });
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
@@ -2262,7 +2262,7 @@ mod action_graph_builder {
                     dependents: Depth::Deep,
                     ..RunRequirements::default()
                 });
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let graph = builder.build().await.unwrap().graph;
 
@@ -2285,7 +2285,7 @@ mod action_graph_builder {
                     dependents: Depth::Deep,
                     ..RunRequirements::default()
                 });
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let graph = builder.build().await.unwrap().graph;
 
@@ -2341,7 +2341,7 @@ mod action_graph_builder {
                     let task = wg.get_task_from_project("proj", id).unwrap();
 
                     builder.set_requirements(reqs.clone());
-                    builder.run_task(&task);
+                    builder.run_task(task.clone());
                 }
 
                 let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
@@ -2566,7 +2566,7 @@ mod action_graph_builder {
                 let task = wg.get_task_from_project("deps", "chain3").unwrap();
 
                 builder.set_requirements(RunRequirements::default());
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
@@ -2595,7 +2595,7 @@ mod action_graph_builder {
                 );
 
                 builder.set_requirements(RunRequirements::default());
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let graph = builder.build().await.unwrap().graph;
 
@@ -2616,7 +2616,7 @@ mod action_graph_builder {
                     no_dependencies: true,
                     ..RunRequirements::default()
                 });
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
@@ -2654,7 +2654,7 @@ mod action_graph_builder {
                     no_dependencies: true,
                     ..RunRequirements::default()
                 });
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let graph = builder.build().await.unwrap().graph;
 
@@ -2856,7 +2856,7 @@ mod action_graph_builder {
                     for id in ids {
                         let task = wg.get_task_from_project("proj", id).unwrap();
 
-                        builder.run_task(&task);
+                        builder.run_task(task.clone());
                     }
 
                     let output = builder.build().await.unwrap();
@@ -2986,7 +2986,7 @@ mod action_graph_builder {
                 builder.set_requirements(RunRequirements {
                     ..RunRequirements::default()
                 });
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let graph = builder.build().await.unwrap().graph;
 
@@ -3016,7 +3016,7 @@ mod action_graph_builder {
                 builder.set_requirements(RunRequirements {
                     ..RunRequirements::default()
                 });
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let graph = builder.build().await.unwrap().graph;
 
@@ -3037,7 +3037,7 @@ mod action_graph_builder {
                     dependents: Depth::DIRECT,
                     ..RunRequirements::default()
                 });
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let graph = builder.build().await.unwrap().graph;
 
@@ -3072,7 +3072,7 @@ mod action_graph_builder {
                     dependents: Depth::DIRECT,
                     ..RunRequirements::default()
                 });
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let graph = builder.build().await.unwrap().graph;
 
@@ -3093,7 +3093,7 @@ mod action_graph_builder {
                     dependents: Depth::Deep,
                     ..RunRequirements::default()
                 });
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let graph = builder.build().await.unwrap().graph;
 
@@ -3132,7 +3132,7 @@ mod action_graph_builder {
                     dependents: Depth::Deep,
                     ..RunRequirements::default()
                 });
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let graph = builder.build().await.unwrap().graph;
 
@@ -3152,14 +3152,14 @@ mod action_graph_builder {
 
                 // First insert the task as a dependency of another target
                 builder.set_requirements(RunRequirements::default());
-                builder.run_task(&parent);
+                builder.run_task(parent.clone());
 
                 // Then run it as an explicit target with dependents
                 builder.set_requirements(RunRequirements {
                     dependents: Depth::DIRECT,
                     ..RunRequirements::default()
                 });
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let graph = builder.build().await.unwrap().graph;
 
@@ -3185,7 +3185,7 @@ mod action_graph_builder {
                     dependents: Depth::Limit(2),
                     ..RunRequirements::default()
                 });
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
@@ -3318,7 +3318,7 @@ mod action_graph_builder {
                     dependents: Depth::Deep,
                     ..RunRequirements::default()
                 });
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let graph = builder.build().await.unwrap().graph;
 
@@ -3344,7 +3344,7 @@ mod action_graph_builder {
                     dependents: Depth::Deep,
                     ..RunRequirements::default()
                 });
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let graph = builder.build().await.unwrap().graph;
 
@@ -3369,7 +3369,7 @@ mod action_graph_builder {
                     dependents: Depth::DIRECT,
                     ..RunRequirements::default()
                 });
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let graph = builder.build().await.unwrap().graph;
 
@@ -3396,13 +3396,13 @@ mod action_graph_builder {
                 let task_b = wg.get_task_from_project("b", "task").unwrap();
 
                 builder.set_requirements(reqs.clone());
-                builder.run_task(&task_b);
+                builder.run_task(task_b.clone());
 
                 // Then runs `c` as an explicit target, which must expand them
                 let task_c = wg.get_task_from_project("c", "task").unwrap();
 
                 builder.set_requirements(reqs.clone());
-                builder.run_task(&task_c);
+                builder.run_task(task_c.clone());
 
                 let graph = builder.build().await.unwrap().graph;
 
@@ -3489,7 +3489,7 @@ mod action_graph_builder {
                     dependents: Depth::Deep,
                     ..RunRequirements::default()
                 });
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let graph = builder.build().await.unwrap().graph;
 
@@ -3518,7 +3518,7 @@ mod action_graph_builder {
                 });
 
                 builder.set_requirements(RunRequirements::default());
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let graph = builder.build().await.unwrap().graph;
 
@@ -3651,7 +3651,7 @@ mod action_graph_builder {
             let task = wg.get_task_from_project("deps", "parallel").unwrap();
 
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
@@ -3673,7 +3673,7 @@ mod action_graph_builder {
             let task = wg.get_task_from_project("deps", "serial").unwrap();
 
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
@@ -3695,7 +3695,7 @@ mod action_graph_builder {
             let task = wg.get_task_from_project("deps", "chain1").unwrap();
 
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
@@ -3717,7 +3717,7 @@ mod action_graph_builder {
             let task = wg.get_task_from_project("deps", "base").unwrap();
 
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
@@ -3742,7 +3742,7 @@ mod action_graph_builder {
                 dependents: Depth::Deep,
                 ..RunRequirements::default()
             });
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
@@ -3778,7 +3778,7 @@ mod action_graph_builder {
                 dependents: Depth::Deep,
                 ..RunRequirements::default()
             });
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
@@ -3815,7 +3815,7 @@ mod action_graph_builder {
 
             for task in &tasks {
                 builder.set_requirements(RunRequirements::default());
-                builder.run_task(task);
+                builder.run_task(Arc::clone(task));
             }
 
             let graph = builder.build().await.unwrap().graph;
@@ -3837,7 +3837,7 @@ mod action_graph_builder {
             let task = wg.get_task_from_project("app", "build").unwrap();
 
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
@@ -3864,11 +3864,90 @@ mod action_graph_builder {
             let task = wg.get_task_from_project("proj", "dev").unwrap();
 
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
             assert_snapshot!(graph.to_dot());
+        }
+
+        // dev => [first-build, server, live] (serial), where live is persistent
+        // and depends on codegen. In live's subtree, live is ordered after
+        // server (the previous dep), and codegen after first-build (the previous
+        // dep that completes), so the link orders tasks against both, which
+        // checks each edge for a cycle on its own
+        #[tokio::test(flavor = "multi_thread")]
+        async fn serial_subtree_orders_against_both_previous_deps() {
+            let sandbox = create_sandbox("serial-persistent");
+
+            sandbox.create_file(
+                "proj/moon.yml",
+                [
+                    "tasks:",
+                    "  first-build:",
+                    "    command: 'build'",
+                    "  codegen:",
+                    "    command: 'codegen'",
+                    "  server:",
+                    "    command: 'serve'",
+                    "    options:",
+                    "      persistent: true",
+                    "  live:",
+                    "    command: 'live'",
+                    "    deps: ['~:codegen']",
+                    "    options:",
+                    "      persistent: true",
+                    "  dev:",
+                    "    deps: ['~:first-build', '~:server', '~:live']",
+                    "    inputs: []",
+                    "    options:",
+                    "      persistent: true",
+                    "      runDepsInParallel: false",
+                ]
+                .join("\n"),
+            );
+
+            let mut container = ActionGraphContainer::new(sandbox.path());
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            builder.set_requirements(RunRequirements::default());
+            builder.run_task(wg.get_task_from_project("proj", "dev").unwrap());
+
+            let graph = builder.build().await.unwrap().graph;
+            let inner = graph.get_inner_graph();
+            let mut edges = inner
+                .edge_indices()
+                .filter_map(|edge| {
+                    let (source, target) = inner.edge_endpoints(edge).unwrap();
+
+                    match (&inner[source], &inner[target]) {
+                        (ActionNode::RunTask(source), ActionNode::RunTask(target)) => {
+                            Some(format!(
+                                "{} -> {}",
+                                source.target.get_task_id().unwrap(),
+                                target.target.get_task_id().unwrap()
+                            ))
+                        }
+                        _ => None,
+                    }
+                })
+                .collect::<Vec<_>>();
+
+            edges.sort();
+
+            assert_eq!(
+                edges,
+                [
+                    "codegen -> first-build",
+                    "dev -> first-build",
+                    "dev -> live",
+                    "dev -> server",
+                    "live -> codegen",
+                    "live -> server",
+                    "server -> first-build",
+                ]
+            );
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -3887,7 +3966,7 @@ mod action_graph_builder {
                 let task = wg.get_task_from_project("proj", name).unwrap();
 
                 builder.set_requirements(RunRequirements::default());
-                builder.run_task(&task);
+                builder.run_task(task.clone());
             }
 
             let graph = builder.build().await.unwrap().graph;
@@ -3952,7 +4031,7 @@ mod action_graph_builder {
                 for id in ids {
                     let task = wg.get_task_from_project("proj", id).unwrap();
 
-                    builder.run_task(&task);
+                    builder.run_task(task.clone());
                 }
 
                 builder
@@ -4109,7 +4188,7 @@ mod action_graph_builder {
                 });
 
                 builder.set_requirements(RunRequirements::default());
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let error = builder.build().await.err().unwrap();
 
@@ -4174,7 +4253,7 @@ mod action_graph_builder {
             let task = wg.get_task_from_project("proj", "base").unwrap();
 
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
@@ -4213,7 +4292,7 @@ mod action_graph_builder {
             let task = wg.get_task_from_project("proj", "base").unwrap();
 
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -4239,7 +4318,7 @@ mod action_graph_builder {
             let task = wg.get_task_from_project("proj", "waits").unwrap();
 
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
@@ -4271,7 +4350,7 @@ mod action_graph_builder {
             let task = wg.get_task_from_project("proj", "serial").unwrap();
 
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -4333,7 +4412,7 @@ mod action_graph_builder {
             let task = wg.get_task_from_project("proj", "serial-wait").unwrap();
 
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -4407,7 +4486,7 @@ mod action_graph_builder {
                 dependents: Depth::DIRECT,
                 ..Default::default()
             });
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -4439,7 +4518,7 @@ mod action_graph_builder {
                 dependents: Depth::DIRECT,
                 ..Default::default()
             });
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
@@ -4480,7 +4559,7 @@ mod action_graph_builder {
                 let task = wg.get_task_from_project("proj", id).unwrap();
 
                 builder.set_requirements(RunRequirements::default());
-                builder.run_task(&task);
+                builder.run_task(task.clone());
 
                 let graph = builder.build().await.unwrap().graph;
                 let edges = map_edges(&graph);
@@ -4518,7 +4597,7 @@ mod action_graph_builder {
                 .unwrap();
 
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             let graph = builder.build().await.unwrap().graph;
             let edges = map_edges(&graph);
@@ -4548,7 +4627,7 @@ mod action_graph_builder {
                 let task = wg.get_task_from_project("proj", id).unwrap();
 
                 builder.set_requirements(RunRequirements::default());
-                builder.run_task(&task);
+                builder.run_task(task.clone());
             }
 
             let graph = builder.build().await.unwrap().graph;
@@ -4584,7 +4663,7 @@ mod action_graph_builder {
                 let task = wg.get_task_from_project("proj", id).unwrap();
 
                 builder.set_requirements(RunRequirements::default());
-                builder.run_task(&task);
+                builder.run_task(task.clone());
             }
 
             let graph = builder.build().await.unwrap().graph;
@@ -4617,7 +4696,7 @@ mod action_graph_builder {
                 dependents: Depth::DIRECT,
                 ..RunRequirements::default()
             });
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -4671,7 +4750,7 @@ mod action_graph_builder {
             });
 
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&task);
+            builder.run_task(task.clone());
 
             let error = builder.build().await.err().unwrap();
 
@@ -5571,7 +5650,7 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let project = wg.get_project("bar").unwrap();
-            let index = builder.setup_environment(&spec, &project.source, &project);
+            let index = builder.setup_environment(&spec, &project.source, project.clone());
 
             let output = builder.build().await.unwrap();
             let graph = output.graph;
@@ -5603,10 +5682,10 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let bar = wg.get_project("bar").unwrap();
-            builder.setup_environment(&spec, &bar.source, &bar);
+            builder.setup_environment(&spec, &bar.source, bar.clone());
 
             let baz = wg.get_project("baz").unwrap();
-            builder.setup_environment(&spec, &baz.source, &baz);
+            builder.setup_environment(&spec, &baz.source, baz.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -5640,8 +5719,8 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let project = wg.get_project("bar").unwrap();
-            let index1 = builder.setup_environment(&spec, &project.source, &project);
-            let index2 = builder.setup_environment(&spec, &project.source, &project);
+            let index1 = builder.setup_environment(&spec, &project.source, project.clone());
+            let index2 = builder.setup_environment(&spec, &project.source, project.clone());
 
             let output = builder.build().await.unwrap();
             let graph = output.graph;
@@ -5674,7 +5753,7 @@ mod action_graph_builder {
             let spec = create_tier_spec(2);
 
             let project = wg.get_project("bar").unwrap();
-            let index = builder.setup_environment(&spec, &project.source, &project);
+            let index = builder.setup_environment(&spec, &project.source, project.clone());
 
             let output = builder.build().await.unwrap();
             let graph = output.graph;
@@ -5704,7 +5783,7 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let project = wg.get_project("bar").unwrap();
-            builder.setup_environment(&spec, &project.source, &project);
+            builder.setup_environment(&spec, &project.source, project.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -5731,7 +5810,7 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let project = wg.get_project("bar").unwrap();
-            builder.setup_environment(&spec, &project.source, &project);
+            builder.setup_environment(&spec, &project.source, project.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -5760,7 +5839,7 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let project = wg.get_project("bar").unwrap();
-            builder.setup_environment(&spec, &project.source, &project);
+            builder.setup_environment(&spec, &project.source, project.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -5798,7 +5877,7 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let project = wg.get_project("bar").unwrap();
-            let index = builder.setup_environment(&spec, &project.source, &project);
+            let index = builder.setup_environment(&spec, &project.source, project.clone());
 
             let output = builder.build().await.unwrap();
             let graph = output.graph;
@@ -5847,7 +5926,7 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-reqs");
 
             let project = wg.get_project("bar").unwrap();
-            let index = builder.setup_environment(&spec, &project.source, &project);
+            let index = builder.setup_environment(&spec, &project.source, project.clone());
 
             let output = builder.build().await.unwrap();
             let graph = output.graph;
@@ -5891,7 +5970,7 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-reqs");
 
             let project = wg.get_project("bar").unwrap();
-            let index = builder.setup_environment(&spec, &project.source, &project);
+            let index = builder.setup_environment(&spec, &project.source, project.clone());
 
             let output = builder.build().await.unwrap();
             let graph = output.graph;
@@ -5923,7 +6002,7 @@ mod action_graph_builder {
 
             let project = wg.get_project("bar").unwrap();
 
-            builder.setup_environment(&spec, &project.source, &project);
+            builder.setup_environment(&spec, &project.source, project.clone());
 
             let error = builder.build().await.err().unwrap();
 
@@ -5991,7 +6070,7 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let project = wg.get_project("bar").unwrap();
-            builder.setup_environment(&spec, &project.source, &project);
+            builder.setup_environment(&spec, &project.source, project.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -6025,7 +6104,7 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let project = wg.get_project("bar").unwrap();
-            builder.setup_environment(&spec, &project.source, &project);
+            builder.setup_environment(&spec, &project.source, project.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -6061,7 +6140,7 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let project = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &project);
+            builder.install_dependencies(&spec, project.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -6114,7 +6193,7 @@ mod action_graph_builder {
                 builder.setup_environment(
                     &create_tier_spec_with_name(id),
                     &project.source,
-                    &project,
+                    project.clone(),
                 );
             }
 
@@ -6149,7 +6228,7 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let project = wg.get_project("bar").unwrap();
-            let index = builder.setup_environment(&spec, &project.source, &project);
+            let index = builder.setup_environment(&spec, &project.source, project.clone());
 
             let output = builder.build().await.unwrap();
             let graph = output.graph;
@@ -6183,10 +6262,10 @@ mod action_graph_builder {
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
             let bar = wg.get_project("bar").unwrap();
-            builder.setup_environment(&spec, &bar.source, &bar);
+            builder.setup_environment(&spec, &bar.source, bar.clone());
 
             let baz = wg.get_project("baz").unwrap();
-            builder.setup_environment(&spec, &baz.source, &baz);
+            builder.setup_environment(&spec, &baz.source, baz.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -6780,8 +6859,8 @@ mod action_graph_builder {
             let mut builder = container.create_builder(wg.clone()).await;
 
             builder.set_requirements(RunRequirements::default());
-            builder.sync_project(&wg.get_project("bar").unwrap());
-            builder.sync_project(&wg.get_project("qux").unwrap());
+            builder.sync_project(wg.get_project("bar").unwrap());
+            builder.sync_project(wg.get_project("qux").unwrap());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -6804,7 +6883,7 @@ mod action_graph_builder {
 
             let bar = wg.get_project("bar").unwrap();
             builder.set_requirements(RunRequirements::default());
-            builder.sync_project(&bar);
+            builder.sync_project(bar.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -6830,15 +6909,15 @@ mod action_graph_builder {
 
             let foo = wg.get_project("foo").unwrap();
             builder.set_requirements(RunRequirements::default());
-            builder.sync_project(&foo);
+            builder.sync_project(foo.clone());
 
             let bar = wg.get_project("bar").unwrap();
             builder.set_requirements(RunRequirements::default());
-            builder.sync_project(&bar);
+            builder.sync_project(bar.clone());
 
             let qux = wg.get_project("qux").unwrap();
             builder.set_requirements(RunRequirements::default());
-            builder.sync_project(&qux);
+            builder.sync_project(qux.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -6878,11 +6957,11 @@ mod action_graph_builder {
 
             let foo = wg.get_project("foo").unwrap();
             builder.set_requirements(RunRequirements::default());
-            builder.sync_project(&foo);
+            builder.sync_project(foo.clone());
 
             let qux = wg.get_project("qux").unwrap();
             builder.set_requirements(RunRequirements::default());
-            builder.sync_project(&qux);
+            builder.sync_project(qux.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -6912,11 +6991,11 @@ mod action_graph_builder {
             let foo = wg.get_project("foo").unwrap();
 
             builder.set_requirements(RunRequirements::default());
-            builder.sync_project(&foo);
+            builder.sync_project(foo.clone());
             builder.set_requirements(RunRequirements::default());
-            builder.sync_project(&foo);
+            builder.sync_project(foo.clone());
             builder.set_requirements(RunRequirements::default());
-            builder.sync_project(&foo);
+            builder.sync_project(foo.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -6952,7 +7031,7 @@ mod action_graph_builder {
 
             let bar = wg.get_project("bar").unwrap();
             builder.set_requirements(RunRequirements::default());
-            builder.sync_project(&bar);
+            builder.sync_project(bar.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -6978,7 +7057,7 @@ mod action_graph_builder {
 
             let bar = wg.get_project("bar").unwrap();
             builder.set_requirements(RunRequirements::default());
-            builder.sync_project(&bar);
+            builder.sync_project(bar.clone());
 
             let graph = builder.build().await.unwrap().graph;
 
@@ -7004,7 +7083,7 @@ mod action_graph_builder {
 
             let bar = wg.get_project("bar").unwrap();
             builder.set_requirements(RunRequirements::default());
-            builder.sync_project(&bar);
+            builder.sync_project(bar.clone());
 
             let graph = builder.build().await.unwrap().graph;
 

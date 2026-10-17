@@ -64,7 +64,7 @@ mod action_pipeline {
                 .unwrap();
 
             let mut graph = mocker.create_action_graph().await;
-            graph.install_dependencies(&spec, &project);
+            graph.install_dependencies(&spec, project.clone());
 
             let BuildOutput { context, graph, .. } = graph.build().await.unwrap();
             let actions = mocker
@@ -111,7 +111,7 @@ mod action_pipeline {
                 .unwrap();
 
             let mut graph = mocker.create_action_graph().await;
-            graph.install_dependencies(&spec, &project);
+            graph.install_dependencies(&spec, project.clone());
 
             let BuildOutput { context, graph, .. } = graph.build().await.unwrap();
             let mut pipeline = mocker.mock_action_pipeline().await;

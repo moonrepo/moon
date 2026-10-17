@@ -36,6 +36,7 @@ use moon_toolchain::{DependenciesWorkspace, DependenciesWorkspaceRole, Toolchain
 use moon_workspace_graph::WorkspaceGraph;
 use moon_workspace_graph::projects::ScopePartition;
 use petgraph::prelude::*;
+use petgraph::visit::{VisitMap, Visitable};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::VecDeque;
 use std::collections::hash_map::Entry;
@@ -89,6 +90,16 @@ struct GraphAssembler<'app> {
 
     instance_nodes: Vec<Option<NodeIndex>>,
     request_nodes: FxHashMap<RequestId, Vec<NodeIndex>>,
+
+    /// Install slots and toolchain setups already resolved for a toolchain
+    /// and project (by ID). Resolving one again would return the same node,
+    /// and only link edges that already exist (or that would still close a
+    /// cycle), but would call the toolchain's plugin functions again. Keyed by
+    /// project ID, as every request for a project passes the same project (the
+    /// workspace graph's), and its config decides the result.
+    install_slots: FxHashMap<(ToolchainSpec, Option<Id>), Option<NodeIndex>>,
+    toolchain_setups: FxHashMap<(ToolchainSpec, Option<Id>), Option<NodeIndex>>,
+
     /// Setup and sync edges of tasks whose dependencies are being visited.
     task_edges: FxHashMap<usize, Vec<Option<NodeIndex>>>,
 
@@ -104,7 +115,10 @@ pub async fn assemble(
     options: &ActionGraphBuilderOptions,
     plan: &mut TaskPlan,
 ) -> miette::Result<AssembledGraph> {
-    let instances = std::mem::take(&mut plan.instances);
+    let mut instances = std::mem::take(&mut plan.instances)
+        .into_iter()
+        .map(Some)
+        .collect::<Vec<_>>();
 
     let mut assembler = GraphAssembler {
         app_context,
@@ -116,13 +130,15 @@ pub async fn assemble(
         cleanup_indices: FxHashSet::default(),
         instance_nodes: vec![None; instances.len()],
         request_nodes: FxHashMap::default(),
+        install_slots: FxHashMap::default(),
+        toolchain_setups: FxHashMap::default(),
         task_edges: FxHashMap::default(),
         present_edges: FxHashSet::default(),
         serial_edges: FxHashSet::default(),
     };
 
     for event in std::mem::take(&mut plan.events) {
-        assembler.replay(event, &instances).await?;
+        assembler.replay(event, &mut instances).await?;
     }
 
     assembler.link_synced_projects(&plan.synced_projects);
@@ -160,7 +176,11 @@ pub async fn assemble(
 impl GraphAssembler<'_> {
     // EVENTS
 
-    async fn replay(&mut self, event: Event, instances: &[ActionNode]) -> miette::Result<()> {
+    async fn replay(
+        &mut self,
+        event: Event,
+        instances: &mut [Option<ActionNode>],
+    ) -> miette::Result<()> {
         match event {
             Event::SyncWorkspace => {
                 self.sync_workspace();
@@ -182,13 +202,13 @@ impl GraphAssembler<'_> {
             Event::EnterTask {
                 instance,
                 project,
-                toolchains,
+                task,
                 sync_project,
             } => {
                 let mut edges = vec![sync_project.map(|id| self.keys[&NodeKey::SyncProject(id)])];
 
                 edges.extend(
-                    self.install_dependencies_by_toolchains(&project, &toolchains)
+                    self.install_dependencies_by_toolchains(&project, &task.toolchains)
                         .await?,
                 );
 
@@ -197,7 +217,10 @@ impl GraphAssembler<'_> {
                     edges.push(self.sync_workspace());
                 }
 
-                let index = self.insert_node(None, instances[instance].clone());
+                let node = instances[instance]
+                    .take()
+                    .expect("Task instance has already been inserted.");
+                let index = self.insert_node(None, node);
 
                 self.instance_nodes[instance] = Some(index);
                 self.task_edges.insert(instance, edges);
@@ -212,12 +235,25 @@ impl GraphAssembler<'_> {
 
                 self.link_available_edges(index, edges)?;
 
-                for (dep_instance, weight) in requirements {
-                    let dep_index = self.get_instance_node(dep_instance);
+                // So far, the task only links to setup and sync actions, and
+                // to tasks it's a cleanup of (with a cleanup edge, while
+                // requirements never are), so a requirement was only linked
+                // already when it's listed more than once, which is checked
+                // without scanning the task's edges
+                let dedupe = requirements.len() > 1;
+                let mut linked = FxHashSet::default();
 
-                    if !self.has_edge_of_type(index, dep_index, weight) {
-                        self.link_edge(index, dep_index, weight)?;
+                for (dep_instance, weight) in requirements {
+                    debug_assert!(
+                        weight != TaskDependencyType::Cleanup,
+                        "Cleanups are linked separately."
+                    );
+
+                    if dedupe && !linked.insert((dep_instance, weight)) {
+                        continue;
                     }
+
+                    self.link_edge(index, self.get_instance_node(dep_instance), weight)?;
                 }
 
                 // Cleanup actions run *after* the node they clean up, so the edge
@@ -350,7 +386,18 @@ impl GraphAssembler<'_> {
         spec: &ToolchainSpec,
         project: Option<&Project>,
     ) -> miette::Result<Option<NodeIndex>> {
-        Box::pin(self.internal_setup_toolchain(spec, project, FxHashSet::default())).await
+        let key = (spec.to_owned(), project.map(|project| project.id.clone()));
+
+        if let Some(index) = self.toolchain_setups.get(&key) {
+            return Ok(*index);
+        }
+
+        let index =
+            Box::pin(self.internal_setup_toolchain(spec, project, FxHashSet::default())).await?;
+
+        self.toolchain_setups.insert(key, index);
+
+        Ok(index)
     }
 
     async fn internal_setup_toolchain(
@@ -607,6 +654,24 @@ impl GraphAssembler<'_> {
             return Ok(None);
         }
 
+        let key = (spec.to_owned(), project.map(|project| project.id.clone()));
+
+        if let Some(index) = self.install_slots.get(&key) {
+            return Ok(*index);
+        }
+
+        let index = self.resolve_install_slot(spec, project).await?;
+
+        self.install_slots.insert(key, index);
+
+        Ok(index)
+    }
+
+    async fn resolve_install_slot(
+        &mut self,
+        spec: &ToolchainSpec,
+        project: Option<&Project>,
+    ) -> miette::Result<Option<NodeIndex>> {
         // If installing dependencies is disabled, we still need to ensure the
         // toolchain has been setup (and indirectly, the workspace synced), so
         // that its binaries are available to tasks
@@ -1107,8 +1172,15 @@ impl GraphAssembler<'_> {
 
     /// Apply the serial ordering links, in the order that they were made.
     fn link_serial_links(&mut self, links: &[SerialLink]) {
+        if links.is_empty() {
+            return;
+        }
+
+        let children = self.collect_serial_children();
+
         for link in links {
             self.link_serial_required_edges(
+                &children,
                 self.get_instance_node(link.index),
                 link.previous
                     .map(|instance| self.get_instance_node(instance)),
@@ -1118,21 +1190,50 @@ impl GraphAssembler<'_> {
         }
     }
 
+    /// Collect the dependencies that a serial walk follows from each task: real
+    /// dependency edges that block it from running, to another task. Never
+    /// serial edges (following one would escape the real subtree), present
+    /// dependency edges (which never took part in the serial order), `cleanup`
+    /// edges (which point back to the task that owns the cleanup), or `wait`
+    /// edges (which don't run to completion first).
+    ///
+    /// They're all linked before any serial edge is, and serial edges are never
+    /// followed, so they're collected once, in the order the edges are walked,
+    /// instead of walking each task's edges (serial ones included) for every
+    /// link, as lower tasks gain a serial edge for every link above them.
+    fn collect_serial_children(&self) -> Vec<Vec<NodeIndex>> {
+        let mut children = vec![vec![]; self.graph.node_count()];
+
+        for index in self.graph.node_indices() {
+            if !matches!(self.graph[index], ActionNode::RunTask(_)) {
+                continue;
+            }
+
+            for edge in self.graph.edges_directed(index, Direction::Outgoing) {
+                if !self.present_edges.contains(&edge.id())
+                    && edge.weight().is_required_type()
+                    && matches!(self.graph[edge.target()], ActionNode::RunTask(_))
+                {
+                    children[index.index()].push(edge.target());
+                }
+            }
+        }
+
+        children
+    }
+
     /// Add serial ordering edges from every task within `index`'s dependency
     /// subtree (including `index` itself) to the previous serial dependency, so
-    /// that the whole subtree runs after it. Only `RunTask` nodes are ordered.
+    /// that the whole subtree runs after it. Only `RunTask` nodes are ordered,
+    /// and the subtree is walked through `children` (see
+    /// [`GraphAssembler::collect_serial_children`]).
     ///
     /// Non-persistent tasks are ordered against `previous_standard` — the
     /// previous dependency that actually completes — instead of `previous`,
     /// as a persistent dependency never completes and so cannot order them.
-    ///
-    /// The walk only follows real dependency edges that block a node from
-    /// running: never serial edges (following one would escape `index`'s real
-    /// subtree), present dependency edges (which never took part in the serial
-    /// order), `cleanup` edges (which point back to the task that owns the
-    /// cleanup), or `wait` edges (which don't run to completion first).
     fn link_serial_required_edges(
         &mut self,
+        children: &[Vec<NodeIndex>],
         index: NodeIndex,
         previous: Option<NodeIndex>,
         previous_standard: Option<NodeIndex>,
@@ -1142,30 +1243,16 @@ impl GraphAssembler<'_> {
         }
 
         let mut visited = FxHashSet::default();
-        let mut ordered = vec![];
+        let mut links = vec![];
         let mut stack = vec![index];
 
         // Collect the subtree first, then link, as linking adds edges that
-        // must not pollute the walk. `ordered` keeps the link order stable
+        // must not pollute the walk. `links` keeps the link order stable
         while let Some(node_index) = stack.pop() {
             if !visited.insert(node_index) {
                 continue;
             }
 
-            ordered.push(node_index);
-
-            for edge in self.graph.edges_directed(node_index, Direction::Outgoing) {
-                if !self.serial_edges.contains(&edge.id())
-                    && !self.present_edges.contains(&edge.id())
-                    && edge.weight().is_required_type()
-                    && matches!(self.graph[edge.target()], ActionNode::RunTask(_))
-                {
-                    stack.push(edge.target());
-                }
-            }
-        }
-
-        for node_index in ordered {
             // A persistent action is marked as completed the moment it is
             // dispatched, so a non-persistent action ordered after one would
             // simply run immediately. Order those against the previous
@@ -1178,10 +1265,73 @@ impl GraphAssembler<'_> {
 
             if let Some(anchor) = anchor
                 && anchor != node_index
-                && let Some(edge_index) = self.try_link_edge(node_index, anchor)
             {
-                self.serial_edges.insert(edge_index);
+                links.push((node_index, anchor));
             }
+
+            stack.extend(children[node_index.index()].iter().copied());
+        }
+
+        let Some(&(_, anchor)) = links.first() else {
+            return;
+        };
+
+        // When linking to both anchors, an edge into one can change what the
+        // other reaches, so each edge is checked for a cycle on its own
+        if links.iter().any(|(_, other)| *other != anchor) {
+            for (node_index, anchor) in links {
+                if let Some(edge_index) = self.try_link_edge(node_index, anchor) {
+                    self.serial_edges.insert(edge_index);
+                }
+            }
+
+            return;
+        }
+
+        // Otherwise an edge into the anchor would close a cycle only when the
+        // anchor already reaches the node, and adding an edge into the anchor
+        // never changes what it reaches (only an edge from a node it reaches
+        // could), so what it reaches is found once, instead of searching for
+        // a path for every edge. Nodes that already require the anchor are
+        // found once too, instead of scanning each node's edges
+        let mut reachable = Dfs::new(&self.graph, anchor);
+
+        while reachable.next(&self.graph).is_some() {}
+
+        let mut requiring = self.graph.visit_map();
+
+        for edge in self.graph.edges_directed(anchor, Direction::Incoming) {
+            if *edge.weight() == TaskDependencyType::Required {
+                requiring.visit(edge.source());
+            }
+        }
+
+        for (node_index, anchor) in links {
+            if requiring.is_visited(&node_index) {
+                continue;
+            }
+
+            if reachable.discovered.is_visited(&node_index) {
+                trace!(
+                    index = node_index.index(),
+                    requires = ?[anchor.index()],
+                    "Not linking requirements for index, as they would introduce a cycle"
+                );
+
+                continue;
+            }
+
+            trace!(
+                index = node_index.index(),
+                requires = ?[anchor.index()],
+                "Linking requirements for index"
+            );
+
+            let edge_index = self
+                .graph
+                .add_edge(node_index, anchor, TaskDependencyType::Required);
+
+            self.serial_edges.insert(edge_index);
         }
     }
 }

@@ -140,6 +140,14 @@
       instead of 24s.
     - Projects in a dependencies workspace (like a JavaScript monorepo) no longer compile the
       workspace's member globs again for every project.
+    - Dependencies roots are now located concurrently, for every toolchain and project that the
+      graph installs dependencies for, before actions are inserted, instead of one at a time while
+      inserting them. Building takes up to 18% less time with toolchains in our benchmarks. The
+      `SetupEnvironment` and `InstallDependencies` actions of a root are now identified by their
+      toolchain and root only.
+  - `moon setup` in a repository whose root is a single package (not a workspace) that's also a
+    project, now sets up the root's environment with that project's toolchain version and config,
+    like running its tasks does, instead of the workspace's.
 - **Action pipeline**
   - Reading the states of task dependencies, while hashing and running tasks, no longer takes an
     exclusive lock, which serialized tasks running concurrently.
@@ -291,6 +299,13 @@
   index.
 - Fixed an issue where a toolchain that required an invalid toolchain ID (from its plugin's
   `define_requirements`) would error without naming the toolchain.
+- Fixed an issue where the environment setup and dependency install of a dependencies workspace
+  (like a Cargo workspace) waited on the toolchain versions that its member projects override, but
+  ran with the workspace's version, which wasn't set up when only overriding projects were in the
+  run. They now always wait on the workspace's version, and a project that overrides it sets up its
+  own version for its tasks.
+- Fixed an issue where a member project's override of a required toolchain's version (like Node.js
+  for JavaScript) made a dependencies workspace's install wait on that version.
 - Fixed an issue where a project's toolchain `version` override, or a toolchain disabled by a
   project, was ignored by a task's command environment when the project referenced the toolchain by
   its stable ID, while the workspace configured its unstable ID (or vice versa). Project toolchain

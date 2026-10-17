@@ -6,8 +6,9 @@ for each of its toolchains, with which version and config, and what lives in eac
 2026-10-17 with Miles's answers (see [Resolved questions](#resolved-questions)). Line references are
 as of that commit, and will drift.
 
-Nothing here has been implemented. Estimates are marked as such. Claims marked **unverified** come
-from reading the code, and need a test before they're relied on.
+Phases 0, 1, and 2 are implemented (see [Phases](#phases)), and the rest isn't. Estimates are marked
+as such. Claims marked **unverified** come from reading the code, and need a test before they're
+relied on.
 
 This composes with [TOOLCHAIN_REQS.md](./TOOLCHAIN_REQS.md): delegation (its section 2) becomes a
 field of a root in this model, and membership (its section 3) is an input to it. Caching composes
@@ -108,10 +109,10 @@ Supporting definitions:
 
 So the graph and the runtime disagree about which version a shared root uses. The graph sets up
 whatever the requesting members asked for. The command then runs with the workspace version, which
-**nothing in the graph sets up** when only overriding members are in the run (unverified: traced
-through the code, not tested). For example, take a Cargo workspace on Rust 1.85, where crate `a`
-overrides it to 1.80. `moon run a:build` sets up 1.80 only, then runs the root's commands with
-`PROTO_RUST_VERSION=1.85`.
+**nothing in the graph sets up** when only overriding members are in the run (verified for the graph
+side by the `shared_root_versions` action graph tests, which failed this way before phase 2). For
+example, take a Cargo workspace on Rust 1.85, where crate `a` overrides it to 1.80.
+`moon run a:build` sets up 1.80 only, then runs the root's commands with `PROTO_RUST_VERSION=1.85`.
 
 This only affects the owner toolchain's own version. A delegated toolchain (like `node` under
 `javascript`) is resolved with no project inside the environment, so the workspace version is always
@@ -342,8 +343,8 @@ installed with Node 22. The layout records it, and the action graph links it as 
 
 Today the same run links 2 → 3 and 2 → 4, so the install waits on 1.99, which it doesn't use.
 `moon run a:build` alone links 2 → 4 only, so 3 doesn't exist, while the root's commands still run
-with `PROTO_RUST_VERSION=1.90` (unverified, see
-[Versions in a shared root](#versions-in-a-shared-root)).
+with `PROTO_RUST_VERSION=1.90` (see [Versions in a shared root](#versions-in-a-shared-root)). Phase
+2 implements these tables, and the `shared_root_versions` tests cover them.
 
 **Principle (decided on 2026-10-17):** an overridden version is only required to run that project's
 tasks. It's never involved in a root's actions (`SetupEnvironment`, `InstallDependencies`, and the
@@ -391,7 +392,9 @@ time.
    Rule 2 is what removes Node 20 from the root's chain. Today `a`'s request reaches the shared
    `SetupToolchain(javascript)` placeholder with `a`'s project, and its `for_setup_toolchain`
    requirements then link `SetupToolchain(node 20)`. That node is keyed by spec only, so the root's
-   install waits on Node 20 through it (unverified).
+   install waits on Node 20 through it (verified by the
+   `root_actions_use_the_workspace_version_of_required_toolchains` test, with `tc-tier2-reqs`
+   requiring `tc-tier3`).
 
 5. An `Outside` or unplaced binding has no root, so its task links `SetupToolchain(own spec)` as the
    install slot, as today.
@@ -426,9 +429,9 @@ hasher today, which parses every registered lockfile name that exists.
   ([session.rs:109](../../crates/app/src/session.rs#L109)). `Session::build_layout_graph()` returns
   a `LayoutGraphBuilder` from the app context and the workspace graph. Docker, queries and
   validation call it for a full build.
-- `build_action_graph_with_options` passes a `LayoutGraphBuilder` to `ActionGraphBuilder::new`. The
-  action graph builds it lazily, and returns the frozen `Arc<LayoutGraph>` in `BuildOutput`, so the
-  pipeline reads the same placements.
+- The action graph builder creates its own `LayoutGraphBuilder` from its app context and workspace
+  graph, in its placement stage, and returns the frozen `Arc<LayoutGraph>` in `BuildOutput`, so the
+  pipeline can read the same placements. `ActionGraphBuilder::new` is unchanged.
 - It's not part of `WorkspaceGraph` or its cache, so commands that never touch toolchains never pay
   for locating.
 
@@ -500,9 +503,9 @@ docker and queries, but not for every `moon run`.
   - `NodeKey::SetupEnvironment` and `NodeKey::InstallDependencies` become `{ toolchain, root }`.
     `members` and `project_id` stay on the node payloads, but stop being identity, as they're
     functions of the root.
-  - So one root can no longer have 2 identities. Today a single-package repo whose root is a project
-    gets `(tc, "", None)` from `setup_environment_root` and `(tc, "", Some(root))` from a task. That
-    only happens across different graphs today, so it's latent, not a race (unverified).
+  - So one root can no longer have 2 identities. Before phase 2, a single-package repo whose root is
+    a project got `(tc, "", None)` from `setup_environment_root` and `(tc, "", Some(root))` from a
+    task. That only happened across different graphs, so it was latent, not a race.
 - **Docker prune and scaffold:**
   - Both use a full layout.
   - Unfocused projects get their own placements, instead of a focused project's globs.
@@ -562,19 +565,34 @@ docker and queries, but not for every `moon run`.
    - `owner_project` is found through the workspace graph's sources, so a partial graph that doesn't
      include the owner leaves it `None`. Only a package root's spec and config depend on the owner.
      Its owner is the project placed at it, except from `place_workspace`.
-   - For phase 2: from `place_workspace`, a single-package root at the workspace root uses the root
-     project's spec and config when one exists. Today `moon setup` uses the workspace's
-     (`setup_environment_root` passes no project), so phase 2 must choose.
+   - From `place_workspace`, a single-package root at the workspace root uses the root project's
+     spec and config when one exists. Phase 2 kept that for `moon setup` (below).
 
-2. **Action graph:**
-   - add the placement stage between select and assemble;
-   - turn the install slot into lookups, and switch to root-keyed node identity;
-   - apply the [divergence rules](#divergence), so the root's actions link the root's spec only, and
-     divergent tasks link their own;
-   - first, add tests for the Rust example and the Node delegate case, so the snapshot changes are
-     visible;
-   - aim for unchanged snapshots otherwise, other than deduped identities;
-   - benchmark against the generated workspaces in ACTION_GRAPH_BUILDER.md.
+2. **Action graph (done):**
+   - `builder/place.rs` places every (project, toolchain) pair that the plan installs dependencies
+     for (task toolchains, and install requests), plus workspace bindings for the root-level
+     requests, between select and assemble. Pairs whose installs are disabled aren't placed.
+   - The install slot, `setup_environment_root`, and `install_dependencies_root` read placements,
+     and `locate_dependencies_root` is no longer called by the assembler.
+   - `NodeKey::SetupEnvironment` and `NodeKey::InstallDependencies` are `{ toolchain, root }`.
+   - The [divergence rules](#divergence): a root's chain is resolved with the root's spec, and
+     without a project for a dependencies workspace. A slot whose requested spec differs from the
+     root's also returns `SetupToolchain(<requested>)` (`InstallSlot.own_toolchain`), which tasks
+     link, and install requests report.
+   - `moon setup` (`setup_environment_root`) on a single-package root at the workspace root, which
+     is also a project, now uses that project's spec and config, as its owner, following the package
+     root rule. Before, it used the workspace's.
+   - Tests: `shared_root_versions` (the Rust example, a member running alone, the Node-style
+     required toolchain, and the `moon setup` package root), on a `shared-root` fixture. They failed
+     before the change. The only other changes were the 2 tests that request 2 versions for one
+     package root, whose install no longer waits on the second version.
+   - Benchmarks (`cargo bench -p moon_action_graph --bench action_graph_builder`, against a baseline
+     of the builder before phase 2, on 2026-10-17): the workspace without toolchains is unchanged
+     within noise (−6% to +1%), and the toolchain workspace is +4% at 10 projects (290 µs, from 284
+     µs), −12% at 100 (2.07 ms), and −18% at 1000 (21.9 ms, from 27.2 ms), as roots are located
+     concurrently. The first cut collected a pair per task, and read root capabilities per binding,
+     which cost +11% to +17% without toolchains, so pairs are deduped per project, and capabilities
+     are read once per root.
 3. **Pipeline consumers:** the hasher and the command env read the frozen layout from `BuildOutput`.
 4. **Docker:** prune and scaffold on a full layout, with a tier 2 prune fixture.
 5. **Diagnostics:** outside, shadowed and divergent, also shown by `moon layout-graph`.

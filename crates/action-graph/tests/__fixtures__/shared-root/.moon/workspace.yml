@@ -1,0 +1,5 @@
+projects:
+  root: '.'
+  a: 'packages/a'
+  b: 'packages/b'
+  c: 'packages/c'

@@ -25,7 +25,6 @@ struct ResolvedBinding {
     toolchain: Arc<ToolchainPlugin>,
     spec: ToolchainSpec,
     config: Arc<JsonValue>,
-    capabilities: RootCapabilities,
     located: Option<(DependenciesWorkspace, Option<DependenciesWorkspaceRole>)>,
 }
 
@@ -42,7 +41,6 @@ async fn resolve_binding(
         Some(project) => registry.create_merged_config(&toolchain.id, &project.config),
         None => registry.create_config(&toolchain.id),
     });
-    let mut capabilities = RootCapabilities::default();
     let mut located = None;
 
     // Only tier 2 toolchains locate a root
@@ -64,11 +62,6 @@ async fn resolve_binding(
 
             located = Some((deps_workspace, role));
         }
-
-        capabilities = RootCapabilities {
-            install_dependencies: toolchain.has_func("install_dependencies").await,
-            setup_environment: toolchain.has_func("setup_environment").await,
-        };
     }
 
     Ok(ResolvedBinding {
@@ -76,7 +69,6 @@ async fn resolve_binding(
         toolchain,
         spec,
         config,
-        capabilities,
         located,
     })
 }
@@ -116,6 +108,10 @@ pub struct LayoutGraphBuilder {
 
     /// Projects by their absolute root, to find the owner project of a root.
     owners: Option<FxHashMap<PathBuf, Id>>,
+
+    /// Roots that were inserted, whose capabilities are read once inserting
+    /// is done, so that it's once per root, instead of once per binding.
+    pending_capabilities: Vec<(RootIndex, Arc<ToolchainPlugin>)>,
 }
 
 impl LayoutGraphBuilder {
@@ -125,6 +121,7 @@ impl LayoutGraphBuilder {
             workspace_graph,
             graph: LayoutGraph::default(),
             owners: None,
+            pending_capabilities: vec![],
         }
     }
 
@@ -290,6 +287,13 @@ impl LayoutGraphBuilder {
             self.insert(resolved)?;
         }
 
+        for (index, toolchain) in std::mem::take(&mut self.pending_capabilities) {
+            self.graph.roots[index.index()].capabilities = RootCapabilities {
+                install_dependencies: toolchain.has_func("install_dependencies").await,
+                setup_environment: toolchain.has_func("setup_environment").await,
+            };
+        }
+
         Ok(())
     }
 
@@ -419,11 +423,13 @@ impl LayoutGraphBuilder {
             spec,
             config,
             files: probe_root_files(&resolved.toolchain, &deps_workspace.root, root),
-            capabilities: resolved.capabilities,
+            capabilities: RootCapabilities::default(),
             members: vec![],
         });
 
         self.graph.root_keys.insert(key, index);
+        self.pending_capabilities
+            .push((index, Arc::clone(&resolved.toolchain)));
 
         Ok(index)
     }

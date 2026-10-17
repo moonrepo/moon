@@ -504,6 +504,7 @@ impl ExecWorkflow {
             context: action_context,
             graph: action_graph,
             mut report,
+            ..
         } = action_graph_builder.build().await?;
         let partition = report.take_partition(request).unwrap_or_default();
         let targets = self.get_targets();

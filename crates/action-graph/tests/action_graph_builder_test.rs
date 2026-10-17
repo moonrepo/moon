@@ -189,9 +189,23 @@ mod action_graph_builder {
 
             let project = wg.get_project("bar").unwrap();
             builder.install_dependencies(&spec1, project.clone());
-            builder.install_dependencies(&spec2, project.clone());
+            let index2 = builder.install_dependencies(&spec2, project.clone());
 
-            let graph = builder.build().await.unwrap().graph;
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
+
+            // The install runs with the root's version, while the other
+            // version is still setup, for the request that asked for it
+            assert_eq!(output.report.nodes(index2).len(), 2);
+            assert_eq!(
+                graph.dependencies_of(&ActionNode::install_dependencies(InstallDependenciesNode {
+                    members: None,
+                    project_id: Some(Id::raw("bar")),
+                    root: WorkspaceRelativePathBuf::from("bar"),
+                    toolchain_id: spec1.id.clone(),
+                })),
+                vec!["SetupToolchain(tc-tier3:1.2.3)"]
+            );
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -202,13 +216,13 @@ mod action_graph_builder {
                     ActionNode::setup_toolchain(SetupToolchainNode {
                         toolchain: spec1.clone()
                     }),
-                    ActionNode::setup_toolchain(SetupToolchainNode { toolchain: spec2 }),
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: None,
                         project_id: Some(Id::raw("bar")),
                         root: WorkspaceRelativePathBuf::from("bar"),
                         toolchain_id: spec1.id,
-                    })
+                    }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { toolchain: spec2 }),
                 ]
             );
         }
@@ -234,8 +248,8 @@ mod action_graph_builder {
             let mut spec2 = create_tier_spec_with_name("tc-tier3-setup-env");
             spec2.req = Some(create_unresolved_version(Version::new(4, 5, 6)));
 
-            // Both versions resolve to the same environment, like projects that
-            // share a dependencies root while overriding the toolchain's version
+            // Both versions resolve to the same environment, but only the
+            // root's version (the project's own) is involved in its actions
             let project = wg.get_project("bar").unwrap();
             builder.install_dependencies(&spec1, project.clone());
             builder.install_dependencies(&spec2, project.clone());
@@ -244,7 +258,7 @@ mod action_graph_builder {
 
             assert_snapshot!(graph.to_dot());
 
-            // The environment must not be setup until every version has been
+            // The environment is setup with the root's version only
             let env_node = ActionNode::setup_environment(SetupEnvironmentNode {
                 project_id: Some(Id::raw("bar")),
                 root: WorkspaceRelativePathBuf::from("bar"),
@@ -255,11 +269,13 @@ mod action_graph_builder {
 
             assert_eq!(
                 env_deps,
-                vec![
-                    "SetupToolchain(tc-tier3-setup-env:1.2.3)",
-                    "SetupToolchain(tc-tier3-setup-env:4.5.6)",
-                    "SyncWorkspace",
-                ]
+                vec!["SetupToolchain(tc-tier3-setup-env:1.2.3)", "SyncWorkspace",]
+            );
+            assert!(
+                graph
+                    .get_nodes()
+                    .iter()
+                    .any(|node| { node.label() == "SetupToolchain(tc-tier3-setup-env:4.5.6)" })
             );
         }
 
@@ -5769,6 +5785,206 @@ mod action_graph_builder {
         }
     }
 
+    mod shared_root_versions {
+        use super::*;
+        use starbase_sandbox::Sandbox;
+
+        // Each crate of a dependencies workspace (`tc.lock` at the root, with
+        // `packages/*` members), with the toolchains config of its `moon.yml`
+        fn write_project(sandbox: &Sandbox, id: &str, toolchains: &str) {
+            sandbox.create_file(
+                format!("packages/{id}/moon.yml"),
+                format!("{toolchains}\ntasks:\n  build:\n    command: 'build'\n"),
+            );
+        }
+
+        // Locate roots from each project, instead of the working dir
+        fn create_container(sandbox: &Sandbox, toolchain_id: &str) -> ActionGraphContainer {
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            container.mocker = container.mocker.update_toolchains_config(|cfg| {
+                cfg.plugins
+                    .entry(Id::raw(toolchain_id))
+                    .or_default()
+                    .config
+                    .insert("testLocateRoots".into(), serde_json::json!(true));
+            });
+            container
+        }
+
+        fn find_node(graph: &ActionGraph, label: &str) -> NodeIndex {
+            graph
+                .get_inner_graph()
+                .node_indices()
+                .find(|index| graph.get_node_from_index(index).unwrap().label() == label)
+                .unwrap_or_else(|| panic!("Missing node {label}"))
+        }
+
+        fn has_node(graph: &ActionGraph, label: &str) -> bool {
+            graph.get_nodes().iter().any(|node| node.label() == label)
+        }
+
+        fn dependency_labels(graph: &ActionGraph, label: &str) -> Vec<String> {
+            let mut labels = graph
+                .get_inner_graph()
+                .neighbors_directed(find_node(graph, label), petgraph::Direction::Outgoing)
+                .map(|index| graph.get_node_from_index(&index).unwrap().label())
+                .collect::<Vec<_>>();
+            labels.sort();
+            labels.dedup();
+            labels
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn root_actions_use_the_workspace_version() {
+            let sandbox = create_sandbox("shared-root");
+
+            // The workspace uses 1.2.3, while `a` overrides it
+            write_project(
+                &sandbox,
+                "a",
+                "toolchains:\n  default: 'tc-tier3-setup-env'\n  tc-tier3-setup-env:\n    version: '1.99.0'",
+            );
+            write_project(
+                &sandbox,
+                "b",
+                "toolchains:\n  default: 'tc-tier3-setup-env'",
+            );
+            write_project(
+                &sandbox,
+                "c",
+                "toolchains:\n  default: 'tc-tier3-setup-env'",
+            );
+
+            let mut container = create_container(&sandbox, "tc-tier3-setup-env");
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            for id in ["a", "b", "c"] {
+                builder.run_task_by_target(Target::parse(&format!("{id}:build")).unwrap());
+            }
+
+            let graph = builder.build().await.unwrap().graph;
+
+            assert_eq!(
+                dependency_labels(&graph, "InstallDependencies(tc-tier3-setup-env)"),
+                vec!["SetupEnvironment(tc-tier3-setup-env)"]
+            );
+            assert_eq!(
+                dependency_labels(&graph, "SetupEnvironment(tc-tier3-setup-env)"),
+                vec!["SetupToolchain(tc-tier3-setup-env:1.2.3)", "SyncWorkspace"]
+            );
+
+            // Only `a` waits on its own version, as the others use the root's
+            let a = dependency_labels(&graph, "RunTask(a:build)");
+
+            assert!(a.contains(&"InstallDependencies(tc-tier3-setup-env)".to_owned()));
+            assert!(a.contains(&"SetupToolchain(tc-tier3-setup-env:1.99.0)".to_owned()));
+
+            for id in ["b", "c"] {
+                let deps = dependency_labels(&graph, &format!("RunTask({id}:build)"));
+
+                assert!(deps.contains(&"InstallDependencies(tc-tier3-setup-env)".to_owned()));
+                assert!(!deps.iter().any(|dep| dep.starts_with("SetupToolchain")));
+            }
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn root_actions_use_the_workspace_version_when_a_member_runs_alone() {
+            let sandbox = create_sandbox("shared-root");
+
+            write_project(
+                &sandbox,
+                "a",
+                "toolchains:\n  default: 'tc-tier3-setup-env'\n  tc-tier3-setup-env:\n    version: '1.99.0'",
+            );
+
+            let mut container = create_container(&sandbox, "tc-tier3-setup-env");
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            builder.run_task_by_target(Target::parse("a:build").unwrap());
+
+            let graph = builder.build().await.unwrap().graph;
+
+            // The root's actions run with the workspace version, so it's setup
+            assert_eq!(
+                dependency_labels(&graph, "SetupEnvironment(tc-tier3-setup-env)"),
+                vec!["SetupToolchain(tc-tier3-setup-env:1.2.3)", "SyncWorkspace"]
+            );
+            assert!(
+                dependency_labels(&graph, "RunTask(a:build)")
+                    .contains(&"SetupToolchain(tc-tier3-setup-env:1.99.0)".to_owned())
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn root_actions_use_the_workspace_version_of_required_toolchains() {
+            let sandbox = create_sandbox("shared-root");
+
+            // Like JavaScript requiring Node.js, which `a` overrides
+            write_project(
+                &sandbox,
+                "a",
+                "toolchains:\n  default: ['tc-tier2-reqs', 'tc-tier3']\n  tc-tier3:\n    version: '4.5.6'",
+            );
+            write_project(
+                &sandbox,
+                "b",
+                "toolchains:\n  default: ['tc-tier2-reqs', 'tc-tier3']",
+            );
+
+            let mut container = create_container(&sandbox, "tc-tier2-reqs");
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            builder.run_task_by_target(Target::parse("a:build").unwrap());
+            builder.run_task_by_target(Target::parse("b:build").unwrap());
+
+            let graph = builder.build().await.unwrap().graph;
+            let requirements = dependency_labels(&graph, "SetupToolchain(tc-tier2-reqs)");
+
+            assert!(requirements.contains(&"SetupToolchain(tc-tier3:1.2.3)".to_owned()));
+            assert!(!requirements.contains(&"SetupToolchain(tc-tier3:4.5.6)".to_owned()));
+            assert!(
+                dependency_labels(&graph, "RunTask(a:build)")
+                    .contains(&"SetupToolchain(tc-tier3:4.5.6)".to_owned())
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn package_root_uses_its_project_version() {
+            let sandbox = create_sandbox("shared-root");
+
+            // A single package at the workspace root, which is also a project
+            std::fs::remove_file(sandbox.path().join("tc.root.cfg")).unwrap();
+            sandbox.create_file(
+                "moon.yml",
+                "toolchains:\n  tc-tier3-setup-env:\n    version: '1.99.0'\n",
+            );
+
+            let mut container = create_container(&sandbox, "tc-tier3-setup-env");
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            // Like `moon setup`
+            builder
+                .setup_toolchain_and_environment(&create_tier_spec_with_name("tc-tier3-setup-env"));
+
+            let graph = builder.build().await.unwrap().graph;
+
+            assert!(has_node(&graph, "SetupToolchain(tc-tier3-setup-env:1.2.3)"));
+            assert_eq!(
+                dependency_labels(&graph, "SetupEnvironment(tc-tier3-setup-env)"),
+                vec!["SetupToolchain(tc-tier3-setup-env:1.99.0)", "SyncWorkspace"]
+            );
+            assert!(graph.get_nodes().iter().any(|node| matches!(
+                node,
+                ActionNode::SetupEnvironment(inner) if inner.project_id == Some(Id::raw("root"))
+            )));
+        }
+    }
+
     mod setup_env {
         use super::*;
 
@@ -7354,6 +7570,7 @@ mod action_graph_builder {
                     context,
                     graph,
                     mut report,
+                    ..
                 } = builder.build().await.unwrap();
                 let partition = report.take_partition(request).unwrap();
 
@@ -7386,6 +7603,7 @@ mod action_graph_builder {
                     context,
                     graph,
                     mut report,
+                    ..
                 } = builder.build().await.unwrap();
                 let partition = report.take_partition(request).unwrap();
 
@@ -7421,6 +7639,7 @@ mod action_graph_builder {
                     context,
                     graph,
                     mut report,
+                    ..
                 } = builder.build().await.unwrap();
                 let partition = report.take_partition(request).unwrap();
 
@@ -7463,6 +7682,7 @@ mod action_graph_builder {
                     context,
                     graph,
                     mut report,
+                    ..
                 } = builder.build().await.unwrap();
                 let partition = report.take_partition(request).unwrap();
 
@@ -7502,6 +7722,7 @@ mod action_graph_builder {
                     context,
                     graph,
                     mut report,
+                    ..
                 } = builder.build().await.unwrap();
                 let partition = report.take_partition(request).unwrap();
 

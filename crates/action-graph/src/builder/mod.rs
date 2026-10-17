@@ -6,12 +6,14 @@
 //! Requests are only recorded, and all of the work happens in [`ActionGraphBuilder::build`]:
 //!
 //! 1. Select the task instances and project syncs that exist, and how they
-//!    relate, as an event log ([`select`]).
+//!    relate, as an event log ([`select`]), then place the toolchains that
+//!    they install dependencies for into the layout graph ([`place`]).
 //! 2. Replay the events to assemble the nodes and edges, resolving each task's
-//!    provisioning actions along the way, then 3. add the edges that depend on
-//!    the whole graph, and 4. freeze it ([`assemble`]).
+//!    provisioning actions from the layout along the way, then 3. add the edges
+//!    that depend on the whole graph, and 4. freeze it ([`assemble`]).
 
 mod assemble;
+mod place;
 mod select;
 
 use crate::action_graph::ActionGraph;
@@ -23,6 +25,7 @@ use moon_app_context::AppContext;
 use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_exec_plan::{ExecutionPlan, TargetsBlock};
+use moon_layout_graph::LayoutGraph;
 use moon_project::Project;
 use moon_query::build_query;
 use moon_task::{Target, TargetLocator, Task};
@@ -86,6 +89,8 @@ pub(crate) fn get_workspace_spec(
 pub struct BuildOutput {
     pub context: ActionContext,
     pub graph: ActionGraph,
+    /// Where each toolchain that installs dependencies was placed.
+    pub layout: Arc<LayoutGraph>,
     pub report: BuildReport,
 }
 
@@ -393,10 +398,18 @@ impl ActionGraphBuilder {
         }
 
         let mut plan = selector.finish();
+        let layout = place::place(
+            &self.app_context,
+            &self.workspace_graph,
+            &self.options,
+            &plan,
+        )
+        .await?;
         let assembled = assemble::assemble(
             &self.app_context,
             &self.workspace_graph,
             &self.options,
+            &layout,
             &mut plan,
         )
         .await?;
@@ -465,6 +478,7 @@ impl ActionGraphBuilder {
         Ok(BuildOutput {
             context,
             graph: assembled.graph,
+            layout: Arc::new(layout),
             report,
         })
     }

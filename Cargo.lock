@@ -5371,6 +5371,7 @@ dependencies = [
  "moon_config",
  "moon_exec_plan",
  "moon_graph_utils",
+ "moon_layout_graph",
  "moon_pdk_api",
  "moon_project",
  "moon_query",

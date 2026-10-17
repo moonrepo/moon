@@ -91,14 +91,14 @@ struct GraphAssembler<'app> {
     instance_nodes: Vec<Option<NodeIndex>>,
     request_nodes: FxHashMap<RequestId, Vec<NodeIndex>>,
 
-    /// Install slots and toolchain setups already resolved for a toolchain
+    /// Install deps and toolchain setups already resolved for a toolchain
     /// and project (by ID). Resolving one again would return the same node,
     /// and only link edges that already exist (or that would still close a
     /// cycle), but would call the toolchain's plugin functions again. Keyed by
     /// project ID, as every request for a project passes the same project (the
     /// workspace graph's), and its config decides the result.
-    install_slots: FxHashMap<(ToolchainSpec, Option<Id>), Option<NodeIndex>>,
-    toolchain_setups: FxHashMap<(ToolchainSpec, Option<Id>), Option<NodeIndex>>,
+    install_deps_indexes: FxHashMap<(ToolchainSpec, Option<Id>), Option<NodeIndex>>,
+    setup_toolchain_indexes: FxHashMap<(ToolchainSpec, Option<Id>), Option<NodeIndex>>,
 
     /// Setup and sync edges of tasks whose dependencies are being visited.
     task_edges: FxHashMap<usize, Vec<Option<NodeIndex>>>,
@@ -130,8 +130,8 @@ pub async fn assemble(
         cleanup_indices: FxHashSet::default(),
         instance_nodes: vec![None; instances.len()],
         request_nodes: FxHashMap::default(),
-        install_slots: FxHashMap::default(),
-        toolchain_setups: FxHashMap::default(),
+        install_deps_indexes: FxHashMap::default(),
+        setup_toolchain_indexes: FxHashMap::default(),
         task_edges: FxHashMap::default(),
         present_edges: FxHashSet::default(),
         serial_edges: FxHashSet::default(),
@@ -388,14 +388,14 @@ impl GraphAssembler<'_> {
     ) -> miette::Result<Option<NodeIndex>> {
         let key = (spec.to_owned(), project.map(|project| project.id.clone()));
 
-        if let Some(index) = self.toolchain_setups.get(&key) {
+        if let Some(index) = self.setup_toolchain_indexes.get(&key) {
             return Ok(*index);
         }
 
         let index =
             Box::pin(self.internal_setup_toolchain(spec, project, FxHashSet::default())).await?;
 
-        self.toolchain_setups.insert(key, index);
+        self.setup_toolchain_indexes.insert(key, index);
 
         Ok(index)
     }
@@ -656,18 +656,18 @@ impl GraphAssembler<'_> {
 
         let key = (spec.to_owned(), project.map(|project| project.id.clone()));
 
-        if let Some(index) = self.install_slots.get(&key) {
+        if let Some(index) = self.install_deps_indexes.get(&key) {
             return Ok(*index);
         }
 
-        let index = self.resolve_install_slot(spec, project).await?;
+        let index = self.internal_install_dependencies(spec, project).await?;
 
-        self.install_slots.insert(key, index);
+        self.install_deps_indexes.insert(key, index);
 
         Ok(index)
     }
 
-    async fn resolve_install_slot(
+    async fn internal_install_dependencies(
         &mut self,
         spec: &ToolchainSpec,
         project: Option<&Project>,

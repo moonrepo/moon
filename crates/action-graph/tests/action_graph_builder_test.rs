@@ -5511,7 +5511,6 @@ mod action_graph_builder {
         }
 
         // Jobs are validated before any task is selected
-        #[should_panic(expected = "Received 0 but the total number of jobs is 0")]
         #[tokio::test(flavor = "multi_thread")]
         async fn errors_for_zero_job_total() {
             let sandbox = create_sandbox("tasks");
@@ -5528,10 +5527,14 @@ mod action_graph_builder {
             });
             builder.run_tasks(vec![TargetLocator::parse("partition:task-*").unwrap()]);
 
-            builder.build().await.unwrap();
+            let error = builder.build().await.err().unwrap().to_string();
+
+            assert!(
+                error.contains("Received 0 but the total number of jobs is 0"),
+                "{error}"
+            );
         }
 
-        #[should_panic(expected = "Received 3 but the total number of jobs is 3")]
         #[tokio::test(flavor = "multi_thread")]
         async fn errors_for_job_index_out_of_range() {
             let sandbox = create_sandbox("tasks");
@@ -5548,10 +5551,14 @@ mod action_graph_builder {
             });
             builder.run_tasks(vec![TargetLocator::parse("partition:task-*").unwrap()]);
 
-            builder.build().await.unwrap();
+            let error = builder.build().await.err().unwrap().to_string();
+
+            assert!(
+                error.contains("Received 3 but the total number of jobs is 3"),
+                "{error}"
+            );
         }
 
-        #[should_panic(expected = "the changed files have not been set")]
         #[tokio::test(flavor = "multi_thread")]
         async fn errors_when_tracking_affected_without_changed_files() {
             let sandbox = create_sandbox("tasks");
@@ -5565,7 +5572,12 @@ mod action_graph_builder {
             builder.set_requirements(RunRequirements::default());
             builder.run_tasks(vec![TargetLocator::parse("partition:task-*").unwrap()]);
 
-            builder.build().await.unwrap();
+            let error = builder.build().await.err().unwrap().to_string();
+
+            assert!(
+                error.contains("the changed files have not been set"),
+                "{error}"
+            );
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -5760,7 +5772,6 @@ mod action_graph_builder {
     mod setup_env {
         use super::*;
 
-        #[should_panic(expected = "requires bad id!, which is not a valid toolchain ID")]
         #[tokio::test(flavor = "multi_thread")]
         async fn errors_for_invalid_toolchain_requirement_ids() {
             let sandbox = create_sandbox("projects");
@@ -5784,7 +5795,12 @@ mod action_graph_builder {
                 wg.get_project("bar").unwrap(),
             );
 
-            builder.build().await.unwrap();
+            let error = builder.build().await.err().unwrap().to_string();
+
+            assert!(
+                error.contains("requires bad id!, which is not a valid toolchain ID"),
+                "{error}"
+            );
         }
 
         #[tokio::test(flavor = "multi_thread")]

@@ -15,6 +15,7 @@ mod assemble;
 mod select;
 
 use crate::action_graph::ActionGraph;
+use crate::action_graph_error::ActionGraphError;
 use crate::action_graph_options::{ActionGraphBuilderOptions, RunPartition, RunRequirements};
 use moon_action_context::{ActionContext, TargetState};
 use moon_affected::{AffectedTracker, Depth};
@@ -360,6 +361,13 @@ impl ActionGraphBuilder {
     pub async fn build(mut self) -> miette::Result<BuildOutput> {
         debug!("Building action graph");
 
+        // Validate the job up front, before any work is done
+        if let (Some(index), Some(total)) = (self.requirements.job, self.requirements.job_total)
+            && index >= total
+        {
+            return Err(ActionGraphError::InvalidJobIndex { index, total }.into());
+        }
+
         let changed_files = self.changed_files.take();
         let (affected, affected_depth) = self.create_affected_tracker(&changed_files).await?;
 
@@ -501,12 +509,11 @@ impl ActionGraphBuilder {
             self.workspace_graph.get_tasks_with_internal()?;
         }
 
-        let mut affected = AffectedTracker::new(
-            Arc::clone(&self.workspace_graph),
-            changed_files
-                .clone()
-                .expect("Changed files are required for affected tracking."),
-        );
+        let Some(changed_files) = changed_files.clone() else {
+            return Err(ActionGraphError::MissingChangedFiles.into());
+        };
+
+        let mut affected = AffectedTracker::new(Arc::clone(&self.workspace_graph), changed_files);
 
         affected.set_ci_check(ci_check);
         affected.set_depth(depth);
@@ -524,10 +531,9 @@ impl ActionGraphBuilder {
     /// Track affected state for the changed files, without tracking projects
     /// up front, so that tasks and projects are only checked when inserted.
     pub fn set_affected(&mut self) -> miette::Result<()> {
-        let changed_files = self
-            .changed_files
-            .clone()
-            .expect("Changed files are required for affected tracking.");
+        let Some(changed_files) = self.changed_files.clone() else {
+            return Err(ActionGraphError::MissingChangedFiles.into());
+        };
 
         self.mocked_affected = Some((
             AffectedTracker::new(Arc::clone(&self.workspace_graph), changed_files),

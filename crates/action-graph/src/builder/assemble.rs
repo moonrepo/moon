@@ -64,6 +64,19 @@ enum NodeKey {
     SyncWorkspace,
 }
 
+/// Parse the ID of a toolchain that a toolchain's plugin requires, naming
+/// the toolchain when it's invalid.
+fn parse_requirement_id(spec: &ToolchainSpec, require_id: String) -> miette::Result<Id> {
+    Id::new(&require_id).map_err(|error| {
+        ActionGraphError::InvalidToolchainRequirement {
+            id: spec.id.to_string(),
+            dep_id: require_id,
+            error: Box::new(error),
+        }
+        .into()
+    })
+}
+
 pub struct AssembledGraph {
     pub graph: ActionGraph,
     /// Dependencies of tasks inserted without them, that have no instance.
@@ -436,7 +449,7 @@ impl GraphAssembler<'_> {
 
         if !output.requires.is_empty() && output.for_setup_toolchain {
             for require_id in output.requires {
-                let require_id = Id::new(require_id)?;
+                let require_id = parse_requirement_id(spec, require_id)?;
 
                 if require_id == spec.id || cycle.contains(&require_id) {
                     continue;
@@ -519,7 +532,7 @@ impl GraphAssembler<'_> {
             .await?;
 
         for require_id in output.requires {
-            let require_id = Id::new(require_id)?;
+            let require_id = parse_requirement_id(spec, require_id)?;
 
             // Skip if itself or already in cycle
             if require_id == spec.id || cycle.contains(&require_id) {

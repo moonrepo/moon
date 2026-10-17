@@ -3242,8 +3242,8 @@ mod action_graph_builder {
 
                     let mut job_targets = partition
                         .targets
-                        .into_values()
-                        .map(|target| target.to_string())
+                        .into_iter()
+                        .map(|(_, target)| target.to_string())
                         .collect::<Vec<_>>();
                     job_targets.sort();
 
@@ -3495,6 +3495,27 @@ mod action_graph_builder {
 
                 // `a` doesn't match, but was explicitly selected
                 assert_eq!(extract_run_task_targets(graph), ["a:deploy", "b:deploy"]);
+            }
+
+            // A task that isn't in the task graph (like one constructed for the
+            // request) has no dependents in it
+            #[tokio::test(flavor = "multi_thread")]
+            async fn expands_no_dependents_of_tasks_outside_the_graph() {
+                let sandbox = create_sandbox("graph-depth");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                builder.set_requirements(RunRequirements {
+                    dependents: Depth::Deep,
+                    ..RunRequirements::default()
+                });
+                builder.run_task(create_task("a", "constructed"));
+
+                let graph = builder.build().await.unwrap().graph;
+
+                assert_eq!(extract_run_task_targets(graph), ["a:constructed"]);
             }
 
             // Dependencies are always inserted, so the query never bounds them.
@@ -5447,6 +5468,106 @@ mod action_graph_builder {
     mod run_tasks {
         use super::*;
 
+        // Selected (requested) targets first, in the order of the locators,
+        // so that the "Resolved targets" output is stable
+        #[tokio::test(flavor = "multi_thread")]
+        async fn partition_targets_are_in_selection_order() {
+            let sandbox = create_sandbox("tasks");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            builder.set_requirements(RunRequirements {
+                job: Some(0),
+                job_total: Some(1),
+                ..Default::default()
+            });
+
+            let request = builder.run_tasks(
+                ["partition:task-3", "partition:task-1", "partition:task-2"]
+                    .into_iter()
+                    .map(|locator| TargetLocator::parse(locator).unwrap())
+                    .collect::<Vec<_>>(),
+            );
+
+            let partition = builder
+                .build()
+                .await
+                .unwrap()
+                .report
+                .take_partition(request)
+                .unwrap();
+
+            assert_eq!(
+                partition
+                    .targets
+                    .into_iter()
+                    .map(|(_, target)| target.to_string())
+                    .collect::<Vec<_>>(),
+                ["partition:task-3", "partition:task-1", "partition:task-2"]
+            );
+        }
+
+        // Jobs are validated before any task is selected
+        #[should_panic(expected = "Received 0 but the total number of jobs is 0")]
+        #[tokio::test(flavor = "multi_thread")]
+        async fn errors_for_zero_job_total() {
+            let sandbox = create_sandbox("tasks");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            builder.set_requirements(RunRequirements {
+                job: Some(0),
+                job_total: Some(0),
+                ..Default::default()
+            });
+            builder.run_tasks(vec![TargetLocator::parse("partition:task-*").unwrap()]);
+
+            builder.build().await.unwrap();
+        }
+
+        #[should_panic(expected = "Received 3 but the total number of jobs is 3")]
+        #[tokio::test(flavor = "multi_thread")]
+        async fn errors_for_job_index_out_of_range() {
+            let sandbox = create_sandbox("tasks");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            builder.set_requirements(RunRequirements {
+                job: Some(3),
+                job_total: Some(3),
+                ..Default::default()
+            });
+            builder.run_tasks(vec![TargetLocator::parse("partition:task-*").unwrap()]);
+
+            builder.build().await.unwrap();
+        }
+
+        #[should_panic(expected = "the changed files have not been set")]
+        #[tokio::test(flavor = "multi_thread")]
+        async fn errors_when_tracking_affected_without_changed_files() {
+            let sandbox = create_sandbox("tasks");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            builder.track_affected(Depth::Deep, false);
+            builder.set_requirements(RunRequirements::default());
+            builder.run_tasks(vec![TargetLocator::parse("partition:task-*").unwrap()]);
+
+            builder.build().await.unwrap();
+        }
+
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_partition_if_no_job() {
             let sandbox = create_sandbox("tasks");
@@ -5577,8 +5698,8 @@ mod action_graph_builder {
                     targets.extend(
                         partition
                             .targets
-                            .into_values()
-                            .map(|target| target.to_string()),
+                            .into_iter()
+                            .map(|(_, target)| target.to_string()),
                     );
                 }
 
@@ -5638,6 +5759,33 @@ mod action_graph_builder {
 
     mod setup_env {
         use super::*;
+
+        #[should_panic(expected = "requires bad id!, which is not a valid toolchain ID")]
+        #[tokio::test(flavor = "multi_thread")]
+        async fn errors_for_invalid_toolchain_requirement_ids() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer::new(sandbox.path())
+                // Plugin matches based on cwd, so the project owns the root package
+                .set_working_dir(sandbox.path().join("bar"));
+
+            container.mocker = container.mocker.update_toolchains_config(|cfg| {
+                if let Some(inner) = cfg.plugins.get_mut(&Id::raw("tc-tier2-setup-env")) {
+                    inner
+                        .config
+                        .insert("testEnvRequirements".into(), serde_json::json!(["bad id!"]));
+                }
+            });
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            builder.install_dependencies(
+                &create_tier_spec_with_name("tc-tier2-setup-env"),
+                wg.get_project("bar").unwrap(),
+            );
+
+            builder.build().await.unwrap();
+        }
 
         #[tokio::test(flavor = "multi_thread")]
         async fn graphs_if_supported() {

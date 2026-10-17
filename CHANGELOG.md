@@ -279,6 +279,12 @@
 - Fixed an issue where `--dependents` would run internal tasks as dependents, even though internal
   tasks can only run as a dependency of another task. Dependents of internal tasks are still added,
   and they run the internal task as a dependency.
+- Fixed an issue where the resolved targets of a CI job (`--job`) were listed in an arbitrary order,
+  instead of the order they were selected in.
+- Fixed an issue where `--job-total 0` would run every task, instead of erroring for an invalid job
+  index.
+- Fixed an issue where a toolchain that required an invalid toolchain ID (from its plugin's
+  `define_requirements`) would error without naming the toolchain.
 
 #### ⚙️ Internal
 

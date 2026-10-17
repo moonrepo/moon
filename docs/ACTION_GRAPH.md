@@ -431,7 +431,9 @@ Which tasks become primary `RunTask` nodes is decided before any edges are linke
 3. Track affected state for every candidate (or every task, when affected state flows through
    relations).
 4. When partitioning into jobs (`--job`/`--job-total`, or an execution plan's partitioned jobs),
-   drop unaffected candidates, then keep this job's slice.
+   drop unaffected candidates, then keep this job's slice. A job index that isn't below the job
+   total errors before anything is selected. The primary targets of the slice are kept in the order
+   they were selected.
 5. Insert each remaining candidate through the `RunTask` path, with origin `Requested` or
    `Dependent`. Every candidate that produces a node is recorded as a primary target.
 

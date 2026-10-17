@@ -327,18 +327,6 @@ impl<'query> TaskSelector<'query> {
                     return Err(ActionGraphError::InvalidPlanJobs.into());
                 };
 
-                if job_total == 0 {
-                    return Err(ActionGraphError::InvalidPlanJobs.into());
-                }
-
-                if job_index > job_total - 1 {
-                    return Err(ActionGraphError::InvalidJobIndex {
-                        index: job_index,
-                        total: job_total,
-                    }
-                    .into());
-                }
-
                 if jobs.len() != job_total {
                     return Err(ActionGraphError::MismatchedPlanJobTotals {
                         plan_total: jobs.len(),
@@ -485,14 +473,6 @@ impl<'query> TaskSelector<'query> {
             && let Some(job_total) = reqs.job_total
             && job_total > 0
         {
-            if job_index > job_total - 1 {
-                return Err(ActionGraphError::InvalidJobIndex {
-                    index: job_index,
-                    total: job_total,
-                }
-                .into());
-            }
-
             // Filter based on affected state before partitioning
             if !reqs.skip_affected {
                 let mut affected_candidates = vec![];
@@ -786,8 +766,8 @@ impl<'query> TaskSelector<'query> {
         });
 
         debug!(
-            index,
-            "Adding {} to graph",
+            instance = index,
+            "Selecting {} for the graph",
             color::muted_light(node.label())
         );
 
@@ -1084,6 +1064,23 @@ impl<'query> TaskSelector<'query> {
             return Ok(vec![]);
         }
 
+        // A task that isn't in the task graph (like one constructed for a
+        // request) has no dependents in it
+        let tasks = tasks
+            .iter()
+            .copied()
+            .filter(|task| {
+                self.workspace_graph
+                    .tasks
+                    .get_unexpanded(&task.target)
+                    .is_ok()
+            })
+            .collect::<Vec<_>>();
+
+        if tasks.is_empty() {
+            return Ok(vec![]);
+        }
+
         let query_project_ids = match self.query {
             Some(query) => Some(
                 self.workspace_graph
@@ -1101,7 +1098,7 @@ impl<'query> TaskSelector<'query> {
         // after the task, but they're always linked through the task itself,
         // so those edges are never followed
         self.workspace_graph.tasks.traverse_within_filtered_nodes(
-            tasks,
+            &tasks,
             Direction::Incoming,
             depth,
             |edge| !matches!(edge, TaskDependencyType::Cleanup),

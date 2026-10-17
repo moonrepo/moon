@@ -225,7 +225,7 @@ impl GeneratedGraphs {
                 builder.set_requirements(local);
 
                 for task in self.workspace_graph.get_tasks()? {
-                    builder.run_task(&task);
+                    builder.run_task(task.clone());
                 }
             }
             Scenario::Sync => {
@@ -233,7 +233,7 @@ impl GeneratedGraphs {
                 builder.sync_workspace();
 
                 for project in self.workspace_graph.get_projects()? {
-                    builder.sync_project(&project);
+                    builder.sync_project(project.clone());
                 }
             }
             Scenario::Setup => {
@@ -247,7 +247,7 @@ impl GeneratedGraphs {
             }
             Scenario::DockerSetup => {
                 for project in self.workspace_graph.get_projects()? {
-                    builder.install_dependencies_by_project(&project);
+                    builder.install_dependencies_by_project(project.clone());
                 }
             }
         };
@@ -542,7 +542,7 @@ mod canonical_form {
         // Both depend on the teardown as a cleanup, once with args
         for id in ["base", "args-parent"] {
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&wg.get_task_from_project("proj", id).unwrap());
+            builder.run_task(wg.get_task_from_project("proj", id).unwrap());
         }
 
         let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
@@ -583,7 +583,7 @@ mod canonical_form {
             let mut builder = container.create_builder(wg.clone()).await;
 
             builder.set_requirements(RunRequirements::default());
-            builder.run_task(&wg.get_task_from_project("proj", id).unwrap());
+            builder.run_task(wg.get_task_from_project("proj", id).unwrap());
 
             let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
 
@@ -606,30 +606,26 @@ mod canonical_form {
 
 mod invariants {
     use super::*;
-    use daggy::Dag;
     use moon_action::{ActionNode, RunTaskNode, SetupToolchainNode, SyncProjectNode};
+    use moon_action_graph::ActionGraphType;
     use moon_common::Id;
     use moon_config::{TaskDependencyType, UnresolvedVersionSpec};
     use moon_task::Target;
     use moon_toolchain::ToolchainSpec;
     use petgraph::graph::NodeIndex;
-    use rustc_hash::{FxHashMap, FxHashSet};
+    use rustc_hash::FxHashSet;
 
     struct GraphMocker {
-        graph: Dag<NodeIndex, TaskDependencyType>,
-        nodes: FxHashMap<NodeIndex, ActionNode>,
+        graph: ActionGraphType,
     }
 
     impl GraphMocker {
         fn add(&mut self, node: ActionNode) -> NodeIndex {
-            let index = self.graph.add_node(NodeIndex::default());
-            self.graph[index] = index;
-            self.nodes.insert(index, node);
-            index
+            self.graph.add_node(node)
         }
 
         fn link(&mut self, from: NodeIndex, to: NodeIndex, weight: TaskDependencyType) {
-            self.graph.add_edge(from, to, weight).unwrap();
+            self.graph.add_edge(from, to, weight);
         }
     }
 
@@ -649,8 +645,7 @@ mod invariants {
     #[test]
     fn reports_each_violation() {
         let mut mocker = GraphMocker {
-            graph: Dag::new(),
-            nodes: FxHashMap::default(),
+            graph: ActionGraphType::new(),
         };
 
         let sync = mocker.add(ActionNode::sync_workspace());
@@ -668,11 +663,7 @@ mod invariants {
         mocker.link(tool, task_a, TaskDependencyType::Required);
         mocker.link(tool_wait, sync, TaskDependencyType::Wait);
 
-        let graph = ActionGraph::new_with_cleanups(
-            mocker.graph,
-            mocker.nodes,
-            FxHashSet::from_iter([task_b]),
-        );
+        let graph = ActionGraph::new_with_cleanups(mocker.graph, FxHashSet::from_iter([task_b]));
 
         assert_eq!(
             find_invariant_violations(&graph, true),

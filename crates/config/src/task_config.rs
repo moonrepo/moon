@@ -132,7 +132,7 @@ config_untagged_enum!(
 
 config_unit_enum!(
     /// The task-to-task relationship of the dependency.
-    #[derive(ConfigEnum, Default)]
+    #[derive(ConfigEnum, Default, Hash)]
     pub enum TaskDependencyType {
         /// The dependency runs *after* the task has ran its command, even when
         /// the task fails. It does not run when the task did not run its

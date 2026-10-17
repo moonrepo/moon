@@ -1,13 +1,19 @@
 use criterion::{BatchSize, BenchmarkId, Criterion, criterion_group, criterion_main};
 use moon_action_graph::{ActionGraphBuilder, ActionGraphBuilderOptions, RunRequirements};
 use moon_app_context::AppContext;
-use moon_bench_utils::{create_chained_workspace, create_simple_workspace};
-use moon_common::{is_ci, is_local};
+use moon_bench_utils::{
+    create_chained_workspace, create_serial_workspace, create_simple_workspace,
+    create_toolchain_workspace,
+};
+use moon_common::{Id, is_ci, is_local};
+use moon_config::UnresolvedVersionSpec;
 use moon_task::TargetLocator;
 use moon_test_utils::{WorkspaceGraph, WorkspaceMocker};
 use starbase_sandbox::Sandbox;
+use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::runtime::{Builder, Runtime};
+use warpgate_api::{FileLocator, PluginLocator};
 
 // The previous builder recursed (through boxed futures) once per task dependency
 // and project dependency, which overflowed the stack for the 1000 project chain,
@@ -41,8 +47,9 @@ fn should_run(max: u16) -> bool {
 fn create_graphs(
     runtime: &Runtime,
     sandbox: &Sandbox,
+    configure: impl FnOnce(WorkspaceMocker) -> WorkspaceMocker,
 ) -> (Arc<AppContext>, Arc<WorkspaceGraph>, Vec<TargetLocator>) {
-    let mocker = WorkspaceMocker::new(sandbox.path()).load_default_configs();
+    let mocker = configure(WorkspaceMocker::new(sandbox.path()).load_default_configs());
 
     let graph = runtime.block_on(async {
         let graph = mocker.mock_workspace_graph().await;
@@ -67,9 +74,19 @@ fn create_graphs(
 }
 
 fn bench_run_tasks(c: &mut Criterion, group_name: &str, max: u16, sandbox: Sandbox) {
+    bench_run_tasks_with(c, group_name, max, sandbox, |mocker| mocker);
+}
+
+fn bench_run_tasks_with(
+    c: &mut Criterion,
+    group_name: &str,
+    max: u16,
+    sandbox: Sandbox,
+    configure: impl FnOnce(WorkspaceMocker) -> WorkspaceMocker,
+) {
     let mut group = c.benchmark_group(group_name);
     let runtime = create_runtime();
-    let (app_context, graph, locators) = create_graphs(&runtime, &sandbox);
+    let (app_context, graph, locators) = create_graphs(&runtime, &sandbox, configure);
 
     if max >= 1000 {
         group.sample_size(10);
@@ -128,6 +145,71 @@ fn do_limit_chained(c: &mut Criterion, max: u16) {
     );
 }
 
+// Find a test plugin built with `just build-wasm`, which builds into
+// `CARGO_TARGET_DIR` when it's set, otherwise into `wasm/target`. Benchmarks are
+// release builds, which don't resolve the test plugins' locators, so it's
+// located here
+fn find_test_plugin(name: &str) -> Option<PathBuf> {
+    let file = format!("{name}.wasm");
+
+    ["CARGO_TARGET_DIR", "WARPGATE_PLUGINS_DIR"]
+        .into_iter()
+        .filter_map(std::env::var_os)
+        .map(PathBuf::from)
+        .flat_map(|dir| [dir.clone(), dir.join("target")])
+        .flat_map(|dir| {
+            ["release", "debug"].map(|profile| dir.join("wasm32-wasip1").join(profile).join(&file))
+        })
+        .find(|path| path.exists())
+}
+
+// Like the simple workspace, but every task runs in a tier 3 toolchain. The
+// test plugin locates the dependencies root at the workspace root, without
+// members, so no project is in it, and every task falls back to setting up the
+// toolchain. This measures resolving that (the toolchain's requirements and
+// supported tiers, and locating the root), but not install or environment
+// actions, nor matching workspace members. Skipped when the test plugin hasn't
+// been built
+fn do_limit_toolchain(c: &mut Criterion, max: u16) {
+    let Some(wasm_path) = find_test_plugin("tc_tier3") else {
+        eprintln!(
+            "Skipping the toolchain benchmarks, as the tc_tier3 test plugin wasn't found (build it with `just build-wasm`)"
+        );
+
+        return;
+    };
+
+    bench_run_tasks_with(
+        c,
+        "ActionGraphBuilder/toolchain",
+        max,
+        create_toolchain_workspace(max),
+        |mocker| {
+            mocker.update_toolchains_config(|config| {
+                let plugin = config.plugins.entry(Id::raw("tc-tier3")).or_default();
+
+                plugin.plugin = Some(PluginLocator::File(Box::new(FileLocator {
+                    file: format!("file://{}", wasm_path.display()),
+                    path: Some(wasm_path.clone()),
+                })));
+                plugin.version = Some(UnresolvedVersionSpec::parse("1.2.3").unwrap());
+            })
+        },
+    );
+}
+
+// Like the chained workspace, but every `build` task runs its dependencies
+// serially, so the chain of `build` tasks below each one is ordered after
+// its `test` task
+fn do_limit_serial(c: &mut Criterion, max: u16) {
+    bench_run_tasks(
+        c,
+        "ActionGraphBuilder/serial",
+        max,
+        create_serial_workspace(max),
+    );
+}
+
 fn limit_10(c: &mut Criterion) {
     do_limit(c, 10);
 }
@@ -158,6 +240,30 @@ fn chained_1000(c: &mut Criterion) {
     do_limit_chained(c, 1000);
 }
 
+fn toolchain_10(c: &mut Criterion) {
+    do_limit_toolchain(c, 10);
+}
+
+fn toolchain_100(c: &mut Criterion) {
+    do_limit_toolchain(c, 100);
+}
+
+fn toolchain_1000(c: &mut Criterion) {
+    do_limit_toolchain(c, 1000);
+}
+
+fn serial_10(c: &mut Criterion) {
+    do_limit_serial(c, 10);
+}
+
+fn serial_100(c: &mut Criterion) {
+    do_limit_serial(c, 100);
+}
+
+fn serial_1000(c: &mut Criterion) {
+    do_limit_serial(c, 1000);
+}
+
 criterion_group!(
     benches,
     limit_10,
@@ -166,6 +272,12 @@ criterion_group!(
     limit_5000,
     chained_10,
     chained_100,
-    chained_1000
+    chained_1000,
+    toolchain_10,
+    toolchain_100,
+    toolchain_1000,
+    serial_10,
+    serial_100,
+    serial_1000
 );
 criterion_main!(benches);

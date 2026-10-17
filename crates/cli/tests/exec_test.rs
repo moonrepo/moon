@@ -1526,6 +1526,30 @@ mod exec {
             assert!(predicate::str::contains("\nfile.txt\n").eval(&assert.output()));
         }
 
+        // Forcing runs the task regardless, but its affected state must still
+        // be tracked, so that it's reported
+        #[test]
+        fn reports_affected_tasks_even_when_forced() {
+            let sandbox = create_cases_sandbox();
+
+            change_files(&sandbox, ["files/other.txt"]);
+
+            sandbox
+                .run_bin(|cmd| {
+                    cmd.arg("exec")
+                        .arg("files:noop")
+                        .arg("--affected")
+                        .arg("--force");
+                })
+                .success();
+
+            let report: json::JsonValue =
+                json::read_file(sandbox.path().join(".moon/cache/runReport.json")).unwrap();
+            let tasks = &report["context"]["affected"]["tasks"];
+
+            assert!(tasks["files:noop"].is_object(), "{tasks}");
+        }
+
         #[test]
         fn runs_if_affected_via_stdin() {
             let sandbox = create_cases_sandbox();

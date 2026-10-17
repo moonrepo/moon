@@ -23,7 +23,7 @@ pub async fn sync(session: MoonSession) -> SessionResult {
     action_graph_builder.set_requirements(RunRequirements::default());
 
     for project in workspace_graph.get_projects()? {
-        action_graph_builder.sync_project(&project);
+        action_graph_builder.sync_project(project);
         project_count += 1;
     }
 

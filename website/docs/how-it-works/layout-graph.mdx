@@ -14,7 +14,7 @@ project's role in that root, and the version and settings that apply.
 moon builds it while building the [action graph](./action-graph), for the toolchains of the tasks
 being ran, and uses it to setup environments, install dependencies, hash tasks, and prune Docker
 images. Each root is located once per project, instead of once for every action and task that needs
-it.
+it, and toolchains that support it locate the roots of many projects in a single call.
 
 ## Dependencies roots
 

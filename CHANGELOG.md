@@ -220,6 +220,11 @@
     loads it once. Previously, each caller loaded and compiled its own instance of the plugin, and
     all but one were discarded.
 - **Toolchains**
+  - Added an optional `locate_dependencies_roots` function to the toolchain plugin API, which
+    locates the dependencies roots of many projects in a single call. When a toolchain implements
+    it, every project that shares the toolchain's config is located in one call while building the
+    layout graph, instead of a call for each project, which is 37% faster for 1000 projects with a
+    test plugin. Toolchains that don't implement it still locate one root per call.
   - Added support for proto v0.63's config trust. As moon already runs the workspace's tasks,
     `.prototools` configs within the workspace are always trusted, while other local configs, like
     one in a parent directory, must be trusted with `proto trust` before their security-sensitive

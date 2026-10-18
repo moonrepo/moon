@@ -11,7 +11,7 @@ pub enum DependenciesWorkspaceRole {
     PackageRoot,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct DependenciesWorkspace {
     pub root: PathBuf,
     // If not a multi-package workspace, will be `None`.

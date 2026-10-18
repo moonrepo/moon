@@ -22,18 +22,39 @@ fn is_testing_deps_workspace(path: &VirtualPath) -> bool {
 pub fn locate_dependencies_root(
     Json(input): Json<LocateDependenciesRootInput>,
 ) -> FnResult<Json<LocateDependenciesRootOutput>> {
+    record_input(
+        &input.context,
+        &input.toolchain_config,
+        "locate_dependencies_root",
+        &input.starting_dir.to_string(),
+        json::to_value(&input)?,
+    )?;
+
+    Ok(Json(locate_dependencies_root_from(
+        &input.context,
+        &input.starting_dir,
+        &input.toolchain_config,
+    )?))
+}
+
+/// Locate the root of a starting directory, which `tc-tier2-batch` also
+/// calls for each of its starting directories.
+pub fn locate_dependencies_root_from(
+    context: &MoonContext,
+    starting_dir: &VirtualPath,
+    toolchain_config: &json::Value,
+) -> FnResult<LocateDependenciesRootOutput> {
     // Like a real plugin, locate the root from the project, by traversing
     // upwards to the closest `tc.lock`. When the root has a `tc.root.cfg`,
     // it's a workspace, with a member glob on each line. Tests opt in via
     // toolchain config, as other tests rely on the working dir below.
-    if input
-        .toolchain_config
+    if toolchain_config
         .get("testLocateRoots")
         .and_then(|value| value.as_bool())
         .unwrap_or_default()
     {
-        let Some(root) = locate_root(&input.starting_dir, "tc.lock") else {
-            return Ok(Json(LocateDependenciesRootOutput::default()));
+        let Some(root) = locate_root(starting_dir, "tc.lock") else {
+            return Ok(LocateDependenciesRootOutput::default());
         };
 
         let members_file = root.join("tc.root.cfg");
@@ -50,20 +71,20 @@ pub fn locate_dependencies_root(
             None
         };
 
-        return Ok(Json(LocateDependenciesRootOutput {
+        return Ok(LocateDependenciesRootOutput {
             members,
             root: Some(root),
-        }));
+        });
     }
 
     // Working dir is set to the project root.
-    let cwd = input.context.working_dir;
+    let cwd = context.working_dir.clone();
 
     // Testing the `dep-workspace` fixture. The "in" project
     // is in the workspace, while "out" is not.
     let is_deps_workspace = is_testing_deps_workspace(&cwd);
 
-    Ok(Json(LocateDependenciesRootOutput {
+    Ok(LocateDependenciesRootOutput {
         members: if is_deps_workspace {
             Some(vec!["in".into()])
         } else {
@@ -72,11 +93,11 @@ pub fn locate_dependencies_root(
         // We need a root for the `InstallDependencies`
         // action to work, otherwise it aborts early
         root: Some(if is_deps_workspace {
-            input.context.workspace_root
+            context.workspace_root.clone()
         } else {
             cwd
         }),
-    }))
+    })
 }
 
 // Test lockfiles have a `name@version` per line, so that tests can hash

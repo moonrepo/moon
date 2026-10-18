@@ -83,6 +83,7 @@ Tier 2 - Ecosystem integration ────────────────�
   ⚫️ hash_task_contents
   ⚫️ install_dependencies
   ⚫️ locate_dependencies_root
+  ⚫️ locate_dependencies_roots
   ⚫️ parse_lock
   ⚫️ parse_manifest
   ⚫️ setup_environment

@@ -509,8 +509,8 @@ docker and queries, but not for every `moon run`.
 
 ### Later: fewer calls, and persistence
 
-- **Batch locate:** an optional `locate_dependencies_roots` PDK function that takes many starting
-  dirs. It costs one WASM call per toolchain, instead of one per project.
+- **Batch locate (done, phase 7b):** an optional `locate_dependencies_roots` PDK function that takes
+  many starting dirs. It costs one WASM call per toolchain and config, instead of one per project.
 - **Persisted layout:** a binding isn't a pure function of its project, as locate reads ancestor
   directories and the root manifest (for member globs). So its fingerprint is:
   - existence probes of the registered lockfile and manifest names in each ancestor, from the
@@ -672,6 +672,34 @@ docker and queries, but not for every `moon run`.
      project config docs, the command docs, and a "Layout graph" section in the v3.0 blog post.
 6. **TOOLCHAIN_REQS phases 3–4** on top: `delegates`, and reverse inference via the layout.
 7. **Perf:** batch locate, persisted layout, daemon watching.
+   - **7a, measure (done):** `cargo bench -p moon_layout_graph --bench layout_graph_builder` places
+     every project of a generated workspace (`create_layout_workspace`: `packages/*` members of a
+     root workspace, and a package root in `apps/*` for every tenth project), with
+     `WARPGATE_NO_FUNC_CACHE` set, as plugin calls are otherwise memoized for the process, so every
+     iteration after the first would be a cache hit. Locating one root per call took 2.81 ms at 10
+     projects, 14.2 ms at 100, and 123 ms at 1000 (2026-10-17), about 120 µs per project. With the
+     call cache, the host side is 10 ms at 1000, so locate calls are ~90% of a full placement.
+   - **7b, batch locate (done):** an optional `locate_dependencies_roots` PDK function
+     (`LocateDependenciesRootsInput { context, starting_dirs, toolchain_config }`, returning a root
+     for each dir in order). `ToolchainPlugin::locate_dependencies_roots` calls it once when the
+     plugin implements it, and otherwise `locate_dependencies_root` for each dir (concurrently, as
+     before), and errors if a batch returns another number of roots
+     (`PluginError::MismatchedOutputs`). The builder now loads each toolchain once, groups the pairs
+     to locate by toolchain and merged config (most projects share it, while an override is part of
+     the input), makes a call for each group, with groups of different toolchains concurrently, and
+     inserts bindings in request order. Groups aren't chunked, as warpgate calls a plugin's single
+     instance under a write lock, so calls to one plugin never ran in parallel. With the
+     `tc-tier2-batch` test plugin (`tc-tier2` plus the batch function), a full placement is 2.31 ms
+     at 10 projects (−18%), 9.0 ms at 100 (−36%), and 77.8 ms at 1000 (−37%), while one root per
+     call is unchanged (within ±2%). The remaining time at 1000 is mostly the plugin's own file
+     walks in WASI (the host side is 8.5 ms), which a real plugin can memoize within a call, like
+     parsing the root manifest once instead of for every project.
+   - Tests: `locate_dependencies_roots` in the toolchain plugin tests (batch, fallback, no root, no
+     tier 2, and a mismatched output), and `batch` in the layout graph tests (the same full and lazy
+     layouts with both plugins, one call for each config, and one call for each project without
+     batch support, from inputs recorded under `testRecordInputs`).
+   - Skipped: persisted locate results (7c) and daemon watching (7d), as caching is revisited in
+     another PR. The design notes are kept in [Later](#later-fewer-calls-and-persistence).
 
 ## Follow-ups
 

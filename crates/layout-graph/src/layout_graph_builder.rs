@@ -1,12 +1,12 @@
 use crate::layout_graph::*;
 use futures::StreamExt;
-use futures::stream::FuturesOrdered;
+use futures::stream::FuturesUnordered;
 use indexmap::IndexSet;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
 use moon_common::Id;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
-use moon_pdk_api::LocateDependenciesRootInput;
+use moon_pdk_api::LocateDependenciesRootsInput;
 use moon_project::Project;
 use moon_toolchain::{
     DependenciesWorkspace, DependenciesWorkspaceRole, ToolchainSpec, get_toolchain_spec,
@@ -29,49 +29,25 @@ struct ResolvedBinding {
     located: Option<(DependenciesWorkspace, Option<DependenciesWorkspaceRole>)>,
 }
 
-/// Locate the root of a toolchain for a project (or the workspace root),
-/// with the same input as the action graph, so that plugin calls are shared.
-async fn resolve_binding(
-    app_context: Arc<AppContext>,
-    spec: ToolchainSpec,
+/// A binding to place, whose root is located first, if its toolchain is
+/// tier 2.
+struct PendingBinding {
     project: Option<Arc<Project>>,
-) -> miette::Result<ResolvedBinding> {
-    let registry = &app_context.toolchain_registry;
-    let toolchain = registry.load(&spec.id).await?;
-    let config = Arc::new(match &project {
-        Some(project) => registry.create_merged_config(&toolchain.id, &project.config),
-        None => registry.create_config(&toolchain.id),
-    });
-    let mut located = None;
+    toolchain: Arc<ToolchainPlugin>,
+    spec: ToolchainSpec,
+    config: Arc<JsonValue>,
+    locates: bool,
+}
 
-    // Only tier 2 toolchains locate a root
-    if toolchain.supports_tier_2().await {
-        let target_root = match &project {
+impl PendingBinding {
+    /// The directory to locate the root from, which is the project's root,
+    /// or the workspace root without a project.
+    fn get_target_root<'path>(&'path self, workspace_root: &'path Path) -> &'path Path {
+        match &self.project {
             Some(project) => &project.root,
-            None => &app_context.workspace_root,
-        };
-
-        if let Some(deps_workspace) = toolchain
-            .locate_dependencies_root(LocateDependenciesRootInput {
-                context: registry.create_context(),
-                starting_dir: toolchain.to_virtual_path(target_root),
-                toolchain_config: config.as_ref().to_owned(),
-            })
-            .await?
-        {
-            let role = toolchain.in_dependencies_workspace(&deps_workspace, target_root)?;
-
-            located = Some((deps_workspace, role));
+            None => workspace_root,
         }
     }
-
-    Ok(ResolvedBinding {
-        project,
-        toolchain,
-        spec,
-        config,
-        located,
-    })
 }
 
 /// Probe the toolchain's registered file names in a root.
@@ -207,13 +183,13 @@ impl LayoutGraphBuilder {
 
     /// Place the toolchain of each pair for its project. Pairs that are already
     /// placed are skipped, as are toolchains that the project disabled, or that
-    /// aren't configured. Roots are located concurrently.
+    /// aren't configured.
     pub async fn place<I>(&mut self, pairs: I) -> miette::Result<()>
     where
         I: IntoIterator<Item = (Arc<Project>, Id)>,
     {
         let mut seen = FxHashSet::default();
-        let mut futures = FuturesOrdered::new();
+        let mut requests = vec![];
 
         for (project, toolchain_id) in pairs {
             if self.graph.binding(&project.id, &toolchain_id).is_some()
@@ -234,14 +210,10 @@ impl LayoutGraphBuilder {
                 continue;
             }
 
-            futures.push_back(tokio::spawn(resolve_binding(
-                Arc::clone(&self.app_context),
-                spec,
-                Some(project),
-            )));
+            requests.push((spec, Some(project)));
         }
 
-        self.insert_all(futures).await
+        self.place_requests(requests).await
     }
 
     /// Place every enabled toolchain of the project, and of its tasks.
@@ -281,7 +253,7 @@ impl LayoutGraphBuilder {
         I: IntoIterator<Item = Id>,
     {
         let mut seen = FxHashSet::default();
-        let mut futures = FuturesOrdered::new();
+        let mut requests = vec![];
 
         for toolchain_id in toolchain_ids {
             if self.graph.workspace_binding(&toolchain_id).is_some()
@@ -300,14 +272,10 @@ impl LayoutGraphBuilder {
                 continue;
             }
 
-            futures.push_back(tokio::spawn(resolve_binding(
-                Arc::clone(&self.app_context),
-                spec,
-                None,
-            )));
+            requests.push((spec, None));
         }
 
-        self.insert_all(futures).await
+        self.place_requests(requests).await
     }
 
     /// Freeze the graph.
@@ -349,23 +317,45 @@ impl LayoutGraphBuilder {
         Ok(toolchain_ids)
     }
 
-    /// Insert resolved bindings in the order they were requested, so that
-    /// root indices are deterministic.
-    async fn insert_all(
+    /// Locate the roots of the requested bindings (with a project, or from
+    /// the workspace root without one), and insert them in the order they
+    /// were requested, so that root indices are deterministic.
+    async fn place_requests(
         &mut self,
-        mut futures: FuturesOrdered<tokio::task::JoinHandle<miette::Result<ResolvedBinding>>>,
+        requests: Vec<(ToolchainSpec, Option<Arc<Project>>)>,
     ) -> miette::Result<()> {
-        if !futures.is_empty() {
-            debug!(
-                count = futures.len(),
-                "Placing toolchains into the layout graph"
-            );
+        if requests.is_empty() {
+            return Ok(());
         }
 
-        while let Some(result) = futures.next().await {
-            let resolved = result.into_diagnostic()??;
+        debug!(
+            count = requests.len(),
+            "Placing toolchains into the layout graph"
+        );
 
-            self.insert(resolved)?;
+        let pending = self.prepare(requests).await?;
+        let located = self.locate(&pending).await?;
+
+        for (binding, deps_workspace) in pending.into_iter().zip(located) {
+            let located = match deps_workspace {
+                Some(deps_workspace) => {
+                    let role = binding.toolchain.in_dependencies_workspace(
+                        &deps_workspace,
+                        binding.get_target_root(&self.app_context.workspace_root),
+                    )?;
+
+                    Some((deps_workspace, role))
+                }
+                None => None,
+            };
+
+            self.insert(ResolvedBinding {
+                project: binding.project,
+                toolchain: binding.toolchain,
+                spec: binding.spec,
+                config: binding.config,
+                located,
+            })?;
         }
 
         for (index, toolchain) in std::mem::take(&mut self.pending_capabilities) {
@@ -376,6 +366,108 @@ impl LayoutGraphBuilder {
         }
 
         Ok(())
+    }
+
+    /// Load the toolchain of each request (once per toolchain), and create
+    /// its config, with the same input as the action graph.
+    async fn prepare(
+        &self,
+        requests: Vec<(ToolchainSpec, Option<Arc<Project>>)>,
+    ) -> miette::Result<Vec<PendingBinding>> {
+        let registry = &self.app_context.toolchain_registry;
+        let mut toolchains = FxHashMap::default();
+
+        for toolchain in registry
+            .load_many(
+                requests
+                    .iter()
+                    .map(|(spec, _)| &spec.id)
+                    .collect::<IndexSet<_>>(),
+            )
+            .await?
+        {
+            // Only tier 2 toolchains locate a root
+            let locates = toolchain.supports_tier_2().await;
+
+            toolchains.insert(toolchain.id.clone(), (toolchain, locates));
+        }
+
+        let mut pending = Vec::with_capacity(requests.len());
+
+        for (spec, project) in requests {
+            let (toolchain, locates) = &toolchains[&spec.id];
+            let config = Arc::new(match &project {
+                Some(project) => registry.create_merged_config(&toolchain.id, &project.config),
+                None => registry.create_config(&toolchain.id),
+            });
+
+            pending.push(PendingBinding {
+                project,
+                toolchain: Arc::clone(toolchain),
+                spec,
+                config,
+                locates: *locates,
+            });
+        }
+
+        Ok(pending)
+    }
+
+    /// Locate the root of each pending binding, in the same order, with a call
+    /// for each toolchain and config, as most projects share their toolchain's
+    /// config. A call locates many roots at once if the plugin supports it.
+    /// Calls for different toolchains run concurrently.
+    async fn locate(
+        &self,
+        pending: &[PendingBinding],
+    ) -> miette::Result<Vec<Option<DependenciesWorkspace>>> {
+        let mut groups = FxHashMap::<(&Id, String), Vec<usize>>::default();
+
+        for (index, binding) in pending.iter().enumerate() {
+            if binding.locates {
+                groups
+                    .entry((&binding.toolchain.id, binding.config.to_string()))
+                    .or_default()
+                    .push(index);
+            }
+        }
+
+        let context = self.app_context.toolchain_registry.create_context();
+        let workspace_root = &self.app_context.workspace_root;
+        let mut futures = FuturesUnordered::new();
+
+        for indices in groups.into_values() {
+            let first = &pending[indices[0]];
+            let toolchain = Arc::clone(&first.toolchain);
+            let input = LocateDependenciesRootsInput {
+                context: context.clone(),
+                starting_dirs: indices
+                    .iter()
+                    .map(|index| {
+                        toolchain.to_virtual_path(pending[*index].get_target_root(workspace_root))
+                    })
+                    .collect(),
+                toolchain_config: first.config.as_ref().to_owned(),
+            };
+
+            futures.push(tokio::spawn(async move {
+                let roots = toolchain.locate_dependencies_roots(input).await?;
+
+                Ok::<_, miette::Report>((indices, roots))
+            }));
+        }
+
+        let mut located = (0..pending.len()).map(|_| None).collect::<Vec<_>>();
+
+        while let Some(result) = futures.next().await {
+            let (indices, roots) = result.into_diagnostic()??;
+
+            for (index, root) in indices.into_iter().zip(roots) {
+                located[index] = root;
+            }
+        }
+
+        Ok(located)
     }
 
     fn insert(&mut self, resolved: ResolvedBinding) -> miette::Result<()> {

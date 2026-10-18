@@ -32,19 +32,28 @@ struct Container {
 
 impl Container {
     async fn new(sandbox: &Sandbox) -> Self {
-        let mocker = WorkspaceMocker::new(sandbox.path())
-            .load_default_configs()
-            .with_test_toolchains()
-            .update_toolchains_config(|config| {
-                // Locate roots from each project, instead of the working dir
-                config
-                    .plugins
-                    .get_mut(&tc())
-                    .unwrap()
-                    .config
-                    .insert("testLocateRoots".into(), serde_json::Value::Bool(true));
-            })
-            .with_global_envs();
+        Self::new_with(sandbox, |mocker| mocker).await
+    }
+
+    async fn new_with(
+        sandbox: &Sandbox,
+        configure: impl FnOnce(WorkspaceMocker) -> WorkspaceMocker,
+    ) -> Self {
+        let mocker = configure(
+            WorkspaceMocker::new(sandbox.path())
+                .load_default_configs()
+                .with_test_toolchains()
+                .update_toolchains_config(|config| {
+                    // Locate roots from each project, instead of the working dir
+                    config
+                        .plugins
+                        .get_mut(&tc())
+                        .unwrap()
+                        .config
+                        .insert("testLocateRoots".into(), serde_json::Value::Bool(true));
+                }),
+        )
+        .with_global_envs();
 
         Self {
             app_context: Arc::new(mocker.mock_app_context()),
@@ -597,5 +606,131 @@ mod diagnostics {
 
         // A package root with an override, a member, and a member of a nested workspace
         assert!(get_diagnostics(&container.place(&["standalone", "a", "lib"]).await).is_empty());
+    }
+}
+
+mod batch {
+    use super::*;
+
+    // Load `tc-tier2` from the provided test plugin, and record its locate calls
+    async fn create_container(sandbox: &Sandbox, plugin_name: &str) -> Container {
+        Container::new_with(sandbox, |mocker| {
+            mocker
+                .with_test_toolchain_from("tc-tier2", plugin_name)
+                .update_toolchains_config(|config| {
+                    config
+                        .plugins
+                        .get_mut(&tc())
+                        .unwrap()
+                        .config
+                        .insert("testRecordInputs".into(), serde_json::Value::Bool(true));
+                })
+        })
+        .await
+    }
+
+    // The starting dirs of each recorded call of the function
+    fn get_recorded_calls(sandbox: &Sandbox, func: &str) -> Vec<Vec<String>> {
+        let Ok(entries) = std::fs::read_dir(
+            sandbox
+                .path()
+                .join(".moon/cache/tcInputs/tc-tier2")
+                .join(func),
+        ) else {
+            return vec![];
+        };
+
+        let mut calls = entries
+            .map(|entry| {
+                let input: serde_json::Value =
+                    serde_json::from_str(&std::fs::read_to_string(entry.unwrap().path()).unwrap())
+                        .unwrap();
+
+                let mut dirs: Vec<String> = match input.get("starting_dirs") {
+                    Some(dirs) => serde_json::from_value(dirs.clone()).unwrap(),
+                    None => vec![input["starting_dir"].as_str().unwrap().to_owned()],
+                };
+
+                dirs.sort();
+                dirs
+            })
+            .collect::<Vec<Vec<String>>>();
+
+        calls.sort();
+        calls
+    }
+
+    async fn build_full(container: &Container) -> serde_json::Value {
+        let mut builder = container.builder();
+
+        builder.place_all().await.unwrap();
+        builder.place_workspace([tc()]).await.unwrap();
+
+        serde_json::to_value(builder.build()).unwrap()
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn matches_locating_one_root_per_call() {
+        let single_sandbox = create_sandbox("layout");
+        let single = create_container(&single_sandbox, "tc-tier2").await;
+        let batch_sandbox = create_sandbox("layout");
+        let batch = create_container(&batch_sandbox, "tc-tier2-batch").await;
+
+        assert_eq!(build_full(&single).await, build_full(&batch).await);
+
+        for project_ids in [&["standalone", "a", "tools"][..], &["lib", "nested", "off"]] {
+            assert_eq!(
+                serde_json::to_value(single.place(project_ids).await).unwrap(),
+                serde_json::to_value(batch.place(project_ids).await).unwrap(),
+                "{project_ids:?}"
+            );
+        }
+    }
+
+    async fn place_all(container: &Container) {
+        let mut builder = container.builder();
+
+        builder.place_all().await.unwrap();
+    }
+
+    // Projects that override the toolchain's config (`root`, `b`, and
+    // `standalone`) are located separately, as the config is part of the input
+    #[tokio::test(flavor = "multi_thread")]
+    async fn locates_once_for_each_config() {
+        let sandbox = create_sandbox("layout");
+        let container = create_container(&sandbox, "tc-tier2-batch").await;
+
+        place_all(&container).await;
+
+        assert_eq!(
+            get_recorded_calls(&sandbox, "locate_dependencies_roots"),
+            [
+                vec!["/workspace"],
+                vec![
+                    "/workspace/apps/web",
+                    "/workspace/nested",
+                    "/workspace/nested/lib",
+                    "/workspace/packages/a",
+                    "/workspace/tools",
+                ],
+                vec!["/workspace/packages/b"],
+                vec!["/workspace/standalone"],
+            ]
+        );
+        assert!(get_recorded_calls(&sandbox, "locate_dependencies_root").is_empty());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn locates_once_for_each_project_without_batch_support() {
+        let sandbox = create_sandbox("layout");
+        let container = create_container(&sandbox, "tc-tier2").await;
+
+        place_all(&container).await;
+
+        assert_eq!(
+            get_recorded_calls(&sandbox, "locate_dependencies_root").len(),
+            8
+        );
+        assert!(get_recorded_calls(&sandbox, "locate_dependencies_roots").is_empty());
     }
 }

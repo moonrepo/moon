@@ -6189,10 +6189,12 @@ dependencies = [
 name = "moon_layout_graph"
 version = "0.0.1"
 dependencies = [
+ "codspeed-criterion-compat",
  "futures",
  "indexmap",
  "miette 7.6.0",
  "moon_app_context",
+ "moon_bench_utils",
  "moon_common",
  "moon_config",
  "moon_graph_utils",
@@ -6210,6 +6212,7 @@ dependencies = [
  "starbase_utils",
  "tokio",
  "tracing",
+ "warpgate_api",
 ]
 
 [[package]]
@@ -6755,6 +6758,7 @@ dependencies = [
  "proto_pdk_api",
  "rustc-hash",
  "scc",
+ "serde_json",
  "starbase_sandbox",
  "starbase_utils",
  "tokio",

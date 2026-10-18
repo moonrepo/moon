@@ -196,6 +196,9 @@
       spawning a blocking task per file.
     - Each file is now stat-ed once before hashing, instead of twice, and read with a single read
       when it fits within the hashing buffer.
+  - Hashing a task's toolchains now reads the dependencies root of each toolchain from where the
+    action graph placed it, instead of calling the toolchain's plugin to locate it again for every
+    task. Hashes are unchanged.
 - **Plugins**
   - Improved the performance of calling plugins concurrently, like when building projects and their
     tasks in parallel. Looking up a loaded plugin, and a toolchain's cached tool locations, no

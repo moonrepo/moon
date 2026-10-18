@@ -256,7 +256,6 @@ impl GeneratedGraphs {
             context,
             graph,
             mut report,
-            ..
         } = builder.build().await?;
 
         Ok(Build {

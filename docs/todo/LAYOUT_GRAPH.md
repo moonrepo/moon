@@ -6,9 +6,9 @@ for each of its toolchains, with which version and config, and what lives in eac
 2026-10-17 with Miles's answers (see [Resolved questions](#resolved-questions)). Line references are
 as of that commit, and will drift.
 
-Phases 0, 1, and 2 are implemented (see [Phases](#phases)), and the rest isn't. Estimates are marked
-as such. Claims marked **unverified** come from reading the code, and need a test before they're
-relied on.
+Phases 0 to 3 are implemented (see [Phases](#phases)), and the rest isn't. Estimates are marked as
+such. Claims marked **unverified** come from reading the code, and need a test before they're relied
+on.
 
 This composes with [TOOLCHAIN_REQS.md](./TOOLCHAIN_REQS.md): delegation (its section 2) becomes a
 field of a root in this model, and membership (its section 3) is an input to it. Caching composes
@@ -541,8 +541,10 @@ docker and queries, but not for every `moon run`.
     task runs `node`. Prune only uses project toolchains today.
   - `packages` is drawn from root members.
   - The prune fixture needs a tier 2 toolchain (it uses `tc-tier1` today, so locate is untested).
-- **Task hasher:** reads the binding. It hashes `root.files.lockfiles`, and decides explicitly
-  whether an `Outside` project hashes the root's lockfiles (it does, implicitly, today).
+- **Task hasher (done, phase 3):** reads the root's path from the binding: a root's, or the root
+  that an `Outside` project located, whose lockfiles are still hashed, as before. The lockfile and
+  manifest probing after that is unchanged, so hashes are the same. It never locates a root itself:
+  a toolchain without a binding (not placed) has no root, so no dependencies are hashed.
 - **Command env:** versions come from the binding's spec. Plugins still compute deps-root bin dirs
   in `extend_command`. Passing the root in `ExtendCommandInput` would let them stop re-locating, as
   a later PDK change.
@@ -620,7 +622,26 @@ docker and queries, but not for every `moon run`.
      concurrently. The first cut collected a pair per task, and read root capabilities per binding,
      which cost +11% to +17% without toolchains, so pairs are deduped per project, and capabilities
      are read once per root.
-3. **Pipeline consumers:** the hasher and the command env read the frozen layout from `BuildOutput`.
+3. **Pipeline consumers (done):**
+   - The built `ActionGraph` carries the layout (`get_layout_graph`, an empty layout for graphs that
+     weren't built by the builder). The pipeline puts it in `JobContext.layout_graph`, next to the
+     workspace graph, and passes it to `run_task`, `TaskRunner::new`, and
+     `hash_toolchain_task_contents`, which all require it.
+   - Placement always includes the toolchains of selected tasks, even when they don't install
+     dependencies, while install requests are still only placed when they do.
+   - The hasher reads the root's path from the binding (see the task hasher above), and never calls
+     `locate_dependencies_root`.
+   - The command env is unchanged: versions were already unified in phase 0, and passing the root to
+     `extend_command` is a later PDK change.
+   - Tests: `toolchain_hashing_test.rs` (task-hasher) checks the locked versions that are hashed for
+     a member, a package root, and an outside project, that the placed root is hashed (a closer
+     lockfile only applies once placed again), and that an unplaced toolchain hashes no
+     dependencies. Before the locate fallback was removed, hashes were checked to be the same with
+     and without a layout for a member, a workspace root, a package root, and an outside project.
+     The task runner tests' container places its project, like the action graph. `tc-tier2` gained
+     `parse_lock` (`name@version` lines) and `parse_manifest` (`dep <name> <version>` lines) for it.
+     The plugin call cache is per process, so locating again needs new graphs. The
+     `places_task_toolchains_when_installs_are_disabled` action graph test covers placement.
 4. **Docker:** prune and scaffold on a full layout, with a tier 2 prune fixture.
 5. **Diagnostics:** outside, shadowed and divergent, also shown by `moon layout-graph`.
 6. **TOOLCHAIN_REQS phases 3–4** on top: `delegates`, and reverse inference via the layout.

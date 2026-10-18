@@ -1,7 +1,9 @@
-//! Stage 1b: place the toolchains that the selected tasks and requests install
-//! dependencies for into the layout graph, before assembling, so that their
-//! dependencies roots are located concurrently, instead of one at a time while
-//! the graph is assembled.
+//! Stage 1b: place the toolchains of the selected tasks, and the toolchains
+//! that requests install dependencies for, into the layout graph, before
+//! assembling, so that their dependencies roots are located concurrently,
+//! instead of one at a time while the graph is assembled. Tasks are placed
+//! even when their toolchains don't install dependencies, as their hashes
+//! include the dependencies of their roots.
 
 use super::select::{Event, ProvisionRequest, TaskPlan};
 use crate::action_graph_options::ActionGraphBuilderOptions;
@@ -24,9 +26,11 @@ fn add_pairs<'plan>(
     toolchain_ids: &'plan [Id],
 ) {
     for toolchain_id in toolchain_ids {
+        // Only mark a pair as seen once it's collected, as a request that
+        // doesn't install may be followed by a task with the same pair
         if toolchain_id != "system"
-            && seen.insert((&project.id, toolchain_id))
             && installs(toolchain_id)
+            && seen.insert((&project.id, toolchain_id))
         {
             pairs.push((Arc::clone(project), toolchain_id.to_owned()));
         }
@@ -56,7 +60,7 @@ pub async fn place(
     for event in &plan.events {
         match event {
             Event::EnterTask { project, task, .. } => {
-                add_pairs(&mut pairs, &mut seen, &installs, project, &task.toolchains);
+                add_pairs(&mut pairs, &mut seen, &|_| true, project, &task.toolchains);
             }
             Event::Request(_, request) => match request {
                 ProvisionRequest::InstallDependencies(spec, project) => {

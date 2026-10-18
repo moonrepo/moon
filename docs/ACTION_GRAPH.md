@@ -55,15 +55,18 @@ which side declared the relationship; see [Cleanup](#cleanup-task-dependencies).
 and so on), and nothing happens until `build()`
 ([builder/mod.rs](../crates/action-graph/src/builder/mod.rs)). The build selects the task instances
 and project syncs that exist, applying their gates, as an event log
-([select.rs](../crates/action-graph/src/builder/select.rs)). Then it places every (project,
-toolchain) pair that the events install dependencies for into the layout graph, which locates their
-dependencies roots concurrently ([place.rs](../crates/action-graph/src/builder/place.rs)). Then it
-replays the events to insert nodes and link edges, resolving each task's provisioning actions from
-the layout right before the task ([assemble.rs](../crates/action-graph/src/builder/assemble.rs)).
-Then it adds the edges that depend on the whole graph (project syncs, present dependencies, and
-serial ordering). A graph that's asked to run one task contains only that task, its dependencies,
-and the setup chain they need. Nodes are inserted in a fixed order: a task's project sync and
-toolchain actions before the task, and the task before its dependencies.
+([select.rs](../crates/action-graph/src/builder/select.rs)). Then it places the toolchains of every
+selected task (even ones that don't install dependencies, as task hashes include them), and of every
+install request, into the layout graph, which locates their dependencies roots concurrently
+([place.rs](../crates/action-graph/src/builder/place.rs)). The built graph carries the layout
+(`ActionGraph::get_layout_graph`), which the pipeline passes to actions through its `JobContext`, so
+the task hasher reads the same roots. Then it replays the events to insert nodes and link edges,
+resolving each task's provisioning actions from the layout right before the task
+([assemble.rs](../crates/action-graph/src/builder/assemble.rs)). Then it adds the edges that depend
+on the whole graph (project syncs, present dependencies, and serial ordering). A graph that's asked
+to run one task contains only that task, its dependencies, and the setup chain they need. Nodes are
+inserted in a fixed order: a task's project sync and toolchain actions before the task, and the task
+before its dependencies.
 
 **Deduplication.** Nodes are deduplicated by identity, and a node that already exists is reused.
 Task instances are keyed by target, args, and env, and provisioning and sync nodes by a `NodeKey` of

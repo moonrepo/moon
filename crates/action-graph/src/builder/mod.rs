@@ -25,7 +25,6 @@ use moon_app_context::AppContext;
 use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_exec_plan::{ExecutionPlan, TargetsBlock};
-use moon_layout_graph::LayoutGraph;
 use moon_project::Project;
 use moon_query::build_query;
 use moon_task::{Target, TargetLocator, Task};
@@ -89,8 +88,6 @@ pub(crate) fn get_workspace_spec(
 pub struct BuildOutput {
     pub context: ActionContext,
     pub graph: ActionGraph,
-    /// Where each toolchain that installs dependencies was placed.
-    pub layout: Arc<LayoutGraph>,
     pub report: BuildReport,
 }
 
@@ -477,8 +474,7 @@ impl ActionGraphBuilder {
 
         Ok(BuildOutput {
             context,
-            graph: assembled.graph,
-            layout: Arc::new(layout),
+            graph: assembled.graph.with_layout_graph(Arc::new(layout)),
             report,
         })
     }

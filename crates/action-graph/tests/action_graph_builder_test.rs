@@ -5879,6 +5879,46 @@ mod action_graph_builder {
             format!("SetupToolchain({TC}:{version})")
         }
 
+        // Tasks are hashed with the dependencies of their roots, so their
+        // toolchains are placed even when they don't install dependencies,
+        // while install requests are only placed when they do
+        #[tokio::test(flavor = "multi_thread")]
+        async fn places_task_toolchains_when_installs_are_disabled() {
+            let sandbox = create_sandbox("shared-root");
+
+            uses_toolchain(&sandbox, "packages/a");
+            uses_toolchain(&sandbox, "packages/c");
+
+            let mut container = create_container(&sandbox, TC);
+
+            container.mocker = container.mocker.update_toolchains_config(|cfg| {
+                cfg.plugins
+                    .get_mut(&Id::raw(TC))
+                    .unwrap()
+                    .install_dependencies = false;
+            });
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            builder.run_task_by_target(Target::parse("a:build").unwrap());
+            builder.install_dependencies(
+                &create_tier_spec_with_name(TC),
+                wg.get_project("c").unwrap(),
+            );
+
+            // The pipeline reads the layout from the graph
+            let graph = builder.build().await.unwrap().graph;
+            let layout = graph.get_layout_graph();
+
+            assert!(
+                layout
+                    .binding(&Id::raw("a"), &Id::raw(TC))
+                    .is_some_and(|binding| binding.root_index().is_some())
+            );
+            assert!(layout.binding(&Id::raw("c"), &Id::raw(TC)).is_none());
+        }
+
         mod workspace {
             use super::*;
 
@@ -7757,7 +7797,6 @@ mod action_graph_builder {
                     context,
                     graph,
                     mut report,
-                    ..
                 } = builder.build().await.unwrap();
                 let partition = report.take_partition(request).unwrap();
 
@@ -7790,7 +7829,6 @@ mod action_graph_builder {
                     context,
                     graph,
                     mut report,
-                    ..
                 } = builder.build().await.unwrap();
                 let partition = report.take_partition(request).unwrap();
 
@@ -7826,7 +7864,6 @@ mod action_graph_builder {
                     context,
                     graph,
                     mut report,
-                    ..
                 } = builder.build().await.unwrap();
                 let partition = report.take_partition(request).unwrap();
 
@@ -7869,7 +7906,6 @@ mod action_graph_builder {
                     context,
                     graph,
                     mut report,
-                    ..
                 } = builder.build().await.unwrap();
                 let partition = report.take_partition(request).unwrap();
 
@@ -7909,7 +7945,6 @@ mod action_graph_builder {
                     context,
                     graph,
                     mut report,
-                    ..
                 } = builder.build().await.unwrap();
                 let partition = report.take_partition(request).unwrap();
 

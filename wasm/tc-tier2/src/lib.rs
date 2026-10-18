@@ -79,6 +79,51 @@ pub fn locate_dependencies_root(
     }))
 }
 
+// Test lockfiles have a `name@version` per line, so that tests can hash
+// locked dependencies. Other lines are ignored.
+#[plugin_fn]
+pub fn parse_lock(Json(input): Json<ParseLockInput>) -> FnResult<Json<ParseLockOutput>> {
+    let mut output = ParseLockOutput::default();
+
+    for line in fs::read_to_string(&input.path)?.lines() {
+        if let Some((name, version)) = line.trim().split_once('@')
+            && !name.is_empty()
+        {
+            output
+                .dependencies
+                .entry(name.into())
+                .or_default()
+                .push(LockDependency {
+                    version: Some(VersionSpec::parse(version)?),
+                    ..Default::default()
+                });
+        }
+    }
+
+    Ok(Json(output))
+}
+
+// Test manifests have a `dep <name> <version>` per line, so that tests can
+// hash dependencies. Other lines (like the member globs of `tc.root.cfg`)
+// are ignored.
+#[plugin_fn]
+pub fn parse_manifest(
+    Json(input): Json<ParseManifestInput>,
+) -> FnResult<Json<ParseManifestOutput>> {
+    let mut output = ParseManifestOutput::default();
+
+    for line in fs::read_to_string(&input.path)?.lines() {
+        if let ["dep", name, version] = line.split_whitespace().collect::<Vec<_>>().as_slice() {
+            output.dependencies.insert(
+                (*name).into(),
+                ManifestDependency::new(UnresolvedVersionSpec::parse(version)?),
+            );
+        }
+    }
+
+    Ok(Json(output))
+}
+
 #[plugin_fn]
 pub fn install_dependencies(
     Json(input): Json<InstallDependenciesInput>,

@@ -17,6 +17,7 @@ pub async fn run_action(
 ) -> miette::Result<()> {
     let JobContext {
         emitter,
+        layout_graph,
         workspace_graph,
         ..
     } = job_context;
@@ -183,6 +184,7 @@ pub async fn run_action(
                 action_context,
                 app_context,
                 workspace_graph.clone(),
+                layout_graph.clone(),
                 job_context.daemon_client.clone(),
                 inner,
             )

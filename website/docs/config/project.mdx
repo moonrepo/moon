@@ -2136,6 +2136,23 @@ toolchains:
   typescript: false
 ```
 
+#### Overriding versions<VersionLabel version="3.0.0" />
+
+The `version` setting can also be overridden, to run the project's tasks with another version of the
+toolchain.
+
+```yaml title="moon.yml" {2,3}
+toolchains:
+  rust:
+    version: '1.99.0'
+```
+
+How the override applies depends on the [dependencies root](../how-it-works/layout-graph) that the
+project belongs to. When the project is a member of a workspace (like a Cargo or `package.json`
+workspace), the workspace's dependencies are still installed with the workspace's version, and the
+overridden version is only setup for running the project's tasks. When the project is its own
+package (with its own lockfile), its dependencies are installed with the overridden version.
+
 ## `workspace`
 
 <HeadingApiLink to="/api/types/interface/ProjectConfig#workspace" />

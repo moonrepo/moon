@@ -15,7 +15,10 @@ With `--info`, it instead prints each root: its kind (workspace or package), mem
 project, the version that its environment setup and dependency installs run with, its lockfiles,
 manifests, and vendor directory, and its projects with their role. Projects that use a toolchain
 without belonging to one of its roots, like a project that isn't a member of the workspace that
-it's located in, are listed separately.
+it's located in, are listed separately, followed by any
+[diagnostics](../how-it-works/layout-graph#diagnostics), like a nested workspace that's also matched
+by an enclosing workspace's members. Learn more about the
+[layout graph](../how-it-works/layout-graph).
 
 ```shell
 # Run the visualizer locally
@@ -44,7 +47,7 @@ $ moon layout-graph --json
 - `--dot` - Print the graph in DOT format.
 - `--host` - The host address. Defaults to `127.0.0.1`.
 - `--info` - Print information about each root and its projects, instead of serving the graph.
-- `--json` - Print the graph in JSON format, with every root and binding.
+- `--json` - Print the graph in JSON format, with every root, binding, and diagnostic.
 - `--port` - The port to bind to. Defaults to a random port.
 
 ### Configuration

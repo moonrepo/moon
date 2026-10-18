@@ -14,6 +14,7 @@ const sidebars: SidebarsConfig = {
 				'how-it-works/languages',
 				'how-it-works/project-graph',
 				'how-it-works/task-graph',
+				'how-it-works/layout-graph',
 				'how-it-works/action-graph',
 			],
 			link: {
@@ -30,6 +31,7 @@ const sidebars: SidebarsConfig = {
 					'dep-graph',
 					'dependency-graph',
 					'task-graph',
+					'layout-graph',
 				],
 			},
 		},

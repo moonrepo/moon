@@ -2,7 +2,7 @@
 slug: moon-v3.0
 title: moon v3.0 - ???
 authors: [milesj]
-tags: [async, experiments, affected, hashing, cache, cas, graph, tasks, proto]
+tags: [async, experiments, affected, hashing, cache, cas, graph, tasks, toolchain, proto]
 # image: ./img/moon/v2.6.png
 ---
 
@@ -223,6 +223,50 @@ with [`graph.noDependencies`](/docs/guides/exec-plan#graph) and
 
 As this is a major release, the previous options have been removed outright, with no aliases or
 deprecation period.
+
+## Layout graph
+
+Toolchains like JavaScript, Python, and Rust install dependencies in a _dependencies root_: a
+package manager's workspace, a Cargo workspace, or a standalone package. In v2, every part of moon
+that needed to know which root a project belonged to (setting up environments, installing
+dependencies, hashing tasks, and pruning Docker images) located it on its own, with slightly
+different rules, once for every project that asked.
+
+In v3, moon builds a [layout graph](/docs/how-it-works/layout-graph) instead: where each project
+lives for each of its toolchains, its role in that root (a member, a workspace root, or a package
+root), and the version and settings that apply. It's built while building the action graph, for the
+toolchains of the tasks being ran, with every root located concurrently, and everything else reads
+from it. Building the action graph for 1,000 projects in a toolchain is ~18% faster in our
+benchmarks.
+
+### Versions in a dependencies workspace
+
+The layout graph also made a long-standing ambiguity explicit: which version a workspace's actions
+run with, when a member [overrides the version](/docs/config/project#overriding-versions). In v2,
+the workspace's actions waited on every version that the projects in the run asked for, but ran with
+the workspace's version, which wasn't setup at all when only overriding projects were ran.
+
+In v3, a workspace's environment setup and dependency install always use the workspace's version,
+and an overridden version is only setup for running that project's tasks. For example, with a Cargo
+workspace on Rust 1.90, where a crate overrides it with 1.99, the workspace's dependencies are
+installed with 1.90, and the crate's tasks run with 1.99. A project that's its own package (with its
+own lockfile) still installs its dependencies with its overridden version.
+
+### Viewing the layout
+
+The new [`moon layout-graph`](/docs/commands/layout-graph) command (or `moon lg`) serves an
+interactive graph of every root and the projects that belong to it. Pass `--info` to print each
+root's kind, version, lockfiles, manifests, and projects, along with diagnostics for placements that
+may be unexpected, like a project that isn't a member of the workspace that it located, or a nested
+workspace that an enclosing workspace's members also match.
+
+```shell
+$ moon layout-graph --info
+```
+
+[`moon docker prune`](/docs/commands/docker/prune) also uses the layout graph, for the projects that
+were focused while scaffolding, so its plugins receive the same root and settings as the rest of
+moon.
 
 ## Performance improvements
 

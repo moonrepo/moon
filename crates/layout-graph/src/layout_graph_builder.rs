@@ -15,6 +15,7 @@ use moon_toolchain_plugin::ToolchainPlugin;
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde_json::Value as JsonValue;
+use starbase_utils::glob::GlobSet;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tracing::debug;
@@ -99,6 +100,81 @@ fn probe_root_files(
     }
 }
 
+/// Diagnose the placements of the graph's projects, in project order.
+fn diagnose(
+    graph: &LayoutGraph,
+    sources: &FxHashMap<Id, WorkspaceRelativePathBuf>,
+) -> Vec<LayoutDiagnostic> {
+    let mut diagnostics = vec![];
+
+    // The member globs of each workspace root, compiled once
+    let globsets = graph
+        .roots
+        .iter()
+        .map(|root| match &root.kind {
+            RootKind::Workspace { members } => GlobSet::new(members).ok(),
+            RootKind::Package => None,
+        })
+        .collect::<Vec<_>>();
+
+    for (project_id, bindings) in &graph.bindings {
+        for binding in bindings {
+            match &binding.placement {
+                Placement::Outside { root } => {
+                    diagnostics.push(LayoutDiagnostic::Outside {
+                        project: project_id.clone(),
+                        toolchain: binding.toolchain.clone(),
+                        root: root.clone(),
+                    });
+                }
+                Placement::Root { index, .. } => {
+                    let root = graph.root(*index);
+
+                    // Like `in_dependencies_workspace`, an enclosing root matches
+                    // the project's path relative to the root with its globs
+                    if let Some(source) = sources.get(project_id) {
+                        for (other_index, other) in graph.roots.iter().enumerate() {
+                            if other_index == index.index() || other.toolchain != binding.toolchain
+                            {
+                                continue;
+                            }
+
+                            let Some(globset) = &globsets[other_index] else {
+                                continue;
+                            };
+
+                            if let Ok(path) = source.strip_prefix(&other.root)
+                                && !matches!(path.as_str(), "" | ".")
+                                && globset.matches(path.as_str())
+                            {
+                                diagnostics.push(LayoutDiagnostic::Shadowed {
+                                    project: project_id.clone(),
+                                    toolchain: binding.toolchain.clone(),
+                                    root: root.root.clone(),
+                                    enclosing_root: other.root.clone(),
+                                });
+                            }
+                        }
+                    }
+
+                    if binding.spec != root.spec {
+                        diagnostics.push(LayoutDiagnostic::Divergent {
+                            project: project_id.clone(),
+                            toolchain: binding.toolchain.clone(),
+                            root: root.root.clone(),
+                            spec: binding.spec.clone(),
+                            root_spec: root.spec.clone(),
+                        });
+                    }
+                }
+                Placement::None => {}
+            };
+        }
+    }
+
+    diagnostics
+}
+
 /// Builds a layout graph, lazily from the (project, toolchain) pairs that are
 /// placed (like the ones a run needs), or fully from every project.
 pub struct LayoutGraphBuilder {
@@ -112,6 +188,9 @@ pub struct LayoutGraphBuilder {
     /// Roots that were inserted, whose capabilities are read once inserting
     /// is done, so that it's once per root, instead of once per binding.
     pending_capabilities: Vec<(RootIndex, Arc<ToolchainPlugin>)>,
+
+    /// The source of every placed project, for diagnostics.
+    sources: FxHashMap<Id, WorkspaceRelativePathBuf>,
 }
 
 impl LayoutGraphBuilder {
@@ -122,6 +201,7 @@ impl LayoutGraphBuilder {
             graph: LayoutGraph::default(),
             owners: None,
             pending_capabilities: vec![],
+            sources: FxHashMap::default(),
         }
     }
 
@@ -245,6 +325,7 @@ impl LayoutGraphBuilder {
             .workspace_bindings
             .sort_by(|a, d| a.toolchain.cmp(&d.toolchain));
 
+        self.graph.diagnostics = diagnose(&self.graph, &self.sources);
         self.graph
     }
 
@@ -335,6 +416,10 @@ impl LayoutGraphBuilder {
 
         match resolved.project {
             Some(project) => {
+                self.sources
+                    .entry(project.id.clone())
+                    .or_insert_with(|| project.source.clone());
+
                 self.graph
                     .bindings
                     .entry(project.id.clone())

@@ -508,3 +508,94 @@ mod formats {
         );
     }
 }
+
+mod diagnostics {
+    use super::*;
+
+    // The other test toolchains are also detected for projects with a
+    // `tc.lock`, and only locate the working dir
+    fn get_diagnostics(graph: &LayoutGraph) -> Vec<LayoutDiagnostic> {
+        graph
+            .diagnostics()
+            .iter()
+            .filter(|diagnostic| diagnostic.toolchain() == &tc())
+            .cloned()
+            .collect()
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn diagnoses_a_full_build() {
+        let sandbox = create_sandbox("layout");
+        let container = Container::new(&sandbox).await;
+        let mut builder = container.builder();
+
+        builder.place_all().await.unwrap();
+
+        let graph = builder.build();
+        let diagnostics = get_diagnostics(&graph);
+
+        assert_eq!(
+            diagnostics,
+            vec![
+                // Overrides the version, which the workspace doesn't configure
+                LayoutDiagnostic::Divergent {
+                    project: Id::raw("b"),
+                    toolchain: tc(),
+                    root: path(""),
+                    spec: spec("2.0.0"),
+                    root_spec: ToolchainSpec::new_global(tc()),
+                },
+                // Its own workspace, while the outer workspace's members match `nested`
+                LayoutDiagnostic::Shadowed {
+                    project: Id::raw("nested"),
+                    toolchain: tc(),
+                    root: path("nested"),
+                    enclosing_root: path(""),
+                },
+                LayoutDiagnostic::Outside {
+                    project: Id::raw("tools"),
+                    toolchain: tc(),
+                    root: path(""),
+                },
+            ]
+        );
+        assert_eq!(
+            diagnostics
+                .iter()
+                .map(|diagnostic| diagnostic.level())
+                .collect::<Vec<_>>(),
+            [
+                DiagnosticLevel::Info,
+                DiagnosticLevel::Warning,
+                DiagnosticLevel::Info
+            ]
+        );
+    }
+
+    // A root is only known once a placed project located it
+    #[tokio::test(flavor = "multi_thread")]
+    async fn only_diagnoses_known_roots() {
+        let sandbox = create_sandbox("layout");
+        let container = Container::new(&sandbox).await;
+
+        assert!(get_diagnostics(&container.place(&["nested"]).await).is_empty());
+        assert_eq!(
+            get_diagnostics(&container.place(&["nested", "a"]).await),
+            vec![LayoutDiagnostic::Shadowed {
+                project: Id::raw("nested"),
+                toolchain: tc(),
+                root: path("nested"),
+                enclosing_root: path(""),
+            }]
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn doesnt_diagnose_package_roots_or_members() {
+        let sandbox = create_sandbox("layout");
+        let container = Container::new(&sandbox).await;
+
+        // A package root with an override, a member, and a member of a nested workspace
+        assert!(get_diagnostics(&container.place(&["standalone", "a", "lib"]).await).is_empty());
+    }
+}

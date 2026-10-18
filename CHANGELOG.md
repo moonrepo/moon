@@ -177,8 +177,10 @@
   - Added a `moon layout-graph` (`moon lg`) command, that serves an interactive graph of the
     dependencies roots (like a package manager workspace) that toolchains locate, and the projects
     that belong to each, with their role. Pass `--info` to print each root's version, files, and
-    projects instead. Also supports `--dot` and `--json` output, and placing a single project, like
-    a run would.
+    projects instead, along with diagnostics for placements that may be unexpected: a project that
+    isn't a member of the workspace that it located, a nested workspace that an enclosing
+    workspace's members also match, and a member that overrides the workspace's version. Also
+    supports `--dot` and `--json` output, and placing a single project, like a run would.
 - **Configuration**
   - Stabilized the `cache.unstable_sharedWorktreeCache` setting in `.moon/workspace.config`. Use
     `cache.sharedWorktreeCache` instead.

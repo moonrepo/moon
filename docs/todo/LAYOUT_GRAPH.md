@@ -6,7 +6,7 @@ for each of its toolchains, with which version and config, and what lives in eac
 2026-10-17 with Miles's answers (see [Resolved questions](#resolved-questions)). Line references are
 as of that commit, and will drift.
 
-Phases 0 to 4 are implemented (see [Phases](#phases)), and the rest isn't. Estimates are marked as
+Phases 0 to 5 are implemented (see [Phases](#phases)), and the rest isn't. Estimates are marked as
 such. Claims marked **unverified** come from reading the code, and need a test before they're relied
 on.
 
@@ -655,7 +655,21 @@ docker and queries, but not for every `moon run`.
      `testRecordInputs`) for a workspace member, the root project only, a package root, both, a
      project outside a root, a disabled toolchain, and installs disabled. Only the 2 intended
      changes fail against the previous prune.
-5. **Diagnostics:** outside, shadowed and divergent, also shown by `moon layout-graph`.
+5. **Diagnostics (done):**
+   - `LayoutGraph::diagnostics()`, computed in `LayoutGraphBuilder::build()`, sorted by project:
+     `Outside` (info), `Shadowed` (warning), and `Divergent` (info), each with the project,
+     toolchain, and root (`LayoutDiagnostic`, serialized with a `type` tag).
+   - Shadowed matches an enclosing root's member globs against the project's path relative to that
+     root, like `in_dependencies_workspace`, with each workspace root's globs compiled once.
+   - Only complete for a full build, as an enclosing root is only known once a placed project
+     located it.
+   - `moon layout-graph --info` prints a Diagnostics section (warnings styled as caution), and
+     `--json` includes `diagnostics`.
+   - Not yet: diagnostics in `moon toolchain info`, `moon check`, or as warnings during runs.
+   - Tests: `diagnostics` in the layout graph tests (a full build, known roots only, and none for
+     package roots or members), and the CLI `--info` and `--json` tests.
+   - Docs: `website/docs/how-it-works/layout-graph.mdx`, an "Overriding versions" section in the
+     project config docs, the command docs, and a "Layout graph" section in the v3.0 blog post.
 6. **TOOLCHAIN_REQS phases 3–4** on top: `delegates`, and reverse inference via the layout.
 7. **Perf:** batch locate, persisted layout, daemon watching.
 

@@ -54,3 +54,9 @@ Workspace root ─────────────────────�
 
   tc-tier1: no root
   tc-tier2: tc-tier2 @ . (workspace root)
+
+Diagnostics ────────────────────────────────────────────────
+
+  b: info: runs tasks with 2.0.0, while tc-tier2 @ . installs with global
+  nested: warning: in tc-tier2 @ nested, but tc-tier2 @ . also matches it with its member globs
+  tools: info: located tc-tier2 @ ., but isn't a member of it

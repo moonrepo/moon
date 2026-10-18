@@ -5,7 +5,8 @@ use iocraft::prelude::{View, element};
 use moon_common::Id;
 use moon_console::ui::{Container, Entry, List, ListItem, Section, Style, StyledText};
 use moon_layout_graph::{
-    Binding, LayoutGraph, Placement, RootKind, ToolchainDependenciesRoot, get_root_label,
+    Binding, DiagnosticLevel, LayoutDiagnostic, LayoutGraph, Placement, RootKind,
+    ToolchainDependenciesRoot, get_root_label,
 };
 use moon_toolchain::{DependenciesWorkspaceRole, ToolchainSpec};
 use tracing::instrument;
@@ -156,6 +157,39 @@ fn format_member(graph: &LayoutGraph, root: &ToolchainDependenciesRoot, member: 
         member.to_string()
     } else {
         format!("{member} <mutedlight>({})</mutedlight>", details.join(", "))
+    }
+}
+
+fn format_diagnostic(diagnostic: &LayoutDiagnostic) -> String {
+    match diagnostic {
+        LayoutDiagnostic::Outside {
+            toolchain, root, ..
+        } => format!(
+            "located {}, but isn't a member of it",
+            get_root_label(toolchain, root)
+        ),
+        LayoutDiagnostic::Shadowed {
+            toolchain,
+            root,
+            enclosing_root,
+            ..
+        } => format!(
+            "in {}, but {} also matches it with its member globs",
+            get_root_label(toolchain, root),
+            get_root_label(toolchain, enclosing_root)
+        ),
+        LayoutDiagnostic::Divergent {
+            toolchain,
+            root,
+            spec,
+            root_spec,
+            ..
+        } => format!(
+            "runs tasks with {}, while {} installs with {}",
+            format_spec(spec),
+            get_root_label(toolchain, root),
+            format_spec(root_spec)
+        ),
     }
 }
 
@@ -328,6 +362,36 @@ fn render_graph(session: &MoonSession, graph: &LayoutGraph) -> miette::Result<()
                                     value: element! {
                                         StyledText(
                                             content: format_placement(graph, binding),
+                                        )
+                                    }.into_any()
+                                )
+                            }
+                        }))
+                    }
+                }
+            }))
+
+            #((!graph.diagnostics().is_empty()).then(|| {
+                element! {
+                    Section(title: "Diagnostics") {
+                        #(graph.diagnostics().iter().map(|diagnostic| {
+                            let warning = diagnostic.level() == DiagnosticLevel::Warning;
+
+                            element! {
+                                Entry(
+                                    name: diagnostic.project().as_str(),
+                                    value: element! {
+                                        StyledText(
+                                            content: format!(
+                                                "{}: {}",
+                                                if warning { "warning" } else { "info" },
+                                                format_diagnostic(diagnostic)
+                                            ),
+                                            style: if warning {
+                                                Style::Caution
+                                            } else {
+                                                Style::MutedLight
+                                            }
                                         )
                                     }.into_any()
                                 )

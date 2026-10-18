@@ -103,6 +103,78 @@ impl ToolchainDependenciesRoot {
     }
 }
 
+/// How severe a diagnostic is.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum DiagnosticLevel {
+    Info,
+    Warning,
+}
+
+/// Something about where a project was placed for a toolchain, that may be
+/// unexpected. Diagnostics are only complete for a full build.
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase",
+    tag = "type"
+)]
+pub enum LayoutDiagnostic {
+    /// The project located a root, but isn't a member of it, so the root's
+    /// install doesn't install the project's dependencies.
+    Outside {
+        project: Id,
+        toolchain: Id,
+        root: WorkspaceRelativePathBuf,
+    },
+
+    /// The project was placed in a root, while an enclosing root of the same
+    /// toolchain also matches it with its member globs, so the enclosing
+    /// root's install may also install the project's dependencies.
+    Shadowed {
+        project: Id,
+        toolchain: Id,
+        root: WorkspaceRelativePathBuf,
+        enclosing_root: WorkspaceRelativePathBuf,
+    },
+
+    /// The project's version differs from its root's version, which the root's
+    /// actions run with, so its tasks run with another version than the root's
+    /// dependencies were installed with.
+    Divergent {
+        project: Id,
+        toolchain: Id,
+        root: WorkspaceRelativePathBuf,
+        spec: ToolchainSpec,
+        root_spec: ToolchainSpec,
+    },
+}
+
+impl LayoutDiagnostic {
+    pub fn level(&self) -> DiagnosticLevel {
+        match self {
+            Self::Shadowed { .. } => DiagnosticLevel::Warning,
+            Self::Outside { .. } | Self::Divergent { .. } => DiagnosticLevel::Info,
+        }
+    }
+
+    pub fn project(&self) -> &Id {
+        match self {
+            Self::Outside { project, .. }
+            | Self::Shadowed { project, .. }
+            | Self::Divergent { project, .. } => project,
+        }
+    }
+
+    pub fn toolchain(&self) -> &Id {
+        match self {
+            Self::Outside { toolchain, .. }
+            | Self::Shadowed { toolchain, .. }
+            | Self::Divergent { toolchain, .. } => toolchain,
+        }
+    }
+}
+
 /// Where a binding's project lives for its toolchain.
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase", tag = "type")]
@@ -166,6 +238,9 @@ pub struct LayoutGraph {
 
     /// Located from the workspace root without a project, sorted by toolchain.
     pub(crate) workspace_bindings: Vec<Binding>,
+
+    /// Diagnostics of the projects' placements, sorted by project.
+    pub(crate) diagnostics: Vec<LayoutDiagnostic>,
 
     /// Whether every project was placed, so that root members are complete.
     pub(crate) complete: bool,
@@ -246,6 +321,13 @@ impl LayoutGraph {
     /// Every binding of the workspace, without a project, sorted by toolchain.
     pub fn workspace_bindings(&self) -> &[Binding] {
         &self.workspace_bindings
+    }
+
+    /// Diagnostics of the projects' placements, sorted by project. They're
+    /// only complete for a full build, as a root must be located by a placed
+    /// project to be known.
+    pub fn diagnostics(&self) -> &[LayoutDiagnostic] {
+        &self.diagnostics
     }
 
     /// Whether every project was placed, so that root members are complete.

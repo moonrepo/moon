@@ -77,6 +77,18 @@ mod layout_graph {
             json["bindings"]["a"][0]["placement"]["role"],
             "workspaceMember"
         );
+        assert!(
+            json["diagnostics"]
+                .as_array()
+                .unwrap()
+                .contains(&serde_json::json!({
+                    "type": "shadowed",
+                    "project": "nested",
+                    "toolchain": "tc-tier2",
+                    "root": "nested",
+                    "enclosingRoot": "",
+                }))
+        );
     }
 
     #[test]

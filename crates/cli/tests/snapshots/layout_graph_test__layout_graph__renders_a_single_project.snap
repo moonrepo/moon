@@ -16,4 +16,8 @@ tc-tier2 @ . ──────────────────────�
   Projects:
     - b (workspace member, runs tasks with 2.0.0)
 
+Diagnostics ────────────────────────────────────────────────
+
+  b: info: runs tasks with 2.0.0, while tc-tier2 @ . installs with global
+
 Only the requested project was placed, so roots only list the projects that were placed.

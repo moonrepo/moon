@@ -24,6 +24,7 @@ petgraph = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+starbase_utils = { workspace = true, features = ["glob"] }
 tokio = { workspace = true }
 tracing = { workspace = true }
 

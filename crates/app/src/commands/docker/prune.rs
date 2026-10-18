@@ -2,38 +2,50 @@ use super::{DockerManifest, MANIFEST_NAME, docker_error::AppDockerError};
 use crate::session::{MoonSession, SessionResult};
 use miette::IntoDiagnostic;
 use moon_actions::plugins::{ExecCommandOptions, exec_plugin_command};
-use moon_pdk_api::{InstallDependenciesInput, LocateDependenciesRootInput, PruneDockerInput};
+use moon_layout_graph::{RootIndex, RootKind, ToolchainDependenciesRoot};
+use moon_pdk_api::{InstallDependenciesInput, PruneDockerInput};
 use moon_project::Project;
-use moon_project_graph::ProjectGraph;
 use moon_toolchain::DependenciesWorkspace;
 use moon_toolchain_plugin::{ToolchainPlugin, ToolchainRegistry};
+use moon_workspace_graph::WorkspaceGraph;
+use rustc_hash::FxHashMap;
 use starbase_utils::json;
 use std::sync::Arc;
 use tokio::task::JoinSet;
 use tracing::{debug, instrument};
 
-#[derive(Debug)]
-struct ToolchainDependenciesWorkspace {
+/// A dependencies root that focused projects were placed in.
+struct PruneRoot {
+    /// Unfocused projects in this root, that the focused projects depend on.
     dependencies: Vec<Arc<Project>>,
-    output: DependenciesWorkspace,
+
+    /// The owner project of a package root, whose config its actions use.
+    owner: Option<Arc<Project>>,
+
+    /// The focused projects in this root.
     projects: Vec<Arc<Project>>,
+
+    root: ToolchainDependenciesRoot,
     toolchain: Arc<ToolchainPlugin>,
+
+    /// The root and its member globs, for matching unfocused projects.
+    workspace: DependenciesWorkspace,
 }
 
 struct PruneWorkflow {
     manifest: DockerManifest,
-    project_graph: Arc<ProjectGraph>,
     registry: Arc<ToolchainRegistry>,
+    roots: Vec<PruneRoot>,
     session: MoonSession,
-    workspaces: Vec<ToolchainDependenciesWorkspace>,
+    workspace_graph: Arc<WorkspaceGraph>,
 }
 
 impl PruneWorkflow {
     async fn prune(mut self) -> miette::Result<()> {
-        self.gather_workspaces().await?;
+        self.gather_roots().await?;
 
-        if self.workspaces.is_empty() {
-            debug!("No dependency workspaces for focused projects, skipping prune");
+        if self.roots.is_empty() {
+            debug!("No dependencies roots for focused projects, skipping prune");
 
             return Ok(());
         }
@@ -43,84 +55,106 @@ impl PruneWorkflow {
         Ok(())
     }
 
-    async fn gather_workspaces(&mut self) -> miette::Result<()> {
+    async fn gather_roots(&mut self) -> miette::Result<()> {
         debug!(
             project_ids = ?self.manifest.focused_projects,
-            "Locating dependency workspaces for focused projects",
+            "Placing focused projects into dependencies roots",
         );
 
-        for project_id in &self.manifest.focused_projects {
-            let project = self.project_graph.get(project_id)?;
+        let focused = self
+            .manifest
+            .focused_projects
+            .iter()
+            .map(|project_id| self.workspace_graph.get_project(project_id))
+            .collect::<miette::Result<Vec<_>>>()?;
 
-            for locate_result in self
-                .registry
-                .locate_dependencies_root_many(project.get_enabled_toolchains(), |toolchain| {
-                    LocateDependenciesRootInput {
-                        context: self.registry.create_context(),
-                        starting_dir: toolchain.to_virtual_path(&project.root),
-                        toolchain_config: self
-                            .registry
-                            .create_merged_config(&toolchain.id, &project.config),
-                    }
-                })
-                .await?
-            {
-                let toolchain = locate_result.plugin;
-                let output = locate_result.output;
+        // Only the focused projects' own toolchains are placed, like the
+        // ones that `docker setup` installs dependencies for
+        // (collected first, as the iterator's borrows would make the future not `Send`)
+        let pairs = focused
+            .iter()
+            .flat_map(|project| {
+                project
+                    .get_enabled_toolchains()
+                    .into_iter()
+                    .map(|toolchain_id| (Arc::clone(project), toolchain_id.to_owned()))
+            })
+            .collect::<Vec<_>>();
 
-                if toolchain
-                    .in_dependencies_workspace(&output, &project.root)?
-                    .is_none()
-                {
+        let mut builder = self.session.build_layout_graph().await?;
+
+        builder.place(pairs).await?;
+
+        let layout_graph = builder.build();
+        let mut indices = FxHashMap::<RootIndex, usize>::default();
+
+        for project in &focused {
+            for binding in layout_graph.bindings(&project.id) {
+                let Some(index) = binding.root_index() else {
                     debug!(
                         project_id = project.id.as_str(),
-                        project_root = ?project.root,
-                        deps_root = ?output.root,
-                        "Not in a dependency workspace, skipping!",
+                        toolchain_id = binding.toolchain.as_str(),
+                        "Not in a dependencies root, skipping!",
                     );
 
                     continue;
-                }
+                };
+
+                let position = match indices.get(&index) {
+                    Some(position) => *position,
+                    None => {
+                        let root = layout_graph.root(index).to_owned();
+
+                        self.roots.push(PruneRoot {
+                            dependencies: vec![],
+                            owner: match (&root.kind, &root.owner_project) {
+                                (RootKind::Package, Some(owner_id)) => {
+                                    Some(self.workspace_graph.get_project(owner_id)?)
+                                }
+                                _ => None,
+                            },
+                            projects: vec![],
+                            toolchain: self.registry.load(&root.toolchain).await?,
+                            workspace: DependenciesWorkspace {
+                                root: root.root.to_logical_path(&self.session.workspace_root),
+                                members: match &root.kind {
+                                    RootKind::Workspace { members } => Some(members.to_owned()),
+                                    RootKind::Package => None,
+                                },
+                            },
+                            root,
+                        });
+
+                        indices.insert(index, self.roots.len() - 1);
+                        self.roots.len() - 1
+                    }
+                };
 
                 debug!(
                     project_id = project.id.as_str(),
-                    project_root = ?project.root,
-                    deps_root = ?output.root,
-                    "Adding to dependency workspace",
+                    deps_root = self.roots[position].root.root.as_str(),
+                    "Adding to dependencies root",
                 );
 
-                match self.workspaces.iter_mut().find(|workspace| {
-                    workspace.output.root == output.root && workspace.toolchain.id == toolchain.id
-                }) {
-                    Some(workspace) => {
-                        workspace.projects.push(project.clone());
-                    }
-                    None => {
-                        self.workspaces.push(ToolchainDependenciesWorkspace {
-                            dependencies: vec![],
-                            output,
-                            projects: vec![project.clone()],
-                            toolchain,
-                        });
-                    }
-                };
+                self.roots[position].projects.push(Arc::clone(project));
             }
         }
 
-        // Also include dependencies (unfocused) in the workspace so we can prune them too
+        // Also include dependencies (unfocused) in the roots, so we can prune
+        // them too. They're not placed, but matched against each root's members
         for project_id in &self.manifest.unfocused_projects {
-            let project = self.project_graph.get(project_id)?;
+            let project = self.workspace_graph.get_project(project_id)?;
             let toolchains = project.get_enabled_toolchains();
 
-            for workspace in &mut self.workspaces {
-                if toolchains.iter().any(|id| *id == &workspace.toolchain.id)
-                    && workspace
+            for prune_root in &mut self.roots {
+                if toolchains.contains(&&prune_root.root.toolchain)
+                    && prune_root
                         .toolchain
-                        .in_dependencies_workspace(&workspace.output, &project.root)?
+                        .in_dependencies_workspace(&prune_root.workspace, &project.root)?
                         .is_some()
-                    && !workspace.dependencies.contains(&project)
+                    && !prune_root.dependencies.contains(&project)
                 {
-                    workspace.dependencies.push(project.clone());
+                    prune_root.dependencies.push(Arc::clone(&project));
                 }
             }
         }
@@ -131,61 +165,53 @@ impl PruneWorkflow {
     async fn prune_dependencies(self) -> miette::Result<()> {
         let mut set = JoinSet::new();
 
-        for workspace in self.workspaces {
+        for prune_root in self.roots {
             let toolchain_registry = Arc::clone(&self.registry);
-            let toolchain = Arc::clone(&workspace.toolchain);
+            let toolchain = Arc::clone(&prune_root.toolchain);
             let docker_config = self.session.workspace_config.docker.prune.clone();
             let app_context = self.session.get_app_context().await?;
 
             set.spawn(Box::pin(async move {
-                // Run prune first, so this can remove all development artifacts
+                let root = &prune_root.workspace.root;
+
+                // Run prune first, so this can remove all development artifacts.
+                // A root's actions use its config: the workspace's, or the owner
+                // project's for a package
                 toolchain
                     .prune_docker(PruneDockerInput {
                         context: toolchain_registry.create_context(),
                         docker_config: docker_config.clone(),
-                        project_dependencies: workspace
+                        project_dependencies: prune_root
                             .dependencies
                             .iter()
                             .map(|project| project.to_fragment())
                             .collect(),
-                        projects: workspace
+                        projects: prune_root
                             .projects
                             .iter()
                             .map(|project| project.to_fragment())
                             .collect(),
-                        root: toolchain.to_virtual_path(&workspace.output.root),
-                        toolchain_config: toolchain_registry.create_config(&toolchain.id),
+                        root: toolchain.to_virtual_path(root),
+                        toolchain_config: prune_root.root.config.as_ref().to_owned(),
                     })
                     .await?;
 
                 // Then run install, so this can only install production dependencies
                 if docker_config.install_toolchain_dependencies {
-                    let in_project = if workspace.projects.len() == 1
-                        && workspace
-                            .projects
-                            .first()
-                            .is_some_and(|project| project.root == workspace.output.root)
-                    {
-                        workspace.projects.first().cloned()
-                    } else {
-                        None
-                    };
-
                     let output = toolchain
                         .install_dependencies(InstallDependenciesInput {
                             context: toolchain_registry.create_context(),
                             packages: get_install_packages_for_projects(
-                                &workspace.projects,
+                                &prune_root.projects,
                                 &toolchain.id,
                             ),
                             production: true,
-                            project: in_project.as_ref().map(|project| project.to_fragment()),
-                            root: toolchain.to_virtual_path(&workspace.output.root),
-                            toolchain_config: match &in_project {
-                                Some(project) => toolchain_registry
-                                    .create_merged_config(&toolchain.id, &project.config),
-                                None => toolchain_registry.create_config(&toolchain.id),
-                            },
+                            project: prune_root
+                                .owner
+                                .as_ref()
+                                .map(|project| project.to_fragment()),
+                            root: toolchain.to_virtual_path(root),
+                            toolchain_config: prune_root.root.config.as_ref().to_owned(),
                         })
                         .await?;
 
@@ -200,9 +226,9 @@ impl PruneWorkflow {
                             app_context,
                             &install,
                             &ExecCommandOptions {
-                                project: in_project,
+                                project: prune_root.owner,
                                 prefix: "prune-docker".into(),
-                                working_dir: Some(workspace.output.root),
+                                working_dir: Some(prune_root.workspace.root),
                                 on_exec: None,
                             },
                         )
@@ -254,10 +280,10 @@ pub async fn prune(session: MoonSession) -> SessionResult {
 
     let workflow = PruneWorkflow {
         manifest,
-        project_graph: session.get_project_graph().await?,
         registry: session.get_toolchain_registry().await?,
+        roots: vec![],
+        workspace_graph: session.get_workspace_graph().await?,
         session,
-        workspaces: vec![],
     };
 
     workflow.prune().await?;

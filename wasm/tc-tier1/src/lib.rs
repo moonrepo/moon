@@ -180,6 +180,14 @@ pub fn scaffold_docker(
 pub fn prune_docker(Json(input): Json<PruneDockerInput>) -> FnResult<Json<PruneDockerOutput>> {
     let mut output = PruneDockerOutput::default();
 
+    record_input(
+        &input.context,
+        &input.toolchain_config,
+        "prune_docker",
+        &input.root.to_string_lossy(),
+        json::to_value(&input)?,
+    )?;
+
     for project in ["dep", "scaffold", "prune"] {
         let vendor_dir = input.root.join(project).join("vendor");
 

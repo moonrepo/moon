@@ -6,7 +6,7 @@ for each of its toolchains, with which version and config, and what lives in eac
 2026-10-17 with Miles's answers (see [Resolved questions](#resolved-questions)). Line references are
 as of that commit, and will drift.
 
-Phases 0 to 3 are implemented (see [Phases](#phases)), and the rest isn't. Estimates are marked as
+Phases 0 to 4 are implemented (see [Phases](#phases)), and the rest isn't. Estimates are marked as
 such. Claims marked **unverified** come from reading the code, and need a test before they're relied
 on.
 
@@ -454,8 +454,8 @@ hasher today, which parses every registered lockfile name that exists.
   graph depends on it.
 - It's hooked up through the session, like the action graph builder
   ([session.rs:109](../../crates/app/src/session.rs#L109)). `Session::build_layout_graph()` returns
-  a `LayoutGraphBuilder` from the app context and the workspace graph. Docker, queries and
-  validation call it for a full build.
+  a `LayoutGraphBuilder` from the app context and the workspace graph. Queries and validation can
+  call it for a full build, and docker prune places its focused projects with it.
 - The action graph builder creates its own `LayoutGraphBuilder` from its app context and workspace
   graph, in its placement stage, and returns the frozen `Arc<LayoutGraph>` in `BuildOutput`, so the
   pipeline can read the same placements. `ActionGraphBuilder::new` is unchanged.
@@ -533,14 +533,9 @@ docker and queries, but not for every `moon run`.
   - So one root can no longer have 2 identities. Before phase 2, a single-package repo whose root is
     a project got `(tc, "", None)` from `setup_environment_root` and `(tc, "", Some(root))` from a
     task. That only happened across different graphs, so it was latent, not a race.
-- **Docker prune and scaffold:**
-  - Both use a full layout.
-  - Unfocused projects get their own placements, instead of a focused project's globs.
-  - Placements include task-only toolchains, so a member reached only through a task's toolchain now
-    counts. For example, a `bash` project matched by a JavaScript workspace's member globs, whose
-    task runs `node`. Prune only uses project toolchains today.
-  - `packages` is drawn from root members.
-  - The prune fixture needs a tier 2 toolchain (it uses `tc-tier1` today, so locate is untested).
+- **Docker prune (done, phase 4):** places only the focused projects of the scaffold's manifest,
+  with their own toolchains (see phase 4). Docker scaffold never locates roots, so it's unchanged,
+  and `docker setup` already reads placements through the action graph.
 - **Task hasher (done, phase 3):** reads the root's path from the binding: a root's, or the root
   that an `Outside` project located, whose lockfiles are still hashed, as before. The lockfile and
   manifest probing after that is unchanged, so hashes are the same. It never locates a root itself:
@@ -642,7 +637,24 @@ docker and queries, but not for every `moon run`.
      `parse_lock` (`name@version` lines) and `parse_manifest` (`dep <name> <version>` lines) for it.
      The plugin call cache is per process, so locating again needs new graphs. The
      `places_task_toolchains_when_installs_are_disabled` action graph test covers placement.
-4. **Docker:** prune and scaffold on a full layout, with a tier 2 prune fixture.
+4. **Docker prune (done):**
+   - Places only the focused projects of `dockerManifest.json`, with their own enabled toolchains
+     (not their tasks'), like the toolchains `docker setup` installs dependencies for. Each root
+     with focused projects is pruned, and its focused projects are its placed bindings. Projects
+     outside a root (or with the toolchain disabled) are skipped, as before.
+   - Unfocused projects aren't placed. As before, they're matched against each root's member globs
+     (`in_dependencies_workspace`), and passed as `project_dependencies`.
+   - Inputs follow the root rules: `PruneDockerInput.toolchain_config` is the root's config (the
+     owner's merged config for a package root, which used to be the workspace's, and its PDK doc is
+     updated), and the production install gets no project and the workspace's config for a
+     dependencies workspace, even when its root project is the only focused project (which used to
+     get that project and its merged config). A package root's install gets its owner.
+   - Scaffold is unchanged, as it never locates roots.
+   - Tests: `docker_prune_layout` in `docker_prune_test.rs`, on a `docker-layout` fixture, asserts
+     the recorded prune and install inputs (`tc-tier1`'s `prune_docker` records under
+     `testRecordInputs`) for a workspace member, the root project only, a package root, both, a
+     project outside a root, a disabled toolchain, and installs disabled. Only the 2 intended
+     changes fail against the previous prune.
 5. **Diagnostics:** outside, shadowed and divergent, also shown by `moon layout-graph`.
 6. **TOOLCHAIN_REQS phases 3–4** on top: `delegates`, and reverse inference via the layout.
 7. **Perf:** batch locate, persisted layout, daemon watching.

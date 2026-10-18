@@ -182,7 +182,10 @@ api_struct!(
         /// the lockfile and root manifest should exist.
         pub root: VirtualPath,
 
-        /// Workspace toolchain configuration.
+        /// The dependencies root's toolchain configuration: the workspace's
+        /// for a dependencies workspace, or the workspace's merged with the
+        /// project's, with the latter taking precedence, when the root is a
+        /// single project's package (non-workspace).
         pub toolchain_config: serde_json::Value,
     }
 );

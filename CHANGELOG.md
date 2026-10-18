@@ -186,6 +186,16 @@
 - **Daemon**
   - The daemon has been stabilized and is now enabled by default. If you run into any issues, simply
     set `daemon = false` in your `.moon/workspace.config`.
+- **Docker**
+  - `moon docker prune` now places the focused projects of the scaffold into the layout graph, and
+    prunes each dependencies root that they belong to, instead of locating roots itself. Unfocused
+    projects are still matched against each root's members.
+  - The `prune_docker` plugin function now receives the root project's merged toolchain config
+    (`toolchain_config`) when the dependencies root is a single project's package, instead of the
+    workspace's, like the root's other actions.
+  - When the only focused project is the root project of a dependencies workspace, the production
+    install now receives the workspace's toolchain config and no project, like the workspace's other
+    actions, instead of that project and its merged config.
 - **Hasher**
   - Improved the performance of file hashing.
     - File hashes are now memoized for the lifetime of the process, and reused while the file's size

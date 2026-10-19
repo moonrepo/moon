@@ -183,9 +183,10 @@ api_struct!(
         pub root: VirtualPath,
 
         /// The dependencies root's toolchain configuration: the workspace's
-        /// for a dependencies workspace, or the workspace's merged with the
-        /// project's, with the latter taking precedence, when the root is a
-        /// single project's package (non-workspace).
+        /// merged with the project's at the root, with the latter taking
+        /// precedence, which is a single project's package (non-workspace),
+        /// or a dependencies workspace's root project. Otherwise the
+        /// workspace's.
         pub toolchain_config: serde_json::Value,
     }
 );

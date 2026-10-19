@@ -148,6 +148,11 @@
   - `moon setup` in a repository whose root is a single package (not a workspace) that's also a
     project, now sets up the root's environment with that project's toolchain version and config,
     like running its tasks does, instead of the workspace's.
+  - The environment setup and dependency install of a dependencies workspace whose root is also a
+    project (the root project) now run with that project's toolchain version and settings, like a
+    single project's package, instead of only the workspace's. The root project isn't passed as the
+    plugin's `project`, as the actions are for the whole workspace. Members that don't override the
+    version still run their tasks with the workspace's, which they set up on their own.
 - **Action pipeline**
   - Reading the states of task dependencies, while hashing and running tasks, no longer takes an
     exclusive lock, which serialized tasks running concurrently.
@@ -196,8 +201,8 @@
     (`toolchain_config`) when the dependencies root is a single project's package, instead of the
     workspace's, like the root's other actions.
   - When the only focused project is the root project of a dependencies workspace, the production
-    install now receives the workspace's toolchain config and no project, like the workspace's other
-    actions, instead of that project and its merged config.
+    install now receives no project, like the workspace's other actions, while its toolchain config
+    is still that project's merged config.
 - **Hasher**
   - Improved the performance of file hashing.
     - File hashes are now memoized for the lifetime of the process, and reused while the file's size
@@ -322,8 +327,8 @@
 - Fixed an issue where the environment setup and dependency install of a dependencies workspace
   (like a Cargo workspace) waited on the toolchain versions that its member projects override, but
   ran with the workspace's version, which wasn't set up when only overriding projects were in the
-  run. They now always wait on the workspace's version, and a project that overrides it sets up its
-  own version for its tasks.
+  run. They now always wait on the version that they run with (the workspace's, or its root
+  project's), and a project that overrides it sets up its own version for its tasks.
 - Fixed an issue where a member project's override of a required toolchain's version (like Node.js
   for JavaScript) made a dependencies workspace's install wait on that version.
 - Fixed an issue where setting up a toolchain version that a project overrides passed the

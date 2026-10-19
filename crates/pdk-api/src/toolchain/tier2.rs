@@ -65,7 +65,9 @@ api_struct!(
         pub root: VirtualPath,
 
         /// Workspace and project merged toolchain configuration,
-        /// with the latter taking precedence.
+        /// with the latter taking precedence. The project is the one at
+        /// the root, which for a dependencies workspace is its root
+        /// project (if there is one), which isn't passed as `project`.
         pub toolchain_config: serde_json::Value,
     }
 );
@@ -177,7 +179,9 @@ api_struct!(
         pub root: VirtualPath,
 
         /// Workspace and project merged toolchain configuration,
-        /// with the latter taking precedence.
+        /// with the latter taking precedence. The project is the one at
+        /// the root, which for a dependencies workspace is its root
+        /// project (if there is one), which isn't passed as `project`.
         pub toolchain_config: serde_json::Value,
     }
 );

@@ -19,7 +19,7 @@ struct PruneRoot {
     /// Unfocused projects in this root, that the focused projects depend on.
     dependencies: Vec<Arc<Project>>,
 
-    /// The owner project of a package root, whose config its actions use.
+    /// The owner project of a package root, which its install is for.
     owner: Option<Arc<Project>>,
 
     /// The focused projects in this root.
@@ -175,8 +175,8 @@ impl PruneWorkflow {
                 let root = &prune_root.workspace.root;
 
                 // Run prune first, so this can remove all development artifacts.
-                // A root's actions use its config: the workspace's, or the owner
-                // project's for a package
+                // A root's actions use its config: its owner project's (a package,
+                // or a workspace's root project), otherwise the workspace's
                 toolchain
                     .prune_docker(PruneDockerInput {
                         context: toolchain_registry.create_context(),

@@ -201,11 +201,13 @@ Prepares a toolchain's environment in a dependencies root, before dependencies a
   environments are linked with `link_environment_edges`, which skips an edge that would form a
   cycle, as toolchains may require each other (like Python and uv): the one reached first wins.
 
-  The environment is set up with its root's spec, and resolved with its root's project: for a
-  dependencies workspace, the workspace's version and config (no project), and for a package root,
-  its owner project's (including an overridden version). A project that overrides the version of a
-  shared root doesn't change the environment's edges, as its version is only needed to run its own
-  tasks (see [RunTask](#runtask)).
+  The environment is set up with its root's spec, and resolved with its root's owner project (the
+  project at the root, including an overridden version): a package root's project, which is also the
+  node's `project_id`, or a dependencies workspace's root project, which is only its
+  `owner_project_id`, as the environment is for the whole workspace, and isn't passed to the plugin
+  as its project. Without an owner, it's the workspace's version and config. A project that
+  overrides the version of a shared root doesn't change the environment's edges, as its version is
+  only needed to run its own tasks (see [RunTask](#runtask)).
 
 ### InstallDependencies
 

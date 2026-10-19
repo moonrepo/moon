@@ -31,8 +31,9 @@ owns that answer. The consumers read from it instead of locating roots themselve
   not on either node. It's stored as arenas with typed indices, not as nested structs or a petgraph.
 - **Config and versions:** included, at 2 levels.
   - Each root has one _install_ spec and config: what its environment setup and install run with.
-    For a workspace root, that's the workspace's version. For a single-package root (the project's
-    own root), it's that project's version, including an override.
+    It's the owner project's version (the project at the root), including an override: a
+    single-package root's project, or a workspace's root project. Without an owner (or when it
+    disables the toolchain), it's the workspace's version.
   - Each binding has the project's own _run_ spec and merged config.
   - When a member's version differs from its root's, the layout records the difference. The root's
     actions still wait only on the root's version, and the member's tasks get an extra edge to their
@@ -291,17 +292,20 @@ built once.
 
 ### Rules
 
-| Root kind                | `spec` / `config` (install level)                        | Today                                         |
-| :----------------------- | :------------------------------------------------------- | :-------------------------------------------- |
-| Package (owner = P)      | P's spec (including an override), workspace + P's config | Same, via `project_id` on the node            |
-| Workspace, no owner      | Workspace spec and config                                | Same                                          |
-| Workspace, owner project | Workspace spec and config                                | Same, even when the root project overrides it |
+| Root kind                | `spec` / `config` (install level)                                | Today                                                |
+| :----------------------- | :--------------------------------------------------------------- | :--------------------------------------------------- |
+| Package (owner = P)      | P's spec (including an override), workspace + P's config         | Same, via `project_id` on the node                   |
+| Workspace, no owner      | Workspace spec and config                                        | Same                                                 |
+| Workspace, owner project | Owner's spec (including an override), workspace + owner's config | Workspace's, even when the root project overrides it |
 
-The last row is decided as workspace-only for now. Merging the owner project's config into a
-workspace root is more correct, as the root project's `moon.yml` is where someone would put a
-root-level override. But under partial graph loading the owner may not be among the requested
-projects, so it would have to be loaded too. That's a [follow-up](#follow-ups). The `Package` row
-has no such cost, as the requesting project is the owner.
+The last row was workspace-only at first. On 2026-10-18, Miles decided that a workspace root uses
+its root project's settings **and version**, as the root project's `moon.yml` is where someone would
+put a root-level override, while the root project is still not passed to the plugins as `project`,
+as the actions are for the whole workspace. The nodes carry it as `owner_project_id` (beside
+`project_id`, which is the plugin's `project`), and the actions merge the config of the project, or
+otherwise of the owner. An owner that disables the toolchain falls back to the workspace's.
+Production never builds a partial workspace graph (only the test mocker does), so the owner is
+always found.
 
 With these rules, every root's spec and config are known without seeing any member, so they satisfy
 [the root-only rule](#root-fields-depend-only-on-the-root) for free.
@@ -348,13 +352,15 @@ with `PROTO_RUST_VERSION=1.90` (see [Versions in a shared root](#versions-in-a-s
 
 **Principle (decided on 2026-10-17):** an overridden version is only required to run that project's
 tasks. It's never involved in a root's actions (`SetupEnvironment`, `InstallDependencies`, and the
-toolchain setup they wait on), with one exception:
+toolchain setup they wait on), except for the project at the root:
 
 - **Package root** (the dependencies root is the project's own root, a single package and not a
   workspace): the project's overridden version is used for toolchain setup, environment setup and
   install, as today. The root has exactly one project, so no other project depends on its state.
-- **Workspace root:** always the workspace's configured version, even when the root directory is
-  also a project.
+- **Workspace root:** the workspace's configured version, unless the root directory is also a
+  project (the root project) that overrides it, in which case the root's actions use the root
+  project's version, like a package root's (decided on 2026-10-18). Members that don't override the
+  version then diverge from the root, so their tasks set up the workspace's version.
 
 **Rejected:** running the root's actions with `a`'s version when `a` runs alone
 (`moon run a:build`), so that only 1.99 is installed. The root's state would then depend on which
@@ -671,6 +677,7 @@ docker and queries, but not for every `moon run`.
    - Docs: `website/docs/how-it-works/layout-graph.mdx`, an "Overriding versions" section in the
      project config docs, the command docs, and a "Layout graph" section in the v3.0 blog post.
 6. **TOOLCHAIN_REQS phases 3–4** on top: `delegates`, and reverse inference via the layout.
+   - Moved to a separate PR, with the rest of [TOOLCHAIN_REQS.md](./TOOLCHAIN_REQS.md).
 7. **Perf:** batch locate, persisted layout, daemon watching.
    - **7a, measure (done):** `cargo bench -p moon_layout_graph --bench layout_graph_builder` places
      every project of a generated workspace (`create_layout_workspace`: `packages/*` members of a
@@ -703,25 +710,29 @@ docker and queries, but not for every `moon run`.
 
 ## Follow-ups
 
-- **Owner config for a workspace root:** merge the root project's config into a workspace root's
-  spec and config, and load the owner project when a partial graph doesn't include it.
+- **Owner config for a workspace root (done, 2026-10-18):** a workspace root's spec and config are
+  its root project's (see [Rules](#rules)). Loading an owner that a partial graph doesn't include
+  wasn't needed, as only the test mocker builds partial graphs. Tests: the layout graph's
+  `uses_the_root_project_*` tests, the action graph's `with_an_override_in_the_root_project*`, and
+  the pipeline's `plugin_inputs` `with_an_override_in_the_root_project`.
 
 ## Resolved questions
 
 Decided on 2026-10-17. No questions are open.
 
 1. **Storage:** arenas with typed indices.
-2. **Owner config for a workspace root:** workspace only, for now (see [Follow-ups](#follow-ups)).
+2. **Owner config for a workspace root:** the root project's settings and version, without passing
+   it as the plugins' `project` (decided on 2026-10-18, see [Rules](#rules)).
 3. **Build timing:** lazy per run, full for docker, queries and validation.
 4. **Where it lives:** a separate crate, hooked up through the session like the action graph
    builder.
 5. **Root files:** probed from the registered names, with no PDK change.
 6. **Naming:** `ToolchainDependenciesRoot`.
 7. **Overridden versions:** only required to run the project's tasks, never involved in a root's
-   actions. In a shared root, the root's actions use the workspace version, and a divergent member's
-   tasks get an extra edge to their own version, even when the member runs alone. A package root
-   (the project's own root, not a workspace) uses its project's overridden version for setup and
-   install, as today (see [Divergence](#divergence)).
+   actions. In a shared root, the root's actions use the workspace version (or the root project's,
+   since 2026-10-18), and a divergent member's tasks get an extra edge to their own version, even
+   when the member runs alone. A package root (the project's own root, not a workspace) uses its
+   project's overridden version for setup and install, as today (see [Divergence](#divergence)).
 8. **Divergence diagnostics:** info only, never a warning.
 9. **Task-only toolchains:** placed in both lazy and full builds. Full builds load every project's
    tasks to get them.

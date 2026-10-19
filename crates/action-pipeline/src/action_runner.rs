@@ -302,6 +302,7 @@ mod tests {
         )));
         assert!(should_abort_on_failure(&ActionNode::setup_environment(
             SetupEnvironmentNode {
+                owner_project_id: None,
                 project_id: None,
                 root: "".into(),
                 toolchain_id: Id::raw("tc"),
@@ -310,6 +311,7 @@ mod tests {
         assert!(should_abort_on_failure(&ActionNode::install_dependencies(
             InstallDependenciesNode {
                 members: None,
+                owner_project_id: None,
                 project_id: None,
                 root: "".into(),
                 toolchain_id: Id::raw("tc"),

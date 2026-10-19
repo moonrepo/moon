@@ -138,25 +138,34 @@ mod docker_prune_layout {
         assert!(install["toolchain_config"].get("customKey").is_none());
     }
 
-    // Even when the only focused project is the workspace's root project
+    // With a root project, a dependencies workspace's actions use its config,
+    // still without a project, whichever projects are focused
     #[test]
-    fn prunes_a_workspace_with_its_config_for_the_root_project() {
-        let sandbox = create_moon_sandbox("docker-layout");
+    fn prunes_a_workspace_with_the_root_project_config() {
+        for focused in [&["root"][..], &["a"]] {
+            let sandbox = create_moon_sandbox("docker-layout");
 
-        sandbox.create_file(
-            "moon.yml",
-            "toolchains:\n  default: 'tc-tier2'\n  tc-tier2:\n    customKey: 'root'\n",
-        );
+            sandbox.create_file(
+                "moon.yml",
+                "toolchains:\n  default: 'tc-tier2'\n  tc-tier2:\n    customKey: 'root'\n",
+            );
 
-        let workdir = scaffold_and_prune(&sandbox, &["root"]);
+            let workdir = scaffold_and_prune(&sandbox, focused);
 
-        let prune = get_single_input(&workdir, "prune_docker");
-        let install = get_single_input(&workdir, "install_dependencies");
+            let prune = get_single_input(&workdir, "prune_docker");
+            let install = get_single_input(&workdir, "install_dependencies");
 
-        assert_eq!(get_ids(&prune["projects"]), ["root"]);
-        assert!(prune["toolchain_config"].get("customKey").is_none());
-        assert!(install["project"].is_null());
-        assert!(install["toolchain_config"].get("customKey").is_none());
+            assert_eq!(get_ids(&prune["projects"]), focused, "{focused:?}");
+            assert_eq!(
+                prune["toolchain_config"]["customKey"], "root",
+                "{focused:?}"
+            );
+            assert!(install["project"].is_null(), "{focused:?}");
+            assert_eq!(
+                install["toolchain_config"]["customKey"], "root",
+                "{focused:?}"
+            );
+        }
     }
 
     // A package root's actions use its owner project's config, and project

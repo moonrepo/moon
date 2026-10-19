@@ -2151,7 +2151,8 @@ How the override applies depends on the [dependencies root](../how-it-works/layo
 project belongs to. When the project is a member of a workspace (like a Cargo or `package.json`
 workspace), the workspace's dependencies are still installed with the workspace's version, and the
 overridden version is only setup for running the project's tasks. When the project is its own
-package (with its own lockfile), its dependencies are installed with the overridden version.
+package (with its own lockfile), or the root project of a workspace (located at the workspace's
+root), its dependencies (or the workspace's) are installed with the overridden version.
 
 ## `workspace`
 

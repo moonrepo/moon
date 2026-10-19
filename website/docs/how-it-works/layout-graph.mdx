@@ -45,9 +45,10 @@ scoped to a root, so every project in a root shares them. A project can
 
 ### Workspace
 
-A workspace's actions always run with the workspace's configured version and settings. A project
-that overrides the version only needs it to run its own tasks, so its tasks also setup their own
-version, while the workspace's actions don't wait on it.
+A workspace's actions run with the version and settings of its root project (the project at the
+workspace's root, if there is one), otherwise with the workspace's configured ones. A project that
+overrides the version only needs it to run its own tasks, so its tasks also setup their own version,
+while the workspace's actions don't wait on it.
 
 For example, a Cargo workspace that uses Rust 1.90, where the crate `a` overrides it with 1.99,
 results in the following actions:
@@ -60,8 +61,13 @@ results in the following actions:
 This is the same whichever projects are in the run, so even when only `a`'s tasks are ran, the
 workspace's version is setup for its install.
 
+If the root project overrides the version instead, the workspace's actions run with the root
+project's version, and the members that don't override it setup the workspace's version for their
+tasks.
+
 The same applies to toolchains that a root's toolchain requires, like Node.js and a package manager
-for the JavaScript toolchain. The workspace's actions use the workspace's versions, while a project
+for the JavaScript toolchain. The workspace's actions use the root project's (or the workspace's)
+versions, while a project
 that overrides them sets up its own for its tasks.
 
 ### Package

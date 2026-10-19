@@ -159,27 +159,71 @@ mod place {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn uses_workspace_config_for_a_workspace_root() {
+    async fn uses_the_root_project_config_for_a_workspace_root() {
         let sandbox = create_sandbox("layout");
         let container = Container::new(&sandbox).await;
+
+        // Also when only a member located it
+        for project_id in ["root", "a"] {
+            let graph = container.place(&[project_id]).await;
+            let root = get_root(&graph, "");
+
+            assert_eq!(root.owner_project, Some(Id::raw("root")));
+            assert_eq!(root.config["rootKey"], serde_json::Value::Bool(true));
+            assert_eq!(
+                root.config["testLocateRoots"],
+                serde_json::Value::Bool(true)
+            );
+        }
+
         let graph = container.place(&["root"]).await;
 
-        let binding = graph.binding(&Id::raw("root"), &tc()).unwrap();
-        let root = get_root(&graph, "");
-
         assert_eq!(
-            binding.role(),
+            graph.binding(&Id::raw("root"), &tc()).unwrap().role(),
             Some(DependenciesWorkspaceRole::WorkspaceRoot)
         );
-        assert_eq!(root.owner_project, Some(Id::raw("root")));
+    }
 
-        // The root project's override is on its binding, but not on the root
-        assert_eq!(binding.config["rootKey"], serde_json::Value::Bool(true));
-        assert!(root.config.get("rootKey").is_none());
-        assert_eq!(
-            root.config["testLocateRoots"],
-            serde_json::Value::Bool(true)
+    // The root's actions use the root project's version, while members that
+    // don't override it run their tasks with the workspace's
+    #[tokio::test(flavor = "multi_thread")]
+    async fn uses_the_root_project_version_for_a_workspace_root() {
+        let sandbox = create_sandbox("layout");
+
+        sandbox.create_file(
+            "moon.yml",
+            "toolchains:\n  default: 'tc-tier2'\n  tc-tier2:\n    version: '4.0.0'",
         );
+
+        let container = Container::new(&sandbox).await;
+        let graph = container.place(&["a", "root"]).await;
+        let root = get_root(&graph, "");
+
+        assert_eq!(root.spec, spec("4.0.0"));
+        assert_eq!(root.config["version"], "4.0.0");
+        assert_eq!(
+            graph.binding(&Id::raw("root"), &tc()).unwrap().spec,
+            spec("4.0.0")
+        );
+        assert_eq!(
+            graph.binding(&Id::raw("a"), &tc()).unwrap().spec,
+            ToolchainSpec::new_global(tc())
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn uses_the_workspace_config_if_the_root_project_disables_it() {
+        let sandbox = create_sandbox("layout");
+
+        sandbox.create_file("moon.yml", "toolchains:\n  tc-tier2: false");
+
+        let container = Container::new(&sandbox).await;
+        let graph = container.place(&["a"]).await;
+        let root = get_root(&graph, "");
+
+        assert_eq!(root.owner_project, Some(Id::raw("root")));
+        assert_eq!(root.spec, ToolchainSpec::new_global(tc()));
+        assert!(root.config.get("rootKey").is_none());
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -455,7 +499,7 @@ mod place_workspace {
         );
         assert_eq!(binding.spec, ToolchainSpec::new_global(tc()));
         assert_eq!(root.owner_project, Some(Id::raw("root")));
-        assert!(root.config.get("rootKey").is_none());
+        assert_eq!(root.config["rootKey"], serde_json::Value::Bool(true));
 
         // A workspace binding isn't a member
         assert!(root.members.is_empty());

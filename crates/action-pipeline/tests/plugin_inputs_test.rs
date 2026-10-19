@@ -153,27 +153,27 @@ mod plugin_inputs {
             );
         }
 
-        // The root project of a workspace is like a member
+        // The root's actions run with the root project's version and config,
+        // but without it as the project, as they're for the whole workspace
         #[tokio::test(flavor = "multi_thread")]
         async fn with_an_override_in_the_root_project() {
             let sandbox = create_sandbox("shared-root");
 
             overrides_version(&sandbox, ".");
+            uses_toolchain(&sandbox, "packages/b");
 
-            run_installs(&create_mocker(&sandbox), &["root"]).await;
+            run_installs(&create_mocker(&sandbox), &["root", "b"]).await;
 
-            assert_root_input(
-                &get_single_input(&sandbox, "setup_environment"),
-                "/workspace",
-                None,
-                "1.2.3",
-            );
-            assert_root_input(
-                &get_single_input(&sandbox, "install_dependencies"),
-                "/workspace",
-                None,
-                "1.2.3",
-            );
+            for func in ["setup_environment", "install_dependencies"] {
+                let input = get_single_input(&sandbox, func);
+
+                assert_eq!(input["root"], "/workspace");
+                assert!(input["project"].is_null());
+                assert_eq!(input["toolchain_config"]["version"], "1.99.0");
+                assert_eq!(input["toolchain_config"]["customKey"], ".");
+            }
+
+            // And `b` sets up the workspace's version for its tasks
             assert_eq!(
                 get_setup_toolchain_versions(&sandbox),
                 [

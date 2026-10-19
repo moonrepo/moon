@@ -79,13 +79,15 @@ pub struct ToolchainDependenciesRoot {
     pub root: WorkspaceRelativePathBuf,
     pub kind: RootKind,
 
-    /// The project whose root is this root. Only projects in the workspace
-    /// graph are known, so it's `None` when a partial graph doesn't include it.
+    /// The project whose root is this root, like a package, or the root
+    /// project of a workspace. Only projects in the workspace graph are
+    /// known, so it's `None` when a partial graph (only built by tests)
+    /// doesn't include it.
     pub owner_project: Option<Id>,
 
     /// What this root's environment setup and install run with: the owner
-    /// project's (including an overridden version) for a package, otherwise
-    /// the workspace's.
+    /// project's (including an overridden version), otherwise the
+    /// workspace's (also when the owner disables the toolchain).
     pub spec: ToolchainSpec,
     #[serde(serialize_with = "serialize_config")]
     pub config: Arc<JsonValue>,

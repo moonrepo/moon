@@ -345,6 +345,7 @@ impl<'app> GraphAssembler<'app> {
                     &spec,
                     &root,
                     Some(&project),
+                    false,
                     FxHashSet::default(),
                 ))
                 .await?
@@ -527,11 +528,16 @@ impl<'app> GraphAssembler<'app> {
         Ok(Some(index))
     }
 
+    /// Setup the environment of a toolchain in a root, resolved with the
+    /// project's config and versions. When `owner_only` is true, the project
+    /// is the owner of a dependencies workspace, which isn't passed to the
+    /// plugin, as the environment is for the whole workspace.
     async fn internal_setup_environment(
         &mut self,
         spec: &ToolchainSpec,
         root: &WorkspaceRelativePathBuf,
         project: Option<&Project>,
+        owner_only: bool,
         mut cycle: FxHashSet<Id>,
     ) -> miette::Result<Option<NodeIndex>> {
         // Explicitly disabled
@@ -595,6 +601,7 @@ impl<'app> GraphAssembler<'app> {
                 &require_spec,
                 root,
                 project,
+                owner_only,
                 cycle.clone(),
             ))
             .await?
@@ -617,7 +624,7 @@ impl<'app> GraphAssembler<'app> {
         // The node may already exist, but the edges must still be linked, as the
         // version is not part of its identity, so another version of the toolchain
         // (overridden by a project that shares the root) must also be setup first
-        let project_id = project.map(|project| project.id.clone());
+        let (project_id, owner_project_id) = split_owner_project(project, owner_only);
         let index = self.get_or_insert_node(
             NodeKey::SetupEnvironment {
                 toolchain: spec.id.clone(),
@@ -625,6 +632,7 @@ impl<'app> GraphAssembler<'app> {
             },
             || {
                 ActionNode::setup_environment(SetupEnvironmentNode {
+                    owner_project_id,
                     project_id,
                     root: root.clone(),
                     toolchain_id: spec.id.clone(),
@@ -664,6 +672,7 @@ impl<'app> GraphAssembler<'app> {
             &root_spec,
             &root.root,
             owner.as_deref(),
+            matches!(root.kind, RootKind::Workspace { .. }),
             FxHashSet::default(),
         ))
         .await
@@ -747,9 +756,10 @@ impl<'app> GraphAssembler<'app> {
 
         // The actions are scoped to the root, so that every project placed in
         // it collapses into the same actions, which run with the root's spec
-        // (the workspace's, or its owner project's for a package)
+        // (its owner project's, otherwise the workspace's)
         let root = layout.root(*index);
         let (root_spec, owner) = self.get_root_chain(root, spec, project)?;
+        let owner_only = matches!(root.kind, RootKind::Workspace { .. });
         let chain_project = owner.as_deref().or(match root.kind {
             RootKind::Package => project,
             RootKind::Workspace { .. } => None,
@@ -760,11 +770,13 @@ impl<'app> GraphAssembler<'app> {
             &root_spec,
             &root.root,
             chain_project,
+            owner_only,
             FxHashSet::default(),
         ))
         .await?;
 
         let index = if root.capabilities.install_dependencies {
+            let (project_id, owner_project_id) = split_owner_project(chain_project, owner_only);
             let index = self.get_or_insert_node(
                 NodeKey::InstallDependencies {
                     toolchain: spec.id.clone(),
@@ -776,7 +788,8 @@ impl<'app> GraphAssembler<'app> {
                             RootKind::Workspace { members } => Some(members.to_owned()),
                             RootKind::Package => None,
                         },
-                        project_id: chain_project.map(|project| project.id.clone()),
+                        owner_project_id,
+                        project_id,
                         root: root.root.clone(),
                         toolchain_id: spec.id.clone(),
                     })
@@ -856,10 +869,10 @@ impl<'app> GraphAssembler<'app> {
             .filter(|root| root.root.as_str().is_empty())
     }
 
-    /// The spec that a root's actions run with, and the owner project that its
-    /// actions are associated with, which is only a package's owner when it
-    /// isn't the requesting project. A workspace's actions have no project,
-    /// so that its requirements resolve with the workspace's config.
+    /// The spec that a root's actions run with, and the owner project that
+    /// they resolve config and versions with, which is a package's owner when
+    /// it isn't the requesting project, or a workspace's root project. A
+    /// workspace without a root project resolves with the workspace's.
     fn get_root_chain(
         &self,
         root: &ToolchainDependenciesRoot,
@@ -870,6 +883,9 @@ impl<'app> GraphAssembler<'app> {
             (RootKind::Package, Some(owner_id))
                 if project.is_none_or(|project| &project.id != owner_id) =>
             {
+                Some(self.workspace_graph.get_project(owner_id)?)
+            }
+            (RootKind::Workspace { .. }, Some(owner_id)) => {
                 Some(self.workspace_graph.get_project(owner_id)?)
             }
             _ => None,
@@ -1383,4 +1399,13 @@ impl<'app> GraphAssembler<'app> {
             self.serial_edges.insert(edge_index);
         }
     }
+}
+
+/// The project to pass to a root's plugin, and the owner project to resolve
+/// its config with instead, when it's only the owner of a dependencies
+/// workspace.
+fn split_owner_project(project: Option<&Project>, owner_only: bool) -> (Option<Id>, Option<Id>) {
+    let id = project.map(|project| project.id.clone());
+
+    if owner_only { (None, id) } else { (id, None) }
 }

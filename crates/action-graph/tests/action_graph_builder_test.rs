@@ -128,6 +128,7 @@ mod action_graph_builder {
                     ActionNode::sync_workspace(),
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: None,
+                        owner_project_id: None,
                         project_id: Some(Id::raw("bar")),
                         root: WorkspaceRelativePathBuf::from("bar"),
                         toolchain_id: spec.id,
@@ -164,6 +165,7 @@ mod action_graph_builder {
                     }),
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: None,
+                        owner_project_id: None,
                         project_id: Some(Id::raw("bar")),
                         root: WorkspaceRelativePathBuf::from("bar"),
                         toolchain_id: spec.id,
@@ -200,6 +202,7 @@ mod action_graph_builder {
             assert_eq!(
                 graph.dependencies_of(&ActionNode::install_dependencies(InstallDependenciesNode {
                     members: None,
+                    owner_project_id: None,
                     project_id: Some(Id::raw("bar")),
                     root: WorkspaceRelativePathBuf::from("bar"),
                     toolchain_id: spec1.id.clone(),
@@ -218,6 +221,7 @@ mod action_graph_builder {
                     }),
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: None,
+                        owner_project_id: None,
                         project_id: Some(Id::raw("bar")),
                         root: WorkspaceRelativePathBuf::from("bar"),
                         toolchain_id: spec1.id,
@@ -260,6 +264,7 @@ mod action_graph_builder {
 
             // The environment is setup with the root's version only
             let env_node = ActionNode::setup_environment(SetupEnvironmentNode {
+                owner_project_id: None,
                 project_id: Some(Id::raw("bar")),
                 root: WorkspaceRelativePathBuf::from("bar"),
                 toolchain_id: spec1.id.clone(),
@@ -352,12 +357,14 @@ mod action_graph_builder {
                 vec![
                     ActionNode::sync_workspace(),
                     ActionNode::setup_environment(SetupEnvironmentNode {
+                        owner_project_id: None,
                         project_id: Some(Id::raw("bar")),
                         root: WorkspaceRelativePathBuf::from("bar"),
                         toolchain_id: spec.id.clone(),
                     }),
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: None,
+                        owner_project_id: None,
                         project_id: Some(Id::raw("bar")),
                         root: WorkspaceRelativePathBuf::from("bar"),
                         toolchain_id: spec.id,
@@ -405,12 +412,14 @@ mod action_graph_builder {
                         )
                     }),
                     ActionNode::setup_environment(SetupEnvironmentNode {
+                        owner_project_id: None,
                         project_id: Some(Id::raw("bar")),
                         root: WorkspaceRelativePathBuf::from("bar"),
                         toolchain_id: spec.id.clone(),
                     }),
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: None,
+                        owner_project_id: None,
                         project_id: Some(Id::raw("bar")),
                         root: WorkspaceRelativePathBuf::from("bar"),
                         toolchain_id: spec.id,
@@ -614,6 +623,7 @@ mod action_graph_builder {
                     ActionNode::sync_workspace(),
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: None,
+                        owner_project_id: None,
                         project_id: Some(Id::raw("bar")),
                         root: WorkspaceRelativePathBuf::from("bar"),
                         toolchain_id: spec.id,
@@ -645,6 +655,7 @@ mod action_graph_builder {
                     ActionNode::sync_workspace(),
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: None,
+                        owner_project_id: None,
                         project_id: Some(Id::raw("isolated")),
                         root: WorkspaceRelativePathBuf::from("isolated"),
                         toolchain_id: spec.id,
@@ -758,6 +769,7 @@ mod action_graph_builder {
                     ActionNode::sync_workspace(),
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: Some(vec!["in".into()]),
+                        owner_project_id: Some(Id::raw("root")),
                         project_id: None,
                         root: WorkspaceRelativePathBuf::new(),
                         toolchain_id: spec.id,
@@ -789,6 +801,7 @@ mod action_graph_builder {
                     ActionNode::sync_workspace(),
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: Some(vec!["in".into()]),
+                        owner_project_id: Some(Id::raw("root")),
                         project_id: None,
                         root: WorkspaceRelativePathBuf::new(),
                         toolchain_id: spec.id,
@@ -825,6 +838,7 @@ mod action_graph_builder {
                     ActionNode::sync_workspace(),
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: None,
+                        owner_project_id: None,
                         project_id: None,
                         root: WorkspaceRelativePathBuf::new(),
                         toolchain_id: spec.id,
@@ -858,6 +872,7 @@ mod action_graph_builder {
                     }),
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: None,
+                        owner_project_id: None,
                         project_id: None,
                         root: WorkspaceRelativePathBuf::new(),
                         toolchain_id: spec.id,
@@ -886,12 +901,14 @@ mod action_graph_builder {
                 vec![
                     ActionNode::sync_workspace(),
                     ActionNode::setup_environment(SetupEnvironmentNode {
+                        owner_project_id: None,
                         project_id: None,
                         root: WorkspaceRelativePathBuf::new(),
                         toolchain_id: spec.id.clone(),
                     }),
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: None,
+                        owner_project_id: None,
                         project_id: None,
                         root: WorkspaceRelativePathBuf::new(),
                         toolchain_id: spec.id,
@@ -923,6 +940,7 @@ mod action_graph_builder {
                     ActionNode::sync_workspace(),
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: Some(vec!["in".into()]),
+                        owner_project_id: Some(Id::raw("root")),
                         project_id: None,
                         root: WorkspaceRelativePathBuf::new(),
                         toolchain_id: spec.id,
@@ -962,6 +980,7 @@ mod action_graph_builder {
                     ActionNode::sync_workspace(),
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: Some(vec!["in".into()]),
+                        owner_project_id: Some(Id::raw("root")),
                         project_id: None,
                         root: WorkspaceRelativePathBuf::new(),
                         toolchain_id: spec.id,
@@ -6012,7 +6031,8 @@ mod action_graph_builder {
                 );
             }
 
-            // The root project of a workspace is treated like a member
+            // The root's actions run with the root project's version, like a
+            // package, so the root project needs no version of its own
             #[tokio::test(flavor = "multi_thread")]
             async fn with_an_override_in_the_root_project() {
                 let sandbox = create_sandbox("shared-root");
@@ -6021,14 +6041,38 @@ mod action_graph_builder {
 
                 let mut container = create_container(&sandbox, TC);
                 let graph = build_tasks(&mut container, &["root"]).await;
-
                 let deps = dependency_labels(&graph, "RunTask(root:build)");
 
                 assert!(deps.contains(&format!("InstallDependencies({TC})")));
-                assert!(deps.contains(&setup_toolchain("1.99.0")));
+                assert!(!deps.iter().any(|dep| dep.starts_with("SetupToolchain")));
                 assert_eq!(
                     dependency_labels(&graph, &format!("SetupEnvironment({TC})")),
-                    vec![setup_toolchain("1.2.3"), "SyncWorkspace".into()]
+                    vec![setup_toolchain("1.99.0"), "SyncWorkspace".into()]
+                );
+            }
+
+            // While members that don't override it run their tasks with the
+            // workspace's version, which they setup on their own
+            #[tokio::test(flavor = "multi_thread")]
+            async fn with_an_override_in_the_root_project_for_members() {
+                let sandbox = create_sandbox("shared-root");
+
+                overrides_version(&sandbox, ".");
+                uses_toolchain(&sandbox, "packages/b");
+
+                let mut container = create_container(&sandbox, TC);
+                let graph = build_tasks(&mut container, &["b"]).await;
+
+                assert_eq!(
+                    dependency_labels(&graph, "RunTask(b:build)"),
+                    vec![
+                        format!("InstallDependencies({TC})"),
+                        setup_toolchain("1.2.3")
+                    ]
+                );
+                assert_eq!(
+                    dependency_labels(&graph, &format!("SetupEnvironment({TC})")),
+                    vec![setup_toolchain("1.99.0"), "SyncWorkspace".into()]
                 );
             }
 
@@ -6270,6 +6314,7 @@ mod action_graph_builder {
                 vec![
                     ActionNode::sync_workspace(),
                     ActionNode::setup_environment(SetupEnvironmentNode {
+                        owner_project_id: None,
                         project_id: Some(Id::raw("bar")),
                         root: WorkspaceRelativePathBuf::from("bar"),
                         toolchain_id: spec.id,
@@ -6302,11 +6347,13 @@ mod action_graph_builder {
                 vec![
                     ActionNode::sync_workspace(),
                     ActionNode::setup_environment(SetupEnvironmentNode {
+                        owner_project_id: None,
                         project_id: Some(Id::raw("bar")),
                         root: WorkspaceRelativePathBuf::from("bar"),
                         toolchain_id: spec.id.clone(),
                     }),
                     ActionNode::setup_environment(SetupEnvironmentNode {
+                        owner_project_id: None,
                         project_id: Some(Id::raw("baz")),
                         root: WorkspaceRelativePathBuf::from("baz"),
                         toolchain_id: spec.id,
@@ -6340,6 +6387,7 @@ mod action_graph_builder {
                 vec![
                     ActionNode::sync_workspace(),
                     ActionNode::setup_environment(SetupEnvironmentNode {
+                        owner_project_id: None,
                         project_id: Some(Id::raw("bar")),
                         root: WorkspaceRelativePathBuf::from("bar"),
                         toolchain_id: spec.id,
@@ -6456,6 +6504,7 @@ mod action_graph_builder {
                 vec![
                     ActionNode::sync_workspace(),
                     ActionNode::setup_environment(SetupEnvironmentNode {
+                        owner_project_id: None,
                         project_id: Some(Id::raw("bar")),
                         root: WorkspaceRelativePathBuf::from("bar"),
                         toolchain_id: spec.id,
@@ -6504,6 +6553,7 @@ mod action_graph_builder {
                         )
                     }),
                     ActionNode::setup_environment(SetupEnvironmentNode {
+                        owner_project_id: None,
                         project_id: Some(Id::raw("bar")),
                         root: WorkspaceRelativePathBuf::from("bar"),
                         toolchain_id: spec.id,
@@ -6556,6 +6606,7 @@ mod action_graph_builder {
                         toolchain: spec.clone(),
                     }),
                     ActionNode::setup_environment(SetupEnvironmentNode {
+                        owner_project_id: None,
                         project_id: Some(Id::raw("bar")),
                         root: WorkspaceRelativePathBuf::from("bar"),
                         toolchain_id: spec.id,
@@ -6644,6 +6695,7 @@ mod action_graph_builder {
 
         fn create_bar_env_node(id: &str) -> ActionNode {
             ActionNode::setup_environment(SetupEnvironmentNode {
+                owner_project_id: None,
                 project_id: Some(Id::raw("bar")),
                 root: WorkspaceRelativePathBuf::from("bar"),
                 toolchain_id: Id::raw(id),
@@ -6764,6 +6816,7 @@ mod action_graph_builder {
                     create_bar_env_node("tc-tier2-setup-env"),
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: None,
+                        owner_project_id: None,
                         project_id: Some(Id::raw("bar")),
                         root: WorkspaceRelativePathBuf::from("bar"),
                         toolchain_id: spec.id,
@@ -6889,11 +6942,13 @@ mod action_graph_builder {
                         )
                     }),
                     ActionNode::setup_environment(SetupEnvironmentNode {
+                        owner_project_id: None,
                         project_id: Some(Id::raw("bar")),
                         root: WorkspaceRelativePathBuf::from("bar"),
                         toolchain_id: spec.id.clone(),
                     }),
                     ActionNode::setup_environment(SetupEnvironmentNode {
+                        owner_project_id: None,
                         project_id: Some(Id::raw("baz")),
                         root: WorkspaceRelativePathBuf::from("baz"),
                         toolchain_id: spec.id,
@@ -6929,6 +6984,7 @@ mod action_graph_builder {
                 vec![
                     ActionNode::sync_workspace(),
                     ActionNode::setup_environment(SetupEnvironmentNode {
+                        owner_project_id: None,
                         project_id: None,
                         root: WorkspaceRelativePathBuf::new(),
                         toolchain_id: spec.id,
@@ -6976,6 +7032,7 @@ mod action_graph_builder {
                         )
                     }),
                     ActionNode::setup_environment(SetupEnvironmentNode {
+                        owner_project_id: None,
                         project_id: None,
                         root: WorkspaceRelativePathBuf::new(),
                         toolchain_id: spec.id,

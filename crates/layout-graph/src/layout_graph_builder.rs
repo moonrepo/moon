@@ -550,39 +550,37 @@ impl LayoutGraphBuilder {
             _ => self.find_owner_project(&deps_workspace.root),
         };
 
-        let (spec, config) = match &deps_workspace.members {
-            // A workspace's actions run with the workspace's version and
-            // config, whatever its projects override
-            Some(_) => self.get_workspace_spec_and_config(toolchain_id),
-            // A package's run with its owner project's, as it's the only one
-            None => match &owner_project {
-                Some(owner_id) => match &resolved.project {
-                    Some(project) if &project.id == owner_id => {
-                        (resolved.spec.clone(), Arc::clone(&resolved.config))
-                    }
-                    _ => {
-                        let owner = self.workspace_graph.get_project(owner_id)?;
+        // A root's actions run with its owner project's version and config,
+        // as it's the project at the root, like a package, or the root project
+        // of a workspace (whatever its members override), otherwise with the
+        // workspace's
+        let (spec, config) = match &owner_project {
+            Some(owner_id) => match &resolved.project {
+                Some(project) if &project.id == owner_id => {
+                    (resolved.spec.clone(), Arc::clone(&resolved.config))
+                }
+                _ => {
+                    let owner = self.workspace_graph.get_project(owner_id)?;
 
-                        match get_toolchain_spec(
-                            &self.app_context.toolchains_config,
-                            toolchain_id,
-                            Some(&owner.config),
-                        ) {
-                            Some(spec) => (
-                                spec,
-                                Arc::new(
-                                    self.app_context
-                                        .toolchain_registry
-                                        .create_merged_config(toolchain_id, &owner.config),
-                                ),
+                    match get_toolchain_spec(
+                        &self.app_context.toolchains_config,
+                        toolchain_id,
+                        Some(&owner.config),
+                    ) {
+                        Some(spec) => (
+                            spec,
+                            Arc::new(
+                                self.app_context
+                                    .toolchain_registry
+                                    .create_merged_config(toolchain_id, &owner.config),
                             ),
-                            // Disabled by the owner
-                            None => self.get_workspace_spec_and_config(toolchain_id),
-                        }
+                        ),
+                        // Disabled by the owner
+                        None => self.get_workspace_spec_and_config(toolchain_id),
                     }
-                },
-                None => self.get_workspace_spec_and_config(toolchain_id),
+                }
             },
+            None => self.get_workspace_spec_and_config(toolchain_id),
         };
 
         let index = RootIndex(self.graph.roots.len() as u32);

@@ -246,8 +246,9 @@ run with, when a member [overrides the version](/docs/config/project#overriding-
 the workspace's actions waited on every version that the projects in the run asked for, but ran with
 the workspace's version, which wasn't setup at all when only overriding projects were ran.
 
-In v3, a workspace's environment setup and dependency install always use the workspace's version,
-and an overridden version is only setup for running that project's tasks. For example, with a Cargo
+In v3, a workspace's environment setup and dependency install always use the workspace's version
+(or its root project's, when the workspace's root is also a project), and an overridden version is
+only setup for running that project's tasks. For example, with a Cargo
 workspace on Rust 1.90, where a crate overrides it with 1.99, the workspace's dependencies are
 installed with 1.90, and the crate's tasks run with 1.99. A project that's its own package (with its
 own lockfile) still installs its dependencies with its overridden version.

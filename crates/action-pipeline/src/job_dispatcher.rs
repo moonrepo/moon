@@ -688,6 +688,7 @@ mod tests {
     use moon_action::{Action, ActionNode, RunTaskNode, SyncProjectNode};
     use moon_common::Id;
     use moon_config::TaskDependencyType;
+    use moon_layout_graph::LayoutGraph;
     use moon_task::Target;
     use moon_workspace_graph::WorkspaceGraph;
     use rustc_hash::FxHashMap;
@@ -711,6 +712,7 @@ mod tests {
             result_sender: sender,
             running_jobs: Arc::new(RwLock::new(FxHashMap::default())),
             semaphore: Arc::new(Semaphore::new(1)),
+            layout_graph: Arc::new(LayoutGraph::default()),
             workspace_graph: Arc::new(WorkspaceGraph::default()),
         };
 

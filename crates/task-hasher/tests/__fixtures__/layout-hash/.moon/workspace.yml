@@ -1,0 +1,5 @@
+projects:
+  root: '.'
+  a: 'packages/a'
+  standalone: 'standalone'
+  tools: 'tools'

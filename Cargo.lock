@@ -5371,6 +5371,7 @@ dependencies = [
  "moon_config",
  "moon_exec_plan",
  "moon_graph_utils",
+ "moon_layout_graph",
  "moon_pdk_api",
  "moon_project",
  "moon_query",
@@ -5407,6 +5408,7 @@ dependencies = [
  "moon_config",
  "moon_console",
  "moon_daemon_client",
+ "moon_layout_graph",
  "moon_notifier",
  "moon_process",
  "moon_project",
@@ -5452,6 +5454,7 @@ dependencies = [
  "moon_env_var",
  "moon_feature_flags",
  "moon_hash",
+ "moon_layout_graph",
  "moon_pdk_api",
  "moon_plugin",
  "moon_process",
@@ -5563,6 +5566,7 @@ dependencies = [
  "moon_extension_plugin",
  "moon_feature_flags",
  "moon_file_watcher",
+ "moon_layout_graph",
  "moon_mcp",
  "moon_pdk_api",
  "moon_plugin",
@@ -6182,6 +6186,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_layout_graph"
+version = "0.0.1"
+dependencies = [
+ "codspeed-criterion-compat",
+ "futures",
+ "indexmap",
+ "miette 7.6.0",
+ "moon_app_context",
+ "moon_bench_utils",
+ "moon_common",
+ "moon_config",
+ "moon_graph_utils",
+ "moon_pdk_api",
+ "moon_project",
+ "moon_test_utils",
+ "moon_toolchain",
+ "moon_toolchain_plugin",
+ "moon_workspace_graph",
+ "petgraph 0.8.3",
+ "rustc-hash",
+ "serde",
+ "serde_json",
+ "starbase_sandbox",
+ "starbase_utils",
+ "tokio",
+ "tracing",
+ "warpgate_api",
+]
+
+[[package]]
 name = "moon_manifest"
 version = "0.0.1"
 dependencies = [
@@ -6572,11 +6606,13 @@ dependencies = [
  "moon_env_var",
  "moon_feature_flags",
  "moon_hash",
+ "moon_layout_graph",
  "moon_pdk_api",
  "moon_process",
  "moon_project",
  "moon_task",
  "moon_test_utils",
+ "moon_toolchain",
  "moon_toolchain_plugin",
  "moon_vcs",
  "rustc-hash",
@@ -6607,6 +6643,7 @@ dependencies = [
  "moon_daemon_client",
  "moon_env_var",
  "moon_hash",
+ "moon_layout_graph",
  "moon_manifest",
  "moon_process",
  "moon_process_augment",
@@ -6721,6 +6758,7 @@ dependencies = [
  "proto_pdk_api",
  "rustc-hash",
  "scc",
+ "serde_json",
  "starbase_sandbox",
  "starbase_utils",
  "tokio",

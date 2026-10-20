@@ -1,0 +1,11 @@
+projects:
+  root: '.'
+  a: 'packages/a'
+  b: 'packages/b'
+  web: 'apps/web'
+  off: 'apps/off'
+  standalone: 'standalone'
+  tools: 'tools'
+  plain: 'plain'
+  nested: 'nested'
+  lib: 'nested/lib'

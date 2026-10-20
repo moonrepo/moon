@@ -1,0 +1,23 @@
+---
+source: crates/cli/tests/layout_graph_test.rs
+expression: assert.output()
+---
+
+tc-tier2 @ . ───────────────────────────────────────────────
+
+  Kind: workspace
+  Member globs: packages/*, apps/*, nested
+  Owner project: root
+  Version: global
+  Lockfiles: tc.lock
+  Manifests: tc.root.cfg
+  Vendor directory: vendor
+  Supports: install dependencies
+  Projects:
+    - b (workspace member, runs tasks with 2.0.0)
+
+Diagnostics ────────────────────────────────────────────────
+
+  b: info: runs tasks with 2.0.0, while tc-tier2 @ . installs with global
+
+Only the requested project was placed, so roots only list the projects that were placed.

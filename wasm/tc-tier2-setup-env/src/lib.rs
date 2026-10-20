@@ -41,6 +41,14 @@ pub fn define_requirements(
 pub fn setup_environment(
     Json(input): Json<SetupEnvironmentInput>,
 ) -> FnResult<Json<SetupEnvironmentOutput>> {
+    record_input(
+        &input.context,
+        &input.toolchain_config,
+        "setup_environment",
+        &input.root.to_string_lossy(),
+        json::to_value(&input)?,
+    )?;
+
     // Only fail when a test opts in via toolchain config, so that
     // pipeline tests can assert what happens downstream of a hard failure
     if input

@@ -140,6 +140,19 @@
       instead of 24s.
     - Projects in a dependencies workspace (like a JavaScript monorepo) no longer compile the
       workspace's member globs again for every project.
+    - Dependencies roots are now located concurrently, for every toolchain and project that the
+      graph installs dependencies for, before actions are inserted, instead of one at a time while
+      inserting them. Building takes up to 18% less time with toolchains in our benchmarks. The
+      `SetupEnvironment` and `InstallDependencies` actions of a root are now identified by their
+      toolchain and root only.
+  - `moon setup` in a repository whose root is a single package (not a workspace) that's also a
+    project, now sets up the root's environment with that project's toolchain version and config,
+    like running its tasks does, instead of the workspace's.
+  - The environment setup and dependency install of a dependencies workspace whose root is also a
+    project (the root project) now run with that project's toolchain version and settings, like a
+    single project's package, instead of only the workspace's. The root project isn't passed as the
+    plugin's `project`, as the actions are for the whole workspace. Members that don't override the
+    version still run their tasks with the workspace's, which they set up on their own.
 - **Action pipeline**
   - Reading the states of task dependencies, while hashing and running tasks, no longer takes an
     exclusive lock, which serialized tasks running concurrently.
@@ -165,6 +178,14 @@
 - **Cache**
   - The `cache.unstable_sharedWorktreeCache` setting no longer requires the `casOutputsCache`
     experiment, as task outputs are now always stored in the local content-addressable store.
+- **CLI**
+  - Added a `moon layout-graph` (`moon lg`) command, that serves an interactive graph of the
+    dependencies roots (like a package manager workspace) that toolchains locate, and the projects
+    that belong to each, with their role. Pass `--info` to print each root's version, files, and
+    projects instead, along with diagnostics for placements that may be unexpected: a project that
+    isn't a member of the workspace that it located, a nested workspace that an enclosing
+    workspace's members also match, and a member that overrides the workspace's version. Also
+    supports `--dot` and `--json` output, and placing a single project, like a run would.
 - **Configuration**
   - Stabilized the `cache.unstable_sharedWorktreeCache` setting in `.moon/workspace.config`. Use
     `cache.sharedWorktreeCache` instead.
@@ -172,6 +193,16 @@
 - **Daemon**
   - The daemon has been stabilized and is now enabled by default. If you run into any issues, simply
     set `daemon = false` in your `.moon/workspace.config`.
+- **Docker**
+  - `moon docker prune` now places the focused projects of the scaffold into the layout graph, and
+    prunes each dependencies root that they belong to, instead of locating roots itself. Unfocused
+    projects are still matched against each root's members.
+  - The `prune_docker` plugin function now receives the root project's merged toolchain config
+    (`toolchain_config`) when the dependencies root is a single project's package, instead of the
+    workspace's, like the root's other actions.
+  - When the only focused project is the root project of a dependencies workspace, the production
+    install now receives no project, like the workspace's other actions, while its toolchain config
+    is still that project's merged config.
 - **Hasher**
   - Improved the performance of file hashing.
     - File hashes are now memoized for the lifetime of the process, and reused while the file's size
@@ -182,6 +213,9 @@
       spawning a blocking task per file.
     - Each file is now stat-ed once before hashing, instead of twice, and read with a single read
       when it fits within the hashing buffer.
+  - Hashing a task's toolchains now reads the dependencies root of each toolchain from where the
+    action graph placed it, instead of calling the toolchain's plugin to locate it again for every
+    task. Hashes are unchanged.
 - **Plugins**
   - Improved the performance of calling plugins concurrently, like when building projects and their
     tasks in parallel. Looking up a loaded plugin, and a toolchain's cached tool locations, no
@@ -191,6 +225,11 @@
     loads it once. Previously, each caller loaded and compiled its own instance of the plugin, and
     all but one were discarded.
 - **Toolchains**
+  - Added an optional `locate_dependencies_roots` function to the toolchain plugin API, which
+    locates the dependencies roots of many projects in a single call. When a toolchain implements
+    it, every project that shares the toolchain's config is located in one call while building the
+    layout graph, instead of a call for each project, which is 37% faster for 1000 projects with a
+    test plugin. Toolchains that don't implement it still locate one root per call.
   - Added support for proto v0.63's config trust. As moon already runs the workspace's tasks,
     `.prototools` configs within the workspace are always trusted, while other local configs, like
     one in a parent directory, must be trusted with `proto trust` before their security-sensitive
@@ -285,6 +324,23 @@
   index.
 - Fixed an issue where a toolchain that required an invalid toolchain ID (from its plugin's
   `define_requirements`) would error without naming the toolchain.
+- Fixed an issue where the environment setup and dependency install of a dependencies workspace
+  (like a Cargo workspace) waited on the toolchain versions that its member projects override, but
+  ran with the workspace's version, which wasn't set up when only overriding projects were in the
+  run. They now always wait on the version that they run with (the workspace's, or its root
+  project's), and a project that overrides it sets up its own version for its tasks.
+- Fixed an issue where a member project's override of a required toolchain's version (like Node.js
+  for JavaScript) made a dependencies workspace's install wait on that version.
+- Fixed an issue where setting up a toolchain version that a project overrides passed the
+  workspace's version in the plugin's `toolchain_config` (`SetupToolchainInput`), which conflicted
+  with its `configured_version`.
+- Fixed an issue where a project's toolchain `version` override, or a toolchain disabled by a
+  project, was ignored by a task's command environment when the project referenced the toolchain by
+  its stable ID, while the workspace configured its unstable ID (or vice versa). Project toolchain
+  versions are now resolved the same way by the action graph, the task hasher, and the command
+  environment.
+- Fixed an issue where `moon docker file` could pick the default base image of a toolchain that the
+  project disabled.
 
 #### ⚙️ Internal
 

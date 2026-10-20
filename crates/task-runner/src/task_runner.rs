@@ -14,6 +14,7 @@ use moon_config::TaskDependencyType;
 use moon_console::TaskReportItem;
 use moon_daemon_client::DaemonClient;
 use moon_hash::{ContentHash, ContentHasher};
+use moon_layout_graph::LayoutGraph;
 use moon_process::ProcessError;
 use moon_project::Project;
 use moon_task::{Task, TaskCheck, TaskCheckFingerprint, TaskCheckType, TaskExpectedFailure};
@@ -32,6 +33,7 @@ pub struct TaskRunResult {
 
 pub struct TaskRunner<'task> {
     app_context: &'task Arc<AppContext>,
+    layout_graph: &'task LayoutGraph,
     project: &'task Arc<Project>,
     pub task: &'task Arc<Task>,
 
@@ -95,6 +97,7 @@ pub fn is_task_dependencies_complete(task: &Task, context: &ActionContext) -> mi
 impl<'task> TaskRunner<'task> {
     pub fn new(
         app_context: &'task Arc<AppContext>,
+        layout_graph: &'task LayoutGraph,
         project: &'task Arc<Project>,
         task: &'task Arc<Task>,
         daemon_client: Option<DaemonClient>,
@@ -125,6 +128,7 @@ impl<'task> TaskRunner<'task> {
             },
             task,
             app_context,
+            layout_graph,
             operations: OperationList::default(),
         })
     }
@@ -417,8 +421,14 @@ impl<'task> TaskRunner<'task> {
         .await?;
 
         // Hash toolchain fields
-        hash_toolchain_task_contents(self.app_context, self.project, self.task, &mut hasher)
-            .await?;
+        hash_toolchain_task_contents(
+            self.app_context,
+            self.layout_graph,
+            self.project,
+            self.task,
+            &mut hasher,
+        )
+        .await?;
 
         // Hash task checks
         self.hash_checks(&mut hasher).await?;

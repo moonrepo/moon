@@ -188,6 +188,17 @@ impl WorkspaceMocker {
         })
     }
 
+    /// Load a configured test toolchain from another test plugin, which shares
+    /// its behavior, like `tc-tier2` from `tc-tier2-batch`.
+    pub fn with_test_toolchain_from(self, id: &str, plugin_name: &str) -> Self {
+        self.update_toolchains_config(|config| {
+            config.plugins.get_mut(&Id::raw(id)).unwrap().plugin = Some(
+                proto_core::warpgate::find_debug_locator(&plugin_name.replace('-', "_"))
+                    .expect("Development plugins missing, build with `just build-wasm`!"),
+            );
+        })
+    }
+
     pub fn with_global_envs(mut self) -> Self {
         let home_dir = std::env::home_dir().unwrap();
 

@@ -1593,6 +1593,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "tc_tier2_batch"
+version = "0.0.1"
+dependencies = [
+ "extism-pdk",
+ "moon_common",
+ "moon_config",
+ "moon_pdk",
+ "moon_pdk_api",
+ "moon_target",
+ "tc_tier2",
+]
+
+[[package]]
 name = "tc_tier2_reqs"
 version = "0.0.1"
 dependencies = [

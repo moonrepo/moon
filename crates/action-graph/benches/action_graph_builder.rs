@@ -3,14 +3,13 @@ use moon_action_graph::{ActionGraphBuilder, ActionGraphBuilderOptions, RunRequir
 use moon_app_context::AppContext;
 use moon_bench_utils::{
     create_chained_workspace, create_serial_workspace, create_simple_workspace,
-    create_toolchain_workspace,
+    create_toolchain_workspace, find_test_plugin,
 };
 use moon_common::{Id, is_ci, is_local};
 use moon_config::UnresolvedVersionSpec;
 use moon_task::TargetLocator;
 use moon_test_utils::{WorkspaceGraph, WorkspaceMocker};
 use starbase_sandbox::Sandbox;
-use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::runtime::{Builder, Runtime};
 use warpgate_api::{FileLocator, PluginLocator};
@@ -143,24 +142,6 @@ fn do_limit_chained(c: &mut Criterion, max: u16) {
         max,
         create_chained_workspace(max),
     );
-}
-
-// Find a test plugin built with `just build-wasm`, which builds into
-// `CARGO_TARGET_DIR` when it's set, otherwise into `wasm/target`. Benchmarks are
-// release builds, which don't resolve the test plugins' locators, so it's
-// located here
-fn find_test_plugin(name: &str) -> Option<PathBuf> {
-    let file = format!("{name}.wasm");
-
-    ["CARGO_TARGET_DIR", "WARPGATE_PLUGINS_DIR"]
-        .into_iter()
-        .filter_map(std::env::var_os)
-        .map(PathBuf::from)
-        .flat_map(|dir| [dir.clone(), dir.join("target")])
-        .flat_map(|dir| {
-            ["release", "debug"].map(|profile| dir.join("wasm32-wasip1").join(profile).join(&file))
-        })
-        .find(|path| path.exists())
 }
 
 // Like the simple workspace, but every task runs in a tier 3 toolchain. The

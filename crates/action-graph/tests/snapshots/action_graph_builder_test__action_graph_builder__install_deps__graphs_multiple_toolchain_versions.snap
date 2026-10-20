@@ -13,5 +13,4 @@ digraph {
     3 -> 2 [ label="required"]
     4 -> 0 [ label="required"]
     4 -> 1 [ label="required"]
-    3 -> 4 [ label="required"]
 }

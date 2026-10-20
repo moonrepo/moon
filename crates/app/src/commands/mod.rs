@@ -14,6 +14,7 @@ pub mod generate;
 pub mod graph;
 pub mod hash;
 pub mod init;
+pub mod layout_graph;
 pub mod mcp;
 pub mod migrate;
 pub mod project;

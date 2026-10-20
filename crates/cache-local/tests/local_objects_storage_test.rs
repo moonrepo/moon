@@ -305,18 +305,18 @@ mod local_objects_storage {
     }
 }
 
-mod hash_manifests {
+mod hash_fingerprints {
     use super::*;
 
     #[tokio::test(flavor = "multi_thread")]
     async fn stores_in_the_objects_dir() {
-        // Hash manifests live in their own store, apart from the task output
+        // Hash fingerprints live in their own store, apart from the task output
         // blobs that action cache GC sweeps.
         let sandbox = create_empty_sandbox();
         let storage = create_storage(&sandbox);
 
         let digest = storage
-            .store_hash_manifest("task", vec!["command", "args"])
+            .store_hash_fingerprint("task", vec!["command", "args"])
             .await
             .unwrap();
 
@@ -325,36 +325,36 @@ mod hash_manifests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn loads_a_stored_manifest_from_disk() {
+    async fn loads_a_stored_fingerprint_from_disk() {
         let sandbox = create_empty_sandbox();
         let storage = create_storage(&sandbox);
 
         let digest = storage
-            .store_hash_manifest("task", vec!["command", "args"])
+            .store_hash_fingerprint("task", vec!["command", "args"])
             .await
             .unwrap();
 
         let content = storage
-            .load_hash_manifest(&digest)
+            .load_hash_fingerprint(&digest)
             .await
             .unwrap()
-            .expect("the manifest reads back");
+            .expect("the fingerprint reads back");
 
         assert_eq!(content.read_bytes().unwrap(), br#"[["command","args"]]"#);
     }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn persists_across_storage_instances() {
-        // A hash manifest marks work as done for later runs, each of which
+        // A hash fingerprint marks work as done for later runs, each of which
         // opens its own storage over the same cache directory.
         let sandbox = create_empty_sandbox();
 
         let digest = create_storage(&sandbox)
-            .store_hash_manifest("task", vec!["command", "args"])
+            .store_hash_fingerprint("task", vec!["command", "args"])
             .await
             .unwrap();
 
-        assert!(create_storage(&sandbox).has_hash_manifest(&digest).await);
+        assert!(create_storage(&sandbox).has_hash_fingerprint(&digest).await);
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -363,7 +363,7 @@ mod hash_manifests {
         let storage = create_storage(&sandbox);
 
         let digest = storage
-            .store_hash_manifest("task", vec!["command", "args"])
+            .store_hash_fingerprint("task", vec!["command", "args"])
             .await
             .unwrap();
 
@@ -376,18 +376,18 @@ mod hash_manifests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn clean_removes_stale_manifests_only() {
-        // A manifest past the lifetime is swept, so the work it marked as done
+    async fn clean_removes_stale_fingerprints_only() {
+        // A fingerprint past the lifetime is swept, so the work it marked as done
         // runs again next time, while a recent one keeps short-circuiting.
         let sandbox = create_empty_sandbox();
         let storage = create_storage(&sandbox);
 
         let stale = storage
-            .store_hash_manifest("task", vec!["stale"])
+            .store_hash_fingerprint("task", vec!["stale"])
             .await
             .unwrap();
         let fresh = storage
-            .store_hash_manifest("task", vec!["fresh"])
+            .store_hash_fingerprint("task", vec!["fresh"])
             .await
             .unwrap();
 
@@ -396,8 +396,8 @@ mod hash_manifests {
         let stats = storage.clean(WEEK).await.unwrap();
 
         assert_eq!(stats.blobs_removed, 1);
-        assert!(!storage.has_hash_manifest(&stale).await);
-        assert!(storage.has_hash_manifest(&fresh).await);
+        assert!(!storage.has_hash_fingerprint(&stale).await);
+        assert!(storage.has_hash_fingerprint(&fresh).await);
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -414,9 +414,9 @@ mod hash_manifests {
         let cache_dir = context.cache_dir.clone();
         let actions = Arc::new(LocalStorage::new(context, cache_dir).unwrap());
 
-        // The task manifest is keyed by the same digest as the hash manifest
+        // The task manifest is keyed by the same digest as the hash fingerprint
         let digest = storage
-            .store_hash_manifest("task", vec!["command", "args"])
+            .store_hash_fingerprint("task", vec!["command", "args"])
             .await
             .unwrap();
         let output = inline_source(b"task output");
@@ -440,7 +440,7 @@ mod hash_manifests {
         actions.gc(WEEK).await.unwrap();
 
         // The task manifest is evicted over the size budget and its output
-        // swept, while the hash manifest is untouched, even past the lifetime
+        // swept, while the hash fingerprint is untouched, even past the lifetime
         assert!(
             actions
                 .retrieve_task_manifest(digest.clone())
@@ -455,6 +455,6 @@ mod hash_manifests {
                 .unwrap(),
             vec![output_digest],
         );
-        assert!(storage.has_hash_manifest(&digest).await);
+        assert!(storage.has_hash_fingerprint(&digest).await);
     }
 }

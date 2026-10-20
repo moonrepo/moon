@@ -177,7 +177,7 @@ impl WorkspaceBuilder {
                 context
                     .cache_engine
                     .objects_storage
-                    .store_hash_manifest_with_hasher(hasher)
+                    .store_hash_fingerprint_with_hasher(hasher)
                     .await?;
 
                 return Ok(cache);
@@ -208,11 +208,11 @@ impl WorkspaceBuilder {
                 .await?;
         }
 
-        // Only store the final manifest, as the hash may have been regenerated
+        // Only store the final fingerprint, as the hash may have been regenerated
         let digest = context
             .cache_engine
             .objects_storage
-            .store_hash_manifest_with_hasher(hasher)
+            .store_hash_fingerprint_with_hasher(hasher)
             .await?;
 
         // Write the graph before saving the state, as the state's hash is what

@@ -608,7 +608,7 @@ tasks:
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn creates_states_and_manifests() {
+        async fn creates_states_and_fingerprints() {
             let (sandbox, _graph) = build_cached_graph(|sandbox| {
                 sandbox.enable_git();
             })
@@ -618,7 +618,7 @@ tasks:
 
             assert!(!state.last_hash.as_str().is_empty());
 
-            // The hash manifest is in the local objects store, which
+            // The hash fingerprint is in the local objects store, which
             // shards objects by the first 2 chars of their hash.
             assert!(
                 sandbox
@@ -877,7 +877,7 @@ tasks:
             }
 
             #[tokio::test(flavor = "multi_thread")]
-            async fn stores_one_manifest_after_discovering_plugin_input_files() {
+            async fn stores_one_fingerprint_after_discovering_plugin_input_files() {
                 let sandbox = build_plugins_cached_graph(|sandbox| {
                     sandbox.create_file("a/tc.lock", "");
                 })
@@ -900,7 +900,7 @@ tasks:
                 }
 
                 // The hash was regenerated with the discovered input files,
-                // but only the final manifest is stored
+                // but only the final fingerprint is stored
                 assert_eq!(blobs, [state.last_hash.as_str()]);
             }
 

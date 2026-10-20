@@ -8,7 +8,6 @@ use moon_env_var::GlobalEnvBag;
 use moon_hash::{ContentHasher, Digest};
 use moon_time::parse_duration;
 use serde::Serialize;
-use serde::de::DeserializeOwned;
 use starbase_utils::fs::{FileLock, RemoveDirContentsResult};
 use starbase_utils::{fs, json};
 use std::collections::BTreeMap;
@@ -70,7 +69,7 @@ impl CacheEngine {
         }
 
         // Remove directories from the legacy tarball-based cache, as task
-        // outputs and hash manifests now live in the CAS. Failures are ignored,
+        // outputs and hash fingerprints now live in the CAS. Failures are ignored,
         // as another process may be removing them at the same time.
         for legacy_dir in [dir.join("hashes"), dir.join("outputs")] {
             if legacy_dir.exists() {
@@ -104,13 +103,6 @@ impl CacheEngine {
         GlobalEnvBag::instance().set("MOON_CACHE", mode.to_string());
     }
 
-    pub fn cache<T>(&self, path: impl AsRef<OsStr>) -> miette::Result<CacheItem<T>>
-    where
-        T: Default + DeserializeOwned + Serialize,
-    {
-        CacheItem::<T>::load(self.resolve_path(path))
-    }
-
     #[instrument(skip(self))]
     pub async fn clean_stale_cache(
         &self,
@@ -130,11 +122,10 @@ impl CacheEngine {
         };
 
         let locks_dir = self.cache_dir.join("locks");
-        let mut dirs = vec![&locks_dir];
+        let mut dirs = vec![&locks_dir, &self.temp_dir];
 
         if all {
             dirs.push(&self.state.states_dir);
-            dirs.push(&self.temp_dir);
         }
 
         for dir in dirs {
@@ -211,13 +202,13 @@ impl CacheEngine {
 
         let digest = Digest::from_hasher(&mut hasher)?;
 
-        // If the hash manifest exists, then it has ran before,
-        // otherwise run and write the manifest
-        if !self.objects_storage.has_hash_manifest(&digest).await {
+        // If the hash fingerprint exists, then it has ran before,
+        // otherwise run and write the fingerprint
+        if !self.objects_storage.has_hash_fingerprint(&digest).await {
             let result = op(digest.hash.as_str()).await?;
 
             self.objects_storage
-                .store_hash_manifest_with_hasher(hasher)
+                .store_hash_fingerprint_with_hasher(hasher)
                 .await?;
 
             return Ok(Some(result));

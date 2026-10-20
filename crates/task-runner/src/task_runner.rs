@@ -436,7 +436,7 @@ impl<'task> TaskRunner<'task> {
         // Generate the digest and store values
         let digest = cache_engine
             .objects_storage
-            .store_hash_manifest_with_hasher(hasher)
+            .store_hash_fingerprint_with_hasher(hasher)
             .await?;
 
         operation.meta.set_hash(&digest.hash);

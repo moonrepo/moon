@@ -463,7 +463,7 @@ mod clean {
     }
 }
 
-mod hash_manifests {
+mod hash_fingerprints {
     use super::*;
 
     #[derive(Serialize)]
@@ -480,7 +480,7 @@ mod hash_manifests {
     }
 
     /// The bytes the hasher would serialize for the given contents, which is
-    /// what a stored hash manifest blob must contain.
+    /// what a stored hash fingerprint blob must contain.
     fn envelope<T: Serialize>(contents: &[T]) -> Vec<u8> {
         format!(
             "[{}]",
@@ -497,7 +497,7 @@ mod hash_manifests {
     async fn stores_a_blob_addressed_by_the_returned_digest() {
         // The returned digest is handed back to the caller as an action digest,
         // so it must actually address the bytes that were stored — otherwise the
-        // manifest would point at a blob nobody can resolve.
+        // task manifest would point at a blob nobody can resolve.
         let backend = MemoryBackend::new("mem");
         let blobs = Arc::clone(&backend.blobs);
 
@@ -505,7 +505,7 @@ mod hash_manifests {
         storage.add_local_backend(backend);
 
         let digest = storage
-            .store_hash_manifest("task", fingerprint())
+            .store_hash_fingerprint("task", fingerprint())
             .await
             .unwrap();
 
@@ -514,7 +514,7 @@ mod hash_manifests {
             .unwrap()
             .get(&digest)
             .cloned()
-            .expect("hash manifest was stored as a blob");
+            .expect("hash fingerprint was stored as a blob");
 
         assert_eq!(Digest::from_bytes(&stored).unwrap(), digest);
         assert_eq!(digest.size, stored.len() as i64);
@@ -522,7 +522,7 @@ mod hash_manifests {
 
     #[tokio::test]
     async fn stores_the_hasher_envelope_not_the_raw_content() {
-        // A hash manifest is the hasher's serialized form (contents wrapped in a
+        // A hash fingerprint is the hasher's serialized form (contents wrapped in a
         // JSON array), not the bare content, since that's what the hash is
         // computed over.
         let backend = MemoryBackend::new("mem");
@@ -532,7 +532,7 @@ mod hash_manifests {
         storage.add_local_backend(backend);
 
         let digest = storage
-            .store_hash_manifest("task", fingerprint())
+            .store_hash_fingerprint("task", fingerprint())
             .await
             .unwrap();
 
@@ -543,12 +543,12 @@ mod hash_manifests {
     }
 
     #[tokio::test]
-    async fn stored_manifest_is_retrievable_as_an_object() {
+    async fn stored_fingerprint_is_retrievable_as_an_object() {
         let mut storage = create_storage();
         storage.add_local_backend(MemoryBackend::new("mem"));
 
         let digest = storage
-            .store_hash_manifest("task", fingerprint())
+            .store_hash_fingerprint("task", fingerprint())
             .await
             .unwrap();
 
@@ -573,15 +573,15 @@ mod hash_manifests {
         storage.add_local_backend(MemoryBackend::new("mem"));
 
         let one = storage
-            .store_hash_manifest("task", fingerprint())
+            .store_hash_fingerprint("task", fingerprint())
             .await
             .unwrap();
         let two = storage
-            .store_hash_manifest("task", fingerprint())
+            .store_hash_fingerprint("task", fingerprint())
             .await
             .unwrap();
         let other = storage
-            .store_hash_manifest(
+            .store_hash_fingerprint(
                 "task",
                 Fingerprint {
                     command: "test",
@@ -606,11 +606,11 @@ mod hash_manifests {
         storage.add_local_backend(backend);
 
         let one = storage
-            .store_hash_manifest("task", fingerprint())
+            .store_hash_fingerprint("task", fingerprint())
             .await
             .unwrap();
         let two = storage
-            .store_hash_manifest("project", fingerprint())
+            .store_hash_fingerprint("project", fingerprint())
             .await
             .unwrap();
 
@@ -633,7 +633,7 @@ mod hash_manifests {
         hasher.hash_content("extra").unwrap();
 
         let digest = storage
-            .store_hash_manifest_with_hasher(hasher)
+            .store_hash_fingerprint_with_hasher(hasher)
             .await
             .unwrap();
 
@@ -661,7 +661,7 @@ mod hash_manifests {
         storage.add_local_backend(backend);
 
         let digest = storage
-            .store_hash_manifest_with_hasher(ContentHasher::new("task"))
+            .store_hash_fingerprint_with_hasher(ContentHasher::new("task"))
             .await
             .unwrap();
 
@@ -688,7 +688,7 @@ mod hash_manifests {
         storage.add_local_backend(b);
 
         let digest = storage
-            .store_hash_manifest("task", fingerprint())
+            .store_hash_fingerprint("task", fingerprint())
             .await
             .unwrap();
 
@@ -701,7 +701,7 @@ mod hash_manifests {
     }
 }
 
-mod hash_manifest_lookups {
+mod hash_fingerprint_lookups {
     use super::*;
 
     /// Mirrors how `moon hash` resolves an abbreviated hash: ask each readable
@@ -728,24 +728,24 @@ mod hash_manifest_lookups {
     }
 
     #[tokio::test]
-    async fn reports_a_stored_manifest_as_present() {
+    async fn reports_a_stored_fingerprint_as_present() {
         let mut storage = create_storage();
         storage.add_local_backend(MemoryBackend::new("local"));
 
         let digest = storage
-            .store_hash_manifest("task", fingerprint())
+            .store_hash_fingerprint("task", fingerprint())
             .await
             .unwrap();
 
-        assert!(storage.has_hash_manifest(&digest).await);
+        assert!(storage.has_hash_fingerprint(&digest).await);
     }
 
     #[tokio::test]
-    async fn reports_an_unknown_manifest_as_absent() {
+    async fn reports_an_unknown_fingerprint_as_absent() {
         let mut storage = create_storage();
         storage.add_local_backend(MemoryBackend::new("local"));
 
-        assert!(!storage.has_hash_manifest(&digest('a', 0)).await);
+        assert!(!storage.has_hash_fingerprint(&digest('a', 0)).await);
     }
 
     #[tokio::test]
@@ -755,7 +755,7 @@ mod hash_manifest_lookups {
         // was already handled.
         let storage = create_storage();
 
-        assert!(!storage.has_hash_manifest(&digest('a', 0)).await);
+        assert!(!storage.has_hash_fingerprint(&digest('a', 0)).await);
     }
 
     #[tokio::test]
@@ -766,7 +766,7 @@ mod hash_manifest_lookups {
         let mut storage = create_storage();
         storage.add_local_backend(unreadable);
 
-        assert!(!storage.has_hash_manifest(&digest).await);
+        assert!(!storage.has_hash_fingerprint(&digest).await);
     }
 
     #[tokio::test]
@@ -776,7 +776,7 @@ mod hash_manifest_lookups {
         let mut storage = create_storage();
         storage.add_local_backend(MemoryBackend::new("local").failing_find_missing());
 
-        assert!(!storage.has_hash_manifest(&digest('a', 0)).await);
+        assert!(!storage.has_hash_fingerprint(&digest('a', 0)).await);
     }
 
     #[tokio::test]
@@ -788,28 +788,28 @@ mod hash_manifest_lookups {
         storage.add_local_backend(MemoryBackend::new("healthy"));
 
         let digest = storage
-            .store_hash_manifest("task", fingerprint())
+            .store_hash_fingerprint("task", fingerprint())
             .await
             .unwrap();
 
-        assert!(storage.has_hash_manifest(&digest).await);
+        assert!(storage.has_hash_fingerprint(&digest).await);
     }
 
     #[tokio::test]
-    async fn loads_a_stored_manifests_bytes_back() {
+    async fn loads_a_stored_fingerprints_bytes_back() {
         let mut storage = create_storage();
         storage.add_local_backend(MemoryBackend::new("local"));
 
         let digest = storage
-            .store_hash_manifest("task", fingerprint())
+            .store_hash_fingerprint("task", fingerprint())
             .await
             .unwrap();
 
         let bytes = storage
-            .load_hash_manifest(&digest)
+            .load_hash_fingerprint(&digest)
             .await
             .unwrap()
-            .expect("the manifest reads back")
+            .expect("the fingerprint reads back")
             .read_bytes()
             .unwrap();
 
@@ -830,10 +830,10 @@ mod hash_manifest_lookups {
         storage.add_local_backend(seeded);
 
         let bytes = storage
-            .load_hash_manifest(&digest)
+            .load_hash_fingerprint(&digest)
             .await
             .unwrap()
-            .expect("the manifest reads back")
+            .expect("the fingerprint reads back")
             .read_bytes()
             .unwrap();
 
@@ -841,13 +841,13 @@ mod hash_manifest_lookups {
     }
 
     #[tokio::test]
-    async fn loading_an_unknown_manifest_is_none() {
+    async fn loading_an_unknown_fingerprint_is_none() {
         let mut storage = create_storage();
         storage.add_local_backend(MemoryBackend::new("local"));
 
         assert!(
             storage
-                .load_hash_manifest(&digest('a', 0))
+                .load_hash_fingerprint(&digest('a', 0))
                 .await
                 .unwrap()
                 .is_none()
@@ -860,7 +860,7 @@ mod hash_manifest_lookups {
         storage.add_local_backend(MemoryBackend::new("local"));
 
         let digest = storage
-            .store_hash_manifest("task", fingerprint())
+            .store_hash_fingerprint("task", fingerprint())
             .await
             .unwrap();
 
@@ -876,7 +876,7 @@ mod hash_manifest_lookups {
         storage.add_local_backend(MemoryBackend::new("local"));
 
         storage
-            .store_hash_manifest("task", fingerprint())
+            .store_hash_fingerprint("task", fingerprint())
             .await
             .unwrap();
 
@@ -885,7 +885,7 @@ mod hash_manifest_lookups {
 
     #[tokio::test]
     async fn reports_a_prefix_match_once_per_backend() {
-        // The same manifest in two backends comes back twice. Callers that
+        // The same fingerprint in two backends comes back twice. Callers that
         // treat "more than one result" as an ambiguous abbreviation must
         // collapse duplicate digests first, or a second backend would make
         // every lookup ambiguous.
@@ -894,7 +894,7 @@ mod hash_manifest_lookups {
         storage.add_local_backend(MemoryBackend::new("local-b"));
 
         let digest = storage
-            .store_hash_manifest("task", fingerprint())
+            .store_hash_fingerprint("task", fingerprint())
             .await
             .unwrap();
 

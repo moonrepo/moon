@@ -54,7 +54,7 @@ impl StorageBackend for LocalObjectsStorage {
         true
     }
 
-    /// Nothing references objects (like hash manifests) the way task manifests
+    /// Nothing references objects (like hash fingerprints) the way task manifests
     /// reference blobs, so they're removed once older than the lifetime.
     async fn gc(&self, lifetime: Duration) -> miette::Result<BlobCleanStats> {
         self.objects.gc(lifetime).await

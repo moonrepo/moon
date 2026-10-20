@@ -1139,7 +1139,7 @@ mod exec {
             let state: TaskRunCacheState = json::read_file(cache_path).unwrap();
 
             assert!(get_task_manifest_path(sandbox.path(), &state.hash).exists());
-            // The hash manifest is in the local objects store, which shards
+            // The hash fingerprint is in the local objects store, which shards
             // objects by the first 2 chars of their hash.
             assert!(
                 sandbox
@@ -2907,7 +2907,7 @@ tasks:
 
             let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFile");
 
-            // hash manifest, stored in the local objects store
+            // hash fingerprint, stored in the local objects store
             assert!(
                 sandbox
                     .path()

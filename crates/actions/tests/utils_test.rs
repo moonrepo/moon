@@ -24,7 +24,7 @@ fn create_workspace() -> (Sandbox, Arc<AppContext>) {
 }
 
 /// The digest an action's fingerprint hashes to, so tests can ask storage
-/// whether the manifest that marks it done was written.
+/// whether the fingerprint that marks it done was written.
 fn fingerprint_digest(action: &Action, fingerprint: &TestFingerprint) -> Digest {
     let mut hasher = ContentHasher::new(action.get_prefix());
     hasher.hash_content(fingerprint).unwrap();
@@ -32,7 +32,7 @@ fn fingerprint_digest(action: &Action, fingerprint: &TestFingerprint) -> Digest 
     Digest::from_hasher(&mut hasher).unwrap()
 }
 
-async fn has_hash_manifest(
+async fn has_hash_fingerprint(
     app_context: &AppContext,
     action: &Action,
     fingerprint: &TestFingerprint,
@@ -40,7 +40,7 @@ async fn has_hash_manifest(
     app_context
         .cache_engine
         .objects_storage
-        .has_hash_manifest(&fingerprint_digest(action, fingerprint))
+        .has_hash_fingerprint(&fingerprint_digest(action, fingerprint))
         .await
 }
 
@@ -53,8 +53,8 @@ mod hash_locks {
     use super::*;
 
     #[tokio::test]
-    async fn stores_no_hash_manifest_when_dropped_without_persisting() {
-        // The manifest marks the action as done, so it must only be written once
+    async fn stores_no_hash_fingerprint_when_dropped_without_persisting() {
+        // The fingerprint marks the action as done, so it must only be written once
         // the action actually succeeded. A lock dropped without persisting (a
         // failed or killed action) must leave nothing behind, or the next run
         // would skip work that never happened.
@@ -72,15 +72,15 @@ mod hash_locks {
         .unwrap()
         .unwrap();
 
-        assert!(!has_hash_manifest(&app_context, &action, &fingerprint).await);
+        assert!(!has_hash_fingerprint(&app_context, &action, &fingerprint).await);
 
         drop(lock);
 
-        assert!(!has_hash_manifest(&app_context, &action, &fingerprint).await);
+        assert!(!has_hash_fingerprint(&app_context, &action, &fingerprint).await);
     }
 
     #[tokio::test]
-    async fn stores_the_hash_manifest_on_persist_and_then_short_circuits() {
+    async fn stores_the_hash_fingerprint_on_persist_and_then_short_circuits() {
         let (_, app_context) = create_workspace();
         let fingerprint = TestFingerprint { input: "success" };
         let mut action = Action::default();
@@ -95,12 +95,12 @@ mod hash_locks {
         .unwrap()
         .unwrap();
 
-        lock.persist_hash_manifest(&app_context.cache_engine.objects_storage)
+        lock.persist_hash_fingerprint(&app_context.cache_engine.objects_storage)
             .await
             .unwrap();
         drop(lock);
 
-        assert!(has_hash_manifest(&app_context, &action, &fingerprint).await);
+        assert!(has_hash_fingerprint(&app_context, &action, &fingerprint).await);
 
         // Having run once, the same fingerprint is now a no-op.
         assert!(
@@ -114,7 +114,7 @@ mod hash_locks {
     }
 
     #[tokio::test]
-    async fn does_not_save_hash_manifest_when_lock_creation_fails() {
+    async fn does_not_save_hash_fingerprint_when_lock_creation_fails() {
         let (_, app_context) = create_workspace();
         let fingerprint = TestFingerprint {
             input: "lock-failure",
@@ -143,7 +143,7 @@ mod hash_locks {
             .await
             .is_err()
         );
-        assert!(!has_hash_manifest(&app_context, &action, &fingerprint).await);
+        assert!(!has_hash_fingerprint(&app_context, &action, &fingerprint).await);
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -191,13 +191,13 @@ mod hash_locks {
         assert!(checked_rx.recv_timeout(Duration::from_millis(100)).is_err());
 
         sandbox.create_file("vendor/dependency", "installed");
-        lock.persist_hash_manifest(&app_context.cache_engine.objects_storage)
+        lock.persist_hash_fingerprint(&app_context.cache_engine.objects_storage)
             .await
             .unwrap();
         drop(lock);
 
         assert!(handle.await.unwrap());
         assert!(checked_rx.recv_timeout(Duration::from_secs(1)).is_ok());
-        assert!(has_hash_manifest(&app_context, &action, &fingerprint).await);
+        assert!(has_hash_fingerprint(&app_context, &action, &fingerprint).await);
     }
 }

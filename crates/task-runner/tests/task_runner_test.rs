@@ -1319,7 +1319,7 @@ mod task_runner {
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn creates_a_manifest_file() {
+        async fn creates_a_fingerprint_file() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             container.sandbox.enable_git();
 

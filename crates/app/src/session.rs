@@ -245,7 +245,7 @@ impl MoonSession {
             let mut engine = CacheEngine::new(context.clone())?;
 
             // Always register the local backends: they're the home for task
-            // outputs (actions) and hash manifests (objects), which every run
+            // outputs (actions) and hash fingerprints (objects), which every run
             // depends on.
             engine.actions_storage.add_local_backend(LocalStorage::new(
                 context.clone(),

@@ -30,16 +30,16 @@ pub async fn hash(session: MoonSession, args: HashArgs) -> SessionResult {
     Ok(None)
 }
 
-/// Resolve a full or abbreviated hash to a stored hash manifest, then read it
-/// back out of the local CAS.
-async fn load_hash_manifest(
+/// Resolve a full or abbreviated hash to a stored hash fingerprint, then read it
+/// back out of the objects storage.
+async fn load_hash_fingerprint(
     session: &MoonSession,
     partial_hash: &str,
 ) -> miette::Result<(String, String, JsonValue)> {
     let cache_engine = session.get_cache_engine()?;
     let mut digests = FxHashSet::default();
 
-    debug!(hash = partial_hash, "Finding hash manifest");
+    debug!(hash = partial_hash, "Finding hash fingerprint");
 
     for backend in cache_engine.objects_storage.get_backends() {
         if backend.is_readable() {
@@ -48,31 +48,31 @@ async fn load_hash_manifest(
     }
 
     if digests.len() > 1 {
-        return Err(AppError::AmbiguousHashManifest(partial_hash.to_owned()).into());
+        return Err(AppError::AmbiguousHashFingerprint(partial_hash.to_owned()).into());
     }
 
     let Some(digest) = digests.into_iter().next() else {
-        return Err(AppError::MissingHashManifest(partial_hash.to_owned()).into());
+        return Err(AppError::MissingHashFingerprint(partial_hash.to_owned()).into());
     };
 
     debug!(
         hash = partial_hash,
         name = digest.hash.as_str(),
-        "Found hash manifest"
+        "Found hash fingerprint"
     );
 
     let Some(blob) = cache_engine
         .objects_storage
-        .load_hash_manifest(&digest)
+        .load_hash_fingerprint(&digest)
         .await?
     else {
-        return Err(AppError::MissingHashManifest(partial_hash.to_owned()).into());
+        return Err(AppError::MissingHashFingerprint(partial_hash.to_owned()).into());
     };
 
     // The blob store is keyed by content, so a prefix can in principle land on
-    // a blob that isn't a hash manifest. Reject that rather than printing it.
+    // a blob that isn't a hash fingerprint. Reject that rather than printing it.
     let data: JsonValue = serde_json::from_slice(&blob.read_bytes()?)
-        .map_err(|_| AppError::MissingHashManifest(partial_hash.to_owned()))?;
+        .map_err(|_| AppError::MissingHashFingerprint(partial_hash.to_owned()))?;
 
     // Our cache is non-pretty, but we wan't to output as pretty,
     // so we need to manually convert it here!
@@ -80,7 +80,7 @@ async fn load_hash_manifest(
 }
 
 async fn view_hash(session: &MoonSession, partial_hash: &str, as_json: bool) -> miette::Result<()> {
-    let (hash, manifest, _) = load_hash_manifest(session, partial_hash).await?;
+    let (hash, fingerprint, _) = load_hash_fingerprint(session, partial_hash).await?;
     let console = &session.console;
 
     if !as_json {
@@ -90,7 +90,7 @@ async fn view_hash(session: &MoonSession, partial_hash: &str, as_json: bool) -> 
         console.out.write_newline()?;
     }
 
-    console.out.write_line(manifest)?;
+    console.out.write_line(fingerprint)?;
 
     Ok(())
 }
@@ -111,10 +111,10 @@ async fn diff_hashes(
     partial_right_hash: &str,
     as_json: bool,
 ) -> miette::Result<()> {
-    let (left_hash, left_manifest, left_data) =
-        load_hash_manifest(session, partial_left_hash).await?;
-    let (right_hash, right_manifest, right_data) =
-        load_hash_manifest(session, partial_right_hash).await?;
+    let (left_hash, left_fingerprint, left_data) =
+        load_hash_fingerprint(session, partial_left_hash).await?;
+    let (right_hash, right_fingerprint, right_data) =
+        load_hash_fingerprint(session, partial_right_hash).await?;
     let console = &session.console;
 
     if as_json {
@@ -126,7 +126,7 @@ async fn diff_hashes(
             ..Default::default()
         };
 
-        for (line, diff) in diff::lines(&left_manifest, &right_manifest)
+        for (line, diff) in diff::lines(&left_fingerprint, &right_fingerprint)
             .into_iter()
             .enumerate()
         {
@@ -153,7 +153,7 @@ async fn diff_hashes(
 
         let is_tty = console.out.is_terminal();
 
-        for diff in diff::lines(&left_manifest, &right_manifest) {
+        for diff in diff::lines(&left_fingerprint, &right_fingerprint) {
             match diff {
                 diff::Result::Left(l) => {
                     if is_tty {

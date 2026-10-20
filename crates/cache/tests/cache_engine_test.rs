@@ -372,18 +372,18 @@ mod cache_engine {
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn removes_stale_hash_manifests() {
+        async fn removes_stale_hash_fingerprints() {
             let sandbox = create_empty_sandbox();
             let engine = create_engine_with_backends(&sandbox);
 
             let stale = engine
                 .objects_storage
-                .store_hash_manifest("task", "stale")
+                .store_hash_fingerprint("task", "stale")
                 .await
                 .unwrap();
             let fresh = engine
                 .objects_storage
-                .store_hash_manifest("task", "fresh")
+                .store_hash_fingerprint("task", "fresh")
                 .await
                 .unwrap();
 
@@ -397,19 +397,19 @@ mod cache_engine {
 
             assert_eq!(files_deleted, 1);
             assert_eq!(bytes_saved, stale.size as u64);
-            assert!(!engine.objects_storage.has_hash_manifest(&stale).await);
-            assert!(engine.objects_storage.has_hash_manifest(&fresh).await);
+            assert!(!engine.objects_storage.has_hash_fingerprint(&stale).await);
+            assert!(engine.objects_storage.has_hash_fingerprint(&fresh).await);
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn keeps_hash_manifests_when_not_cleaning_all() {
+        async fn keeps_hash_fingerprints_when_not_cleaning_all() {
             // The cleanup that runs after a pipeline only clears stale locks.
             let sandbox = create_empty_sandbox();
             let engine = create_engine_with_backends(&sandbox);
 
             let stale = engine
                 .objects_storage
-                .store_hash_manifest("task", "stale")
+                .store_hash_fingerprint("task", "stale")
                 .await
                 .unwrap();
 
@@ -420,7 +420,7 @@ mod cache_engine {
 
             engine.clean_stale_cache("7 days", false).await.unwrap();
 
-            assert!(engine.objects_storage.has_hash_manifest(&stale).await);
+            assert!(engine.objects_storage.has_hash_fingerprint(&stale).await);
         }
     }
 }

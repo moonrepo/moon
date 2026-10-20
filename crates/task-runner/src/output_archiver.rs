@@ -227,7 +227,7 @@ impl OutputArchiver<'_> {
             .app_context
             .cache_engine
             .objects_storage
-            .load_hash_manifest(&state.digest)
+            .load_hash_fingerprint(&state.digest)
             .await?
         {
             packer.inherit_source(&state.digest, blob)?;

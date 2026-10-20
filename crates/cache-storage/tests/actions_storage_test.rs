@@ -393,7 +393,7 @@ mod storage {
 
     #[tokio::test]
     async fn archives_the_manifests_digest_source() {
-        // The action digest addresses the fingerprint hash manifest. The caller
+        // The action digest addresses the fingerprint hash fingerprint. The caller
         // supplies it as the manifest's `digest_source`, and it must be uploaded
         // to the CAS alongside the outputs so an RE-compliant backend can
         // resolve the action result.

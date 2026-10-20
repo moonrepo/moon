@@ -166,7 +166,7 @@ pub async fn setup_environment(
             .collect(),
     )?;
 
-    lock.persist_hash_manifest(&cache_engine.objects_storage)
+    lock.persist_hash_fingerprint(&cache_engine.objects_storage)
         .await?;
 
     Ok(if skipped {

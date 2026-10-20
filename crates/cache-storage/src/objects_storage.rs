@@ -103,7 +103,7 @@ impl ObjectsStorage {
         Ok(())
     }
 
-    pub async fn store_hash_manifest<T: Serialize>(
+    pub async fn store_hash_fingerprint<T: Serialize>(
         &self,
         label: &str,
         content: T,
@@ -111,30 +111,29 @@ impl ObjectsStorage {
         let mut hasher = ContentHasher::new(label);
         hasher.hash_content(content)?;
 
-        self.store_hash_manifest_with_hasher(hasher).await
+        self.store_hash_fingerprint_with_hasher(hasher).await
     }
 
-    pub async fn store_hash_manifest_with_hasher(
+    pub async fn store_hash_fingerprint_with_hasher(
         &self,
         mut hasher: ContentHasher,
     ) -> miette::Result<Digest> {
         let digest = Digest::from_hasher(&mut hasher)?;
 
-        debug!(label = hasher.label, "Storing hash manifest (local only)");
+        debug!(
+            label = hasher.label,
+            "Storing hash fingerprint (local only)"
+        );
 
         let data = hasher.into_bytes();
-
-        // This writes inline rather than queueing a background task: the very
-        // next thing to happen may be another action (or another process
-        // waiting on the same lock) asking whether this hash was stored, and it
-        // has to see it. They're small and local, so there's nothing to gain by
-        // deferring them.
-        let input = Blob::new(digest.clone(), data).into_input();
 
         for backend in &self.backends {
             if backend.is_writable() {
                 Arc::clone(backend)
-                    .store_blobs_batched(digest.clone(), vec![input.clone()])
+                    .store_blobs_batched(
+                        digest.clone(),
+                        vec![Blob::new(digest.clone(), data.clone()).into_input()],
+                    )
                     .await?;
             }
         }
@@ -142,7 +141,7 @@ impl ObjectsStorage {
         Ok(digest)
     }
 
-    pub async fn has_hash_manifest(&self, digest: &Digest) -> bool {
+    pub async fn has_hash_fingerprint(&self, digest: &Digest) -> bool {
         for backend in &self.backends {
             if !backend.is_readable() {
                 continue;
@@ -159,7 +158,7 @@ impl ObjectsStorage {
                         storage = backend.get_id().as_str(),
                         hash = digest.hash.as_str(),
                         error = format_error_chain(&error),
-                        "Failed to check for a hash manifest, assuming it is missing"
+                        "Failed to check for a hash fingerprint, assuming it is missing"
                     );
                 }
             }
@@ -168,7 +167,10 @@ impl ObjectsStorage {
         false
     }
 
-    pub async fn load_hash_manifest(&self, digest: &Digest) -> miette::Result<Option<BlobContent>> {
+    pub async fn load_hash_fingerprint(
+        &self,
+        digest: &Digest,
+    ) -> miette::Result<Option<BlobContent>> {
         Ok(self
             .retrieve_object(digest.to_owned())
             .await?

@@ -331,9 +331,9 @@ mod plugin_commands {
     mod cache {
         use super::*;
 
-        /// Hash manifests are stored in the local objects store, which shards
+        /// Hash fingerprints are stored in the local objects store, which shards
         /// objects by the first 2 chars of their hash. Nothing else is stored
-        /// in these tests, so every object here is a hash manifest.
+        /// in these tests, so every object here is a hash fingerprint.
         fn get_hashes(root: &Path) -> Vec<PathBuf> {
             let mut paths = fs::read_dir(root.join(".moon/cache/objects"))
                 .unwrap()

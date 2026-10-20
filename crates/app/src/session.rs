@@ -255,7 +255,7 @@ impl MoonSession {
             )?);
 
             engine
-                .storage
+                .objects_storage
                 .add_local_backend(LocalObjectsStorage::new(context.clone())?);
 
             if context.remote_config.is_enabled() {

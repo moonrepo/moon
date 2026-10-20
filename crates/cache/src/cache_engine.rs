@@ -2,7 +2,7 @@ use crate::file_hasher::FileHasher;
 use crate::state_engine::StateEngine;
 use crate::{merge_clean_results, resolve_path};
 use moon_cache_item::*;
-use moon_cache_storage::{CacheContext, Storage};
+use moon_cache_storage::{ActionsStorage, CacheContext, ObjectsStorage};
 use moon_common::path::{WorkspaceRelativePathBuf, encode_component};
 use moon_env_var::GlobalEnvBag;
 use moon_hash::{ContentHasher, Digest};
@@ -31,7 +31,9 @@ pub struct CacheEngine {
     pub state: StateEngine,
 
     /// A content-addressable storage with multiple backends.
-    pub storage: Storage,
+    pub storage: ActionsStorage,
+
+    pub objects_storage: ObjectsStorage,
 
     /// A temporary directory for random artifacts.
     pub temp_dir: PathBuf,
@@ -83,7 +85,8 @@ impl CacheEngine {
         Ok(CacheEngine {
             file_hasher: FileHasher::default(),
             state: StateEngine::new(dir)?,
-            storage: Storage::new(context.clone()),
+            storage: ActionsStorage::new(context.clone()),
+            objects_storage: ObjectsStorage::new(context.clone()),
             temp_dir: dir.join("temp"),
             cache_dir: dir.to_owned(),
             mode: get_cache_mode(),
@@ -204,10 +207,12 @@ impl CacheEngine {
 
         // If the hash manifest exists, then it has ran before,
         // otherwise run and write the manifest
-        if !self.storage.has_hash_manifest(&digest).await {
+        if !self.objects_storage.has_hash_manifest(&digest).await {
             let result = op(digest.hash.as_str()).await?;
 
-            self.storage.store_hash_manifest_with_hasher(hasher).await?;
+            self.objects_storage
+                .store_hash_manifest_with_hasher(hasher)
+                .await?;
 
             return Ok(Some(result));
         }

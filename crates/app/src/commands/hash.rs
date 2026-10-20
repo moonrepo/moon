@@ -41,7 +41,7 @@ async fn load_hash_manifest(
 
     debug!(hash = partial_hash, "Finding hash manifest");
 
-    for backend in cache_engine.storage.get_local_backends() {
+    for backend in cache_engine.objects_storage.get_backends() {
         if backend.is_readable() {
             digests.extend(backend.find_blobs_by_prefix(partial_hash).await?);
         }
@@ -61,7 +61,11 @@ async fn load_hash_manifest(
         "Found hash manifest"
     );
 
-    let Some(blob) = cache_engine.storage.load_hash_manifest(&digest).await? else {
+    let Some(blob) = cache_engine
+        .objects_storage
+        .load_hash_manifest(&digest)
+        .await?
+    else {
         return Err(AppError::MissingHashManifest(partial_hash.to_owned()).into());
     };
 

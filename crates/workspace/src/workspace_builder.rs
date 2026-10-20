@@ -176,7 +176,7 @@ impl WorkspaceBuilder {
 
                 context
                     .cache_engine
-                    .storage
+                    .objects_storage
                     .store_hash_manifest_with_hasher(hasher)
                     .await?;
 
@@ -211,7 +211,7 @@ impl WorkspaceBuilder {
         // Only store the final manifest, as the hash may have been regenerated
         let digest = context
             .cache_engine
-            .storage
+            .objects_storage
             .store_hash_manifest_with_hasher(hasher)
             .await?;
 

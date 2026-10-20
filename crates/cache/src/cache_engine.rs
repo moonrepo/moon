@@ -20,6 +20,10 @@ use tracing::{debug, instrument};
 
 #[derive(Debug)]
 pub struct CacheEngine {
+    /// A content-addressable storage with local and remote backends,
+    /// for caching action/task manifests and blobs.
+    pub actions_storage: ActionsStorage,
+
     /// The `.moon/cache` directory relative to workspace root.
     /// Contains cached items pertaining to runs and processes.
     pub cache_dir: PathBuf,
@@ -27,13 +31,12 @@ pub struct CacheEngine {
     /// Hashes file contents, and memoizes them for the process.
     pub file_hasher: FileHasher,
 
+    /// A key-value storage with a local backend for caching objects,
+    /// hashes, states, and more.
+    pub objects_storage: ObjectsStorage,
+
     /// Manages states of projects, tasks, tools, and more.
     pub state: StateEngine,
-
-    /// A content-addressable storage with multiple backends.
-    pub storage: ActionsStorage,
-
-    pub objects_storage: ObjectsStorage,
 
     /// A temporary directory for random artifacts.
     pub temp_dir: PathBuf,
@@ -85,7 +88,7 @@ impl CacheEngine {
         Ok(CacheEngine {
             file_hasher: FileHasher::default(),
             state: StateEngine::new(dir)?,
-            storage: ActionsStorage::new(context.clone()),
+            actions_storage: ActionsStorage::new(context.clone()),
             objects_storage: ObjectsStorage::new(context.clone()),
             temp_dir: dir.join("temp"),
             cache_dir: dir.to_owned(),
@@ -139,7 +142,7 @@ impl CacheEngine {
         }
 
         if all {
-            let storage_result = self.storage.clean(duration).await?;
+            let storage_result = self.actions_storage.clean(duration).await?;
 
             result.files_deleted += storage_result.blobs_removed;
             result.bytes_saved += storage_result.bytes_saved;

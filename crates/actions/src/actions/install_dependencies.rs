@@ -252,7 +252,8 @@ pub async fn install_dependencies(
 
     finalize_action_operations(action, &toolchain, setup_op, output.operations, vec![])?;
 
-    lock.persist_hash_manifest(&cache_engine.storage).await?;
+    lock.persist_hash_manifest(&cache_engine.objects_storage)
+        .await?;
 
     Ok(if skipped {
         ActionStatus::Skipped

@@ -166,7 +166,8 @@ pub async fn setup_environment(
             .collect(),
     )?;
 
-    lock.persist_hash_manifest(&cache_engine.storage).await?;
+    lock.persist_hash_manifest(&cache_engine.objects_storage)
+        .await?;
 
     Ok(if skipped {
         ActionStatus::Skipped

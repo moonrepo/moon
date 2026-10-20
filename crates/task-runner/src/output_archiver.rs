@@ -93,7 +93,7 @@ impl OutputArchiver<'_> {
             } else {
                 self.app_context
                     .cache_engine
-                    .storage
+                    .actions_storage
                     .with_options(StorageOptions {
                         include_local: use_local,
                         include_remote: use_remote,
@@ -226,7 +226,7 @@ impl OutputArchiver<'_> {
         if let Some(blob) = self
             .app_context
             .cache_engine
-            .storage
+            .objects_storage
             .load_hash_manifest(&state.digest)
             .await?
         {

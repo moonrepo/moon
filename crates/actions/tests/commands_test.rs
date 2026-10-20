@@ -331,11 +331,11 @@ mod plugin_commands {
     mod cache {
         use super::*;
 
-        /// Hash manifests are stored as blobs in the local CAS, which shards
+        /// Hash manifests are stored in the local objects store, which shards
         /// objects by the first 2 chars of their hash. Nothing else is stored
         /// in these tests, so every object here is a hash manifest.
         fn get_hashes(root: &Path) -> Vec<PathBuf> {
-            let mut paths = fs::read_dir(root.join(".moon/cache/blobs"))
+            let mut paths = fs::read_dir(root.join(".moon/cache/objects"))
                 .unwrap()
                 .filter_map(|dir| {
                     let shard = dir.unwrap().path();

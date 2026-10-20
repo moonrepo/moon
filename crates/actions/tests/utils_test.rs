@@ -39,7 +39,7 @@ async fn has_hash_manifest(
 ) -> bool {
     app_context
         .cache_engine
-        .storage
+        .objects_storage
         .has_hash_manifest(&fingerprint_digest(action, fingerprint))
         .await
 }
@@ -95,13 +95,7 @@ mod hash_locks {
         .unwrap()
         .unwrap();
 
-        lock.persist_hash_manifest(&app_context.cache_engine.storage)
-            .await
-            .unwrap();
-        app_context
-            .cache_engine
-            .storage
-            .wait_for_background_tasks()
+        lock.persist_hash_manifest(&app_context.cache_engine.objects_storage)
             .await
             .unwrap();
         drop(lock);
@@ -197,13 +191,7 @@ mod hash_locks {
         assert!(checked_rx.recv_timeout(Duration::from_millis(100)).is_err());
 
         sandbox.create_file("vendor/dependency", "installed");
-        lock.persist_hash_manifest(&app_context.cache_engine.storage)
-            .await
-            .unwrap();
-        app_context
-            .cache_engine
-            .storage
-            .wait_for_background_tasks()
+        lock.persist_hash_manifest(&app_context.cache_engine.objects_storage)
             .await
             .unwrap();
         drop(lock);

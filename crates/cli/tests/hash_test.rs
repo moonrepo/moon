@@ -2,11 +2,11 @@ use moon_test_utils::{create_empty_moon_sandbox, predicates::prelude::*};
 use starbase_sandbox::{Sandbox, assert_snapshot};
 use std::fs;
 
-/// Hash manifests live in the local CAS, which shards objects by the first 2
-/// chars of their 64-char hash. Tests seed them directly so they can address a
-/// manifest by an abbreviated hash the way a user does.
+/// Hash manifests live in the local objects store, which shards them by the
+/// first 2 chars of their 64-char hash. Tests seed them directly so they can
+/// address a manifest by an abbreviated hash the way a user does.
 fn seed_manifest(sandbox: &Sandbox, hash: &str, contents: &str) {
-    let dir = sandbox.path().join(".moon/cache/blobs").join(&hash[0..2]);
+    let dir = sandbox.path().join(".moon/cache/objects").join(&hash[0..2]);
 
     fs::create_dir_all(&dir).unwrap();
     fs::write(dir.join(&hash[2..]), contents).unwrap();

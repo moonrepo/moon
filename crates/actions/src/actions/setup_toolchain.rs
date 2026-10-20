@@ -145,7 +145,8 @@ pub async fn setup_toolchain(
             .collect(),
     )?;
 
-    lock.persist_hash_manifest(&cache_engine.storage).await?;
+    lock.persist_hash_manifest(&cache_engine.objects_storage)
+        .await?;
 
     Ok(if output.installed {
         ActionStatus::Passed

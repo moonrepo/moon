@@ -119,7 +119,7 @@ impl OutputHydrater<'_> {
                     manifest = self
                         .app_context
                         .cache_engine
-                        .storage
+                        .actions_storage
                         .with_options(StorageOptions {
                             include_local: use_local,
                             include_remote: use_remote,

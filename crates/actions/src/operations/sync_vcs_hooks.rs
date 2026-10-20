@@ -20,7 +20,7 @@ pub async fn sync_vcs_hooks(app_context: &AppContext, force: bool) -> miette::Re
 
         app_context
             .cache_engine
-            .storage
+            .objects_storage
             .store_hash_manifest("vcs-hooks", fingerprint)
             .await?;
 

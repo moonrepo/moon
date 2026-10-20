@@ -1,6 +1,6 @@
 use moon_action::{Action, ActionStatus, Operation};
 use moon_app_context::AppContext;
-use moon_cache_storage::ActionsStorage;
+use moon_cache::ObjectsStorage;
 use moon_env_var::GlobalEnvBag;
 use moon_hash::{ContentHasher, Digest};
 use serde::Serialize;
@@ -25,7 +25,7 @@ impl HashLock {
         &self.digest
     }
 
-    pub async fn persist_hash_manifest(&mut self, storage: &ActionsStorage) -> miette::Result<()> {
+    pub async fn persist_hash_manifest(&mut self, storage: &ObjectsStorage) -> miette::Result<()> {
         if let Some(hasher) = self.pending.take() {
             storage.store_hash_manifest_with_hasher(hasher).await?;
         }
@@ -94,7 +94,7 @@ pub async fn create_hash_and_return_lock_if_changed(
     if !should_force()
         && app_context
             .cache_engine
-            .storage
+            .objects_storage
             .has_hash_manifest(&digest)
             .await
     {

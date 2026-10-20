@@ -351,7 +351,7 @@ impl<'task> TaskRunner<'task> {
             match self
                 .app_context
                 .cache_engine
-                .storage
+                .actions_storage
                 .with_options(StorageOptions {
                     include_local: self.state.local_cache_readable,
                     include_remote: self.state.remote_cache_readable,
@@ -435,7 +435,7 @@ impl<'task> TaskRunner<'task> {
 
         // Generate the digest and store values
         let digest = cache_engine
-            .storage
+            .objects_storage
             .store_hash_manifest_with_hasher(hasher)
             .await?;
 

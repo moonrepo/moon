@@ -618,12 +618,12 @@ tasks:
 
             assert!(!state.last_hash.as_str().is_empty());
 
-            // The hash manifest is a blob in the local CAS, which
+            // The hash manifest is in the local objects store, which
             // shards objects by the first 2 chars of their hash.
             assert!(
                 sandbox
                     .path()
-                    .join(".moon/cache/blobs")
+                    .join(".moon/cache/objects")
                     .join(&state.last_hash.as_str()[0..2])
                     .join(&state.last_hash.as_str()[2..])
                     .exists()
@@ -886,7 +886,8 @@ tasks:
                 let state = load_state(&sandbox);
                 let mut blobs = vec![];
 
-                for shard in std::fs::read_dir(sandbox.path().join(".moon/cache/blobs")).unwrap() {
+                for shard in std::fs::read_dir(sandbox.path().join(".moon/cache/objects")).unwrap()
+                {
                     let shard = shard.unwrap();
 
                     for blob in std::fs::read_dir(shard.path()).unwrap() {

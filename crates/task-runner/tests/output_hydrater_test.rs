@@ -72,7 +72,7 @@ mod output_hydrater {
             container
                 .app_context
                 .cache_engine
-                .storage
+                .actions_storage
                 .load_task_manifest(&state.digest)
                 .await
                 .unwrap()

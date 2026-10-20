@@ -21,6 +21,7 @@ moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_exec_plan = { path = "../exec-plan" }
 moon_graph_utils = { path = "../graph-utils" }
+moon_layout_graph = { path = "../layout-graph" }
 moon_pdk_api = { path = "../pdk-api" }
 moon_project = { path = "../project" }
 moon_task = { path = "../task" }

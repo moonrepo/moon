@@ -6,12 +6,14 @@
 //! Requests are only recorded, and all of the work happens in [`ActionGraphBuilder::build`]:
 //!
 //! 1. Select the task instances and project syncs that exist, and how they
-//!    relate, as an event log ([`select`]).
+//!    relate, as an event log ([`select`]), then place the toolchains that
+//!    they install dependencies for into the layout graph ([`place`]).
 //! 2. Replay the events to assemble the nodes and edges, resolving each task's
-//!    provisioning actions along the way, then 3. add the edges that depend on
-//!    the whole graph, and 4. freeze it ([`assemble`]).
+//!    provisioning actions from the layout along the way, then 3. add the edges
+//!    that depend on the whole graph, and 4. freeze it ([`assemble`]).
 
 mod assemble;
+mod place;
 mod select;
 
 use crate::action_graph::ActionGraph;
@@ -26,7 +28,7 @@ use moon_exec_plan::{ExecutionPlan, TargetsBlock};
 use moon_project::Project;
 use moon_query::build_query;
 use moon_task::{Target, TargetLocator, Task};
-use moon_toolchain::ToolchainSpec;
+use moon_toolchain::{ToolchainSpec, get_toolchain_spec};
 use moon_workspace_graph::WorkspaceGraph;
 use petgraph::graph::NodeIndex;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -57,10 +59,11 @@ pub(crate) fn get_spec(
     toolchain_id: &Id,
     project: Option<&Project>,
 ) -> Option<ToolchainSpec> {
-    match project {
-        Some(project) => get_project_spec(app_context, toolchain_id, project),
-        None => get_workspace_spec(app_context, toolchain_id),
-    }
+    get_toolchain_spec(
+        &app_context.toolchains_config,
+        toolchain_id,
+        project.map(|project| &project.config),
+    )
 }
 
 /// The spec of a toolchain for a project, which may override its version, or
@@ -70,20 +73,7 @@ pub(crate) fn get_project_spec(
     toolchain_id: &Id,
     project: &Project,
 ) -> Option<ToolchainSpec> {
-    if let Some(config) = project.config.toolchains.get_plugin_config(toolchain_id) {
-        if !config.is_enabled() {
-            return None;
-        }
-
-        if let Some(version) = config.get_version() {
-            return Some(ToolchainSpec::new(
-                toolchain_id.to_owned(),
-                version.to_owned(),
-            ));
-        }
-    }
-
-    get_workspace_spec(app_context, toolchain_id)
+    get_spec(app_context, toolchain_id, Some(project))
 }
 
 /// The spec of a configured toolchain.
@@ -91,13 +81,7 @@ pub(crate) fn get_workspace_spec(
     app_context: &AppContext,
     toolchain_id: &Id,
 ) -> Option<ToolchainSpec> {
-    app_context
-        .toolchains_config
-        .get_plugin_config(toolchain_id)
-        .map(|config| match &config.version {
-            Some(version) => ToolchainSpec::new(toolchain_id.to_owned(), version.to_owned()),
-            None => ToolchainSpec::new_global(toolchain_id.to_owned()),
-        })
+    get_spec(app_context, toolchain_id, None)
 }
 
 /// The result of a build.
@@ -411,10 +395,18 @@ impl ActionGraphBuilder {
         }
 
         let mut plan = selector.finish();
+        let layout = place::place(
+            &self.app_context,
+            &self.workspace_graph,
+            &self.options,
+            &plan,
+        )
+        .await?;
         let assembled = assemble::assemble(
             &self.app_context,
             &self.workspace_graph,
             &self.options,
+            &layout,
             &mut plan,
         )
         .await?;
@@ -482,7 +474,7 @@ impl ActionGraphBuilder {
 
         Ok(BuildOutput {
             context,
-            graph: assembled.graph,
+            graph: assembled.graph.with_layout_graph(Arc::new(layout)),
             report,
         })
     }

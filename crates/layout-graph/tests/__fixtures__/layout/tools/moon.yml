@@ -1,0 +1,4 @@
+tasks:
+  gen:
+    command: 'gen'
+    toolchain: 'tc-tier2'

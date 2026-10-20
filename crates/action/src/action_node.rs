@@ -14,6 +14,12 @@ pub struct InstallDependenciesNode {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub members: Option<Vec<String>>,
 
+    /// The project at the root of a dependencies workspace, whose toolchain
+    /// config the action runs with, without passing it to the plugin as the
+    /// project, as the action is for the whole workspace.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub owner_project_id: Option<Id>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub project_id: Option<Id>,
 
@@ -25,6 +31,12 @@ pub struct InstallDependenciesNode {
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SetupEnvironmentNode {
+    /// The project at the root of a dependencies workspace, whose toolchain
+    /// config the action runs with, without passing it to the plugin as the
+    /// project, as the action is for the whole workspace.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub owner_project_id: Option<Id>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub project_id: Option<Id>,
 

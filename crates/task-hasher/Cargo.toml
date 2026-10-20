@@ -17,10 +17,12 @@ moon_config = { path = "../config" }
 moon_env_var = { path = "../env-var" }
 moon_feature_flags = { path = "../feature-flags" }
 moon_hash = { path = "../hash" }
+moon_layout_graph = { path = "../layout-graph" }
 moon_pdk_api = { path = "../pdk-api" }
 moon_process = { path = "../process" }
 moon_project = { path = "../project" }
 moon_task = { path = "../task" }
+moon_toolchain = { path = "../toolchain" }
 moon_toolchain_plugin = { path = "../toolchain-plugin" }
 moon_vcs = { path = "../vcs" }
 miette = { workspace = true }

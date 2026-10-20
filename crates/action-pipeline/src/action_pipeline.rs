@@ -210,6 +210,7 @@ impl ActionPipeline {
             result_sender: sender,
             semaphore: Arc::new(Semaphore::new(self.concurrency)),
             running_jobs: Arc::new(RwLock::new(FxHashMap::default())),
+            layout_graph: Arc::clone(action_graph.get_layout_graph()),
             workspace_graph: self.workspace_graph.clone(),
         };
 

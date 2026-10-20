@@ -21,6 +21,7 @@ use moon_daemon::{DaemonClient, DaemonConnector};
 use moon_env::MoonEnvironment;
 use moon_env_var::GlobalEnvBag;
 use moon_extension_plugin::*;
+use moon_layout_graph::LayoutGraphBuilder;
 use moon_plugin::MoonHostData;
 use moon_process::ProcessRegistry;
 use moon_project_graph::ProjectGraph;
@@ -132,6 +133,13 @@ impl MoonSession {
             workspace_graph,
             options,
         ))
+    }
+
+    pub async fn build_layout_graph(&self) -> miette::Result<LayoutGraphBuilder> {
+        let app_context = self.get_app_context().await?;
+        let workspace_graph = self.get_workspace_graph().await?;
+
+        Ok(LayoutGraphBuilder::new(app_context, workspace_graph))
     }
 
     pub fn build_code_generator(&self) -> CodeGenerator<'_> {

@@ -17,6 +17,7 @@ moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_console = { path = "../console" }
 moon_daemon_client = { path = "../daemon-client" }
+moon_layout_graph = { path = "../layout-graph" }
 moon_notifier = { path = "../notifier" }
 moon_process = { path = "../process" }
 moon_project = { path = "../project" }

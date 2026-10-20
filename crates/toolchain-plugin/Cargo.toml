@@ -37,6 +37,7 @@ tracing = { workspace = true }
 moon_bench_utils = { path = "../bench-utils" }
 moon_test_utils = { path = "../test-utils" }
 criterion = { workspace = true }
+serde_json = { workspace = true }
 starbase_sandbox = { workspace = true }
 tokio = { workspace = true }
 

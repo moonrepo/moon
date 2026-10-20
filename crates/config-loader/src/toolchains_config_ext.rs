@@ -137,8 +137,9 @@ impl ToolchainsConfigExt {
 
             match id.as_str() {
                 #[cfg(debug_assertions)]
-                "tc-tier1" | "tc-tier2" | "tc-tier2-reqs" | "tc-tier2-setup-env" | "tc-tier3"
-                | "tc-tier3-reqs" | "tc-tier3-setup-env" | "tc-tier3-tool" => {
+                "tc-tier1" | "tc-tier2" | "tc-tier2-batch" | "tc-tier2-reqs"
+                | "tc-tier2-setup-env" | "tc-tier3" | "tc-tier3-reqs" | "tc-tier3-setup-env"
+                | "tc-tier3-tool" => {
                     use proto_core::{UnresolvedVersionSpec, warpgate::find_debug_locator};
 
                     config.plugin = Some(

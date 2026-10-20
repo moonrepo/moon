@@ -2,6 +2,7 @@ use crate::abort_state::AbortState;
 use crate::event_emitter::EventEmitter;
 use moon_action::Action;
 use moon_daemon_client::DaemonClient;
+use moon_layout_graph::LayoutGraph;
 use moon_workspace_graph::WorkspaceGraph;
 use petgraph::graph::NodeIndex;
 use rustc_hash::FxHashMap;
@@ -58,6 +59,10 @@ pub struct JobContext {
 
     /// Acquires a permit for concurrency
     pub semaphore: Arc<Semaphore>,
+
+    /// Where the toolchains of the graph's actions were placed (their
+    /// dependencies roots), for use within actions
+    pub layout_graph: Arc<LayoutGraph>,
 
     /// The project and task graphs, for use within actions
     pub workspace_graph: Arc<WorkspaceGraph>,

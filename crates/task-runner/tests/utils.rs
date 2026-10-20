@@ -12,6 +12,7 @@ use moon_daemon_server::{DaemonService, DaemonState, serve_unix};
 use moon_daemon_utils::endpoint::{get_endpoint, get_sock_path};
 use moon_env_var::GlobalEnvBag;
 use moon_hash::Digest;
+use moon_layout_graph::{LayoutGraph, LayoutGraphBuilder};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
@@ -37,11 +38,12 @@ pub struct TaskRunnerContainer {
     pub sandbox: Sandbox,
     pub app_context: Arc<AppContext>,
     pub env_bag: GlobalEnvBag,
+    pub layout_graph: Arc<LayoutGraph>,
     pub project: Arc<Project>,
     pub project_id: String,
     pub task: Arc<Task>,
     pub task_id: String,
-    pub workspace_graph: WorkspaceGraph,
+    pub workspace_graph: Arc<WorkspaceGraph>,
 }
 
 impl TaskRunnerContainer {
@@ -60,17 +62,27 @@ impl TaskRunnerContainer {
             mocker = mocker.with_test_extensions();
         }
 
-        let app_context = mocker.mock_app_context();
-        let workspace_graph = mocker.mock_workspace_graph().await;
+        let app_context = Arc::new(mocker.mock_app_context());
+        let workspace_graph = Arc::new(mocker.mock_workspace_graph().await);
         let project = workspace_graph.get_project(project_id).unwrap();
         let task = workspace_graph
             .get_task_from_project(project_id, task_id)
             .unwrap();
 
+        // Place the project's toolchains, like the action graph does
+        let mut layout_builder =
+            LayoutGraphBuilder::new(Arc::clone(&app_context), Arc::clone(&workspace_graph));
+
+        layout_builder
+            .place_project(Arc::clone(&project))
+            .await
+            .unwrap();
+
         Self {
             sandbox,
-            app_context: Arc::new(app_context),
+            app_context,
             env_bag: GlobalEnvBag::default(),
+            layout_graph: Arc::new(layout_builder.build()),
             workspace_graph,
             project,
             project_id: project_id.to_owned(),
@@ -291,7 +303,14 @@ impl TaskRunnerContainer {
     }
 
     pub fn create_runner(&self) -> TaskRunner<'_> {
-        TaskRunner::new(&self.app_context, &self.project, &self.task, None).unwrap()
+        TaskRunner::new(
+            &self.app_context,
+            &self.layout_graph,
+            &self.project,
+            &self.task,
+            None,
+        )
+        .unwrap()
     }
 
     pub fn create_action_node(&self) -> ActionNode {

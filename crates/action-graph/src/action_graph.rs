@@ -3,10 +3,11 @@ use graph_cycles::Cycles;
 use moon_action::ActionNode;
 use moon_config::TaskDependencyType;
 use moon_graph_utils::*;
+use moon_layout_graph::LayoutGraph;
 use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 use tracing::debug;
 
 pub type ActionGraphType = DiGraph<ActionNode, TaskDependencyType>;
@@ -18,6 +19,10 @@ pub struct ActionGraph {
     // Tracked separately so that they can be located without having to scan
     // every edge in the graph.
     cleanup_indices: FxHashSet<NodeIndex>,
+
+    // Where the toolchains of the graph's actions were placed (their
+    // dependencies roots), which actions read while running.
+    layout_graph: Arc<LayoutGraph>,
 
     // Index of every node, for looking up a node's index from the node itself.
     // Only the graph traits need it, so it's created on first use.
@@ -38,8 +43,19 @@ impl ActionGraph {
         ActionGraph {
             graph,
             cleanup_indices,
+            layout_graph: Arc::new(LayoutGraph::default()),
             node_indices: OnceLock::new(),
         }
+    }
+
+    /// Set the layout graph that the graph's toolchains were placed in.
+    pub fn with_layout_graph(mut self, layout_graph: Arc<LayoutGraph>) -> Self {
+        self.layout_graph = layout_graph;
+        self
+    }
+
+    pub fn get_layout_graph(&self) -> &Arc<LayoutGraph> {
+        &self.layout_graph
     }
 
     pub fn is_empty(&self) -> bool {

@@ -65,7 +65,9 @@ api_struct!(
         pub root: VirtualPath,
 
         /// Workspace and project merged toolchain configuration,
-        /// with the latter taking precedence.
+        /// with the latter taking precedence. The project is the one at
+        /// the root, which for a dependencies workspace is its root
+        /// project (if there is one), which isn't passed as `project`.
         pub toolchain_config: serde_json::Value,
     }
 );
@@ -123,6 +125,39 @@ api_struct!(
 );
 
 api_struct!(
+    /// Input passed to the `locate_dependencies_roots` function, which
+    /// locates the root of many directories in a single call, instead of
+    /// a `locate_dependencies_root` call for each. When implemented, it's
+    /// used instead of `locate_dependencies_root` for locating the roots
+    /// of projects, while `locate_dependencies_root` is still required.
+    pub struct LocateDependenciesRootsInput {
+        /// Current moon context.
+        pub context: MoonContext,
+
+        /// The starting directories in which to locate a root each.
+        /// These are typically project roots.
+        pub starting_dirs: Vec<VirtualPath>,
+
+        /// Workspace and project merged toolchain configuration, with the
+        /// latter taking precedence, which is the same for every starting
+        /// directory. Directories with different configuration are located
+        /// in separate calls.
+        pub toolchain_config: serde_json::Value,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `locate_dependencies_roots` function.
+    #[serde(default)]
+    pub struct LocateDependenciesRootsOutput {
+        /// The located root of each starting directory, in the same order
+        /// as the starting directories, and with the same length. Return
+        /// a default output for a directory without a root.
+        pub roots: Vec<LocateDependenciesRootOutput>,
+    }
+);
+
+api_struct!(
     /// Input passed to the `install_dependencies` function.
     /// Requires `locate_dependencies_root`.
     pub struct InstallDependenciesInput {
@@ -144,7 +179,9 @@ api_struct!(
         pub root: VirtualPath,
 
         /// Workspace and project merged toolchain configuration,
-        /// with the latter taking precedence.
+        /// with the latter taking precedence. The project is the one at
+        /// the root, which for a dependencies workspace is its root
+        /// project (if there is one), which isn't passed as `project`.
         pub toolchain_config: serde_json::Value,
     }
 );

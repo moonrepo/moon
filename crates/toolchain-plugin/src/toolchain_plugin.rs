@@ -4,7 +4,9 @@ use moon_config::is_glob_like;
 use moon_config::schematic::Schema;
 use moon_config::schematic::schema::indexmap::IndexSet;
 use moon_pdk_api::*;
-use moon_plugin::{Plugin, PluginContainer, PluginRegistration, PluginType, inherit_path_methods};
+use moon_plugin::{
+    Plugin, PluginContainer, PluginError, PluginRegistration, PluginType, inherit_path_methods,
+};
 use moon_toolchain::{DependenciesWorkspace, DependenciesWorkspaceRole};
 use proto_core::flow::detect::Detector;
 use proto_core::flow::install::InstallOptions;
@@ -594,15 +596,69 @@ impl ToolchainPlugin {
                 .cache_func_with("locate_dependencies_root", input)
                 .await?;
 
-            if let Some(root) = output.root {
-                return Ok(Some(DependenciesWorkspace {
-                    root: self.to_real_path(&root).to_path_buf(),
-                    members: output.members,
-                }));
-            }
+            return Ok(self.to_dependencies_workspace(output));
         }
 
         Ok(None)
+    }
+
+    /// Locate the dependencies root of each starting directory, which share
+    /// the same config, in the same order. Calls `locate_dependencies_roots`
+    /// once if the plugin supports it, otherwise `locate_dependencies_root`
+    /// for each directory.
+    #[instrument(skip(self, input), fields(count = input.starting_dirs.len()))]
+    pub async fn locate_dependencies_roots(
+        &self,
+        input: LocateDependenciesRootsInput,
+    ) -> miette::Result<Vec<Option<DependenciesWorkspace>>> {
+        if !self.has_func("locate_dependencies_roots").await {
+            let LocateDependenciesRootsInput {
+                context,
+                starting_dirs,
+                toolchain_config,
+            } = input;
+
+            return futures::future::try_join_all(starting_dirs.into_iter().map(|starting_dir| {
+                self.locate_dependencies_root(LocateDependenciesRootInput {
+                    context: context.clone(),
+                    starting_dir,
+                    toolchain_config: toolchain_config.clone(),
+                })
+            }))
+            .await;
+        }
+
+        let expected = input.starting_dirs.len();
+        let output: LocateDependenciesRootsOutput = self
+            .cache_func_with("locate_dependencies_roots", input)
+            .await?;
+
+        if output.roots.len() != expected {
+            return Err(PluginError::MismatchedOutputs {
+                id: self.id.to_string(),
+                ty: PluginType::Toolchain,
+                func: "locate_dependencies_roots".into(),
+                expected,
+                actual: output.roots.len(),
+            }
+            .into());
+        }
+
+        Ok(output
+            .roots
+            .into_iter()
+            .map(|output| self.to_dependencies_workspace(output))
+            .collect())
+    }
+
+    fn to_dependencies_workspace(
+        &self,
+        output: LocateDependenciesRootOutput,
+    ) -> Option<DependenciesWorkspace> {
+        output.root.map(|root| DependenciesWorkspace {
+            root: self.to_real_path(&root).to_path_buf(),
+            members: output.members,
+        })
     }
 
     #[instrument(skip(self))]

@@ -21,4 +21,19 @@ pub enum PluginError {
     )]
     #[error("The {} plugin {} does not exist.", .ty.get_label(), .id.style(Style::Id))]
     UnknownId { id: String, ty: PluginType },
+
+    #[diagnostic(code(plugin::mismatched_outputs))]
+    #[error(
+        "The {} plugin {} returned {actual} results from {}, but {expected} were expected, one for each input.",
+        .ty.get_label(),
+        .id.style(Style::Id),
+        .func.style(Style::Property),
+    )]
+    MismatchedOutputs {
+        id: String,
+        ty: PluginType,
+        func: String,
+        expected: usize,
+        actual: usize,
+    },
 }

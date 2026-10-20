@@ -74,17 +74,26 @@ pub async fn setup_environment(
     };
 
     let project = match &node.project_id {
-        Some(project_id) => {
-            let project = workspace_graph.get_project(project_id)?;
-
-            input.project = Some(project.to_fragment());
-            input.toolchain_config =
-                toolchain_registry.create_merged_config(&toolchain.id, &project.config);
-
-            Some(project)
-        }
+        Some(project_id) => Some(workspace_graph.get_project(project_id)?),
         None => None,
     };
+
+    // The config is the project's, or the owner's of a dependencies workspace,
+    // which isn't passed to the plugin, as the environment is for the workspace
+    let config_project = match (&project, &node.owner_project_id) {
+        (Some(project), _) => Some(Arc::clone(project)),
+        (None, Some(owner_id)) => Some(workspace_graph.get_project(owner_id)?),
+        (None, None) => None,
+    };
+
+    if let Some(project) = &project {
+        input.project = Some(project.to_fragment());
+    }
+
+    if let Some(config_project) = &config_project {
+        input.toolchain_config =
+            toolchain_registry.create_merged_config(&toolchain.id, &config_project.config);
+    }
 
     let output = toolchain.setup_environment(input.clone()).await?;
 

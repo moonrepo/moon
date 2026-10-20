@@ -5,9 +5,11 @@ node, every edge between nodes, and the conditions under which each node and edg
 
 Written on 2026-10-15 against `develop-3.0` at `6a680da217`, then updated on `3.0-ag-new` for the
 toolchain setup fixes, and again on 2026-10-16 for the new builder (see
-[todo/ACTION_GRAPH_BUILDER.md](./todo/ACTION_GRAPH_BUILDER.md)). Line references are as of that
-update, and will drift. This describes the behavior of the code, which is the spec: where something
-looks surprising, it's called out in [Notes](#notes) instead of being described as the intent.
+[todo/ACTION_GRAPH_BUILDER.md](./todo/ACTION_GRAPH_BUILDER.md)), and on 2026-10-17 for dependencies
+roots resolved from the layout graph (see [todo/LAYOUT_GRAPH.md](./todo/LAYOUT_GRAPH.md)). Line
+references are as of that update, and will drift. This describes the behavior of the code, which is
+the spec: where something looks surprising, it's called out in [Notes](#notes) instead of being
+described as the intent.
 
 Source files:
 
@@ -16,6 +18,9 @@ Source files:
   stages.
 - [builder/select.rs](../crates/action-graph/src/builder/select.rs): which task instances and
   project syncs exist, and the gates they pass.
+- [builder/place.rs](../crates/action-graph/src/builder/place.rs): which (project, toolchain) pairs
+  are placed into the [layout graph](../crates/layout-graph/src/layout_graph.rs), which locates
+  their dependencies roots.
 - [builder/assemble.rs](../crates/action-graph/src/builder/assemble.rs): every node and edge
   insertion, and provisioning resolution.
 - [action_graph.rs](../crates/action-graph/src/action_graph.rs): the built graph, cycle detection,
@@ -50,8 +55,13 @@ which side declared the relationship; see [Cleanup](#cleanup-task-dependencies).
 and so on), and nothing happens until `build()`
 ([builder/mod.rs](../crates/action-graph/src/builder/mod.rs)). The build selects the task instances
 and project syncs that exist, applying their gates, as an event log
-([select.rs](../crates/action-graph/src/builder/select.rs)). Then it replays the events to insert
-nodes and link edges, resolving each task's provisioning actions right before the task
+([select.rs](../crates/action-graph/src/builder/select.rs)). Then it places the toolchains of every
+selected task (even ones that don't install dependencies, as task hashes include them), and of every
+install request, into the layout graph, which locates their dependencies roots concurrently
+([place.rs](../crates/action-graph/src/builder/place.rs)). The built graph carries the layout
+(`ActionGraph::get_layout_graph`), which the pipeline passes to actions through its `JobContext`, so
+the task hasher reads the same roots. Then it replays the events to insert nodes and link edges,
+resolving each task's provisioning actions from the layout right before the task
 ([assemble.rs](../crates/action-graph/src/builder/assemble.rs)). Then it adds the edges that depend
 on the whole graph (project syncs, present dependencies, and serial ordering). A graph that's asked
 to run one task contains only that task, its dependencies, and the setup chain they need. Nodes are
@@ -113,7 +123,7 @@ the toolchain supports. See [InstallDependencies](#installdependencies).
 
 Syncs the workspace (config schemas, codeowners, VCS hooks, and toolchain and extension
 `sync_workspace` hooks), and runs before nearly everything else.
-[sync_workspace](../crates/action-graph/src/builder/assemble.rs#L343).
+[sync_workspace](../crates/action-graph/src/builder/assemble.rs#L413).
 
 - **Exists when** `options.sync_workspace` is true (`pipeline.syncWorkspace`, default `true`), and
   something asks for it: another node links to it, `moon sync`, or `moon run`/`ci`/`check`/`exec` in
@@ -122,7 +132,7 @@ Syncs the workspace (config schemas, codeowners, VCS hooks, and toolchain and ex
 
 ### SetupProto
 
-Installs proto itself. [setup_proto](../crates/action-graph/src/builder/assemble.rs#L351).
+Installs proto itself. [setup_proto](../crates/action-graph/src/builder/assemble.rs#L421).
 
 - **Identity:** `proto.version` from `.moon/toolchains.yml`, so a singleton in practice.
 - **Exists when** a `SetupToolchain` node links to it, or `moon setup` inserts it directly.
@@ -131,7 +141,7 @@ Installs proto itself. [setup_proto](../crates/action-graph/src/builder/assemble
 ### SetupToolchain
 
 Downloads and installs a toolchain's tool (tier 3).
-[internal_setup_toolchain](../crates/action-graph/src/builder/assemble.rs#L367).
+[internal_setup_toolchain](../crates/action-graph/src/builder/assemble.rs#L448).
 
 - **Identity:** the `ToolchainSpec`, the toolchain id plus its version requirement. Projects that
   override a toolchain's version (`toolchains.<id>.version` in `moon.yml`) get their own node per
@@ -158,10 +168,11 @@ Downloads and installs a toolchain's tool (tier 3).
 ### SetupEnvironment
 
 Prepares a toolchain's environment in a dependencies root, before dependencies are installed.
-[internal_setup_environment](../crates/action-graph/src/builder/assemble.rs#L449).
+[internal_setup_environment](../crates/action-graph/src/builder/assemble.rs#L530).
 
-- **Identity:** toolchain id, root (workspace-relative, empty for the workspace root), and an
-  optional project id.
+- **Identity:** toolchain id and root (workspace-relative, empty for the workspace root). The node
+  also has an optional project id, which is derived from the root (its owner project, for a package
+  root), so it isn't part of the identity.
 - **Exists when all of:**
   - `options.setup_environment` is enabled for the toolchain id (always true, except for
     `exec --no-actions` and the `sync projects` command);
@@ -171,8 +182,8 @@ Prepares a toolchain's environment in a dependencies root, before dependencies a
     environment setup, **or** the environment of a toolchain it requires exists;
   - something asks for it: the [install slot](#installdependencies), the environment of a toolchain
     that requires it (see below), or `moon setup` via `setup_environment_root`, which additionally
-    requires that the located dependencies root is the workspace root
-    ([setup_environment_root](../crates/action-graph/src/builder/assemble.rs#L567)).
+    requires that the workspace's placement in the layout graph is the workspace root
+    ([setup_environment_root](../crates/action-graph/src/builder/assemble.rs#L647)).
 - **Outgoing edges** (all `Required`):
 
   | To                             | When                                                                                                                                                                                                                                                               |
@@ -190,49 +201,59 @@ Prepares a toolchain's environment in a dependencies root, before dependencies a
   environments are linked with `link_environment_edges`, which skips an edge that would form a
   cycle, as toolchains may require each other (like Python and uv): the one reached first wins.
 
-  Edges are linked on every request, even when the node already exists. The toolchain version isn't
-  part of its identity, so projects that share a dependencies root but override the version each add
-  their own `SetupToolchain`, and the environment waits for all of them.
+  The environment is set up with its root's spec, and resolved with its root's owner project (the
+  project at the root, including an overridden version): a package root's project, which is also the
+  node's `project_id`, or a dependencies workspace's root project, which is only its
+  `owner_project_id`, as the environment is for the whole workspace, and isn't passed to the plugin
+  as its project. Without an owner, it's the workspace's version and config. A project that
+  overrides the version of a shared root doesn't change the environment's edges, as its version is
+  only needed to run its own tasks (see [RunTask](#runtask)).
 
 ### InstallDependencies
 
 Installs a toolchain's dependencies in a dependencies root (tier 2).
-[install_dependencies](../crates/action-graph/src/builder/assemble.rs#L612).
+[install_dependencies](../crates/action-graph/src/builder/assemble.rs#L693).
 
 This is the "install slot" for a toolchain. It's asked for once per toolchain of a task (or of a
 project, for `docker setup`), and it always returns the most specific node that exists for that
 toolchain, inserting the chain beneath it as it goes. The caller links to whatever comes back.
 
-- **Identity:** toolchain id, root (the located dependencies root, workspace-relative), the
-  workspace `members` globs, and an optional project id. The project id is only set when the
-  dependencies root is a lone package (no members) and is the project's own root (role
-  `PackageRoot`), so that project-level toolchain config reaches the plugin. In a dependencies
-  workspace (members), every project that resolves to the same root collapses into **one** node.
+- **Identity:** toolchain id and root (the located dependencies root, workspace-relative). The node
+  also has the workspace `members` globs and an optional project id, which are derived from the
+  root, so they aren't part of the identity. The project id is only set when the dependencies root
+  is a lone package (no members), and is its owner project, so that project-level toolchain config
+  reaches the plugin. In a dependencies workspace (members), every project that resolves to the same
+  root collapses into **one** node.
 - **Resolution**, in order. The first matching row decides what the slot returns:
 
   | #   | Condition                                                                                                                                                     | Returns                                                       |
   | :-- | :------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------ |
   | 1   | The spec is `system`                                                                                                                                          | `None`                                                        |
   | 2   | `options.install_dependencies` is disabled for the toolchain id (`pipeline.installDependencies`), or the toolchain's `installDependencies` setting is `false` | `SetupToolchain` (or `None` if that doesn't exist)            |
-  | 3   | The plugin doesn't support tier 2 (no `locate_dependencies_root`)                                                                                             | `SetupToolchain` (or `None`)                                  |
+  | 3   | The plugin doesn't support tier 2 (no `locate_dependencies_root`), so the project isn't placed in a root                                                      | `SetupToolchain` (or `None`)                                  |
   | 4   | `locate_dependencies_root` finds no root, or the project's root (workspace root when there's no project) isn't in that dependencies workspace                 | `SetupToolchain` (or `None`)                                  |
-  | 5   | The plugin exports `install_dependencies`                                                                                                                     | `InstallDependencies`                                         |
+  | 5   | The plugin exports `install_dependencies` (the root's capabilities)                                                                                           | `InstallDependencies`                                         |
   | 6   | Otherwise                                                                                                                                                     | `SetupEnvironment` if it exists, else `SetupToolchain`/`None` |
 
   "In that dependencies workspace" means the path is the root itself, or the root has `members` and
   the path relative to the root matches one of the member globs
-  ([toolchain_plugin.rs:177](../crates/toolchain-plugin/src/toolchain_plugin.rs#L177)).
+  ([toolchain_plugin.rs:199](../crates/toolchain-plugin/src/toolchain_plugin.rs#L199)). Rows 3 and 4
+  read the project's placement from the layout graph, which was located before assembly, so the
+  plugin isn't called again.
 
   Row 2 means disabling installs never disables toolchain setup: tasks still wait on the toolchain
-  being setup, but no `SetupEnvironment` is inserted for it. `SyncWorkspace` and `SetupToolchain`
-  are inserted (when enabled) before rows 3–6 are evaluated, and `SetupEnvironment` before rows 5–6,
-  so they exist even when the slot returns something else.
+  being setup, but no `SetupEnvironment` is inserted for it. `SyncWorkspace` is inserted (when
+  enabled) before rows 3–6 are evaluated, and the root's `SetupToolchain` and `SetupEnvironment`
+  before rows 5–6, so they exist even when the slot returns something else.
 
-- **Outgoing edges:** one `Required` edge per request, to the **first** of `SetupEnvironment`,
-  `SetupToolchain`, `SyncWorkspace` that exists (`link_first_available_edge`). The rest are reached
-  transitively, as `SetupEnvironment` already links to both. When requests that resolve to the same
-  node pass different versions of the toolchain (projects sharing a root that override it), and
-  there's no `SetupEnvironment`, each request links its own version's `SetupToolchain`.
+  Rows 5 and 6 run with the root's spec: the workspace's version for a dependencies workspace, and
+  the owner project's for a package root. When the requested spec differs (a project that overrides
+  the version of a shared root), the slot also returns `SetupToolchain(<requested>)`, which the
+  requester links itself, so the root's actions never wait on a version they don't run with.
+
+- **Outgoing edges:** one `Required` edge, to the **first** of `SetupEnvironment`,
+  `SetupToolchain(<root spec>)`, `SyncWorkspace` that exists (`link_first_available_edge`). The rest
+  are reached transitively, as `SetupEnvironment` already links to both.
 - In case 6, the returned `SetupEnvironment` is also linked to the first of `SetupToolchain`,
   `SyncWorkspace`. Both edges already exist from its own insertion, so this adds nothing.
 
@@ -243,7 +264,7 @@ located dependencies root is the workspace root, otherwise it returns `None`.
 
 Syncs a project through the `sync_project` hooks of its enabled toolchains and of extensions.
 [walk_sync_project](../crates/action-graph/src/builder/select.rs#L906) and
-[link_synced_projects](../crates/action-graph/src/builder/assemble.rs#L937).
+[link_synced_projects](../crates/action-graph/src/builder/assemble.rs#L1045).
 
 - **Identity:** project id.
 - **Exists when all of:**
@@ -299,11 +320,12 @@ Runs a task's command. [enter](../crates/action-graph/src/builder/select.rs#L679
 
 - **Outgoing edges** (excluding task dependencies, all `Required`):
 
-  | To                     | When                                                                                                                                                                                                                              |
-  | :--------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-  | `SyncProject(<owner>)` | The owning project's node exists after its gates. For a primary target, the project's affected check uses the run's requirements; for a dependency it's skipped.                                                                  |
-  | install slot, per id   | For each id in `task.toolchains` that resolves to a spec ([`get_project_spec`](../crates/action-graph/src/builder/mod.rs#L67)): not disabled in the project's `toolchains` config, with the project's version or the workspace's. |
-  | `SyncWorkspace`        | Fallback: only when none of the edges above exist, and `SyncWorkspace` is enabled.                                                                                                                                                |
+  | To                      | When                                                                                                                                                                                                                              |
+  | :---------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `SyncProject(<owner>)`  | The owning project's node exists after its gates. For a primary target, the project's affected check uses the run's requirements; for a dependency it's skipped.                                                                  |
+  | install slot, per id    | For each id in `task.toolchains` that resolves to a spec ([`get_project_spec`](../crates/action-graph/src/builder/mod.rs#L72)): not disabled in the project's `toolchains` config, with the project's version or the workspace's. |
+  | `SetupToolchain(<own>)` | The install slot is a root whose actions run with another version than the project's, like a member that overrides the version of a dependencies workspace.                                                                       |
+  | `SyncWorkspace`         | Fallback: only when none of the edges above exist, and `SyncWorkspace` is enabled.                                                                                                                                                |
 
   The fallback guarantees that every `RunTask` reaches `SyncWorkspace` when it's enabled, either
   directly or through one of its other edges.
@@ -341,7 +363,7 @@ also chains them, because a serial edge can be skipped for forming a cycle.
 ### Cleanup task dependencies
 
 When task `T` declares `deps: [{ target: C, type: cleanup }]`, `C` runs **after** `T`, so the edge
-is `C → T` with weight `Cleanup` ([replay](../crates/action-graph/src/builder/assemble.rs#L163)).
+is `C → T` with weight `Cleanup` ([replay](../crates/action-graph/src/builder/assemble.rs#L216)).
 It's linked by the caller that owns `T`'s index, after `T` is inserted, and it's skipped if a
 `Cleanup` edge already links the pair. `C` may also depend on `T` in another way (for example, a
 `required` dep); that's a separate edge with its own weight, and both are kept.
@@ -353,7 +375,7 @@ task.
 
 When a task sets `options.runDepsInParallel: false`, its `required` dependencies run one after
 another, and so does each dependency's whole task subtree
-([link_serial_required_edges](../crates/action-graph/src/builder/assemble.rs#L1135)). For
+([link_serial_required_edges](../crates/action-graph/src/builder/assemble.rs#L1283)). For
 dependencies `d1, d2, d3` in declared order, with `prev` the last required dependency so far and
 `prev_standard` the last required dependency that isn't persistent:
 

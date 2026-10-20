@@ -8,7 +8,7 @@ use moon_actions::operations::sync_pkl_schemas;
 use moon_api::Launchpad;
 use moon_app_context::AppContext;
 use moon_cache::{CacheContext, CacheEngine};
-use moon_cache_local::LocalStorage;
+use moon_cache_local::{LocalObjectsStorage, LocalStorage};
 use moon_cache_remote::{GrpcRemoteStorage, HttpRemoteStorage};
 use moon_codegen::CodeGenerator;
 use moon_common::{is_docker, is_formatted_output, is_test_env};
@@ -253,6 +253,10 @@ impl MoonSession {
                     .as_deref()
                     .unwrap_or(&context.cache_dir),
             )?);
+
+            engine
+                .storage
+                .add_local_backend(LocalObjectsStorage::new(context.clone())?);
 
             if context.remote_config.is_enabled() {
                 match context.remote_config.api {

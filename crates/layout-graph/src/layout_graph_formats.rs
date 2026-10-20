@@ -13,7 +13,8 @@ use std::fmt;
 /// A node of the layout graph, when it's rendered as a graph.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum LayoutNode {
-    /// The workspace root, which links to the roots of workspace bindings.
+    /// The workspace root, which the roots of workspace bindings link to, as
+    /// they're within it.
     Workspace,
     Root {
         toolchain: Id,
@@ -43,7 +44,9 @@ impl fmt::Display for LayoutNode {
     }
 }
 
-/// An edge from a project (or the workspace) to a root.
+/// An edge from what's within to what contains it: from a project to its
+/// root, or from a root to the workspace, labeled with the role of the
+/// project (or the workspace root) in the root.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum LayoutEdge {
     Role(DependenciesWorkspaceRole),
@@ -134,7 +137,9 @@ struct VisualizerGraph {
 
 impl LayoutGraph {
     /// Render the layout as a graph of projects and roots, where each edge
-    /// is a binding, labeled with its role.
+    /// is a binding, labeled with its role. Edges point from what's within
+    /// to what contains it: from a project to its root, and from a root at
+    /// the workspace root to the workspace.
     pub fn to_view(&self) -> LayoutGraphView {
         let mut graph = DiGraph::new();
         let workspace_index = graph.add_node(LayoutNode::Workspace);
@@ -162,7 +167,7 @@ impl LayoutGraph {
 
         for binding in &self.workspace_bindings {
             if let Some((root_index, edge)) = get_edge(binding) {
-                graph.add_edge(workspace_index, root_index, edge);
+                graph.add_edge(root_index, workspace_index, edge);
             }
         }
 

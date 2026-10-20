@@ -552,12 +552,12 @@ docker and queries, but not for every `moon run`.
 - **Install action:** keeps walking member globs for manifest hashing, as non-project packages
   matter. It can take `packages` from members when installs are scoped (docker today).
 - **Introspection (done, ahead of phase 5):** `moon layout-graph [id]` (`moon lg`) serves the
-  visualizer, with projects (and the workspace) linking to roots, labeled with their role, sent in
-  the visualizer's labeled format with a node `type` (`layout-workspace`, `layout-root`,
-  `layout-project`) that it styles by. `--info` prints every root with its fields and members, the
-  bindings that aren't in a root, and the workspace bindings. `--dot` renders the same graph, and
-  `--json` serializes the `LayoutGraph` itself. Diagnostics can go in `moon toolchain info` or
-  `moon check` later.
+  visualizer, with projects linking to roots (and a root at the workspace root linking to the
+  workspace, as it's within it), labeled with their role, sent in the visualizer's labeled format
+  with a node `type` (`layout-workspace`, `layout-root`, `layout-project`) that it styles by.
+  `--info` prints every root with its fields and members, the bindings that aren't in a root, and
+  the workspace bindings. `--dot` renders the same graph, and `--json` serializes the `LayoutGraph`
+  itself. Diagnostics can go in `moon toolchain info` or `moon check` later.
 
 ## Relationship to TOOLCHAIN_REQS.md
 

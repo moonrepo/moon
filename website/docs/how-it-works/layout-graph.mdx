@@ -103,9 +103,10 @@ known once a project in it has located it.
 ## Viewing the graph
 
 The [`moon layout-graph`](../commands/layout-graph) command serves an interactive graph of every
-root, with each project linking to the root that it belongs to, labeled with its role. Pass `--info`
-to print each root's kind, version, files, and projects, and the diagnostics, or a project ID to
-only place that project, like a run would.
+root, with each project linking to the root that it belongs to, labeled with its role, and a root
+at the workspace root linking to the workspace. Pass `--info` to print each root's kind, version,
+files, and projects, and the diagnostics, or a project ID to only place that project, like a run
+would.
 
 ```shell
 $ moon layout-graph --info

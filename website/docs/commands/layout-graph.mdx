@@ -58,7 +58,8 @@ $ moon layout-graph --json
 ## Example output
 
 The following output is an example of the graph in DOT format, where projects link to the root that
-they belong to, labeled with their role.
+they belong to, labeled with their role, and a root at the workspace root links to the workspace,
+as it's within it.
 
 ```dot
 digraph {
@@ -66,7 +67,7 @@ digraph {
     1 [ label="javascript @ ."]
     2 [ label="app"]
     3 [ label="tools"]
-    0 -> 1 [ label="workspace-root"]
+    1 -> 0 [ label="workspace-root"]
     2 -> 1 [ label="workspace-member"]
     3 -> 1 [ label="outside"]
 }

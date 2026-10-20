@@ -554,7 +554,7 @@ mod formats {
         assert_eq!(
             json["edges"],
             serde_json::json!([
-                { "id": "0 -> 1", "source": 0, "target": 1, "label": "workspace-root" },
+                { "id": "1 -> 0", "source": 1, "target": 0, "label": "workspace-root" },
                 { "id": "2 -> 1", "source": 2, "target": 1, "label": "workspace-member" },
                 { "id": "3 -> 1", "source": 3, "target": 1, "label": "outside" },
             ])

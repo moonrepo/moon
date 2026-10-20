@@ -17,7 +17,7 @@ digraph {
     10 [ label="standalone"]
     11 [ label="tools"]
     12 [ label="web"]
-    0 -> 1 [ label="workspace-root"]
+    1 -> 0 [ label="workspace-root"]
     4 -> 1 [ label="workspace-member"]
     5 -> 1 [ label="workspace-member"]
     6 -> 2 [ label="workspace-member"]

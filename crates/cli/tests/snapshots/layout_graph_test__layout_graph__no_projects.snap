@@ -1,0 +1,6 @@
+---
+source: crates/cli/tests/layout_graph_test.rs
+expression: assert.output()
+---
+
+No toolchains were placed into the layout graph.

@@ -1,0 +1,4 @@
+toolchains:
+  default: 'tc-tier2'
+  tc-tier2:
+    rootKey: true

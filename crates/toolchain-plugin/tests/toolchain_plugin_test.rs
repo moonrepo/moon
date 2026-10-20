@@ -1,7 +1,7 @@
 use moon_common::Id;
 use moon_pdk_api::{
     DefineRequirementsInput, ExtendTaskCommandInput, LocateDependenciesRootInput,
-    UnresolvedVersionSpec,
+    LocateDependenciesRootsInput, UnresolvedVersionSpec,
 };
 use moon_test_utils::WorkspaceMocker;
 use moon_toolchain::{DependenciesWorkspace, DependenciesWorkspaceRole};
@@ -248,6 +248,186 @@ mod toolchain_plugin {
             assert_eq!(results.len(), 1);
             assert_eq!(results[0].id, Id::raw("tc-tier2"));
             assert_eq!(results[0].output.members, Some(vec!["in".to_string()]));
+        }
+    }
+
+    mod locate_dependencies_roots {
+        use super::*;
+        use moon_plugin::PluginError;
+        use moon_toolchain_plugin::ToolchainRegistry;
+
+        // `tc.lock` roots, where `ws` is a workspace with `packages/*` members
+        fn create_roots_workspace(plugin_name: &str) -> (Sandbox, WorkspaceMocker) {
+            let sandbox = create_empty_sandbox();
+
+            sandbox.create_file("tc.lock", "");
+            sandbox.create_file("tc.root.cfg", "packages/*");
+            sandbox.create_file("packages/a/moon.yml", "");
+            sandbox.create_file("app/tc.lock", "");
+            sandbox.create_file("app/src/moon.yml", "");
+
+            let mocker = WorkspaceMocker::new(sandbox.path())
+                .with_test_toolchains()
+                .with_test_toolchain_from("tc-tier2", plugin_name);
+
+            (sandbox, mocker)
+        }
+
+        async fn locate(
+            registry: &ToolchainRegistry,
+            id: &str,
+            dirs: &[&std::path::Path],
+            toolchain_config: serde_json::Value,
+        ) -> miette::Result<Vec<Option<DependenciesWorkspace>>> {
+            let toolchain = registry.load(id).await.unwrap();
+
+            toolchain
+                .locate_dependencies_roots(LocateDependenciesRootsInput {
+                    context: registry.create_context(),
+                    starting_dirs: dirs
+                        .iter()
+                        .map(|dir| toolchain.to_virtual_path(dir))
+                        .collect(),
+                    toolchain_config,
+                })
+                .await
+        }
+
+        fn get_expected(sandbox: &Sandbox) -> Vec<Option<DependenciesWorkspace>> {
+            vec![
+                Some(DependenciesWorkspace {
+                    root: sandbox.path().join("app"),
+                    members: None,
+                }),
+                Some(DependenciesWorkspace {
+                    root: sandbox.path().to_path_buf(),
+                    members: Some(vec!["packages/*".into()]),
+                }),
+                Some(DependenciesWorkspace {
+                    root: sandbox.path().join("app"),
+                    members: None,
+                }),
+            ]
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn locates_each_dir_in_order_in_a_single_call() {
+            let (sandbox, ws) = create_roots_workspace("tc-tier2-batch");
+            let registry = ws.mock_toolchain_registry();
+            let dirs = [
+                sandbox.path().join("app/src"),
+                sandbox.path().join("packages/a"),
+                sandbox.path().join("app"),
+            ];
+
+            let roots = locate(
+                &registry,
+                "tc-tier2",
+                &dirs.iter().map(|dir| dir.as_path()).collect::<Vec<_>>(),
+                serde_json::json!({ "testLocateRoots": true }),
+            )
+            .await
+            .unwrap();
+
+            assert_eq!(roots, get_expected(&sandbox));
+        }
+
+        // Without `locate_dependencies_roots`, every dir is located with a
+        // call of its own, with the same result
+        #[tokio::test(flavor = "multi_thread")]
+        async fn locates_each_dir_in_order_without_batch_support() {
+            let (sandbox, ws) = create_roots_workspace("tc-tier2");
+            let registry = ws.mock_toolchain_registry();
+            let dirs = [
+                sandbox.path().join("app/src"),
+                sandbox.path().join("packages/a"),
+                sandbox.path().join("app"),
+            ];
+
+            let roots = locate(
+                &registry,
+                "tc-tier2",
+                &dirs.iter().map(|dir| dir.as_path()).collect::<Vec<_>>(),
+                serde_json::json!({ "testLocateRoots": true }),
+            )
+            .await
+            .unwrap();
+
+            assert_eq!(roots, get_expected(&sandbox));
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_none_for_dirs_without_a_root() {
+            let (sandbox, ws) = create_roots_workspace("tc-tier2-batch");
+            let registry = ws.mock_toolchain_registry();
+
+            // A lockfile can't be found outside of the workspace
+            sandbox.create_file("other/moon.yml", "");
+            std::fs::remove_file(sandbox.path().join("tc.lock")).unwrap();
+
+            let roots = locate(
+                &registry,
+                "tc-tier2",
+                &[&sandbox.path().join("other"), &sandbox.path().join("app")],
+                serde_json::json!({ "testLocateRoots": true }),
+            )
+            .await
+            .unwrap();
+
+            assert_eq!(
+                roots,
+                [
+                    None,
+                    Some(DependenciesWorkspace {
+                        root: sandbox.path().join("app"),
+                        members: None,
+                    })
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_none_without_tier_2() {
+            let (sandbox, ws) = create_roots_workspace("tc-tier2");
+            let registry = ws.mock_toolchain_registry();
+
+            let roots = locate(
+                &registry,
+                "tc-tier1",
+                &[sandbox.path(), &sandbox.path().join("app")],
+                serde_json::Value::Null,
+            )
+            .await
+            .unwrap();
+
+            assert_eq!(roots, [None, None]);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn errors_if_a_root_is_missing_from_the_output() {
+            let (sandbox, ws) = create_roots_workspace("tc-tier2-batch");
+            let registry = ws.mock_toolchain_registry();
+
+            let error = locate(
+                &registry,
+                "tc-tier2",
+                &[sandbox.path(), &sandbox.path().join("app")],
+                serde_json::json!({ "testLocateRoots": true, "testMismatchRoots": true }),
+            )
+            .await
+            .unwrap_err();
+
+            assert!(
+                matches!(
+                    error.downcast_ref::<PluginError>(),
+                    Some(PluginError::MismatchedOutputs {
+                        expected: 2,
+                        actual: 1,
+                        ..
+                    })
+                ),
+                "{error:?}"
+            );
         }
     }
 

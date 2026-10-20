@@ -62,6 +62,7 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> SessionResul
             "extend_task_script",
             "define_requirements",
             "locate_dependencies_root",
+            "locate_dependencies_roots",
             "install_dependencies",
             "hash_task_contents",
             "parse_lock",

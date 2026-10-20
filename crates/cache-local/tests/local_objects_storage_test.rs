@@ -248,6 +248,61 @@ mod local_objects_storage {
                 .is_empty()
         );
     }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn gc_keeps_objects_within_lifetime() {
+        let sandbox = create_empty_sandbox();
+        let backend = create_backend(&sandbox);
+
+        let source = inline_source(b"recent");
+        let digest = source.digest.clone();
+
+        Arc::clone(&backend)
+            .store_blobs_batched(action_digest(), vec![source])
+            .await
+            .unwrap();
+
+        backdate(&object_path(&sandbox, &digest), Duration::from_secs(7200));
+
+        let stats = backend.gc(WEEK).await.unwrap();
+
+        assert_eq!(stats.blobs_removed, 0);
+        assert!(
+            backend
+                .find_missing_blobs(vec![digest])
+                .await
+                .unwrap()
+                .is_empty()
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn gc_removes_objects_past_lifetime() {
+        let sandbox = create_empty_sandbox();
+        let backend = create_backend(&sandbox);
+
+        let source = inline_source(b"stale");
+        let digest = source.digest.clone();
+
+        Arc::clone(&backend)
+            .store_blobs_batched(action_digest(), vec![source])
+            .await
+            .unwrap();
+
+        backdate(&object_path(&sandbox, &digest), WEEK * 2);
+
+        let stats = backend.gc(WEEK).await.unwrap();
+
+        assert_eq!(stats.blobs_removed, 1);
+        assert_eq!(stats.bytes_saved, 5);
+        assert_eq!(
+            backend
+                .find_missing_blobs(vec![digest.clone()])
+                .await
+                .unwrap(),
+            vec![digest]
+        );
+    }
 }
 
 mod hash_manifests {
@@ -318,6 +373,31 @@ mod hash_manifests {
             .unwrap();
 
         assert_eq!(found, vec![digest]);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn clean_removes_stale_manifests_only() {
+        // A manifest past the lifetime is swept, so the work it marked as done
+        // runs again next time, while a recent one keeps short-circuiting.
+        let sandbox = create_empty_sandbox();
+        let storage = create_storage(&sandbox);
+
+        let stale = storage
+            .store_hash_manifest("task", vec!["stale"])
+            .await
+            .unwrap();
+        let fresh = storage
+            .store_hash_manifest("task", vec!["fresh"])
+            .await
+            .unwrap();
+
+        backdate(&object_path(&sandbox, &stale), WEEK * 2);
+
+        let stats = storage.clean(WEEK).await.unwrap();
+
+        assert_eq!(stats.blobs_removed, 1);
+        assert!(!storage.has_hash_manifest(&stale).await);
+        assert!(storage.has_hash_manifest(&fresh).await);
     }
 
     #[tokio::test(flavor = "multi_thread")]

@@ -54,11 +54,10 @@ impl StorageBackend for LocalObjectsStorage {
         true
     }
 
-    async fn gc(&self, _lifetime: Duration) -> miette::Result<BlobCleanStats> {
-        Ok(BlobCleanStats {
-            blobs_removed: 0,
-            bytes_saved: 0,
-        })
+    /// Nothing references objects (like hash manifests) the way task manifests
+    /// reference blobs, so they're removed once older than the lifetime.
+    async fn gc(&self, lifetime: Duration) -> miette::Result<BlobCleanStats> {
+        self.objects.gc(lifetime).await
     }
 
     async fn retrieve_task_manifest(

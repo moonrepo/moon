@@ -5672,6 +5672,7 @@ dependencies = [
  "moon_async_utils",
  "moon_bench_utils",
  "moon_cache_item",
+ "moon_cache_local",
  "moon_cache_storage",
  "moon_cas",
  "moon_common",

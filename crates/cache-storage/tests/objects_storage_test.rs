@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use moon_blob::{BlobContent, BlobInput, BlobOutput, Bytes};
+use moon_blob::{BlobCleanStats, BlobContent, BlobInput, BlobOutput, Bytes};
 use moon_cache_storage::{CacheCapabilities, CacheContext, ObjectsStorage, StorageBackend};
 use moon_common::Id;
 use moon_hash::{ContentHash, ContentHasher, Digest};
@@ -9,6 +9,7 @@ use serde::Serialize;
 use starbase_utils::json::serde_json;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 fn create_storage() -> ObjectsStorage {
     ObjectsStorage::new(CacheContext::new(Path::new("/moon-test")))
@@ -22,8 +23,12 @@ struct MemoryBackend {
     capabilities: CacheCapabilities,
     blobs: Arc<Mutex<FxHashMap<Digest, Bytes>>>,
 
+    // The lifetime of the last garbage collection, if any ran.
+    gc_lifetime: Arc<Mutex<Option<Duration>>>,
+
     // Failure injection for the degrade paths.
     fail_find_missing: bool,
+    fail_gc: bool,
     fail_store_blobs: bool,
     fail_retrieve_blobs: bool,
 
@@ -39,7 +44,9 @@ impl MemoryBackend {
             id: Id::raw(id),
             capabilities: CacheCapabilities::default(),
             blobs: Arc::new(Mutex::new(FxHashMap::default())),
+            gc_lifetime: Arc::new(Mutex::new(None)),
             fail_find_missing: false,
+            fail_gc: false,
             fail_store_blobs: false,
             fail_retrieve_blobs: false,
             read_only: false,
@@ -49,6 +56,11 @@ impl MemoryBackend {
 
     fn failing_find_missing(mut self) -> Self {
         self.fail_find_missing = true;
+        self
+    }
+
+    fn failing_gc(mut self) -> Self {
+        self.fail_gc = true;
         self
     }
 
@@ -100,6 +112,25 @@ impl StorageBackend for MemoryBackend {
 
     fn is_writable(&self) -> bool {
         !self.read_only
+    }
+
+    /// Collects everything, as if every blob were past the lifetime.
+    async fn gc(&self, lifetime: Duration) -> miette::Result<BlobCleanStats> {
+        if self.fail_gc {
+            return Err(miette::miette!("simulated gc failure"));
+        }
+
+        self.gc_lifetime.lock().unwrap().replace(lifetime);
+
+        let mut blobs = self.blobs.lock().unwrap();
+        let stats = BlobCleanStats {
+            blobs_removed: blobs.len(),
+            bytes_saved: blobs.values().map(|bytes| bytes.len() as u64).sum(),
+        };
+
+        blobs.clear();
+
+        Ok(stats)
     }
 
     async fn retrieve_task_manifest(
@@ -365,6 +396,69 @@ mod objects {
         let mut storage = create_storage();
         storage.add_local_backend(unreadable);
 
+        assert!(storage.retrieve_object(digest).await.unwrap().is_none());
+    }
+}
+
+mod clean {
+    use super::*;
+
+    const WEEK: Duration = Duration::from_secs(86400 * 7);
+
+    #[tokio::test]
+    async fn collects_every_writable_backend() {
+        let a = MemoryBackend::new("a");
+        let b = MemoryBackend::new("b");
+
+        a.seed(b"one");
+        a.seed(b"two");
+        b.seed(b"three");
+
+        let a_lifetime = Arc::clone(&a.gc_lifetime);
+        let b_lifetime = Arc::clone(&b.gc_lifetime);
+
+        let mut storage = create_storage();
+        storage.add_local_backend(a);
+        storage.add_local_backend(b);
+
+        let stats = storage.clean(WEEK).await.unwrap();
+
+        assert_eq!(stats.blobs_removed, 3);
+        assert_eq!(stats.bytes_saved, 11);
+        assert_eq!(*a_lifetime.lock().unwrap(), Some(WEEK));
+        assert_eq!(*b_lifetime.lock().unwrap(), Some(WEEK));
+    }
+
+    #[tokio::test]
+    async fn skips_read_only_backends() {
+        let read_only = MemoryBackend::new("read-only").read_only();
+        let digest = read_only.seed(b"object");
+        let lifetime = Arc::clone(&read_only.gc_lifetime);
+
+        let mut storage = create_storage();
+        storage.add_local_backend(read_only);
+
+        let stats = storage.clean(WEEK).await.unwrap();
+
+        assert_eq!(stats.blobs_removed, 0);
+        assert!(lifetime.lock().unwrap().is_none());
+        assert!(storage.retrieve_object(digest).await.unwrap().is_some());
+    }
+
+    #[tokio::test]
+    async fn a_failing_backend_does_not_block_the_rest() {
+        // A backend that fails to collect is logged and skipped, so the clean
+        // still succeeds and the backends after it are still collected.
+        let healthy = MemoryBackend::new("healthy");
+        let digest = healthy.seed(b"object");
+
+        let mut storage = create_storage();
+        storage.add_local_backend(MemoryBackend::new("failing").failing_gc());
+        storage.add_local_backend(healthy);
+
+        let stats = storage.clean(WEEK).await.unwrap();
+
+        assert_eq!(stats.blobs_removed, 1);
         assert!(storage.retrieve_object(digest).await.unwrap().is_none());
     }
 }

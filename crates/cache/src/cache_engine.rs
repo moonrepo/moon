@@ -142,10 +142,13 @@ impl CacheEngine {
         }
 
         if all {
-            let storage_result = self.actions_storage.clean(duration).await?;
-
-            result.files_deleted += storage_result.blobs_removed;
-            result.bytes_saved += storage_result.bytes_saved;
+            for storage_result in [
+                self.actions_storage.clean(duration).await?,
+                self.objects_storage.clean(duration).await?,
+            ] {
+                result.files_deleted += storage_result.blobs_removed;
+                result.bytes_saved += storage_result.bytes_saved;
+            }
         }
 
         debug!(

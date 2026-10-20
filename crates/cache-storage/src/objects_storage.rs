@@ -1,10 +1,11 @@
 use crate::actions_storage::CacheContext;
 use crate::storage_backend::{BoxedStorageBackend, StorageBackend};
-use moon_blob::{Blob, BlobContent, BlobInput, BlobOutput};
+use moon_blob::{Blob, BlobCleanStats, BlobContent, BlobInput, BlobOutput};
 use moon_common::format_error_chain;
 use moon_hash::{ContentHasher, Digest};
 use serde::Serialize;
 use std::sync::Arc;
+use std::time::Duration;
 use tracing::{debug, warn};
 
 #[derive(Debug)]
@@ -28,6 +29,34 @@ impl ObjectsStorage {
 
     pub fn get_backends(&self) -> &[BoxedStorageBackend] {
         &self.backends
+    }
+
+    /// Garbage-collect the writable backends. A failure in one backend is logged
+    /// and skipped rather than aborting the whole clean.
+    pub async fn clean(&self, lifetime: Duration) -> miette::Result<BlobCleanStats> {
+        let mut stats = BlobCleanStats::default();
+
+        for backend in &self.backends {
+            if !backend.is_writable() {
+                continue;
+            }
+
+            match backend.gc(lifetime).await {
+                Ok(backend_stats) => {
+                    stats.blobs_removed += backend_stats.blobs_removed;
+                    stats.bytes_saved += backend_stats.bytes_saved;
+                }
+                Err(error) => {
+                    warn!(
+                        storage = backend.get_id().as_str(),
+                        error = format_error_chain(&error),
+                        "Failed to garbage collect storage backend"
+                    );
+                }
+            }
+        }
+
+        Ok(stats)
     }
 
     pub async fn retrieve_object(&self, digest: Digest) -> miette::Result<Option<BlobOutput>> {
@@ -140,16 +169,9 @@ impl ObjectsStorage {
     }
 
     pub async fn load_hash_manifest(&self, digest: &Digest) -> miette::Result<Option<BlobContent>> {
-        for backend in &self.backends {
-            if !backend.is_readable() {
-                continue;
-            }
-
-            if let Some(blob) = self.retrieve_object(digest.to_owned()).await? {
-                return Ok(Some(blob.content));
-            }
-        }
-
-        Ok(None)
+        Ok(self
+            .retrieve_object(digest.to_owned())
+            .await?
+            .map(|blob| blob.content))
     }
 }

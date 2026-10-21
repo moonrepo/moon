@@ -36,7 +36,7 @@ pub struct TaskRunState {
 
 impl TaskRunState {
     pub fn new(app_context: &AppContext, task: &Task) -> Self {
-        let remote_enabled = app_context.cache_engine.storage.is_remote_enabled();
+        let remote_enabled = app_context.cache_engine.actions_storage.is_remote_enabled();
 
         Self {
             local_cache_readable: app_context.cache_engine.is_readable()

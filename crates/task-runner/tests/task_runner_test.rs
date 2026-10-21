@@ -1319,7 +1319,7 @@ mod task_runner {
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn creates_a_manifest_file() {
+        async fn creates_a_fingerprint_file() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             container.sandbox.enable_git();
 
@@ -1329,13 +1329,13 @@ mod task_runner {
 
             let hash = runner.hash(&context, &node).await.unwrap();
 
-            // The fingerprint is stored as a blob in the local CAS, which
+            // The fingerprint is stored in the local objects store, which
             // shards objects by the first 2 chars of their hash.
             assert!(
                 container
                     .sandbox
                     .path()
-                    .join(".moon/cache/blobs")
+                    .join(".moon/cache/objects")
                     .join(&hash[0..2])
                     .join(&hash[2..])
                     .exists()

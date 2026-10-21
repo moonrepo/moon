@@ -112,7 +112,7 @@ impl TaskRunnerContainer {
     pub async fn flush_storage(&self) {
         self.app_context
             .cache_engine
-            .storage
+            .actions_storage
             .wait_for_background_tasks()
             .await
             .unwrap();
@@ -122,7 +122,7 @@ impl TaskRunnerContainer {
     pub async fn manifest_exists(&self, digest: &Digest) -> bool {
         self.app_context
             .cache_engine
-            .storage
+            .actions_storage
             .load_task_manifest(digest)
             .await
             .unwrap()
@@ -144,7 +144,7 @@ impl TaskRunnerContainer {
         let mut paths = self
             .app_context
             .cache_engine
-            .storage
+            .actions_storage
             .load_task_manifest(&state.digest)
             .await
             .unwrap()
@@ -160,7 +160,7 @@ impl TaskRunnerContainer {
 
     /// Whether a blob for the given digest exists in the local storage backend.
     pub async fn blob_exists(&self, digest: &Digest) -> bool {
-        let backend = self.app_context.cache_engine.storage.get_backends()[0].clone();
+        let backend = self.app_context.cache_engine.actions_storage.get_backends()[0].clone();
 
         backend
             .find_missing_blobs(vec![digest.clone()])
@@ -172,7 +172,7 @@ impl TaskRunnerContainer {
     /// Persist a manifest directly into the local storage backend, so it can be
     /// loaded back as a hydration source.
     pub async fn seed_manifest(&self, digest: &Digest, manifest: TaskManifest) {
-        let backend = self.app_context.cache_engine.storage.get_backends()[0].clone();
+        let backend = self.app_context.cache_engine.actions_storage.get_backends()[0].clone();
 
         backend
             .store_task_manifest(digest.clone(), manifest)
@@ -184,7 +184,7 @@ impl TaskRunnerContainer {
     /// its digest.
     pub async fn seed_blob(&self, content: &'static [u8]) -> Digest {
         let digest = Digest::from_bytes(content).unwrap();
-        let backend = self.app_context.cache_engine.storage.get_backends()[0].clone();
+        let backend = self.app_context.cache_engine.actions_storage.get_backends()[0].clone();
 
         backend
             .store_blobs(

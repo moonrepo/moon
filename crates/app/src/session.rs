@@ -8,7 +8,7 @@ use moon_actions::operations::sync_pkl_schemas;
 use moon_api::Launchpad;
 use moon_app_context::AppContext;
 use moon_cache::{CacheContext, CacheEngine};
-use moon_cache_local::LocalStorage;
+use moon_cache_local::{LocalObjectsStorage, LocalStorage};
 use moon_cache_remote::{GrpcRemoteStorage, HttpRemoteStorage};
 use moon_codegen::CodeGenerator;
 use moon_common::{is_docker, is_formatted_output, is_test_env};
@@ -244,9 +244,10 @@ impl MoonSession {
 
             let mut engine = CacheEngine::new(context.clone())?;
 
-            // Always register the local backend: it's the home for hash
-            // manifests and task outputs, which every run depends on.
-            engine.storage.add_local_backend(LocalStorage::new(
+            // Always register the local backends: they're the home for task
+            // outputs (actions) and hash fingerprints (objects), which every run
+            // depends on.
+            engine.actions_storage.add_local_backend(LocalStorage::new(
                 context.clone(),
                 context
                     .cache_shared_dir
@@ -254,16 +255,20 @@ impl MoonSession {
                     .unwrap_or(&context.cache_dir),
             )?);
 
+            engine
+                .objects_storage
+                .add_local_backend(LocalObjectsStorage::new(context.clone())?);
+
             if context.remote_config.is_enabled() {
                 match context.remote_config.api {
                     RemoteApi::Grpc => {
                         engine
-                            .storage
+                            .actions_storage
                             .add_remote_backend(GrpcRemoteStorage::new(context.clone())?);
                     }
                     RemoteApi::Http => {
                         engine
-                            .storage
+                            .actions_storage
                             .add_remote_backend(HttpRemoteStorage::new(context.clone())?);
                     }
                 };
@@ -516,7 +521,7 @@ impl AppSession for MoonSession {
             // commands that will actually read/write to it. Reads and writes wait
             // for the connection to finish
             if self.is_pipeline_command() || self.is_daemon_server_command() {
-                cache_engine.storage.spawn_connect_backends();
+                cache_engine.actions_storage.spawn_connect_backends();
             }
         }
 
@@ -547,7 +552,7 @@ impl AppSession for MoonSession {
     async fn shutdown(&mut self) -> AppResult<Self::Error> {
         // Ensure all in-flight storage tasks have finished
         if let Some(engine) = self.cache_engine.get() {
-            engine.storage.wait_for_background_tasks().await?;
+            engine.actions_storage.wait_for_background_tasks().await?;
         }
 
         // Ensure all child processes have finished

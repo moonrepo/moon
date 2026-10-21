@@ -93,7 +93,7 @@ impl OutputArchiver<'_> {
             } else {
                 self.app_context
                     .cache_engine
-                    .storage
+                    .actions_storage
                     .with_options(StorageOptions {
                         include_local: use_local,
                         include_remote: use_remote,
@@ -220,14 +220,14 @@ impl OutputArchiver<'_> {
         // Then inherit the execution operation metadata
         packer.inherit_operation(&state.operation)?;
 
-        // Then inherit the source fingerprint, which lives in the local CAS.
-        // Without a local tier there's nothing to attach, and the manifest is
-        // archived without it.
+        // Then inherit the source fingerprint, which lives in the objects
+        // storage. Without an objects backend there's nothing to attach, and
+        // the manifest is archived without it.
         if let Some(blob) = self
             .app_context
             .cache_engine
-            .storage
-            .load_hash_manifest(&state.digest)
+            .objects_storage
+            .load_hash_fingerprint(&state.digest)
             .await?
         {
             packer.inherit_source(&state.digest, blob)?;

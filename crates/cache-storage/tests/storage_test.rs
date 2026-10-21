@@ -8,11 +8,27 @@ use moon_hash::{ContentHash, ContentHasher, Digest};
 use moon_manifest::{TaskManifest, TaskManifestFile};
 use rustc_hash::FxHashMap;
 use serde::Serialize;
+use starbase_sandbox::{Sandbox, create_empty_sandbox};
 use starbase_utils::json::serde_json;
 use std::path::Path;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
-use tokio::sync::Notify;
+use std::time::Duration;
+use tokio::sync::{Notify, Semaphore};
+
+type Manifest = TaskManifest;
+type ManifestFile = TaskManifestFile;
+
+struct FileSourceOwner {
+    sandbox: Sandbox,
+    dropped: Arc<AtomicBool>,
+}
+
+impl Drop for FileSourceOwner {
+    fn drop(&mut self) {
+        self.dropped.store(true, Ordering::SeqCst);
+    }
+}
 
 fn create_storage() -> Storage {
     Storage::new(CacheContext::new(Path::new("/moon-test")))
@@ -37,6 +53,10 @@ struct MemoryBackend {
     read_only: bool,
 
     // A remote tier is unreadable until its connection is established.
+    connect_calls: Arc<AtomicUsize>,
+    store_started: Arc<Notify>,
+    store_calls: Arc<AtomicUsize>,
+    store_gate: Option<Arc<Semaphore>>,
     connect_gate: Option<Arc<Notify>>,
     connected: Arc<AtomicBool>,
 }
@@ -52,6 +72,10 @@ impl MemoryBackend {
             fail_store_blobs: false,
             fail_retrieve_blobs: false,
             read_only: false,
+            connect_calls: Arc::new(AtomicUsize::new(0)),
+            store_started: Arc::new(Notify::new()),
+            store_calls: Arc::new(AtomicUsize::new(0)),
+            store_gate: None,
             connect_gate: None,
             connected: Arc::new(AtomicBool::new(true)),
         }
@@ -99,6 +123,7 @@ impl StorageBackend for MemoryBackend {
     }
 
     async fn connect(&self) -> miette::Result<()> {
+        self.connect_calls.fetch_add(1, Ordering::SeqCst);
         if let Some(gate) = &self.connect_gate {
             gate.notified().await;
         }
@@ -109,7 +134,7 @@ impl StorageBackend for MemoryBackend {
     }
 
     fn is_writable(&self) -> bool {
-        !self.read_only
+        self.is_readable() && !self.read_only
     }
 
     async fn retrieve_task_manifest(&self, digest: Digest) -> miette::Result<Option<TaskManifest>> {
@@ -147,6 +172,11 @@ impl StorageBackend for MemoryBackend {
     }
 
     async fn find_missing_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Digest>> {
+        self.store_calls.fetch_add(1, Ordering::SeqCst);
+        self.store_started.notify_one();
+        if let Some(gate) = &self.store_gate {
+            gate.acquire().await.unwrap().forget();
+        }
         if self.fail_find_missing {
             return Err(miette::miette!("simulated find_missing failure"));
         }
@@ -172,10 +202,12 @@ impl StorageBackend for MemoryBackend {
         let mut stored = vec![];
 
         for source in blob_sources {
-            if let BlobContent::Inline(bytes) = source.content {
-                blobs.insert(source.digest.clone(), bytes);
-                stored.push(source.digest);
-            }
+            let bytes = match source.content {
+                BlobContent::Inline(bytes) => bytes,
+                BlobContent::File(path) => Bytes::from(std::fs::read(path).unwrap()),
+            };
+            blobs.insert(source.digest.clone(), bytes);
+            stored.push(source.digest);
         }
 
         Ok(stored)
@@ -204,6 +236,18 @@ impl StorageBackend for MemoryBackend {
     }
 }
 
+fn file_backed_manifest(blob: &Digest, source_path: &Path) -> Manifest {
+    Manifest {
+        files: vec![ManifestFile {
+            digest: Some(blob.clone()),
+            path: "out/a.txt".into(),
+            source_path: Some(source_path.to_path_buf()),
+            ..Default::default()
+        }],
+        ..Default::default()
+    }
+}
+
 fn digest(seed: char, size: i64) -> Digest {
     Digest {
         hash: ContentHash::from_hex(std::iter::repeat_n(seed, 64).collect::<String>()).unwrap(),
@@ -225,6 +269,221 @@ fn manifest_with_file(blob: &Digest) -> TaskManifest {
 
 /// Seed a backend so it "has" an entry: the manifest as a serializing backend
 /// would persist it (no inline bytes) plus its referenced blob.
+mod promotion_regressions {
+    use super::*;
+
+    #[tokio::test]
+    async fn retains_file_source_until_every_foreground_backend_finishes() {
+        let mut first = MemoryBackend::new("first");
+        let first_manifests = Arc::clone(&first.manifests);
+        let first_started = Arc::clone(&first.store_started);
+        let first_gate = Arc::new(Semaphore::new(0));
+        first.store_gate = Some(Arc::clone(&first_gate));
+
+        let mut second = MemoryBackend::new("second");
+        let second_blobs = Arc::clone(&second.blobs);
+        let second_started = Arc::clone(&second.store_started);
+        let second_gate = Arc::new(Semaphore::new(0));
+        second.store_gate = Some(Arc::clone(&second_gate));
+
+        let mut storage = create_storage();
+        storage.add_local_backend(first);
+        storage.add_remote_backend(second);
+
+        let dropped = Arc::new(AtomicBool::new(false));
+        let owner = Arc::new(FileSourceOwner {
+            sandbox: create_empty_sandbox(),
+            dropped: Arc::clone(&dropped),
+        });
+        owner.sandbox.create_file("output", "output");
+        let path = owner.sandbox.path().join("output");
+        let action = digest('a', 0);
+        let blob = Digest::from_bytes(b"output").unwrap();
+
+        let archive_storage = storage.with_options(StorageOptions::default());
+        let archive_action = action.clone();
+        let archive_manifest = file_backed_manifest(&blob, &path);
+        let archive_owner = Arc::clone(&owner) as Arc<dyn Send + Sync>;
+        let archive = tokio::spawn(async move {
+            archive_storage
+                .archive_task_manifest_with_lifetime(
+                    &archive_action,
+                    archive_manifest,
+                    Some(archive_owner),
+                )
+                .await
+        });
+        drop(owner);
+
+        first_started.notified().await;
+        second_started.notified().await;
+        assert!(
+            path.exists(),
+            "source must survive while uploads are paused"
+        );
+        assert!(!dropped.load(Ordering::SeqCst));
+
+        first_gate.add_permits(1);
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while !first_manifests.lock().unwrap().contains_key(&action) {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .expect("first backend should finish");
+        assert!(path.exists(), "second backend still needs the file");
+        assert!(!dropped.load(Ordering::SeqCst));
+        assert!(
+            !archive.is_finished(),
+            "archive must await the slow backend"
+        );
+
+        second_gate.add_permits(1);
+        archive.await.unwrap().unwrap();
+        assert_eq!(
+            second_blobs.lock().unwrap().get(&blob),
+            Some(&Bytes::from_static(b"output"))
+        );
+        assert!(dropped.load(Ordering::SeqCst));
+        assert!(
+            !path.exists(),
+            "source directory should be removed after uploads"
+        );
+    }
+
+    #[tokio::test]
+    async fn releases_file_source_after_failed_foreground_upload() {
+        let mut backend = MemoryBackend::new("failing").failing_store_blobs();
+        let manifests = Arc::clone(&backend.manifests);
+        let started = Arc::clone(&backend.store_started);
+        let gate = Arc::new(Semaphore::new(0));
+        backend.store_gate = Some(Arc::clone(&gate));
+        let mut storage = create_storage();
+        storage.add_local_backend(backend);
+
+        let dropped = Arc::new(AtomicBool::new(false));
+        let owner = Arc::new(FileSourceOwner {
+            sandbox: create_empty_sandbox(),
+            dropped: Arc::clone(&dropped),
+        });
+        owner.sandbox.create_file("output", "output");
+        let path = owner.sandbox.path().join("output");
+        let action = digest('a', 0);
+        let blob = Digest::from_bytes(b"output").unwrap();
+
+        let archive_storage = storage.with_options(StorageOptions::default());
+        let archive_action = action.clone();
+        let archive_manifest = file_backed_manifest(&blob, &path);
+        let archive_owner = Arc::clone(&owner) as Arc<dyn Send + Sync>;
+        let archive = tokio::spawn(async move {
+            archive_storage
+                .archive_task_manifest_with_lifetime(
+                    &archive_action,
+                    archive_manifest,
+                    Some(archive_owner),
+                )
+                .await
+        });
+        drop(owner);
+        started.notified().await;
+        assert!(!archive.is_finished(), "archive must await failed upload");
+        assert!(path.exists());
+        assert!(!dropped.load(Ordering::SeqCst));
+        gate.add_permits(1);
+        archive.await.unwrap().unwrap();
+
+        assert!(!manifests.lock().unwrap().contains_key(&action));
+        assert!(dropped.load(Ordering::SeqCst));
+        assert!(!path.exists(), "failed upload must release its file source");
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn timed_out_foreground_archive_aborts_upload_and_releases_file_source() {
+        let mut backend = MemoryBackend::new("stalled");
+        let manifests = Arc::clone(&backend.manifests);
+        let started = Arc::clone(&backend.store_started);
+        let calls = Arc::clone(&backend.store_calls);
+        backend.store_gate = Some(Arc::new(Semaphore::new(0)));
+        let mut storage = create_storage();
+        storage.add_remote_backend(backend);
+
+        let dropped = Arc::new(AtomicBool::new(false));
+        let owner = Arc::new(FileSourceOwner {
+            sandbox: create_empty_sandbox(),
+            dropped: Arc::clone(&dropped),
+        });
+        owner.sandbox.create_file("output", "output");
+        let path = owner.sandbox.path().join("output");
+        let action = digest('a', 0);
+        let blob = Digest::from_bytes(b"output").unwrap();
+
+        let archive_storage = storage.with_options(StorageOptions::default());
+        let archive_action = action.clone();
+        let archive_manifest = file_backed_manifest(&blob, &path);
+        let archive_owner = Arc::clone(&owner) as Arc<dyn Send + Sync>;
+        let archive = tokio::spawn(async move {
+            archive_storage
+                .archive_task_manifest_with_lifetime(
+                    &archive_action,
+                    archive_manifest,
+                    Some(archive_owner),
+                )
+                .await
+        });
+        drop(owner);
+
+        started.notified().await;
+        assert!(!archive.is_finished());
+        assert!(path.exists());
+        assert!(!dropped.load(Ordering::SeqCst));
+
+        tokio::time::advance(Duration::from_secs(301)).await;
+        let error = archive.await.unwrap().unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("Timed out archiving cache manifest")
+        );
+
+        // JoinSet aborts children on drop; give the runtime a chance to poll
+        // that cancellation before checking the temporary directory cleanup.
+        for _ in 0..16 {
+            if dropped.load(Ordering::SeqCst) {
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+        assert!(dropped.load(Ordering::SeqCst));
+        assert!(!path.exists());
+        assert!(!manifests.lock().unwrap().contains_key(&action));
+        assert!(!storage.is_promotion_enabled());
+
+        let later_action = digest('b', 0);
+        let later_manifest = Manifest {
+            stdout_bytes: Some(Bytes::from_static(b"later")),
+            stdout_digest: Some(Digest::from_bytes(b"later").unwrap()),
+            ..Default::default()
+        };
+        let cloned_storage = storage.with_options(StorageOptions::default());
+        assert!(
+            !tokio::time::timeout(
+                Duration::from_millis(1),
+                cloned_storage.archive_task_manifest_with_lifetime(
+                    &later_action,
+                    later_manifest,
+                    None,
+                ),
+            )
+            .await
+            .unwrap()
+            .unwrap(),
+            "later promotion must skip without attempting another upload"
+        );
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+        assert!(!manifests.lock().unwrap().contains_key(&later_action));
+    }
+}
+
 fn seed_backend(backend: &MemoryBackend, action: &Digest, blob: &Digest, bytes: &'static [u8]) {
     let mut manifest = manifest_with_file(blob);
     manifest.files[0].bytes = None;

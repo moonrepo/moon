@@ -339,7 +339,7 @@ impl<'task> TaskRunner<'task> {
         self.cache.data.hash = hash.to_owned();
 
         // If the previous run was a failure, avoid hydrating
-        if self.cache.data.exit_code > 0 {
+        if self.cache.data.exit_code != 0 {
             debug!(
                 task_target = self.task.target.as_str(),
                 hash, "Previous run failed, avoiding hydration"
@@ -902,7 +902,6 @@ impl<'task> TaskRunner<'task> {
         // Not cached
         let Some(from) = self.is_cached(hash).await? else {
             debug!(task_target, "Nothing to hydrate");
-
             operation.finish(ActionStatus::Skipped);
 
             self.operations.push(operation);
@@ -918,6 +917,7 @@ impl<'task> TaskRunner<'task> {
         );
 
         let from_previous_outputs = matches!(from, HydrateFrom::PreviousOutput);
+        let from_remote = matches!(&from, HydrateFrom::Storage(source) if source.remote);
 
         let hydrated = match self.hydrater.hydrate(from, hash, &self.state).await? {
             HydrateOutcome::Skipped => {
@@ -1000,6 +1000,17 @@ impl<'task> TaskRunner<'task> {
         self.operations.push(operation);
 
         if hydrated {
+            // Promote only the original saved bytes, never mutable live outputs.
+            if !from_remote
+                && self.cache.data.exit_code == 0
+                && let Err(error) = self.archiver.promote_cached(hash, &self.state).await
+            {
+                warn!(
+                    task_target,
+                    hash, "Could not promote cached outputs: {error}"
+                );
+            }
+
             // Outputs were just restored from a cache, so record them
             if !from_previous_outputs {
                 self.record_output_globs()?;

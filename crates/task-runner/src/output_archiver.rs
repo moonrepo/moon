@@ -1,9 +1,10 @@
+use crate::output_hydrater::OutputHydrater;
 use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
 use moon_blob::Blob;
-use moon_cache::{StorageOptions, TaskManifest};
+use moon_cache::{PROMOTION_TIMEOUT, StorageOptions, TaskManifest};
 use moon_common::color;
 use moon_common::path::PathExt;
 use moon_common::path::to_relative_virtual_string;
@@ -12,7 +13,7 @@ use moon_hash::ContentHash;
 use moon_manifest::{ManifestError, TaskManifestFile as ManifestFile, TaskManifestPacker};
 use moon_task::Task;
 use starbase_archive::Archiver;
-use starbase_utils::fs;
+use starbase_utils::{fs, glob::GlobSet};
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -175,6 +176,194 @@ impl OutputArchiver<'_> {
                     .iter()
                     .all(|output| output.is_glob() && output.is_optional())
             {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+
+    /// Share an existing successful cache entry without trusting live output files.
+    /// Callers keep promotion best-effort; normal task execution is never required.
+    pub async fn promote_cached(
+        &self,
+        hash: &str,
+        state: &TaskRunState,
+    ) -> miette::Result<ArchiveOutcome> {
+        match tokio::time::timeout(PROMOTION_TIMEOUT, self.promote_cached_inner(hash, state)).await
+        {
+            Ok(result) => result,
+            Err(_) => {
+                self.app_context.cache_engine.storage.disable_promotion();
+                Err(miette::miette!(
+                    "Timed out promoting cached outputs after {} seconds",
+                    PROMOTION_TIMEOUT.as_secs()
+                ))
+            }
+        }
+    }
+
+    async fn promote_cached_inner(
+        &self,
+        hash: &str,
+        state: &TaskRunState,
+    ) -> miette::Result<ArchiveOutcome> {
+        // Persistent tasks run outside Moon's task concurrency permit, so a
+        // foreground upload here would have no resource bound. Their normal
+        // cache lookup and task execution remain unchanged.
+        if self.task.is_persistent() {
+            debug!(
+                task_target = self.task.target.as_str(),
+                hash, "Skipping cache promotion for persistent task"
+            );
+            return Ok(ArchiveOutcome::Skipped);
+        }
+
+        if !state.local_cache_readable
+            || !state.remote_cache_writable
+            || state.digest.hash.as_str() != hash
+            || !self.app_context.cache_engine.storage.is_promotion_enabled()
+        {
+            return Ok(ArchiveOutcome::Skipped);
+        }
+
+        let cache = &self.app_context.cache_engine;
+        let remote = cache.storage.with_options(StorageOptions {
+            include_local: false,
+            include_remote: true,
+            ..Default::default()
+        });
+        // Writability is unknown
+        // until negotiation completes (notably for a PreviousOutput hit).
+        remote.wait_for_connection().await;
+        if !remote
+            .get_backends()
+            .iter()
+            .any(|backend| backend.is_writable())
+            || remote.load_task_manifest(&state.digest).await?.is_some()
+        {
+            return Ok(ArchiveOutcome::Skipped);
+        }
+
+        let Some(fingerprint_content) = cache.storage.load_hash_manifest(&state.digest).await?
+        else {
+            return Ok(ArchiveOutcome::Skipped);
+        };
+        let expected_digest = state.digest.clone();
+        // Snapshot and verify exact action bytes before any remote upload.
+        let fingerprint = spawn_blocking(move || {
+            let blob = Blob::from_bytes(fingerprint_content.read_bytes()?)?;
+            Ok::<_, miette::Report>((blob.digest == expected_digest).then_some(blob))
+        })
+        .await
+        .into_diagnostic()??;
+        let Some(fingerprint) = fingerprint else {
+            return Ok(ArchiveOutcome::Skipped);
+        };
+
+        let local = cache.storage.with_options(StorageOptions {
+            include_local: true,
+            include_remote: false,
+            ..Default::default()
+        });
+        let mut manifest = None;
+        if state.local_cas_enabled
+            && let Some(source) = local.load_task_manifest(&state.digest).await?
+            && source.manifest.exit_code == 0
+        {
+            manifest = local.hydrate_task_manifest(&state.digest, source).await?;
+        }
+
+        let mut lifetime: Option<Arc<dyn Send + Sync>> = None;
+        let mut manifest = if let Some(manifest) = manifest {
+            manifest
+        } else {
+            let archive_path = cache.hash.get_archive_path(hash);
+            if !archive_path.is_file() {
+                return Ok(ArchiveOutcome::Skipped);
+            }
+
+            let Some(staged) =
+                Self::stage_local_archive(self.app_context, self.task, archive_path).await?
+            else {
+                return Ok(ArchiveOutcome::Skipped);
+            };
+            if !staged.has_required_outputs {
+                return Ok(ArchiveOutcome::Skipped);
+            }
+            lifetime = Some(staged.scratch.clone());
+            staged.manifest
+        };
+
+        // Validate declared outputs before attaching the fingerprint: its path
+        // is outside the task's output allowlist by design.
+        if let Err(error) =
+            OutputHydrater::new(self.app_context, self.task, None)?.validate_output_paths(&manifest)
+        {
+            if matches!(
+                error.downcast_ref::<TaskRunnerError>(),
+                Some(TaskRunnerError::OutputFileNotDeclared { .. })
+            ) {
+                debug!(
+                    task_target = self.task.target.as_str(),
+                    hash, "Skipping cache promotion because a cached output is undeclared"
+                );
+                return Ok(ArchiveOutcome::Skipped);
+            }
+            return Err(error);
+        }
+        if !self.has_required_manifest_outputs(&manifest)? {
+            return Ok(ArchiveOutcome::Skipped);
+        }
+        manifest.digest_source = Some(ManifestFile {
+            bytes: Some(fingerprint.bytes),
+            digest: Some(fingerprint.digest),
+            path: moon_common::path::WorkspaceRelativePathBuf::from(format!(
+                ".moon/cache/blobs/{}/{}",
+                state.digest.hash.prefix(),
+                state.digest.hash.suffix(),
+            )),
+            ..Default::default()
+        });
+
+        // The daemon RPC drops file source paths. Use native storage directly
+        // and await all uploads under Moon's existing task-concurrency permit.
+        if remote
+            .archive_task_manifest_with_lifetime(&state.digest, manifest, lifetime)
+            .await?
+        {
+            Ok(ArchiveOutcome::Queued)
+        } else {
+            Ok(ArchiveOutcome::Skipped)
+        }
+    }
+
+    fn has_required_manifest_outputs(&self, manifest: &Manifest) -> miette::Result<bool> {
+        let paths = manifest
+            .files
+            .iter()
+            .map(|file| &file.path)
+            .chain(manifest.symlinks.iter().map(|link| &link.path))
+            .collect::<Vec<_>>();
+        for (required, params) in &self.task.output_files {
+            if !params.optional && !paths.iter().any(|path| path.starts_with(required)) {
+                return Ok(false);
+            }
+        }
+        // Match the normal archiver's aggregate glob requirement. Expanded
+        // globs do not carry per-pattern optional metadata.
+        if self
+            .task
+            .output_globs
+            .keys()
+            .any(|glob| !glob.as_str().starts_with('!'))
+            && !self
+                .task
+                .outputs
+                .iter()
+                .all(|output| output.is_glob() && output.is_optional())
+        {
+            let matcher = GlobSet::new(self.task.output_globs.keys())?;
+            if !paths.iter().any(|path| matcher.matches(path.as_str())) {
                 return Ok(false);
             }
         }

@@ -10,6 +10,7 @@ use serde::Serialize;
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, SystemTime};
 use tokio::sync::{Mutex, watch};
 use tokio::task::{AbortHandle, JoinHandle, JoinSet};
@@ -20,6 +21,7 @@ use tracing::{debug, warn};
 /// slower than just running the task would have been; stragglers past this are
 /// aborted and reported, and simply get re-uploaded on the next run.
 const BACKGROUND_FLUSH_TIMEOUT: Duration = Duration::from_secs(300);
+pub const PROMOTION_TIMEOUT: Duration = BACKGROUND_FLUSH_TIMEOUT;
 
 /// Upper bound on how long a read or write waits for backends that are still
 /// connecting. Past this, unconnected backends are skipped, as a cache miss
@@ -94,6 +96,7 @@ impl Drop for FinishConnection<'_> {
 #[derive(Debug)]
 pub struct Storage {
     background_tasks: Arc<Mutex<Vec<JoinHandle<miette::Result<()>>>>>,
+    promotion_disabled: Arc<AtomicBool>,
     connection: Arc<watch::Sender<ConnectionState>>,
     local_backends: Vec<BoxedStorageBackend>,
     remote_backends: Vec<BoxedStorageBackend>,
@@ -106,6 +109,7 @@ impl Storage {
     pub fn new(context: CacheContext) -> Self {
         Self {
             background_tasks: Arc::new(Mutex::new(vec![])),
+            promotion_disabled: Arc::new(AtomicBool::new(false)),
             connection: Arc::new(watch::Sender::new(ConnectionState::NotStarted)),
             local_backends: vec![],
             remote_backends: vec![],
@@ -117,6 +121,7 @@ impl Storage {
     pub fn with_options(&self, options: StorageOptions) -> Self {
         Self {
             background_tasks: Arc::clone(&self.background_tasks),
+            promotion_disabled: Arc::clone(&self.promotion_disabled),
             connection: Arc::clone(&self.connection),
             local_backends: self.local_backends.clone(),
             remote_backends: self.remote_backends.clone(),
@@ -177,7 +182,7 @@ impl Storage {
         Ok(())
     }
 
-    async fn wait_for_connection(&self) {
+    pub async fn wait_for_connection(&self) {
         let mut receiver = self.connection.subscribe();
 
         if *receiver.borrow() == ConnectionState::Connecting {
@@ -199,6 +204,14 @@ impl Storage {
                 );
             }
         }
+    }
+
+    pub fn is_promotion_enabled(&self) -> bool {
+        !self.promotion_disabled.load(Ordering::SeqCst)
+    }
+
+    pub fn disable_promotion(&self) {
+        self.promotion_disabled.store(true, Ordering::SeqCst);
     }
 
     pub fn get_backends(&self) -> Vec<&BoxedStorageBackend> {
@@ -464,9 +477,49 @@ impl Storage {
         digest: &Digest,
         manifest: TaskManifest,
     ) -> miette::Result<()> {
+        self.archive_task_manifest_inner(digest, manifest, None, !is_daemon_env())
+            .await
+    }
+
+    /// Promote a verified local hit without returning before file-backed uploads finish.
+    pub async fn archive_task_manifest_with_lifetime(
+        &self,
+        digest: &Digest,
+        manifest: TaskManifest,
+        lifetime: Option<Arc<dyn Send + Sync>>,
+    ) -> miette::Result<bool> {
+        if !self.is_promotion_enabled() {
+            return Ok(false);
+        }
+        tokio::time::timeout(
+            BACKGROUND_FLUSH_TIMEOUT,
+            self.archive_task_manifest_inner(digest, manifest, lifetime, false),
+        )
+        .await
+        .map_err(|_| {
+            self.disable_promotion();
+            miette::miette!(
+                "Timed out archiving cache manifest after {} seconds",
+                BACKGROUND_FLUSH_TIMEOUT.as_secs()
+            )
+        })??;
+        Ok(true)
+    }
+
+    async fn archive_task_manifest_inner(
+        &self,
+        digest: &Digest,
+        manifest: TaskManifest,
+        lifetime: Option<Arc<dyn Send + Sync>>,
+        in_background: bool,
+    ) -> miette::Result<()> {
         self.wait_for_connection().await;
 
-        let mut background_tasks = self.background_tasks.lock().await;
+        let mut background_tasks = if in_background {
+            Some(self.background_tasks.lock().await)
+        } else {
+            None
+        };
 
         debug!(
             hash = digest.hash.as_str(),
@@ -479,21 +532,26 @@ impl Storage {
         // Store the manifest in all backends in parallel, but if any fail,
         // continue storing the rest for failover/redundancy in the future
         let mut set = JoinSet::new();
-        let in_background = !is_daemon_env();
 
         for backend in self.get_backends() {
             if !backend.is_writable() {
                 continue;
             }
 
-            let future = Box::pin(persist_task_manifest_in_backend(
-                Arc::clone(backend),
-                digest.to_owned(),
-                manifest.clone(),
-                self.context.workspace_root.clone(),
-            ));
+            let backend = Arc::clone(backend);
+            let digest = digest.to_owned();
+            let manifest = manifest.clone();
+            let workspace_root = self.context.workspace_root.clone();
+            let lifetime = lifetime.clone();
+            let future = Box::pin(async move {
+                let result =
+                    persist_task_manifest_in_backend(backend, digest, manifest, workspace_root)
+                        .await;
+                drop(lifetime);
+                result
+            });
 
-            if in_background {
+            if let Some(background_tasks) = &mut background_tasks {
                 background_tasks.push(tokio::spawn(future));
             } else {
                 set.spawn(future);

@@ -1,17 +1,17 @@
+use crate::output_archiver::OutputArchiver;
 use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
 use moon_cache::{StorageOptions, TaskManifest, TaskManifestSource, TaskManifestUnpacker};
-use moon_common::{color, path::WorkspaceRelativePath};
+use moon_common::path::WorkspaceRelativePath;
 use moon_daemon_client::DaemonClient;
 use moon_task::Task;
-use starbase_archive::Archiver;
 use starbase_utils::{fs, glob::GlobSet};
 use std::fmt::{self, Debug};
+use std::io::ErrorKind;
 use std::sync::Arc;
-use tokio::task::spawn_blocking;
-use tracing::{debug, instrument, warn};
+use tracing::{debug, instrument};
 
 pub enum HydrateFrom {
     PreviousOutput,
@@ -187,47 +187,39 @@ impl OutputHydrater<'_> {
             return Ok(HydrateOutcome::Skipped);
         }
 
-        // Clone values to run in a blocking thread
-        let app_context = Arc::clone(self.app_context);
-        let task = Arc::clone(self.task);
-        let hash = hash.to_string();
+        let Some(staged) =
+            OutputArchiver::stage_local_archive(self.app_context, self.task, archive_file).await?
+        else {
+            return Ok(HydrateOutcome::Missed);
+        };
 
-        // Create the archiver instance based on task outputs
-        let hydrated = spawn_blocking(move || {
-            let mut archive = Archiver::new(&app_context.workspace_root, &archive_file);
-
-            for output_file in task.output_files.keys() {
-                archive.add_source_file(output_file.as_str(), None);
-            }
-
-            for output_glob in task.output_globs.keys() {
-                archive.add_source_glob(output_glob.as_str());
-            }
-
-            // Unpack the archive
-            if let Err(error) = archive.unpack_from_ext() {
-                warn!(
-                    task_target = task.target.as_str(),
-                    hash,
-                    archive_file = ?archive_file,
-                    "Failed to hydrate task outputs from archive: {}",
-                    color::muted_light(error.to_string()),
-                );
-
-                return false;
-            }
-
-            true
-        })
-        .await
-        .into_diagnostic()?;
-
-        if !hydrated {
-            self.delete_existing_outputs()?;
-
+        OutputArchiver::validate_staged_entries(
+            &staged.manifest,
+            &staged.declared_dirs,
+            &staged.log_paths,
+            staged.scratch.path(),
+        )?;
+        self.validate_output_paths(&staged.manifest)?;
+        if !staged.has_required_outputs {
             return Ok(HydrateOutcome::Missed);
         }
-
+        // Nothing in the live workspace is removed until extraction and all
+        // declared-path checks have succeeded. A failure below must never hit.
+        self.delete_existing_outputs()?;
+        for dir in &staged.declared_dirs {
+            let relative = dir.strip_prefix(staged.scratch.path()).into_diagnostic()?;
+            fs::create_dir_all(self.app_context.workspace_root.join(relative))?;
+        }
+        TaskManifestUnpacker::new(&staged.manifest, self.app_context.workspace_root.clone())
+            .unpack()?;
+        for log in staged.log_paths {
+            let relative = log.strip_prefix(staged.scratch.path()).into_diagnostic()?;
+            let destination = self.app_context.workspace_root.join(relative);
+            if let Some(parent) = destination.parent() {
+                fs::create_dir_all(parent)?;
+            }
+            std::fs::copy(log, destination).into_diagnostic()?;
+        }
         Ok(HydrateOutcome::Hit)
     }
 
@@ -236,16 +228,17 @@ impl OutputHydrater<'_> {
             .task
             .get_output_files(&self.app_context.workspace_root, true)?
         {
-            // Ignore failures as we don't want to crash the entire pipeline,
-            // and in most cases, these artifacts will just be overwritten
-            // on the next hydration anyways!
-            let _ = fs::remove(output);
+            match std::fs::symlink_metadata(&output) {
+                Ok(_) => fs::remove(output)?,
+                Err(error) if error.kind() == ErrorKind::NotFound => {}
+                Err(error) => return Err(error).into_diagnostic(),
+            }
         }
 
         Ok(())
     }
 
-    fn validate_output_paths(&self, manifest: &TaskManifest) -> miette::Result<()> {
+    pub(crate) fn validate_output_paths(&self, manifest: &TaskManifest) -> miette::Result<()> {
         for file in &manifest.files {
             if file.digest.is_some() {
                 self.validate_output_path(&file.path)?;

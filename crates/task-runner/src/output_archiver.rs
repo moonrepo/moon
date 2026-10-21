@@ -2,21 +2,38 @@ use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
+use moon_blob::Blob;
 use moon_cache::{StorageOptions, TaskManifest};
 use moon_common::color;
+use moon_common::path::PathExt;
 use moon_common::path::to_relative_virtual_string;
 use moon_daemon_client::DaemonClient;
 use moon_hash::ContentHash;
-use moon_manifest::TaskManifestPacker;
+use moon_manifest::{ManifestError, TaskManifestFile as ManifestFile, TaskManifestPacker};
 use moon_task::Task;
 use starbase_archive::Archiver;
+use starbase_utils::fs;
+use std::path::Path;
+use std::path::PathBuf;
 use std::sync::Arc;
+use tempfile::TempDir;
 use tokio::task::spawn_blocking;
 use tracing::{debug, instrument, warn};
+
+type Manifest = TaskManifest;
+type ManifestPacker = TaskManifestPacker;
 
 pub enum ArchiveOutcome {
     Skipped,
     Queued,
+}
+
+pub(crate) struct StagedLocalArchive {
+    pub scratch: Arc<TempDir>,
+    pub manifest: Manifest,
+    pub declared_dirs: Vec<PathBuf>,
+    pub log_paths: Vec<PathBuf>,
+    pub has_required_outputs: bool,
 }
 
 /// Cache outputs to the `.moon/cache` folder and to cloud storage,
@@ -116,31 +133,7 @@ impl OutputArchiver<'_> {
 
     #[instrument(skip(self))]
     pub fn has_outputs_been_created(&self) -> miette::Result<bool> {
-        // Check paths first since they are literal
-        if !self.has_output_files_been_created() {
-            return Ok(false);
-        }
-
-        // Check globs last, as they are costly!
-        // If all globs are negated, then the empty check will always
-        // fail, resulting in archives not being created
-        if self.has_output_globs() {
-            let outputs = self
-                .task
-                .get_output_files(&self.app_context.workspace_root, false)?;
-
-            if outputs.is_empty()
-                && !self
-                    .task
-                    .outputs
-                    .iter()
-                    .all(|output| output.is_glob() && output.is_optional())
-            {
-                return Ok(false);
-            }
-        }
-
-        Ok(true)
+        Self::has_outputs_at(self.task, &self.app_context.workspace_root)
     }
 
     #[instrument(skip(self))]
@@ -159,13 +152,211 @@ impl OutputArchiver<'_> {
                 task_target = self.task.target.as_str(),
                 "Files matched by output globs differ from the previous run, will hydrate"
             );
-
             return Ok(false);
         }
-
         Ok(true)
     }
 
+    fn has_outputs_at(task: &Task, root: &Path) -> miette::Result<bool> {
+        for (output, params) in &task.output_files {
+            if !output.to_path(root).exists() && !params.optional {
+                return Ok(false);
+            }
+        }
+        if task
+            .output_globs
+            .keys()
+            .any(|glob| !glob.as_str().starts_with('!'))
+        {
+            let outputs = task.get_output_files(root, false)?;
+            if outputs.is_empty()
+                && !task
+                    .outputs
+                    .iter()
+                    .all(|output| output.is_glob() && output.is_optional())
+            {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+
+    fn validate_staged_sources(manifest: &Manifest, scratch: &TempDir) -> miette::Result<()> {
+        let root = std::fs::canonicalize(scratch.path()).into_diagnostic()?;
+        for source in manifest
+            .files
+            .iter()
+            .filter_map(|file| file.source_path.as_ref())
+        {
+            if !std::fs::canonicalize(source)
+                .into_diagnostic()?
+                .starts_with(&root)
+            {
+                return Err(miette::miette!(
+                    "Cached output escapes private promotion directory"
+                ));
+            }
+        }
+        for link in &manifest.symlinks {
+            let target = link.target.to_logical_path(&root);
+            if !std::fs::canonicalize(target)
+                .into_diagnostic()?
+                .starts_with(&root)
+            {
+                return Err(miette::miette!(
+                    "Cached symlink escapes private promotion directory"
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    /// Validate a complete legacy archive before either promotion or hydration
+    /// can observe its content. The returned source paths stay alive with scratch.
+    pub(crate) async fn stage_local_archive(
+        app_context: &Arc<AppContext>,
+        task: &Arc<Task>,
+        archive_path: PathBuf,
+    ) -> miette::Result<Option<StagedLocalArchive>> {
+        let cache = &app_context.cache_engine;
+        let logs = cache
+            .state
+            .get_target_dir(&task.target)
+            .relative_to(&app_context.workspace_root)
+            .into_diagnostic()?;
+        fs::create_dir_all(&cache.temp_dir)?;
+        let mut scratch_builder = tempfile::Builder::new();
+        scratch_builder.prefix("hydrate-");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            scratch_builder.permissions(std::fs::Permissions::from_mode(0o700));
+        }
+        let scratch = Arc::new(
+            scratch_builder
+                .tempdir_in(&cache.temp_dir)
+                .into_diagnostic()?,
+        );
+        let task = Arc::clone(task);
+        let staging = Arc::clone(&scratch);
+        spawn_blocking(move || {
+            if let Err(error) = Archiver::new(staging.path(), &archive_path).unpack_from_ext() {
+                warn!(
+                    task_target = task.target.as_str(),
+                    archive_file = ?archive_path,
+                    "Failed to stage cached task outputs: {}",
+                    color::muted_light(error.to_string()),
+                );
+                return Ok(None);
+            }
+            let mut packer = ManifestPacker::new(staging.path().to_path_buf());
+            for output in task.get_output_files(staging.path(), true)? {
+                if let Err(error) = packer.inherit_output(output) {
+                    if matches!(
+                        error.downcast_ref::<ManifestError>(),
+                        Some(ManifestError::OutputSymlinkOutsideOfWorkspace { .. })
+                    ) {
+                        debug!(
+                            task_target = task.target.as_str(),
+                            "Skipping cache archive with an unsupported symlink output"
+                        );
+                        return Ok(None);
+                    }
+                    return Err(error);
+                }
+            }
+            let mut manifest = packer.pack();
+            let mut pending = task
+                .output_files
+                .keys()
+                .map(|path| path.to_logical_path(staging.path()))
+                .filter(|path| std::fs::symlink_metadata(path).is_ok_and(|meta| meta.is_dir()))
+                .collect::<Vec<_>>();
+            let mut declared_dirs = Vec::new();
+            while let Some(dir) = pending.pop() {
+                if declared_dirs.contains(&dir) {
+                    continue;
+                }
+                for entry in std::fs::read_dir(&dir).into_diagnostic()? {
+                    let entry = entry.into_diagnostic()?;
+                    if entry.file_type().into_diagnostic()?.is_dir() {
+                        pending.push(entry.path());
+                    }
+                }
+                declared_dirs.push(dir);
+            }
+            let log_dir = logs.to_logical_path(staging.path());
+            let log_paths = [log_dir.join("stdout.log"), log_dir.join("stderr.log")]
+                .into_iter()
+                .filter(|path| std::fs::symlink_metadata(path).is_ok_and(|meta| meta.is_file()))
+                .collect::<Vec<_>>();
+            for path in &log_paths {
+                let blob = Blob::from_file(path)?;
+                if path.ends_with("stdout.log") {
+                    manifest.stdout_digest = Some(blob.digest);
+                    manifest.stdout_bytes = Some(blob.bytes);
+                } else {
+                    manifest.stderr_digest = Some(blob.digest);
+                    manifest.stderr_bytes = Some(blob.bytes);
+                }
+            }
+            Self::validate_staged_sources(&manifest, &staging)?;
+            let has_required_outputs = Self::has_outputs_at(&task, staging.path())?;
+            Ok::<_, miette::Report>(Some(StagedLocalArchive {
+                scratch: staging,
+                manifest,
+                declared_dirs,
+                log_paths,
+                has_required_outputs,
+            }))
+        })
+        .await
+        .into_diagnostic()?
+    }
+
+    pub(crate) fn validate_staged_entries(
+        manifest: &Manifest,
+        declared_dirs: &[PathBuf],
+        log_paths: &[PathBuf],
+        root: &Path,
+    ) -> miette::Result<()> {
+        let mut allowed = manifest
+            .files
+            .iter()
+            .filter_map(|file| file.source_path.clone())
+            .collect::<Vec<_>>();
+        allowed.extend(
+            manifest
+                .symlinks
+                .iter()
+                .map(|link| link.path.to_logical_path(root)),
+        );
+        allowed.extend(declared_dirs.iter().cloned());
+        allowed.extend(log_paths.iter().cloned());
+        let mut pending = vec![root.to_path_buf()];
+        while let Some(dir) = pending.pop() {
+            for entry in std::fs::read_dir(&dir).into_diagnostic()? {
+                let entry = entry.into_diagnostic()?;
+                let path = entry.path();
+                let kind = entry.file_type().into_diagnostic()?;
+                if kind.is_dir() {
+                    if !allowed.iter().any(|file| file.starts_with(&path)) {
+                        return Err(miette::miette!(
+                            "Cached archive contains undeclared directory {}",
+                            path.display()
+                        ));
+                    }
+                    pending.push(path);
+                } else if !allowed.contains(&path) {
+                    return Err(miette::miette!(
+                        "Cached archive contains undeclared entry {}",
+                        path.display()
+                    ));
+                }
+            }
+        }
+        Ok(())
+    }
     /// Create a hash from the workspace relative paths of all files currently
     /// matched by output globs, so that a subsequent run can verify that the
     /// exact same set of files still exists. Returns `None` if the task has

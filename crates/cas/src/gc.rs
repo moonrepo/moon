@@ -116,7 +116,7 @@ pub async fn retain(
 /// - Objects in `keep` are always kept.
 /// - Objects in `released` were only referenced by manifests that have been
 ///   evicted, and are removed once older than `grace`.
-/// - Objects that no manifest has ever referenced, like hash manifests that
+/// - Objects that no manifest has ever referenced, like hash fingerprints that
 ///   are stored on their own, are removed once older than `unreferenced_grace`
 ///   (and never sooner than `grace`, as they may be mid-ingest).
 #[instrument(skip(store, keep, released))]

@@ -1,12 +1,11 @@
 use crate::storage_backend::{BoxedStorageBackend, StorageBackend};
 use miette::IntoDiagnostic;
-use moon_blob::{Blob, BlobCleanStats, BlobContent, BlobInput, BlobOutput};
+use moon_blob::{BlobCleanStats, BlobContent, BlobInput};
 use moon_common::{Id, format_error_chain, is_daemon_env};
 use moon_config::{CacheConfig, RemoteConfig};
-use moon_hash::{ContentHasher, Digest};
+use moon_hash::Digest;
 use moon_manifest::TaskManifest;
 use rustc_hash::FxHashMap;
-use serde::Serialize;
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -92,7 +91,7 @@ impl Drop for FinishConnection<'_> {
 }
 
 #[derive(Debug)]
-pub struct Storage {
+pub struct ActionsStorage {
     background_tasks: Arc<Mutex<Vec<JoinHandle<miette::Result<()>>>>>,
     connection: Arc<watch::Sender<ConnectionState>>,
     local_backends: Vec<BoxedStorageBackend>,
@@ -102,7 +101,7 @@ pub struct Storage {
     options: StorageOptions,
 }
 
-impl Storage {
+impl ActionsStorage {
     pub fn new(context: CacheContext) -> Self {
         Self {
             background_tasks: Arc::new(Mutex::new(vec![])),
@@ -274,147 +273,6 @@ impl Storage {
         }
 
         Ok(stats)
-    }
-
-    pub async fn retrieve_blob(&self, digest: Digest) -> miette::Result<Option<BlobOutput>> {
-        let mut results = self.retrieve_blobs(vec![digest]).await?;
-
-        if !results.is_empty() {
-            return Ok(Some(results.remove(0)));
-        }
-
-        Ok(None)
-    }
-
-    pub async fn retrieve_blobs(&self, digests: Vec<Digest>) -> miette::Result<Vec<BlobOutput>> {
-        self.wait_for_connection().await;
-
-        for backend in self.get_backends() {
-            if !backend.is_readable() {
-                continue;
-            }
-
-            let result = Arc::clone(backend)
-                .retrieve_blobs_batched(Digest::default(), digests.clone())
-                .await?;
-
-            if !result.blobs.is_empty() {
-                return Ok(result.blobs);
-            }
-        }
-
-        Ok(vec![])
-    }
-
-    pub async fn store_blob(&self, blob: BlobInput) -> miette::Result<()> {
-        self.store_blobs(vec![blob]).await
-    }
-
-    pub async fn store_blobs(&self, blobs: Vec<BlobInput>) -> miette::Result<()> {
-        self.wait_for_connection().await;
-
-        let mut background_tasks = self.background_tasks.lock().await;
-
-        for backend in self.get_backends() {
-            if !backend.is_writable() {
-                continue;
-            }
-
-            let backend = Arc::clone(backend);
-            let blobs = blobs.clone();
-
-            background_tasks.push(tokio::spawn(Box::pin(async move {
-                backend
-                    .store_blobs_batched(Digest::default(), blobs)
-                    .await
-                    .map(|_| ())
-            })));
-        }
-
-        Ok(())
-    }
-
-    pub async fn store_hash_manifest<T: Serialize>(
-        &self,
-        label: &str,
-        content: T,
-    ) -> miette::Result<Digest> {
-        let mut hasher = ContentHasher::new(label);
-        hasher.hash_content(content)?;
-
-        self.store_hash_manifest_with_hasher(hasher).await
-    }
-
-    pub async fn store_hash_manifest_with_hasher(
-        &self,
-        mut hasher: ContentHasher,
-    ) -> miette::Result<Digest> {
-        let digest = Digest::from_hasher(&mut hasher)?;
-
-        debug!(label = hasher.label, "Storing hash manifest (local only)");
-
-        let data = hasher.into_bytes();
-
-        // This writes inline rather than queueing a background task: the very
-        // next thing to happen may be another action (or another process
-        // waiting on the same lock) asking whether this hash was stored, and it
-        // has to see it. They're small and local, so there's nothing to gain by
-        // deferring them.
-        let input = Blob::new(digest.clone(), data).into_input();
-
-        for backend in self.get_local_backends() {
-            if backend.is_writable() {
-                Arc::clone(backend)
-                    .store_blobs_batched(digest.clone(), vec![input.clone()])
-                    .await?;
-            }
-        }
-
-        Ok(digest)
-    }
-
-    pub async fn has_hash_manifest(&self, digest: &Digest) -> bool {
-        for backend in self.get_local_backends() {
-            if !backend.is_readable() {
-                continue;
-            }
-
-            match backend.find_missing_blobs(vec![digest.to_owned()]).await {
-                Ok(missing) => {
-                    if missing.is_empty() {
-                        return true;
-                    }
-                }
-                Err(error) => {
-                    warn!(
-                        storage = backend.get_id().as_str(),
-                        hash = digest.hash.as_str(),
-                        error = format_error_chain(&error),
-                        "Failed to check for a hash manifest, assuming it is missing"
-                    );
-                }
-            }
-        }
-
-        false
-    }
-
-    pub async fn load_hash_manifest(&self, digest: &Digest) -> miette::Result<Option<BlobContent>> {
-        for backend in self.get_local_backends() {
-            if !backend.is_readable() {
-                continue;
-            }
-
-            let mut blobs = backend
-                .retrieve_blobs(vec![digest.to_owned()], false)
-                .await?;
-
-            if !blobs.is_empty() {
-                return Ok(Some(blobs.remove(0).content));
-            }
-        }
-
-        Ok(None)
     }
 
     pub async fn load_task_manifest(

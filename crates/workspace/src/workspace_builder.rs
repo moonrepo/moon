@@ -22,8 +22,7 @@ use tokio::task::JoinHandle;
 use tracing::{debug, instrument};
 
 pub const LOCK_FILE_NAME: &str = "workspaceGraph.lock";
-pub const STATE_GRAPH_FILE_NAME: &str = "workspaceGraph.json";
-pub const STATE_CACHE_FILE_NAME: &str = "workspaceGraphStateV1.json";
+pub const STATE_KEY: &str = "WorkspaceGraph";
 
 pub struct WorkspaceBuilderContext {
     pub cache_engine: Arc<CacheEngine>,
@@ -102,12 +101,9 @@ impl WorkspaceBuilder {
         // during the last build must contribute to the hash
         let mut state = context
             .cache_engine
-            .state
-            .load_state::<WorkspaceGraphCacheState>(STATE_CACHE_FILE_NAME)?;
-        let cache_path = context
-            .cache_engine
-            .state
-            .resolve_path(STATE_GRAPH_FILE_NAME);
+            .objects_storage
+            .load_state::<WorkspaceGraphCacheState>(STATE_KEY)
+            .await?;
 
         // Preload sources and configs, and hash the graph based on that state
         graph.preload().await?;
@@ -122,7 +118,7 @@ impl WorkspaceBuilder {
             .collect::<BTreeMap<_, _>>();
 
         let mut hasher = graph
-            .create_cache_hasher(&projects, state.data.plugin_input_paths.clone())
+            .create_cache_hasher(&projects, state.plugin_input_paths.clone())
             .await?;
         let digest = Digest::from_hasher(&mut hasher)?;
 
@@ -133,21 +129,26 @@ impl WorkspaceBuilder {
 
         // A missing or unreadable cache, like one that was only partially
         // written, or is from an incompatible version, is treated as a miss
-        let read_cache = || match read_cache_file::<WorkspaceBuilder>(&cache_path) {
-            Ok(cache) => Some(cache),
-            Err(error) => {
-                debug!(
-                    cache = ?cache_path,
-                    "Unable to read cached workspace graph, rebuilding: {error}",
-                );
+        let cache = match &state.graph_digest {
+            Some(graph_digest) if digest.hash == state.last_hash => {
+                match read_cache_object::<WorkspaceBuilder>(&context.cache_engine, graph_digest)
+                    .await
+                {
+                    Ok(cache) => cache,
+                    Err(error) => {
+                        debug!(
+                            hash = graph_digest.hash.as_str(),
+                            "Unable to read cached workspace graph, rebuilding: {error}",
+                        );
 
-                None
+                        None
+                    }
+                }
             }
+            _ => None,
         };
 
-        if digest.hash == state.data.last_hash
-            && let Some(mut cache) = read_cache()
-        {
+        if let Some(mut cache) = cache {
             // Verify that the cached projects match the current projects
             // on disk. If a project has been added or removed since the
             // cache was created, we need to rebuild the graph
@@ -164,7 +165,6 @@ impl WorkspaceBuilder {
 
             if cached_ids == current_ids {
                 debug!(
-                    cache = ?cache_path,
                     "Loading workspace graph with {} projects from cache",
                     cached_ids.len(),
                 );
@@ -176,17 +176,14 @@ impl WorkspaceBuilder {
 
                 context
                     .cache_engine
-                    .storage
-                    .store_hash_manifest_with_hasher(hasher)
+                    .objects_storage
+                    .store_hash_fingerprint_with_hasher(hasher)
                     .await?;
 
                 return Ok(cache);
             }
 
-            debug!(
-                cache = ?cache_path,
-                "Cached workspace graph has mismatched projects, rebuilding",
-            );
+            debug!("Cached workspace graph has mismatched projects, rebuilding",);
         }
 
         // Build the graph, update the state, and save the cache
@@ -200,27 +197,32 @@ impl WorkspaceBuilder {
         // If plugins discovered a different set of input files, regenerate
         // the hash with them included, otherwise the next run would be
         // a guaranteed cache miss
-        if graph.projects.plugin_input_paths != state.data.plugin_input_paths {
-            state.data.plugin_input_paths = graph.projects.plugin_input_paths.clone();
+        if graph.projects.plugin_input_paths != state.plugin_input_paths {
+            state.plugin_input_paths = graph.projects.plugin_input_paths.clone();
 
             hasher = graph
-                .create_cache_hasher(&projects, state.data.plugin_input_paths.clone())
+                .create_cache_hasher(&projects, state.plugin_input_paths.clone())
                 .await?;
         }
 
-        // Only store the final manifest, as the hash may have been regenerated
+        // Only store the final fingerprint, as the hash may have been regenerated
         let digest = context
             .cache_engine
-            .storage
-            .store_hash_manifest_with_hasher(hasher)
+            .objects_storage
+            .store_hash_fingerprint_with_hasher(hasher)
             .await?;
 
-        // Write the graph before saving the state, as the state's hash is what
-        // marks the cached graph as valid, so a failure in between is a miss
-        write_cache_file(&cache_path, &graph)?;
+        // Store the graph before saving the state that points to it, so the
+        // state only ever references a graph built for its hash, and a failure
+        // in between is a miss
+        state.graph_digest = Some(write_cache_object(&context.cache_engine, &graph).await?);
+        state.last_hash = digest.hash;
 
-        state.data.last_hash = digest.hash;
-        state.save()?;
+        context
+            .cache_engine
+            .objects_storage
+            .save_state(STATE_KEY, &state)
+            .await?;
 
         Ok(graph)
     }

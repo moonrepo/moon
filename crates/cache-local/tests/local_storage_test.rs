@@ -526,6 +526,63 @@ mod local_storage {
         );
     }
 
+    #[tokio::test(flavor = "multi_thread")]
+    async fn gc_keeps_unreferenced_blobs_when_evicting_over_size_budget() {
+        let sandbox = create_empty_sandbox();
+        let backend = create_backend_with_max_size(&sandbox, "1b");
+
+        let orphan = inline_source(b"never referenced");
+        let output = inline_source(b"task output");
+        let orphan_digest = orphan.digest.clone();
+        let output_digest = output.digest.clone();
+
+        Arc::clone(&backend)
+            .store_blobs_batched(action_digest(), vec![orphan, output])
+            .await
+            .unwrap();
+        backend
+            .store_task_manifest(action_digest(), manifest_referencing(&output_digest))
+            .await
+            .unwrap();
+
+        // Past the ingest grace, but well within the lifetime
+        backdate(
+            &blob_path(&sandbox, &orphan_digest),
+            Duration::from_secs(7200),
+        );
+        backdate(
+            &blob_path(&sandbox, &output_digest),
+            Duration::from_secs(7200),
+        );
+
+        backend.gc(Duration::from_secs(86400 * 7)).await.unwrap();
+
+        // The output is released by the evicted manifest and swept, while a
+        // blob that no manifest references lives out the lifetime
+        assert!(
+            backend
+                .retrieve_task_manifest(action_digest())
+                .await
+                .unwrap()
+                .is_none()
+        );
+        assert_eq!(
+            backend
+                .find_missing_blobs(vec![output_digest.clone()])
+                .await
+                .unwrap(),
+            vec![output_digest],
+        );
+        assert!(
+            backend
+                .find_missing_blobs(vec![orphan_digest])
+                .await
+                .unwrap()
+                .is_empty(),
+            "a never referenced blob should survive the size budget",
+        );
+    }
+
     mod id {
         use super::*;
 
@@ -585,119 +642,5 @@ mod local_storage {
 
             assert_eq!(backend.get_id().as_str(), "local-cache");
         }
-    }
-}
-
-mod hash_manifests {
-    use super::*;
-    use moon_cache_storage::Storage;
-
-    const WEEK: Duration = Duration::from_secs(86400 * 7);
-
-    fn create_storage(sandbox: &Sandbox) -> Storage {
-        let context = CacheContext::new(sandbox.path());
-        let cache_dir = context.cache_dir.clone();
-
-        let mut storage = Storage::new(context.clone());
-        storage.add_local_backend(LocalStorage::new(context, cache_dir).unwrap());
-        storage
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn gc_keeps_hash_manifests_within_lifetime() {
-        let sandbox = create_empty_sandbox();
-        let storage = create_storage(&sandbox);
-
-        let digest = storage
-            .store_hash_manifest("task", vec!["command", "args"])
-            .await
-            .unwrap();
-
-        // Older than the ingest grace window, but well within the lifetime
-        backdate(&blob_path(&sandbox, &digest), Duration::from_secs(7200));
-
-        storage.clean(WEEK).await.unwrap();
-
-        assert!(
-            storage.has_hash_manifest(&digest).await,
-            "a hash manifest within the lifetime should survive garbage collection",
-        );
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn gc_removes_hash_manifests_past_lifetime() {
-        let sandbox = create_empty_sandbox();
-        let storage = create_storage(&sandbox);
-
-        let digest = storage
-            .store_hash_manifest("task", vec!["command", "args"])
-            .await
-            .unwrap();
-
-        backdate(&blob_path(&sandbox, &digest), WEEK * 2);
-
-        storage.clean(WEEK).await.unwrap();
-
-        assert!(!storage.has_hash_manifest(&digest).await);
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn gc_keeps_hash_manifests_when_evicting_over_size_budget() {
-        let sandbox = create_empty_sandbox();
-        let mut config = CacheConfig::default();
-        config.cas.max_size = Some("1b".into());
-
-        let mut context = CacheContext::new(sandbox.path());
-        context.cache_config = Arc::new(config);
-
-        let cache_dir = context.cache_dir.clone();
-        let backend = LocalStorage::new(context.clone(), cache_dir).unwrap();
-        let mut storage = Storage::new(context);
-        storage.add_local_backend(backend);
-
-        // The task manifest is keyed by the same digest as the hash manifest
-        let digest = storage
-            .store_hash_manifest("task", vec!["command", "args"])
-            .await
-            .unwrap();
-        let output = inline_source(b"task output");
-        let output_digest = output.digest.clone();
-
-        let backend = Arc::clone(storage.get_local_backends()[0]);
-
-        Arc::clone(&backend)
-            .store_blobs_batched(digest.clone(), vec![output])
-            .await
-            .unwrap();
-        backend
-            .store_task_manifest(digest.clone(), manifest_referencing(&output_digest))
-            .await
-            .unwrap();
-
-        backdate(&blob_path(&sandbox, &digest), Duration::from_secs(7200));
-        backdate(
-            &blob_path(&sandbox, &output_digest),
-            Duration::from_secs(7200),
-        );
-
-        storage.clean(WEEK).await.unwrap();
-
-        // The output is released by the evicted task manifest and swept,
-        // while the hash manifest lives out the lifetime
-        assert!(
-            backend
-                .retrieve_task_manifest(digest.clone())
-                .await
-                .unwrap()
-                .is_none()
-        );
-        assert_eq!(
-            backend
-                .find_missing_blobs(vec![output_digest.clone()])
-                .await
-                .unwrap(),
-            vec![output_digest],
-        );
-        assert!(storage.has_hash_manifest(&digest).await);
     }
 }

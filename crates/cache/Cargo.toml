@@ -32,6 +32,7 @@ tracing = { workspace = true }
 
 [dev-dependencies]
 moon_bench_utils = { path = "../bench-utils" }
+moon_cache_local = { path = "../cache-local" }
 criterion = { workspace = true }
 starbase_sandbox = { workspace = true }
 

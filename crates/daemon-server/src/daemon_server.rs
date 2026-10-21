@@ -143,7 +143,7 @@ impl MoonDaemon for DaemonService {
         self.run_in_background(async move {
             if let Err(error) = app_context
                 .cache_engine
-                .storage
+                .actions_storage
                 .with_options(StorageOptions {
                     include_local: request.include_local,
                     include_remote: request.include_remote,
@@ -189,7 +189,7 @@ impl MoonDaemon for DaemonService {
 
         let storage = app_context
             .cache_engine
-            .storage
+            .actions_storage
             .with_options(StorageOptions {
                 include_local: request.include_local,
                 include_remote: request.include_remote,

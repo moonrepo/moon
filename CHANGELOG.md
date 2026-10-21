@@ -178,6 +178,11 @@
 - **Cache**
   - The `cache.unstable_sharedWorktreeCache` setting no longer requires the `casOutputsCache`
     experiment, as task outputs are now always stored in the local content-addressable store.
+  - Hash fingerprints are now stored in their own local objects store, `.moon/cache/objects`,
+    instead of alongside task outputs. The VCS hooks, version check, and workspace graph states, and
+    the cached workspace graph, have also moved there from `.moon/cache/states`. They always stay in
+    the current checkout's cache (even when `cache.unstable_sharedWorktreeCache` is enabled), and
+    `moon clean` removes those older than the cache lifetime.
 - **CLI**
   - Added a `moon layout-graph` (`moon lg`) command, that serves an interactive graph of the
     dependencies roots (like a package manager workspace) that toolchains locate, and the projects
@@ -274,8 +279,8 @@
   - Improved `moon project-graph` and `moon task-graph` performance when focused on a project or
     task, by walking the graph by node index with a breadth-first traversal, instead of scanning
     every node for each visited one.
-  - The graph's cache now stores a single hash manifest, instead of also storing an unused one when
-    plugins discovered new input files.
+  - The graph's cache now stores a single hash fingerprint, instead of also storing an unused one
+    when plugins discovered new input files.
   - The graph's cache file is now less than half the size, as data that's only used while building
     the graph is no longer cached, task options are omitted when they're the default value, and
     projects only store the paths of the configs they inherited from. It's also read without

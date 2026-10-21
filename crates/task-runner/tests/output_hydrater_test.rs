@@ -5,6 +5,7 @@ use moon_env_var::GlobalEnvBag;
 use moon_hash::Digest;
 use moon_task_runner::TaskRunState;
 use moon_task_runner::output_hydrater::{HydrateFrom, HydrateOutcome};
+use starbase_archive::Archiver;
 use std::fs;
 use utils::*;
 
@@ -30,6 +31,29 @@ mod output_hydrater {
 
     mod local_legacy {
         use super::*;
+
+        fn pack_glob_archive(container: &TaskRunnerContainer, include_rogue: bool) {
+            let root = container.sandbox.path();
+            let archive_path = container
+                .app_context
+                .cache_engine
+                .hash
+                .get_archive_path("hash123");
+            let mut archive = Archiver::new(root, &archive_path);
+            archive.add_source_file("project/a.txt", None);
+            if include_rogue {
+                archive.add_source_file("project/rogue.bin", None);
+            }
+            archive.add_source_file(
+                ".moon/cache/states/project/glob-outputs-negated/stdout.log",
+                None,
+            );
+            archive.add_source_file(
+                ".moon/cache/states/project/glob-outputs-negated/stderr.log",
+                None,
+            );
+            archive.pack_from_ext().unwrap();
+        }
 
         #[tokio::test(flavor = "multi_thread")]
         async fn does_nothing_if_from_prev_outputs() {
@@ -143,6 +167,244 @@ mod output_hydrater {
                     .join(".moon/cache/states/project/file-outputs/stdout.log")
                     .exists()
             );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn replaces_glob_outputs_even_when_hash_and_live_outputs_match() {
+            let container = TaskRunnerContainer::new("archive", "glob-outputs").await;
+            let root = container.sandbox.path();
+            container.sandbox.create_file("project/one.txt", "cached");
+            container.sandbox.create_file(
+                ".moon/cache/states/project/glob-outputs/stdout.log",
+                "cached stdout",
+            );
+            container.sandbox.create_file(
+                ".moon/cache/states/project/glob-outputs/stderr.log",
+                "cached stderr",
+            );
+            container
+                .create_archiver()
+                .archive("hash123", &container.create_state())
+                .await
+                .unwrap();
+            let archive_path = container
+                .app_context
+                .cache_engine
+                .hash
+                .get_archive_path("hash123");
+            let archive_bytes = fs::read(&archive_path).unwrap();
+            let archived_globs_hash = container
+                .create_archiver()
+                .hash_output_globs()
+                .unwrap()
+                .unwrap();
+
+            fs::write(root.join("project/one.txt"), "live stale").unwrap();
+            container
+                .sandbox
+                .create_file("project/extra.txt", "obsolete");
+            fs::write(
+                root.join(".moon/cache/states/project/glob-outputs/stdout.log"),
+                "live stdout",
+            )
+            .unwrap();
+            assert!(
+                !container
+                    .create_archiver()
+                    .has_previous_outputs_been_created(&archived_globs_hash)
+                    .unwrap()
+            );
+
+            assert_hydrated(
+                container
+                    .create_hydrator()
+                    .hydrate(
+                        HydrateFrom::LocalArchive,
+                        "hash123",
+                        &container.create_state(),
+                    )
+                    .await
+                    .unwrap(),
+            );
+            assert_eq!(
+                fs::read_to_string(root.join("project/one.txt")).unwrap(),
+                "cached"
+            );
+            assert!(!root.join("project/extra.txt").exists());
+            assert_eq!(
+                fs::read_to_string(root.join(".moon/cache/states/project/glob-outputs/stdout.log"))
+                    .unwrap(),
+                "cached stdout"
+            );
+            assert_eq!(
+                fs::read_to_string(root.join(".moon/cache/states/project/glob-outputs/stderr.log"))
+                    .unwrap(),
+                "cached stderr"
+            );
+            assert_eq!(fs::read(archive_path).unwrap(), archive_bytes);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn restores_declared_empty_directory_tree() {
+            let container = TaskRunnerContainer::new("archive", "output-one-dir").await;
+            let root = container.sandbox.path();
+            let nested = root.join("project/dir/empty/nested");
+            fs::create_dir_all(&nested).unwrap();
+            container
+                .create_archiver()
+                .archive("hash123", &container.create_state())
+                .await
+                .unwrap();
+            fs::remove_dir_all(root.join("project/dir")).unwrap();
+
+            assert_hydrated(
+                container
+                    .create_hydrator()
+                    .hydrate(
+                        HydrateFrom::LocalArchive,
+                        "hash123",
+                        &container.create_state(),
+                    )
+                    .await
+                    .unwrap(),
+            );
+            assert!(nested.is_dir());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn missing_or_corrupt_archive_preserves_live_outputs() {
+            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
+            let output = container.sandbox.path().join("project/file.txt");
+            container
+                .sandbox
+                .create_file("project/file.txt", "live output");
+            let state = container.create_state();
+            assert_not_hydrated(
+                container
+                    .create_hydrator()
+                    .hydrate(HydrateFrom::LocalArchive, "hash123", &state)
+                    .await
+                    .unwrap(),
+            );
+            assert_eq!(fs::read_to_string(&output).unwrap(), "live output");
+
+            container
+                .sandbox
+                .create_file(".moon/cache/outputs/hash123.tar.gz", "invalid archive");
+            assert_not_hydrated(
+                container
+                    .create_hydrator()
+                    .hydrate(HydrateFrom::LocalArchive, "hash123", &state)
+                    .await
+                    .unwrap(),
+            );
+            assert_eq!(fs::read_to_string(output).unwrap(), "live output");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn respects_negated_glob_and_sibling_project() {
+            let container = TaskRunnerContainer::new("archive", "glob-outputs-negated").await;
+            let root = container.sandbox.path();
+            container.sandbox.create_file("project/a.txt", "cached a");
+            container
+                .sandbox
+                .create_file("project/b.txt", "protected b");
+            container.sandbox.create_file("sibling/keep.txt", "sibling");
+            container.sandbox.create_file(
+                ".moon/cache/states/project/glob-outputs-negated/stdout.log",
+                "out",
+            );
+            container.sandbox.create_file(
+                ".moon/cache/states/project/glob-outputs-negated/stderr.log",
+                "err",
+            );
+            pack_glob_archive(&container, false);
+            fs::write(root.join("project/a.txt"), "live a").unwrap();
+
+            assert_hydrated(
+                container
+                    .create_hydrator()
+                    .hydrate(
+                        HydrateFrom::LocalArchive,
+                        "hash123",
+                        &container.create_state(),
+                    )
+                    .await
+                    .unwrap(),
+            );
+            assert_eq!(
+                fs::read_to_string(root.join("project/a.txt")).unwrap(),
+                "cached a"
+            );
+            assert_eq!(
+                fs::read_to_string(root.join("project/b.txt")).unwrap(),
+                "protected b"
+            );
+            assert_eq!(
+                fs::read_to_string(root.join("sibling/keep.txt")).unwrap(),
+                "sibling"
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn rejects_undeclared_archive_entry_before_workspace_write() {
+            let container = TaskRunnerContainer::new("archive", "glob-outputs-negated").await;
+            let root = container.sandbox.path();
+            container.sandbox.create_file("project/a.txt", "cached a");
+            container.sandbox.create_file("project/rogue.bin", "rogue");
+            container.sandbox.create_file(
+                ".moon/cache/states/project/glob-outputs-negated/stdout.log",
+                "out",
+            );
+            container.sandbox.create_file(
+                ".moon/cache/states/project/glob-outputs-negated/stderr.log",
+                "err",
+            );
+            pack_glob_archive(&container, true);
+            fs::write(root.join("project/a.txt"), "live a").unwrap();
+
+            assert!(
+                container
+                    .create_hydrator()
+                    .hydrate(
+                        HydrateFrom::LocalArchive,
+                        "hash123",
+                        &container.create_state()
+                    )
+                    .await
+                    .is_err()
+            );
+            assert_eq!(
+                fs::read_to_string(root.join("project/a.txt")).unwrap(),
+                "live a"
+            );
+            assert_eq!(
+                fs::read_to_string(root.join("project/rogue.bin")).unwrap(),
+                "rogue"
+            );
+        }
+
+        #[cfg(unix)]
+        #[tokio::test(flavor = "multi_thread")]
+        async fn removal_failure_cannot_report_a_hit() {
+            use std::os::unix::fs::PermissionsExt;
+            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
+            container.pack_archive();
+            let output = container.sandbox.path().join("project/file.txt");
+            fs::write(&output, "live output").unwrap();
+            let project = container.sandbox.path().join("project");
+            fs::set_permissions(&project, fs::Permissions::from_mode(0o555)).unwrap();
+            let result = container
+                .create_hydrator()
+                .hydrate(
+                    HydrateFrom::LocalArchive,
+                    "hash123",
+                    &container.create_state(),
+                )
+                .await;
+            fs::set_permissions(&project, fs::Permissions::from_mode(0o755)).unwrap();
+            assert!(result.is_err());
+            assert_eq!(fs::read_to_string(output).unwrap(), "live output");
         }
     }
 

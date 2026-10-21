@@ -1,3 +1,4 @@
+use moon_cache::Digest;
 use moon_common::{Id, path::WorkspaceRelativePathBuf};
 use moon_config::{
     DependencyScope, DependencySource, ProjectDependencyConfig, TaskDependencyCacheStrategy,
@@ -10,7 +11,7 @@ use moon_task::{Target, TaskFileInput, TaskFileOutput, TaskGlobInput};
 use moon_test_utils::{
     MoonSandbox, WorkspaceGraph, WorkspaceMockOptions, WorkspaceMocker, create_moon_sandbox,
 };
-use moon_workspace::{WorkspaceBuilder, WorkspaceGraphCacheState};
+use moon_workspace::{STATE_KEY, WorkspaceBuilder, WorkspaceGraphCacheState};
 use rustc_hash::FxHashMap;
 use starbase_sandbox::assert_snapshot;
 use starbase_utils::{fs, json, string_vec};
@@ -370,14 +371,23 @@ mod project_graph {
         use super::*;
 
         const CACHE_PATH: &str = ".moon/cache/states/workspaceGraph.json";
-        const STATE_PATH: &str = ".moon/cache/states/workspaceGraphStateV1.json";
 
         // Written by the `tc-tier1` test plugin when `extend_project_graph`
         // is called, allowing us to detect if/when it was invoked
         const MARKER_PATH: &str = ".moon/cache/tcExtendProjectGraph";
 
+        /// The state is an object stored under its key in the objects store.
         fn load_state(sandbox: &MoonSandbox) -> WorkspaceGraphCacheState {
-            json::read_file(sandbox.path().join(STATE_PATH)).unwrap()
+            let key = Digest::from_bytes(STATE_KEY).unwrap();
+
+            json::read_file(
+                sandbox
+                    .path()
+                    .join(".moon/cache/objects")
+                    .join(key.hash.prefix())
+                    .join(key.hash.suffix()),
+            )
+            .unwrap()
         }
 
         async fn do_generate(root: &Path) -> WorkspaceGraph {
@@ -898,6 +908,11 @@ tasks:
                         ));
                     }
                 }
+
+                // The state lives in the same store, under its key
+                let state_key = Digest::from_bytes(STATE_KEY).unwrap();
+
+                blobs.retain(|blob| blob != state_key.hash.as_str());
 
                 // The hash was regenerated with the discovered input files,
                 // but only the final fingerprint is stored

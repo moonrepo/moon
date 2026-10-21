@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
 use moon_blob::{BlobCleanStats, BlobContent, BlobInput, BlobOutput};
+use moon_cache_item::get_cache_mode;
 use moon_cache_storage::{CacheCapabilities, CacheContext, StorageBackend, TaskManifest};
 use moon_cas::CasStore;
 use moon_common::Id;
@@ -47,11 +48,11 @@ impl StorageBackend for LocalObjectsStorage {
     }
 
     fn is_readable(&self) -> bool {
-        true
+        get_cache_mode().is_readable()
     }
 
     fn is_writable(&self) -> bool {
-        true
+        get_cache_mode().is_writable()
     }
 
     /// Nothing references objects (like hash fingerprints) the way task manifests

@@ -458,3 +458,131 @@ mod hash_fingerprints {
         assert!(storage.has_hash_fingerprint(&digest).await);
     }
 }
+
+mod states {
+    use super::*;
+    use serde_json::{Value, json};
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn persists_across_storage_instances() {
+        // A state is read back by later runs, each of which opens its own
+        // storage over the same cache directory.
+        let sandbox = create_empty_sandbox();
+
+        create_storage(&sandbox)
+            .save_state("state.json", &json!({ "lastHash": "abc123" }))
+            .await
+            .unwrap();
+
+        assert_eq!(
+            create_storage(&sandbox)
+                .load_state::<Value>("state.json")
+                .await
+                .unwrap(),
+            json!({ "lastHash": "abc123" })
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn saving_again_replaces_the_state_on_disk() {
+        let sandbox = create_empty_sandbox();
+        let storage = create_storage(&sandbox);
+
+        storage
+            .save_state("state.json", &json!({ "lastHash": "first" }))
+            .await
+            .unwrap();
+        storage
+            .save_state("state.json", &json!({ "lastHash": "second" }))
+            .await
+            .unwrap();
+
+        let key = Digest::from_bytes("state.json").unwrap();
+
+        assert_eq!(
+            std::fs::read_to_string(object_path(&sandbox, &key)).unwrap(),
+            r#"{"lastHash":"second"}"#
+        );
+    }
+}
+
+mod cache_mode {
+    use super::*;
+    use moon_env_var::GlobalEnvBag;
+    use serde_json::{Value, json};
+    use serial_test::serial;
+
+    fn with_cache_mode<T>(mode: &str, op: impl FnOnce() -> T) -> T {
+        let bag = GlobalEnvBag::instance();
+
+        bag.set("MOON_CACHE", mode);
+        let result = op();
+        bag.remove("MOON_CACHE");
+
+        result
+    }
+
+    #[test]
+    #[serial]
+    fn follows_the_cache_mode() {
+        let sandbox = create_empty_sandbox();
+        let backend = create_backend(&sandbox);
+
+        for (mode, readable, writable) in [
+            ("read-write", true, true),
+            ("read", true, false),
+            ("write", false, true),
+            ("off", false, false),
+        ] {
+            let flags = with_cache_mode(mode, || (backend.is_readable(), backend.is_writable()));
+
+            assert_eq!(flags, (readable, writable), "for mode {mode}");
+        }
+
+        assert!(backend.is_readable());
+        assert!(backend.is_writable());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    #[serial]
+    async fn loads_the_default_state_when_the_cache_is_not_readable() {
+        let sandbox = create_empty_sandbox();
+        let storage = create_storage(&sandbox);
+
+        storage
+            .save_state("state.json", &json!({ "lastHash": "abc123" }))
+            .await
+            .unwrap();
+
+        let bag = GlobalEnvBag::instance();
+        bag.set("MOON_CACHE", "write");
+
+        let loaded = storage.load_state::<Value>("state.json").await;
+
+        bag.remove("MOON_CACHE");
+
+        assert_eq!(loaded.unwrap(), Value::Null);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    #[serial]
+    async fn does_not_save_state_when_the_cache_is_not_writable() {
+        let sandbox = create_empty_sandbox();
+        let storage = create_storage(&sandbox);
+
+        let bag = GlobalEnvBag::instance();
+        bag.set("MOON_CACHE", "read");
+
+        let saved = storage
+            .save_state("state.json", &json!({ "lastHash": "abc123" }))
+            .await;
+
+        bag.remove("MOON_CACHE");
+
+        saved.unwrap();
+
+        let key = Digest::from_bytes("state.json").unwrap();
+
+        assert!(!object_path(&sandbox, &key).exists());
+    }
+}

@@ -5,7 +5,7 @@ use moon_common::path::WorkspaceRelativePath;
 use moon_config::WorkspaceProjects;
 use moon_daemon::AtomicDaemonState;
 use moon_file_watcher::*;
-use moon_workspace::{STATE_CACHE_FILE_NAME, STATE_GRAPH_FILE_NAME};
+use moon_workspace::{STATE_KEY, WorkspaceGraphCacheState};
 use regex::Regex;
 use starbase_utils::fs;
 use starbase_utils::glob::GlobSet;
@@ -143,12 +143,12 @@ impl WorkspaceWatcher {
             handle.abort();
         }
 
-        // Ensure the cache/state files are cleared before rebuilding. The state
-        // is removed first, as its hash is what marks the cached graph as valid
-        let cache_engine = self.session.get_cache_engine()?;
-
-        fs::remove_file(cache_engine.state.resolve_path(STATE_CACHE_FILE_NAME))?;
-        fs::remove_file(cache_engine.state.resolve_path(STATE_GRAPH_FILE_NAME))?;
+        // Ensure the cache state is cleared before rebuilding
+        self.session
+            .get_cache_engine()?
+            .objects_storage
+            .save_state(STATE_KEY, &WorkspaceGraphCacheState::default())
+            .await?;
 
         // Rebuild the graphs in a background thread
         self.graph_handle = Some(self.session.rebuild_graphs(Arc::clone(state)));

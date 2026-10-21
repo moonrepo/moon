@@ -110,7 +110,7 @@ impl<'task> TaskRunner<'task> {
         let mut cache = app_context
             .cache_engine
             .state
-            .load_target_state::<TaskRunCacheState>(&task.target)?;
+            .load_target_last_run::<TaskRunCacheState>(&task.target)?;
 
         if cache.data.target.is_empty() {
             cache.data.target = task.target.to_string();

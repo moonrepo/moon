@@ -39,40 +39,6 @@ mod cache_engine {
     }
 
     #[test]
-    fn returns_default_if_cache_missing() {
-        let sandbox = create_empty_sandbox();
-        let engine = create_engine(&sandbox);
-        let item = engine
-            .state
-            .load_state::<CommonCacheState>("state.json")
-            .unwrap();
-
-        assert_eq!(item.data, CommonCacheState::default());
-    }
-
-    #[test]
-    fn reads_cache_if_exists() {
-        let sandbox = create_empty_sandbox();
-        sandbox.create_file(
-            ".moon/cache/states/state.json",
-            r#"{ "lastHash": "abc123" }"#,
-        );
-
-        let engine = create_engine(&sandbox);
-        let item = engine
-            .state
-            .load_state::<CommonCacheState>("state.json")
-            .unwrap();
-
-        assert_eq!(
-            item.data,
-            CommonCacheState {
-                last_hash: "abc123".into()
-            }
-        );
-    }
-
-    #[test]
     fn can_write_cache_if_mode_off() {
         let sandbox = create_empty_sandbox();
         let engine = create_engine(&sandbox);

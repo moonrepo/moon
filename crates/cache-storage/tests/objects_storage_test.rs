@@ -903,3 +903,122 @@ mod hash_fingerprint_lookups {
         assert_eq!(found, vec![digest.clone(), digest]);
     }
 }
+
+mod states {
+    use super::*;
+    use serde::Deserialize;
+
+    #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
+    struct TestState {
+        last_hash: String,
+    }
+
+    fn state(hash: &str) -> TestState {
+        TestState {
+            last_hash: hash.into(),
+        }
+    }
+
+    #[tokio::test]
+    async fn loads_the_default_when_missing() {
+        let mut storage = create_storage();
+        storage.add_local_backend(MemoryBackend::new("mem"));
+
+        assert_eq!(
+            storage.load_state::<TestState>("state.json").await.unwrap(),
+            TestState::default()
+        );
+    }
+
+    #[tokio::test]
+    async fn saves_then_loads_a_state() {
+        let mut storage = create_storage();
+        storage.add_local_backend(MemoryBackend::new("mem"));
+
+        storage
+            .save_state("state.json", &state("abc123"))
+            .await
+            .unwrap();
+
+        assert_eq!(
+            storage.load_state::<TestState>("state.json").await.unwrap(),
+            state("abc123")
+        );
+    }
+
+    #[tokio::test]
+    async fn saving_again_replaces_the_previous_state() {
+        // A state is stored under its key rather than its content, so saving
+        // under the same key must overwrite it, not be skipped as already
+        // stored.
+        let mut storage = create_storage();
+        storage.add_local_backend(MemoryBackend::new("mem"));
+
+        storage
+            .save_state("state.json", &state("first"))
+            .await
+            .unwrap();
+        storage
+            .save_state("state.json", &state("second"))
+            .await
+            .unwrap();
+
+        assert_eq!(
+            storage.load_state::<TestState>("state.json").await.unwrap(),
+            state("second")
+        );
+    }
+
+    #[tokio::test]
+    async fn keeps_states_under_different_keys_apart() {
+        let mut storage = create_storage();
+        storage.add_local_backend(MemoryBackend::new("mem"));
+
+        storage.save_state("one.json", &state("one")).await.unwrap();
+        storage.save_state("two.json", &state("two")).await.unwrap();
+
+        assert_eq!(
+            storage.load_state::<TestState>("one.json").await.unwrap(),
+            state("one")
+        );
+        assert_eq!(
+            storage.load_state::<TestState>("two.json").await.unwrap(),
+            state("two")
+        );
+    }
+
+    #[tokio::test]
+    async fn loads_the_default_from_an_unreadable_backend() {
+        let unreadable = MemoryBackend::new("unreadable").unreadable();
+        let blobs = Arc::clone(&unreadable.blobs);
+
+        blobs.lock().unwrap().insert(
+            Digest::from_bytes("state.json").unwrap(),
+            Bytes::from_static(br#"{"last_hash":"abc123"}"#),
+        );
+
+        let mut storage = create_storage();
+        storage.add_local_backend(unreadable);
+
+        assert_eq!(
+            storage.load_state::<TestState>("state.json").await.unwrap(),
+            TestState::default()
+        );
+    }
+
+    #[tokio::test]
+    async fn does_not_save_to_a_read_only_backend() {
+        let read_only = MemoryBackend::new("read-only").read_only();
+        let blobs = Arc::clone(&read_only.blobs);
+
+        let mut storage = create_storage();
+        storage.add_local_backend(read_only);
+
+        storage
+            .save_state("state.json", &state("abc123"))
+            .await
+            .unwrap();
+
+        assert!(blobs.lock().unwrap().is_empty());
+    }
+}

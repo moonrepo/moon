@@ -22,8 +22,7 @@ use tokio::task::JoinHandle;
 use tracing::{debug, instrument};
 
 pub const LOCK_FILE_NAME: &str = "workspaceGraph.lock";
-pub const STATE_GRAPH_FILE_NAME: &str = "workspaceGraph.json";
-pub const STATE_CACHE_FILE_NAME: &str = "workspaceGraphStateV1.json";
+pub const STATE_KEY: &str = "WorkspaceGraph";
 
 pub struct WorkspaceBuilderContext {
     pub cache_engine: Arc<CacheEngine>,
@@ -102,12 +101,9 @@ impl WorkspaceBuilder {
         // during the last build must contribute to the hash
         let mut state = context
             .cache_engine
-            .state
-            .load_state::<WorkspaceGraphCacheState>(STATE_CACHE_FILE_NAME)?;
-        let cache_path = context
-            .cache_engine
-            .state
-            .resolve_path(STATE_GRAPH_FILE_NAME);
+            .objects_storage
+            .load_state::<WorkspaceGraphCacheState>(STATE_KEY)
+            .await?;
 
         // Preload sources and configs, and hash the graph based on that state
         graph.preload().await?;
@@ -122,7 +118,7 @@ impl WorkspaceBuilder {
             .collect::<BTreeMap<_, _>>();
 
         let mut hasher = graph
-            .create_cache_hasher(&projects, state.data.plugin_input_paths.clone())
+            .create_cache_hasher(&projects, state.plugin_input_paths.clone())
             .await?;
         let digest = Digest::from_hasher(&mut hasher)?;
 
@@ -145,7 +141,7 @@ impl WorkspaceBuilder {
             }
         };
 
-        if digest.hash == state.data.last_hash
+        if digest.hash == state.last_hash
             && let Some(mut cache) = read_cache()
         {
             // Verify that the cached projects match the current projects
@@ -200,11 +196,11 @@ impl WorkspaceBuilder {
         // If plugins discovered a different set of input files, regenerate
         // the hash with them included, otherwise the next run would be
         // a guaranteed cache miss
-        if graph.projects.plugin_input_paths != state.data.plugin_input_paths {
-            state.data.plugin_input_paths = graph.projects.plugin_input_paths.clone();
+        if graph.projects.plugin_input_paths != state.plugin_input_paths {
+            state.plugin_input_paths = graph.projects.plugin_input_paths.clone();
 
             hasher = graph
-                .create_cache_hasher(&projects, state.data.plugin_input_paths.clone())
+                .create_cache_hasher(&projects, state.plugin_input_paths.clone())
                 .await?;
         }
 
@@ -219,8 +215,13 @@ impl WorkspaceBuilder {
         // marks the cached graph as valid, so a failure in between is a miss
         write_cache_file(&cache_path, &graph)?;
 
-        state.data.last_hash = digest.hash;
-        state.save()?;
+        state.last_hash = digest.hash;
+
+        context
+            .cache_engine
+            .objects_storage
+            .save_state(STATE_KEY, &state)
+            .await?;
 
         Ok(graph)
     }

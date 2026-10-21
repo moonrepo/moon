@@ -14,7 +14,7 @@ use tracing::{debug, instrument, warn};
 
 static ARG_VAR_PATTERN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\$(ARG\d+)").unwrap());
 
-const STATE_KEY: &str = "VcsHooks";
+pub const STATE_KEY: &str = "VcsHooks";
 
 pub enum ShellType {
     Bash,

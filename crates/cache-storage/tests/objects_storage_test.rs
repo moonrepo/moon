@@ -389,6 +389,32 @@ mod objects {
     }
 
     #[tokio::test]
+    async fn replacing_repairs_an_object_that_already_exists() {
+        // Storing skips digests that already exist, so an object with bad
+        // content stays bad, while replacing writes it again.
+        let backend = MemoryBackend::new("mem");
+        let blobs = Arc::clone(&backend.blobs);
+        let input = inline_input(b"object");
+        let digest = input.digest.clone();
+
+        blobs
+            .lock()
+            .unwrap()
+            .insert(digest.clone(), Bytes::from_static(b"corrupt"));
+
+        let mut storage = create_storage();
+        storage.add_local_backend(backend);
+
+        storage.store_object(input.clone()).await.unwrap();
+
+        assert_eq!(blobs.lock().unwrap()[&digest], &b"corrupt"[..]);
+
+        storage.replace_objects(vec![input]).await.unwrap();
+
+        assert_eq!(blobs.lock().unwrap()[&digest], &b"object"[..]);
+    }
+
+    #[tokio::test]
     async fn skips_unreadable_backends() {
         let unreadable = MemoryBackend::new("unreadable").unreadable();
         let digest = unreadable.seed(b"object");

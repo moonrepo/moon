@@ -129,21 +129,26 @@ impl WorkspaceBuilder {
 
         // A missing or unreadable cache, like one that was only partially
         // written, or is from an incompatible version, is treated as a miss
-        let read_cache = || match read_cache_file::<WorkspaceBuilder>(&cache_path) {
-            Ok(cache) => Some(cache),
-            Err(error) => {
-                debug!(
-                    cache = ?cache_path,
-                    "Unable to read cached workspace graph, rebuilding: {error}",
-                );
+        let cache = match &state.graph_digest {
+            Some(graph_digest) if digest.hash == state.last_hash => {
+                match read_cache_object::<WorkspaceBuilder>(&context.cache_engine, graph_digest)
+                    .await
+                {
+                    Ok(cache) => cache,
+                    Err(error) => {
+                        debug!(
+                            hash = graph_digest.hash.as_str(),
+                            "Unable to read cached workspace graph, rebuilding: {error}",
+                        );
 
-                None
+                        None
+                    }
+                }
             }
+            _ => None,
         };
 
-        if digest.hash == state.last_hash
-            && let Some(mut cache) = read_cache()
-        {
+        if let Some(mut cache) = cache {
             // Verify that the cached projects match the current projects
             // on disk. If a project has been added or removed since the
             // cache was created, we need to rebuild the graph
@@ -160,7 +165,6 @@ impl WorkspaceBuilder {
 
             if cached_ids == current_ids {
                 debug!(
-                    cache = ?cache_path,
                     "Loading workspace graph with {} projects from cache",
                     cached_ids.len(),
                 );
@@ -179,10 +183,7 @@ impl WorkspaceBuilder {
                 return Ok(cache);
             }
 
-            debug!(
-                cache = ?cache_path,
-                "Cached workspace graph has mismatched projects, rebuilding",
-            );
+            debug!("Cached workspace graph has mismatched projects, rebuilding",);
         }
 
         // Build the graph, update the state, and save the cache
@@ -211,10 +212,10 @@ impl WorkspaceBuilder {
             .store_hash_fingerprint_with_hasher(hasher)
             .await?;
 
-        // Write the graph before saving the state, as the state's hash is what
-        // marks the cached graph as valid, so a failure in between is a miss
-        write_cache_file(&cache_path, &graph)?;
-
+        // Store the graph before saving the state that points to it, so the
+        // state only ever references a graph built for its hash, and a failure
+        // in between is a miss
+        state.graph_digest = Some(write_cache_object(&context.cache_engine, &graph).await?);
         state.last_hash = digest.hash;
 
         context

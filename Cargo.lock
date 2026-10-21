@@ -6823,6 +6823,7 @@ dependencies = [
  "miette 7.6.0",
  "moon_async_utils",
  "moon_bench_utils",
+ "moon_blob",
  "moon_cache",
  "moon_common",
  "moon_config",

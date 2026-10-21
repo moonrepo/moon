@@ -148,9 +148,15 @@ impl ObjectsStorage {
             });
         }
 
-        // A keyed object is replaced by storing under its key again, so this
-        // writes directly instead of through `store_blobs_batched`, which
-        // skips digests that already exist and would keep the old value
+        // A keyed object is replaced by storing under its key again
+        self.replace_objects(blobs).await
+    }
+
+    /// Store objects in every writable backend, even when they already exist.
+    /// Unlike `store_objects`, which skips digests that already exist, this
+    /// replaces them, so a keyed object takes its new value, and an object
+    /// that couldn't be read back is repaired.
+    pub async fn replace_objects(&self, blobs: Vec<BlobInput>) -> miette::Result<()> {
         for backend in &self.backends {
             if backend.is_writable() {
                 backend.store_blobs(blobs.clone(), false).await?;

@@ -7,7 +7,6 @@ use moon_daemon::AtomicDaemonState;
 use moon_file_watcher::*;
 use moon_workspace::{STATE_KEY, WorkspaceGraphCacheState};
 use regex::Regex;
-use starbase_utils::fs;
 use starbase_utils::glob::GlobSet;
 use std::sync::Arc;
 use tokio::task::JoinHandle;

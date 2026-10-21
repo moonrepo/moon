@@ -6673,6 +6673,7 @@ dependencies = [
 name = "moon_task_runner"
 version = "0.0.1"
 dependencies = [
+ "async-trait",
  "miette 7.6.0",
  "moon_action",
  "moon_action_context",
@@ -6682,6 +6683,7 @@ dependencies = [
  "moon_blob",
  "moon_cache",
  "moon_cache_item",
+ "moon_cache_local",
  "moon_common",
  "moon_config",
  "moon_console",
@@ -6701,6 +6703,7 @@ dependencies = [
  "starbase_archive",
  "starbase_sandbox",
  "starbase_utils",
+ "tempfile",
  "thiserror 2.0.21",
  "tokio",
  "tokio-util",

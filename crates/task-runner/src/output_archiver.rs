@@ -1,22 +1,40 @@
+use crate::output_hydrater::OutputHydrater;
 use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
-use moon_cache::{StorageOptions, TaskManifest};
+use moon_blob::Blob;
+use moon_cache::{PROMOTION_TIMEOUT, StorageOptions, TaskManifest};
 use moon_common::color;
+use moon_common::path::PathExt;
 use moon_common::path::to_relative_virtual_string;
 use moon_daemon_client::DaemonClient;
 use moon_hash::ContentHash;
-use moon_manifest::TaskManifestPacker;
+use moon_manifest::{ManifestError, TaskManifestFile as ManifestFile, TaskManifestPacker};
 use moon_task::Task;
 use starbase_archive::Archiver;
+use starbase_utils::{fs, glob::GlobSet};
+use std::path::Path;
+use std::path::PathBuf;
 use std::sync::Arc;
+use tempfile::TempDir;
 use tokio::task::spawn_blocking;
 use tracing::{debug, instrument, warn};
+
+type Manifest = TaskManifest;
+type ManifestPacker = TaskManifestPacker;
 
 pub enum ArchiveOutcome {
     Skipped,
     Queued,
+}
+
+pub(crate) struct StagedLocalArchive {
+    pub scratch: Arc<TempDir>,
+    pub manifest: Manifest,
+    pub declared_dirs: Vec<PathBuf>,
+    pub log_paths: Vec<PathBuf>,
+    pub has_required_outputs: bool,
 }
 
 /// Cache outputs to the `.moon/cache` folder and to cloud storage,
@@ -116,31 +134,7 @@ impl OutputArchiver<'_> {
 
     #[instrument(skip(self))]
     pub fn has_outputs_been_created(&self) -> miette::Result<bool> {
-        // Check paths first since they are literal
-        if !self.has_output_files_been_created() {
-            return Ok(false);
-        }
-
-        // Check globs last, as they are costly!
-        // If all globs are negated, then the empty check will always
-        // fail, resulting in archives not being created
-        if self.has_output_globs() {
-            let outputs = self
-                .task
-                .get_output_files(&self.app_context.workspace_root, false)?;
-
-            if outputs.is_empty()
-                && !self
-                    .task
-                    .outputs
-                    .iter()
-                    .all(|output| output.is_glob() && output.is_optional())
-            {
-                return Ok(false);
-            }
-        }
-
-        Ok(true)
+        Self::has_outputs_at(self.task, &self.app_context.workspace_root)
     }
 
     #[instrument(skip(self))]
@@ -159,13 +153,399 @@ impl OutputArchiver<'_> {
                 task_target = self.task.target.as_str(),
                 "Files matched by output globs differ from the previous run, will hydrate"
             );
-
             return Ok(false);
         }
-
         Ok(true)
     }
 
+    fn has_outputs_at(task: &Task, root: &Path) -> miette::Result<bool> {
+        for (output, params) in &task.output_files {
+            if !output.to_path(root).exists() && !params.optional {
+                return Ok(false);
+            }
+        }
+        if task
+            .output_globs
+            .keys()
+            .any(|glob| !glob.as_str().starts_with('!'))
+        {
+            let outputs = task.get_output_files(root, false)?;
+            if outputs.is_empty()
+                && !task
+                    .outputs
+                    .iter()
+                    .all(|output| output.is_glob() && output.is_optional())
+            {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+
+    /// Share an existing successful cache entry without trusting live output files.
+    /// Callers keep promotion best-effort; normal task execution is never required.
+    pub async fn promote_cached(
+        &self,
+        hash: &str,
+        state: &TaskRunState,
+    ) -> miette::Result<ArchiveOutcome> {
+        match tokio::time::timeout(PROMOTION_TIMEOUT, self.promote_cached_inner(hash, state)).await
+        {
+            Ok(result) => result,
+            Err(_) => {
+                self.app_context.cache_engine.storage.disable_promotion();
+                Err(miette::miette!(
+                    "Timed out promoting cached outputs after {} seconds",
+                    PROMOTION_TIMEOUT.as_secs()
+                ))
+            }
+        }
+    }
+
+    async fn promote_cached_inner(
+        &self,
+        hash: &str,
+        state: &TaskRunState,
+    ) -> miette::Result<ArchiveOutcome> {
+        // Persistent tasks run outside Moon's task concurrency permit, so a
+        // foreground upload here would have no resource bound. Their normal
+        // cache lookup and task execution remain unchanged.
+        if self.task.is_persistent() {
+            debug!(
+                task_target = self.task.target.as_str(),
+                hash, "Skipping cache promotion for persistent task"
+            );
+            return Ok(ArchiveOutcome::Skipped);
+        }
+
+        if !state.local_cache_readable
+            || !state.remote_cache_writable
+            || state.digest.hash.as_str() != hash
+            || !self.app_context.cache_engine.storage.is_promotion_enabled()
+        {
+            return Ok(ArchiveOutcome::Skipped);
+        }
+
+        let cache = &self.app_context.cache_engine;
+        let remote = cache.storage.with_options(StorageOptions {
+            include_local: false,
+            include_remote: true,
+            ..Default::default()
+        });
+        // Writability is unknown
+        // until negotiation completes (notably for a PreviousOutput hit).
+        remote.wait_for_connection().await;
+        if !remote
+            .get_backends()
+            .iter()
+            .any(|backend| backend.is_writable())
+            || remote.load_task_manifest(&state.digest).await?.is_some()
+        {
+            return Ok(ArchiveOutcome::Skipped);
+        }
+
+        let Some(fingerprint_content) = cache.storage.load_hash_manifest(&state.digest).await?
+        else {
+            return Ok(ArchiveOutcome::Skipped);
+        };
+        let expected_digest = state.digest.clone();
+        // Snapshot and verify exact action bytes before any remote upload.
+        let fingerprint = spawn_blocking(move || {
+            let blob = Blob::from_bytes(fingerprint_content.read_bytes()?)?;
+            Ok::<_, miette::Report>((blob.digest == expected_digest).then_some(blob))
+        })
+        .await
+        .into_diagnostic()??;
+        let Some(fingerprint) = fingerprint else {
+            return Ok(ArchiveOutcome::Skipped);
+        };
+
+        let local = cache.storage.with_options(StorageOptions {
+            include_local: true,
+            include_remote: false,
+            ..Default::default()
+        });
+        let mut manifest = None;
+        if state.local_cas_enabled
+            && let Some(source) = local.load_task_manifest(&state.digest).await?
+            && source.manifest.exit_code == 0
+        {
+            manifest = local.hydrate_task_manifest(&state.digest, source).await?;
+        }
+
+        let mut lifetime: Option<Arc<dyn Send + Sync>> = None;
+        let mut manifest = if let Some(manifest) = manifest {
+            manifest
+        } else {
+            let archive_path = cache.hash.get_archive_path(hash);
+            if !archive_path.is_file() {
+                return Ok(ArchiveOutcome::Skipped);
+            }
+
+            let Some(staged) =
+                Self::stage_local_archive(self.app_context, self.task, archive_path).await?
+            else {
+                return Ok(ArchiveOutcome::Skipped);
+            };
+            if !staged.has_required_outputs {
+                return Ok(ArchiveOutcome::Skipped);
+            }
+            lifetime = Some(staged.scratch.clone());
+            staged.manifest
+        };
+
+        // Validate declared outputs before attaching the fingerprint: its path
+        // is outside the task's output allowlist by design.
+        if let Err(error) =
+            OutputHydrater::new(self.app_context, self.task, None)?.validate_output_paths(&manifest)
+        {
+            if matches!(
+                error.downcast_ref::<TaskRunnerError>(),
+                Some(TaskRunnerError::OutputFileNotDeclared { .. })
+            ) {
+                debug!(
+                    task_target = self.task.target.as_str(),
+                    hash, "Skipping cache promotion because a cached output is undeclared"
+                );
+                return Ok(ArchiveOutcome::Skipped);
+            }
+            return Err(error);
+        }
+        if !self.has_required_manifest_outputs(&manifest)? {
+            return Ok(ArchiveOutcome::Skipped);
+        }
+        manifest.digest_source = Some(ManifestFile {
+            bytes: Some(fingerprint.bytes),
+            digest: Some(fingerprint.digest),
+            path: moon_common::path::WorkspaceRelativePathBuf::from(format!(
+                ".moon/cache/blobs/{}/{}",
+                state.digest.hash.prefix(),
+                state.digest.hash.suffix(),
+            )),
+            ..Default::default()
+        });
+
+        // The daemon RPC drops file source paths. Use native storage directly
+        // and await all uploads under Moon's existing task-concurrency permit.
+        if remote
+            .archive_task_manifest_with_lifetime(&state.digest, manifest, lifetime)
+            .await?
+        {
+            Ok(ArchiveOutcome::Queued)
+        } else {
+            Ok(ArchiveOutcome::Skipped)
+        }
+    }
+
+    fn has_required_manifest_outputs(&self, manifest: &Manifest) -> miette::Result<bool> {
+        let paths = manifest
+            .files
+            .iter()
+            .map(|file| &file.path)
+            .chain(manifest.symlinks.iter().map(|link| &link.path))
+            .collect::<Vec<_>>();
+        for (required, params) in &self.task.output_files {
+            if !params.optional && !paths.iter().any(|path| path.starts_with(required)) {
+                return Ok(false);
+            }
+        }
+        // Match the normal archiver's aggregate glob requirement. Expanded
+        // globs do not carry per-pattern optional metadata.
+        if self
+            .task
+            .output_globs
+            .keys()
+            .any(|glob| !glob.as_str().starts_with('!'))
+            && !self
+                .task
+                .outputs
+                .iter()
+                .all(|output| output.is_glob() && output.is_optional())
+        {
+            let matcher = GlobSet::new(self.task.output_globs.keys())?;
+            if !paths.iter().any(|path| matcher.matches(path.as_str())) {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+
+    fn validate_staged_sources(manifest: &Manifest, scratch: &TempDir) -> miette::Result<()> {
+        let root = std::fs::canonicalize(scratch.path()).into_diagnostic()?;
+        for source in manifest
+            .files
+            .iter()
+            .filter_map(|file| file.source_path.as_ref())
+        {
+            if !std::fs::canonicalize(source)
+                .into_diagnostic()?
+                .starts_with(&root)
+            {
+                return Err(miette::miette!(
+                    "Cached output escapes private promotion directory"
+                ));
+            }
+        }
+        for link in &manifest.symlinks {
+            let target = link.target.to_logical_path(&root);
+            if !std::fs::canonicalize(target)
+                .into_diagnostic()?
+                .starts_with(&root)
+            {
+                return Err(miette::miette!(
+                    "Cached symlink escapes private promotion directory"
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    /// Validate a complete legacy archive before either promotion or hydration
+    /// can observe its content. The returned source paths stay alive with scratch.
+    pub(crate) async fn stage_local_archive(
+        app_context: &Arc<AppContext>,
+        task: &Arc<Task>,
+        archive_path: PathBuf,
+    ) -> miette::Result<Option<StagedLocalArchive>> {
+        let cache = &app_context.cache_engine;
+        let logs = cache
+            .state
+            .get_target_dir(&task.target)
+            .relative_to(&app_context.workspace_root)
+            .into_diagnostic()?;
+        fs::create_dir_all(&cache.temp_dir)?;
+        let mut scratch_builder = tempfile::Builder::new();
+        scratch_builder.prefix("hydrate-");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            scratch_builder.permissions(std::fs::Permissions::from_mode(0o700));
+        }
+        let scratch = Arc::new(
+            scratch_builder
+                .tempdir_in(&cache.temp_dir)
+                .into_diagnostic()?,
+        );
+        let task = Arc::clone(task);
+        let staging = Arc::clone(&scratch);
+        spawn_blocking(move || {
+            if let Err(error) = Archiver::new(staging.path(), &archive_path).unpack_from_ext() {
+                warn!(
+                    task_target = task.target.as_str(),
+                    archive_file = ?archive_path,
+                    "Failed to stage cached task outputs: {}",
+                    color::muted_light(error.to_string()),
+                );
+                return Ok(None);
+            }
+            let mut packer = ManifestPacker::new(staging.path().to_path_buf());
+            for output in task.get_output_files(staging.path(), true)? {
+                if let Err(error) = packer.inherit_output(output) {
+                    if matches!(
+                        error.downcast_ref::<ManifestError>(),
+                        Some(ManifestError::OutputSymlinkOutsideOfWorkspace { .. })
+                    ) {
+                        debug!(
+                            task_target = task.target.as_str(),
+                            "Skipping cache archive with an unsupported symlink output"
+                        );
+                        return Ok(None);
+                    }
+                    return Err(error);
+                }
+            }
+            let mut manifest = packer.pack();
+            let mut pending = task
+                .output_files
+                .keys()
+                .map(|path| path.to_logical_path(staging.path()))
+                .filter(|path| std::fs::symlink_metadata(path).is_ok_and(|meta| meta.is_dir()))
+                .collect::<Vec<_>>();
+            let mut declared_dirs = Vec::new();
+            while let Some(dir) = pending.pop() {
+                if declared_dirs.contains(&dir) {
+                    continue;
+                }
+                for entry in std::fs::read_dir(&dir).into_diagnostic()? {
+                    let entry = entry.into_diagnostic()?;
+                    if entry.file_type().into_diagnostic()?.is_dir() {
+                        pending.push(entry.path());
+                    }
+                }
+                declared_dirs.push(dir);
+            }
+            let log_dir = logs.to_logical_path(staging.path());
+            let log_paths = [log_dir.join("stdout.log"), log_dir.join("stderr.log")]
+                .into_iter()
+                .filter(|path| std::fs::symlink_metadata(path).is_ok_and(|meta| meta.is_file()))
+                .collect::<Vec<_>>();
+            for path in &log_paths {
+                let blob = Blob::from_file(path)?;
+                if path.ends_with("stdout.log") {
+                    manifest.stdout_digest = Some(blob.digest);
+                    manifest.stdout_bytes = Some(blob.bytes);
+                } else {
+                    manifest.stderr_digest = Some(blob.digest);
+                    manifest.stderr_bytes = Some(blob.bytes);
+                }
+            }
+            Self::validate_staged_sources(&manifest, &staging)?;
+            let has_required_outputs = Self::has_outputs_at(&task, staging.path())?;
+            Ok::<_, miette::Report>(Some(StagedLocalArchive {
+                scratch: staging,
+                manifest,
+                declared_dirs,
+                log_paths,
+                has_required_outputs,
+            }))
+        })
+        .await
+        .into_diagnostic()?
+    }
+
+    pub(crate) fn validate_staged_entries(
+        manifest: &Manifest,
+        declared_dirs: &[PathBuf],
+        log_paths: &[PathBuf],
+        root: &Path,
+    ) -> miette::Result<()> {
+        let mut allowed = manifest
+            .files
+            .iter()
+            .filter_map(|file| file.source_path.clone())
+            .collect::<Vec<_>>();
+        allowed.extend(
+            manifest
+                .symlinks
+                .iter()
+                .map(|link| link.path.to_logical_path(root)),
+        );
+        allowed.extend(declared_dirs.iter().cloned());
+        allowed.extend(log_paths.iter().cloned());
+        let mut pending = vec![root.to_path_buf()];
+        while let Some(dir) = pending.pop() {
+            for entry in std::fs::read_dir(&dir).into_diagnostic()? {
+                let entry = entry.into_diagnostic()?;
+                let path = entry.path();
+                let kind = entry.file_type().into_diagnostic()?;
+                if kind.is_dir() {
+                    if !allowed.iter().any(|file| file.starts_with(&path)) {
+                        return Err(miette::miette!(
+                            "Cached archive contains undeclared directory {}",
+                            path.display()
+                        ));
+                    }
+                    pending.push(path);
+                } else if !allowed.contains(&path) {
+                    return Err(miette::miette!(
+                        "Cached archive contains undeclared entry {}",
+                        path.display()
+                    ));
+                }
+            }
+        }
+        Ok(())
+    }
     /// Create a hash from the workspace relative paths of all files currently
     /// matched by output globs, so that a subsequent run can verify that the
     /// exact same set of files still exists. Returns `None` if the task has

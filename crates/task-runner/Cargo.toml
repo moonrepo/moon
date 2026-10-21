@@ -34,15 +34,19 @@ rustc-hash = { workspace = true }
 serde = { workspace = true }
 starbase_archive = { workspace = true }
 starbase_utils = { workspace = true }
+tempfile = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tokio-util = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
+async-trait = { workspace = true }
 moon_affected = { path = "../affected" }
+moon_cache_local = { path = "../cache-local" }
 moon_test_utils = { path = "../test-utils" }
 starbase_sandbox = { workspace = true }
+tokio = { workspace = true, features = ["test-util"] }
 
 [lints]
 workspace = true

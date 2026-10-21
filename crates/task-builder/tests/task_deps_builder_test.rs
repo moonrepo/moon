@@ -170,7 +170,7 @@ mod task_deps_builder {
         FxHashMap::from_iter([(
             Target::parse("project:allow-failure").unwrap(),
             TaskOptions {
-                allow_failure: true,
+                on_failure: Some(TaskOptionOnFailure::Allow),
                 ..Default::default()
             },
         )])
@@ -237,7 +237,7 @@ mod task_deps_builder {
                 FxHashMap::from_iter([(
                     Target::parse("project:expect-failure").unwrap(),
                     TaskOptions {
-                        expect_failure: true,
+                        on_failure: Some(TaskOptionOnFailure::Expect),
                         ..Default::default()
                     },
                 )]),

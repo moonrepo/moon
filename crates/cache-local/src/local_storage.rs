@@ -115,7 +115,7 @@ impl StorageBackend for LocalStorage {
         // 2. Sweep blobs no surviving manifest references. Blobs released by an
         //    evicted manifest are swept past the ingest grace (so the size budget
         //    is enforced), while blobs that no manifest references at all (like
-        //    hash manifests, which mark actions as having ran) live out the
+        //    hash fingerprints, which mark actions as having ran) live out the
         //    lifetime, as nothing else keeps them alive.
         let blob_stats = blobs
             .retain_with_released(Arc::new(keep), Arc::new(released), BLOB_GRACE, lifetime)

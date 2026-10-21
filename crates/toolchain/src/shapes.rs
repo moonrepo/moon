@@ -1,6 +1,8 @@
+use serde::Serialize;
 use std::path::PathBuf;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub enum DependenciesWorkspaceRole {
     // Workspace
     WorkspaceRoot,
@@ -9,7 +11,7 @@ pub enum DependenciesWorkspaceRole {
     PackageRoot,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct DependenciesWorkspace {
     pub root: PathBuf,
     // If not a multi-package workspace, will be `None`.

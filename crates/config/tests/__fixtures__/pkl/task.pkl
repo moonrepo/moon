@@ -6,7 +6,7 @@ description = "I do something"
 
 command = "cmd --arg"
 
-args = List("-c", "-b", "arg")
+args = new Listing { "-c"; "-b"; "arg" }
 
 deps = new Listing {
 	"proj:task"
@@ -16,7 +16,7 @@ deps = new Listing {
 	}
 	new TaskDependencyConfig {
 		target = "~:build"
-		args = List("--minify")
+		args = new Listing { "--minify" }
 		env {
 			["DEBUG"] = "1"
 		}

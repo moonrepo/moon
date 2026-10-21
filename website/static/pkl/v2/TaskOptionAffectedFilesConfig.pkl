@@ -6,14 +6,14 @@ module TaskOptionAffectedFilesConfig
 /// A list of glob patterns to filter the affected files list before
 /// passing to the task as arguments or environment variables. Globs
 /// must start with `**` to match against absolute paths.
-filter: *Listing<String> | List<String> | Set<String>
+filter: Listing<String>?
 
 /// When matching affected files, ignore the project boundary and include
 /// workspace relative files. Otherwise, only files within the project are matched.
 ignoreProjectBoundary: Boolean?
 
 /// The pattern in which affected files will be passed to the affected task.
-pass: Boolean | "args" | "env"
+pass: TaskOptionAffectedFilesPattern?
 
 /// When there are no affected files after matching and filtering,
 /// use `.` instead of an empty value.
@@ -22,3 +22,6 @@ passDotWhenNoResults: Boolean?
 /// When there are no affected files after matching, use the
 /// task's inputs instead.
 passInputsWhenNoMatch: Boolean?
+
+/// The pattern in which affected files will be passed to the affected task.
+typealias TaskOptionAffectedFilesPattern = "args" | "env" | *Boolean

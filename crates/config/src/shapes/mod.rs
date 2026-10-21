@@ -8,7 +8,21 @@ pub use output::*;
 pub use poly::*;
 pub use portable_path::*;
 
-use schematic::ParseError;
+use schematic::{Config, ConfigError, ParseError, PartialConfig};
+
+/// Finalize a partial configuration that was deserialized on its own, instead
+/// of through a config loader, by applying its defaults and validating it.
+pub(crate) fn finalize_partial<T: Config>(partial: T::Partial) -> Result<T, ParseError> {
+    let map_error = |error: ConfigError| ParseError::new(error.to_full_string());
+    let context = Default::default();
+
+    // Finalizing applies the default values
+    let partial = partial.finalize(&context).map_err(map_error)?;
+
+    partial.validate(&context, true).map_err(map_error)?;
+
+    Ok(T::from_partial(partial))
+}
 
 #[derive(Debug, Default)]
 pub struct Uri {
@@ -55,8 +69,12 @@ pub fn is_false(value: &bool) -> bool {
     !(*value)
 }
 
-pub(super) fn default_true() -> bool {
-    true
+pub fn is_true(value: &bool) -> bool {
+    *value
+}
+
+pub fn is_default<T: Default + PartialEq>(value: &T) -> bool {
+    *value == T::default()
 }
 
 pub(super) fn map_parse_error<T: std::fmt::Display>(error: T) -> ParseError {

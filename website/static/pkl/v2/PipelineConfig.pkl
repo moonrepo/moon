@@ -3,10 +3,8 @@
 /// Configures aspects of the action pipeline.
 module PipelineConfig
 
-import "PipelineActionSwitch.pkl"
-
 /// Automatically clean the cache after every task run.
-/// @since 1.24.0
+@Since { version = "1.24.0" }
 autoCleanCache: Boolean?
 
 /// The lifetime in which task outputs will be cached.
@@ -17,8 +15,8 @@ inheritColorsForPipedTasks: Boolean?
 
 /// Run the `InstallDependencies` actions for each running task
 /// when changes to lockfiles and manifests are detected.
-/// @since 1.34.0
-installDependencies: PipelineActionSwitch.PipelineActionSwitch?
+@Since { version = "1.34.0" }
+installDependencies: PipelineActionSwitch?
 
 /// A threshold in milliseconds in which to force kill running child
 /// processes after the pipeline receives an external signal. A value
@@ -30,14 +28,19 @@ logRunningCommand: Boolean?
 
 /// When creating `SyncProject` actions, recursively create a `SyncProject`
 /// action for each project dependency, and link them as a relationship.
-/// @since 1.34.0
+@Since { version = "1.34.0" }
 syncProjectDependencies: Boolean?
 
 /// Run the `SyncProject` actions in the pipeline for each owning project
 /// of a running task.
-/// @since 1.34.0
-syncProjects: PipelineActionSwitch.PipelineActionSwitch?
+@Since { version = "1.34.0" }
+syncProjects: PipelineActionSwitch?
 
 /// Run the `SyncWorkspace` action before all actions in the pipeline.
-/// @since 1.34.0
+@Since { version = "1.34.0" }
 syncWorkspace: Boolean?
+
+typealias Id = String
+
+/// Toggles the state of actions within the pipeline.
+typealias PipelineActionSwitch = (Boolean | Listing<Id>)?

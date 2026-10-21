@@ -104,12 +104,14 @@ Controls how the pipeline executes tasks.
 
 ### `graph`
 
-Controls how deeply the dependency graph is traversed when building the task graph.
+Controls which dependency and dependent tasks are inserted into the action graph.
+[Learn more about graph depth](../concepts/affected#graph-depth).
 
-- `downstream` (`none | direct | deep`) - Depth of downstream dependents to include. Defaults to
-  `none`. Same as `--downstream`.
-- `upstream` (`none | direct | deep`) - Depth of upstream dependencies to include. Defaults to
-  `none`. Same as `--upstream`.
+- `dependents` (`"none" | "direct" | "deep" | number`) - Also run the dependents of every selected
+  target, up to the depth. Defaults to `none`. Same as `--dependents`.
+  <VersionLabel version="3.0.0" />
+- `noDependencies` (`boolean`) - Do not insert dependency tasks that were not selected themselves.
+  Defaults to `false`. Same as `--no-dependencies`. <VersionLabel version="3.0.0" />
 
 ### `affected`
 
@@ -119,8 +121,8 @@ filtering is disabled and all matched targets run.
 - `base` (`string`) - Base branch, commit, or revision to compare against. Same as `--base`.
 - `head` (`string`) - Current branch, commit, or revision to compare with. Defaults to `HEAD`. Same
   as `--head`.
-- `includeRelations` (`boolean`) - Include graph relations for affected checks, instead of just
-  changed files. Same as `--include-relations`.
+- `depth` (`"none" | "direct" | "deep" | number`) - How far affected state propagates to dependent
+  tasks. Defaults to `deep`. Same as `--affected-depth`. <VersionLabel version="3.0.0" />
 - `source` (`string`) - Source of affected files. Determines which git commands are used to detect
   changes. Accepts `local` or `remote`.
 - `status` (`string[]`) - Filter changed files by status. Same as `--status`.
@@ -201,15 +203,32 @@ Run all lint tasks, continuing past failures so you get the full list of issues:
 
 ### Deep dependency graph
 
-Build a target along with all of its upstream dependencies and downstream dependents:
+Build a target along with all of its dependencies (always included) and all of its dependents:
 
 ```json
 {
   "graph": {
-    "upstream": "deep",
-    "downstream": "deep"
+    "dependents": "deep"
   },
   "targets": ["core:build"]
+}
+```
+
+### Skip unchanged dependencies
+
+Run the affected `deploy` tasks in dependency order, without running their dependencies that were
+not selected themselves:
+
+```json
+{
+  "affected": {
+    "base": "main",
+    "source": "remote"
+  },
+  "graph": {
+    "noDependencies": true
+  },
+  "targets": [":deploy"]
 }
 ```
 
@@ -222,13 +241,12 @@ Combine all blocks — run affected tests in CI across partitioned jobs, with fu
   "affected": {
     "base": "main",
     "head": "HEAD",
-    "includeRelations": true,
+    "depth": "deep",
     "source": "remote",
     "status": ["modified", "added"]
   },
   "graph": {
-    "upstream": "deep",
-    "downstream": "direct"
+    "dependents": "direct"
   },
   "pipeline": {
     "ci": true,

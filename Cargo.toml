@@ -28,7 +28,6 @@ convert_case = "0.12.0"
 criterion = { package = "codspeed-criterion-compat", version = "5.0.2", default-features = false, features = [
   "async_tokio",
 ] }
-daggy = { version = "0.9.0", features = ["serde-1"] }
 dirs = "6.0.0"
 futures = "0.3.34"
 httpmock = "0.8.3"
@@ -64,7 +63,7 @@ reqwest = { version = "0.13.5", default-features = false, features = [
 once_cell = "1.21.4"
 rustc-hash = "2.1.3"
 scc = "3.8.8"
-schematic = { version = "0.20.8", default-features = false, features = [
+schematic = { version = "0.20.12", default-features = false, features = [
   "schema",
 ] }
 serial_test = "4.0.1"
@@ -84,12 +83,12 @@ starbase_process = "0.1.2"
 starbase_sandbox = "0.12.0"
 starbase_shell = "0.14.1"
 starbase_styles = { version = "0.6.1", features = ["relative-path"] }
-starbase_utils = { version = "0.14.6", default-features = false, features = [
+starbase_utils = { version = "0.14.7", default-features = false, features = [
   "editor-config",
   "glob-cache",
   "miette",
 ] }
-tera = { version = "1.20.1", features = ["preserve_order"] }
+tera = { version = "2.4.0", features = ["fast", "preserve_order"] }
 thiserror = "2.0.21"
 tokio = { version = "1.53.2", default-features = false, features = [
   "macros",
@@ -113,15 +112,15 @@ windows-sys = { version = "0.61.2", default-features = false }
 # proto/plugin related
 extism = "=1.30.0"
 extism-pdk = "1.4.1"
-proto_core = "0.62.1"
-proto_pdk_api = "0.34.4"
-proto_pdk_test_utils = "0.50.1"
-proto_shim = "0.8.5"
-system_env = "0.10.4"
-version_spec = "0.11.5"
-warpgate = "0.36.3"
-warpgate_api = "0.19.3"
-warpgate_pdk = "0.18.3"
+proto_core = "0.63.2"
+proto_pdk_api = "0.35.0"
+proto_pdk_test_utils = "0.51.1"
+proto_shim = "0.9.0"
+system_env = "0.10.5"
+version_spec = "0.11.7"
+warpgate = "0.37.1"
+warpgate_api = "0.20.0"
+warpgate_pdk = "0.19.0"
 
 # proto_core = { path = "../proto/crates/core" }
 # proto_pdk_api = { path = "../proto/crates/pdk-api" }

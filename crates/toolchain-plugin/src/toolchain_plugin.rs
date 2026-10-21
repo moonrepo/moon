@@ -4,7 +4,9 @@ use moon_config::is_glob_like;
 use moon_config::schematic::Schema;
 use moon_config::schematic::schema::indexmap::IndexSet;
 use moon_pdk_api::*;
-use moon_plugin::{Plugin, PluginContainer, PluginRegistration, PluginType, inherit_path_methods};
+use moon_plugin::{
+    Plugin, PluginContainer, PluginError, PluginRegistration, PluginType, inherit_path_methods,
+};
 use moon_toolchain::{DependenciesWorkspace, DependenciesWorkspaceRole};
 use proto_core::flow::detect::Detector;
 use proto_core::flow::install::InstallOptions;
@@ -19,7 +21,6 @@ use proto_core::{
     UnresolvedVersionSpec, locate_plugin,
 };
 use proto_pdk_api::{ActivateEnvironmentInput, ActivateEnvironmentOutput, InstallStrategy};
-use scc::hash_map::Entry;
 use starbase_utils::glob::{self, GlobSet};
 use std::fmt;
 use std::ops::Deref;
@@ -42,6 +43,10 @@ pub struct ToolchainPlugin {
 
     globals_cache: scc::HashMap<UnresolvedVersionSpec, Option<PathBuf>>,
     locations_cache: scc::HashMap<UnresolvedVersionSpec, (ToolSpec, LocatorResponse)>,
+
+    // Every project in a dependencies workspace is matched against its member
+    // globs, so they're compiled once per list of members
+    members_globs_cache: scc::HashMap<Vec<String>, Arc<GlobSet<'static>>>,
 }
 
 #[async_trait]
@@ -77,6 +82,7 @@ impl Plugin for ToolchainPlugin {
             locator: registration.locator,
             globals_cache: scc::HashMap::new(),
             locations_cache: scc::HashMap::new(),
+            members_globs_cache: scc::HashMap::new(),
             setup: AtomicBool::new(false),
             metadata,
             plugin,
@@ -113,24 +119,32 @@ impl ToolchainPlugin {
         }
     }
 
+    // These caches are read for every task that runs, so read them with a shared
+    // lock first. Locating is not held under a map lock, as it awaits, so concurrent
+    // misses may locate more than once, which is harmless as the result is the same.
+
     async fn cache_globals_dir(&self) -> miette::Result<Option<PathBuf>> {
         if let Some(tool) = &self.tool {
-            return match self
+            let version = UnresolvedVersionSpec::default();
+
+            if let Some(locations) = self
                 .globals_cache
-                .entry_async(UnresolvedVersionSpec::default())
+                .read_async(&version, |_, locations| locations.to_owned())
                 .await
             {
-                Entry::Occupied(entry) => Ok(entry.get().to_owned()),
-                Entry::Vacant(entry) => {
-                    let tool = tool.read().await;
-                    let spec = ToolSpec::default();
-                    let locations = Locator::new(&tool, &spec).locate_globals_dir().await?;
+                return Ok(locations);
+            }
 
-                    entry.insert_entry(locations.clone());
+            let tool = tool.read().await;
+            let spec = ToolSpec::default();
+            let locations = Locator::new(&tool, &spec).locate_globals_dir().await?;
 
-                    Ok(locations)
-                }
-            };
+            let _ = self
+                .globals_cache
+                .insert_async(version, locations.clone())
+                .await;
+
+            return Ok(locations);
         }
 
         Ok(None)
@@ -141,24 +155,47 @@ impl ToolchainPlugin {
         version: &UnresolvedVersionSpec,
     ) -> miette::Result<Option<(ToolSpec, LocatorResponse)>> {
         if let Some(tool) = &self.tool {
-            return match self.locations_cache.entry_async(version.to_owned()).await {
-                Entry::Occupied(entry) => Ok(Some(entry.get().to_owned())),
-                Entry::Vacant(entry) => {
-                    let tool = tool.read().await;
-                    let mut spec = ToolSpec::new(version.to_owned());
+            if let Some(cached) = self
+                .locations_cache
+                .read_async(version, |_, cached| cached.to_owned())
+                .await
+            {
+                return Ok(Some(cached));
+            }
 
-                    Resolver::resolve(&tool, &mut spec, false).await?;
+            let tool = tool.read().await;
+            let mut spec = ToolSpec::new(version.to_owned());
 
-                    let locations = Locator::locate(&tool, &spec).await?;
+            Resolver::resolve(&tool, &mut spec, false).await?;
 
-                    entry.insert_entry((spec.clone(), locations.clone()));
+            let locations = Locator::locate(&tool, &spec).await?;
 
-                    Ok(Some((spec, locations)))
-                }
-            };
+            let _ = self
+                .locations_cache
+                .insert_async(version.to_owned(), (spec.clone(), locations.clone()))
+                .await;
+
+            return Ok(Some((spec, locations)));
         }
 
         Ok(None)
+    }
+
+    fn get_members_globset(&self, members: &[String]) -> miette::Result<Arc<GlobSet<'static>>> {
+        if let Some(globset) = self
+            .members_globs_cache
+            .read_sync(members, |_, globset| Arc::clone(globset))
+        {
+            return Ok(globset);
+        }
+
+        let globset = Arc::new(GlobSet::new_owned(members)?);
+
+        let _ = self
+            .members_globs_cache
+            .insert_sync(members.to_vec(), Arc::clone(&globset));
+
+        Ok(globset)
     }
 
     pub fn in_dependencies_workspace(
@@ -177,7 +214,7 @@ impl ToolchainPlugin {
             }
             // Match against the provided member globs
             else if let Some(members) = &workspace.members {
-                GlobSet::new(members)?
+                self.get_members_globset(members)?
                     .matches(path.strip_prefix(&workspace.root).unwrap_or(path))
                     .then_some(DependenciesWorkspaceRole::WorkspaceMember)
             }
@@ -559,15 +596,69 @@ impl ToolchainPlugin {
                 .cache_func_with("locate_dependencies_root", input)
                 .await?;
 
-            if let Some(root) = output.root {
-                return Ok(Some(DependenciesWorkspace {
-                    root: self.to_real_path(&root).to_path_buf(),
-                    members: output.members,
-                }));
-            }
+            return Ok(self.to_dependencies_workspace(output));
         }
 
         Ok(None)
+    }
+
+    /// Locate the dependencies root of each starting directory, which share
+    /// the same config, in the same order. Calls `locate_dependencies_roots`
+    /// once if the plugin supports it, otherwise `locate_dependencies_root`
+    /// for each directory.
+    #[instrument(skip(self, input), fields(count = input.starting_dirs.len()))]
+    pub async fn locate_dependencies_roots(
+        &self,
+        input: LocateDependenciesRootsInput,
+    ) -> miette::Result<Vec<Option<DependenciesWorkspace>>> {
+        if !self.has_func("locate_dependencies_roots").await {
+            let LocateDependenciesRootsInput {
+                context,
+                starting_dirs,
+                toolchain_config,
+            } = input;
+
+            return futures::future::try_join_all(starting_dirs.into_iter().map(|starting_dir| {
+                self.locate_dependencies_root(LocateDependenciesRootInput {
+                    context: context.clone(),
+                    starting_dir,
+                    toolchain_config: toolchain_config.clone(),
+                })
+            }))
+            .await;
+        }
+
+        let expected = input.starting_dirs.len();
+        let output: LocateDependenciesRootsOutput = self
+            .cache_func_with("locate_dependencies_roots", input)
+            .await?;
+
+        if output.roots.len() != expected {
+            return Err(PluginError::MismatchedOutputs {
+                id: self.id.to_string(),
+                ty: PluginType::Toolchain,
+                func: "locate_dependencies_roots".into(),
+                expected,
+                actual: output.roots.len(),
+            }
+            .into());
+        }
+
+        Ok(output
+            .roots
+            .into_iter()
+            .map(|output| self.to_dependencies_workspace(output))
+            .collect())
+    }
+
+    fn to_dependencies_workspace(
+        &self,
+        output: LocateDependenciesRootOutput,
+    ) -> Option<DependenciesWorkspace> {
+        output.root.map(|root| DependenciesWorkspace {
+            root: self.to_real_path(&root).to_path_buf(),
+            members: output.members,
+        })
     }
 
     #[instrument(skip(self))]

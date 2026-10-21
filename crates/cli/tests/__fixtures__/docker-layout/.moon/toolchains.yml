@@ -1,0 +1,4 @@
+tc-tier2:
+  # Locate roots from each project, and record plugin inputs
+  testLocateRoots: true
+  testRecordInputs: true

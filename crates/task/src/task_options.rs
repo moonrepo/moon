@@ -1,19 +1,43 @@
 use moon_common::cacheable;
 use moon_config::{
     Input, MergeStrategy, TaskOperatingSystem, TaskOptionAffectedFilesPattern, TaskOptionCache,
-    TaskOptionEnvOverride, TaskOptionRunInCI, TaskOutputStyle, TaskPriority, TaskUnixShell,
-    TaskWindowsShell,
+    TaskOptionEnvOverride, TaskOptionOnFailure, TaskOptionRunInCI, TaskOutputStyle, TaskPriority,
+    TaskUnixShell, TaskWindowsShell, is_default, is_false, is_true,
 };
 use std::fmt;
+
+// Fields are not serialized when they're the default value, which must match
+// the value in the `Default` implementation, as that's used when deserializing
+
+fn is_cache_enabled(value: &TaskOptionCache) -> bool {
+    *value == TaskOptionCache::Enabled(true)
+}
+
+fn is_run_in_ci_enabled(value: &TaskOptionRunInCI) -> bool {
+    *value == TaskOptionRunInCI::Enabled(true)
+}
+
+fn is_shell_enabled(value: &Option<bool>) -> bool {
+    *value == Some(true)
+}
 
 cacheable!(
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
     #[serde(default)]
     pub struct TaskOptionAffectedFiles {
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub filter: Vec<String>,
+
+        #[serde(skip_serializing_if = "is_false")]
         pub ignore_project_boundary: bool,
+
+        #[serde(skip_serializing_if = "is_default")]
         pub pass: TaskOptionAffectedFilesPattern,
+
+        #[serde(skip_serializing_if = "is_false")]
         pub pass_inputs_when_no_match: bool,
+
+        #[serde(skip_serializing_if = "is_false")]
         pub pass_dot_when_no_results: bool,
     }
 );
@@ -25,8 +49,7 @@ cacheable!(
         #[serde(skip_serializing_if = "Option::is_none")]
         pub affected_files: Option<TaskOptionAffectedFiles>,
 
-        pub allow_failure: bool,
-
+        #[serde(skip_serializing_if = "is_cache_enabled")]
         pub cache: TaskOptionCache,
 
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -38,34 +61,47 @@ cacheable!(
         #[serde(skip_serializing_if = "Option::is_none")]
         pub env_files: Option<Vec<Input>>,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub env_override: TaskOptionEnvOverride,
 
-        pub expect_failure: bool,
-
+        #[serde(skip_serializing_if = "is_false")]
         pub infer_inputs: bool,
 
+        #[serde(skip_serializing_if = "is_false")]
         pub internal: bool,
 
+        #[serde(skip_serializing_if = "is_false")]
         pub interactive: bool,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub merge_args: MergeStrategy,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub merge_checks: MergeStrategy,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub merge_deps: MergeStrategy,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub merge_env: MergeStrategy,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub merge_inputs: MergeStrategy,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub merge_outputs: MergeStrategy,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub merge_tags: MergeStrategy,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub merge_toolchains: MergeStrategy,
 
         #[serde(skip_serializing_if = "Option::is_none")]
         pub mutex: Option<String>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub on_failure: Option<TaskOptionOnFailure>,
 
         #[serde(skip_serializing_if = "Option::is_none")]
         pub os: Option<Vec<TaskOperatingSystem>>,
@@ -73,44 +109,62 @@ cacheable!(
         #[serde(skip_serializing_if = "Option::is_none")]
         pub output_style: Option<TaskOutputStyle>,
 
+        #[serde(skip_serializing_if = "is_false")]
         pub persistent: bool,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub priority: TaskPriority,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub retry_count: u8,
 
+        #[serde(skip_serializing_if = "is_true")]
         pub run_deps_in_parallel: bool,
 
-        #[serde(rename = "runInCI")]
+        #[serde(rename = "runInCI", skip_serializing_if = "is_run_in_ci_enabled")]
         pub run_in_ci: TaskOptionRunInCI,
 
+        #[serde(skip_serializing_if = "is_false")]
         pub run_in_sync_phase: bool,
 
+        #[serde(skip_serializing_if = "is_false")]
         pub run_from_workspace_root: bool,
 
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "is_shell_enabled")]
         pub shell: Option<bool>,
 
         #[serde(skip_serializing_if = "Option::is_none")]
         pub timeout: Option<u64>,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub unix_shell: TaskUnixShell,
 
+        #[serde(skip_serializing_if = "is_default")]
         pub windows_shell: TaskWindowsShell,
     }
 );
+
+impl TaskOptions {
+    /// Whether the task can fail without failing the action pipeline.
+    pub fn is_failure_allowed(&self) -> bool {
+        matches!(self.on_failure, Some(TaskOptionOnFailure::Allow))
+    }
+
+    /// Whether the task must fail, and fails the action pipeline if it passes.
+    pub fn is_failure_expected(&self) -> bool {
+        matches!(self.on_failure, Some(TaskOptionOnFailure::Expect))
+    }
+}
 
 impl Default for TaskOptions {
     fn default() -> Self {
         TaskOptions {
             affected_files: None,
-            allow_failure: false,
             cache: TaskOptionCache::Enabled(true),
             cache_key: None,
             cache_lifetime: None,
             env_files: None,
             env_override: TaskOptionEnvOverride::default(),
-            expect_failure: false,
             infer_inputs: false,
             internal: false,
             interactive: false,
@@ -123,6 +177,7 @@ impl Default for TaskOptions {
             merge_tags: MergeStrategy::Append,
             merge_toolchains: MergeStrategy::Append,
             mutex: None,
+            on_failure: None,
             os: None,
             output_style: None,
             persistent: false,
@@ -140,7 +195,7 @@ impl Default for TaskOptions {
     }
 }
 
-/// How the exit code of a task with `expectFailure` relates to that expectation.
+/// How the exit code of a task with `onFailure: expect` relates to that expectation.
 /// Only a normal failure satisfies it, as commands that could not run, or were
 /// killed by a signal, are not the failure that was expected.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

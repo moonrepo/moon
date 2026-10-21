@@ -8,7 +8,7 @@ use moon_actions::operations::sync_pkl_schemas;
 use moon_api::Launchpad;
 use moon_app_context::AppContext;
 use moon_cache::{CacheContext, CacheEngine};
-use moon_cache_local::LocalStorage;
+use moon_cache_local::{LocalObjectsStorage, LocalStorage};
 use moon_cache_remote::{GrpcRemoteStorage, HttpRemoteStorage};
 use moon_codegen::CodeGenerator;
 use moon_common::{is_docker, is_formatted_output, is_test_env};
@@ -21,13 +21,14 @@ use moon_daemon::{DaemonClient, DaemonConnector};
 use moon_env::MoonEnvironment;
 use moon_env_var::GlobalEnvBag;
 use moon_extension_plugin::*;
+use moon_layout_graph::LayoutGraphBuilder;
 use moon_plugin::MoonHostData;
 use moon_process::ProcessRegistry;
 use moon_project_graph::ProjectGraph;
 use moon_task_graph::TaskGraph;
 use moon_toolchain_plugin::*;
 use moon_vcs::{BoxedVcs, git::Git};
-use moon_workspace::{WorkspaceBuilder, WorkspaceBuilderAsync, WorkspaceBuilderContext};
+use moon_workspace::{WorkspaceBuilder, WorkspaceBuilderContext};
 use moon_workspace_graph::WorkspaceGraph;
 use proto_core::ProtoEnvironment;
 use starbase::{AppExitCode, AppResult, AppSession};
@@ -106,7 +107,7 @@ impl MoonSession {
         }
     }
 
-    pub async fn build_action_graph<'graph>(&self) -> miette::Result<ActionGraphBuilder<'graph>> {
+    pub async fn build_action_graph(&self) -> miette::Result<ActionGraphBuilder> {
         let config = &self.workspace_config.pipeline;
 
         self.build_action_graph_with_options(ActionGraphBuilderOptions {
@@ -120,14 +121,25 @@ impl MoonSession {
         .await
     }
 
-    pub async fn build_action_graph_with_options<'graph>(
+    pub async fn build_action_graph_with_options(
         &self,
         options: ActionGraphBuilderOptions,
-    ) -> miette::Result<ActionGraphBuilder<'graph>> {
+    ) -> miette::Result<ActionGraphBuilder> {
         let app_context = self.get_app_context().await?;
         let workspace_graph = self.get_workspace_graph().await?;
 
-        ActionGraphBuilder::new(app_context, workspace_graph, options)
+        Ok(ActionGraphBuilder::new(
+            app_context,
+            workspace_graph,
+            options,
+        ))
+    }
+
+    pub async fn build_layout_graph(&self) -> miette::Result<LayoutGraphBuilder> {
+        let app_context = self.get_app_context().await?;
+        let workspace_graph = self.get_workspace_graph().await?;
+
+        Ok(LayoutGraphBuilder::new(app_context, workspace_graph))
     }
 
     pub fn build_code_generator(&self) -> CodeGenerator<'_> {
@@ -232,11 +244,10 @@ impl MoonSession {
 
             let mut engine = CacheEngine::new(context.clone())?;
 
-            // Always register the local backend: it's the home for hash
-            // manifests, which every run depends on regardless of whether task
-            // outputs are cached here. Using it for task outputs stays gated on
-            // the experiment (see `TaskRunState::local_cas_enabled`).
-            engine.storage.add_local_backend(LocalStorage::new(
+            // Always register the local backends: they're the home for task
+            // outputs (actions) and hash fingerprints (objects), which every run
+            // depends on.
+            engine.actions_storage.add_local_backend(LocalStorage::new(
                 context.clone(),
                 context
                     .cache_shared_dir
@@ -244,16 +255,20 @@ impl MoonSession {
                     .unwrap_or(&context.cache_dir),
             )?);
 
+            engine
+                .objects_storage
+                .add_local_backend(LocalObjectsStorage::new(context.clone())?);
+
             if context.remote_config.is_enabled() {
                 match context.remote_config.api {
                     RemoteApi::Grpc => {
                         engine
-                            .storage
+                            .actions_storage
                             .add_remote_backend(GrpcRemoteStorage::new(context.clone())?);
                     }
                     RemoteApi::Http => {
                         engine
-                            .storage
+                            .actions_storage
                             .add_remote_backend(HttpRemoteStorage::new(context.clone())?);
                     }
                 };
@@ -392,17 +407,12 @@ impl MoonSession {
     async fn load_workspace_graph(&self) -> miette::Result<Arc<WorkspaceGraph>> {
         let context = self.create_workspace_graph_context().await?;
 
-        let workspace_graph = Arc::new(if self.workspace_config.experiments.async_graph_building {
-            WorkspaceBuilderAsync::new_with_cache(context)
-                .await?
-                .build()
-                .await?
-        } else {
+        let workspace_graph = Arc::new(
             WorkspaceBuilder::new_with_cache(context)
                 .await?
                 .build()
-                .await?
-        });
+                .await?,
+        );
 
         // Update the plugin registries with the graph
         let extensions = self.get_extension_registry().await?;
@@ -511,7 +521,7 @@ impl AppSession for MoonSession {
             // commands that will actually read/write to it. Reads and writes wait
             // for the connection to finish
             if self.is_pipeline_command() || self.is_daemon_server_command() {
-                cache_engine.storage.spawn_connect_backends();
+                cache_engine.actions_storage.spawn_connect_backends();
             }
         }
 
@@ -542,7 +552,7 @@ impl AppSession for MoonSession {
     async fn shutdown(&mut self) -> AppResult<Self::Error> {
         // Ensure all in-flight storage tasks have finished
         if let Some(engine) = self.cache_engine.get() {
-            engine.storage.wait_for_background_tasks().await?;
+            engine.actions_storage.wait_for_background_tasks().await?;
         }
 
         // Ensure all child processes have finished

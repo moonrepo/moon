@@ -14,7 +14,7 @@ channel: String?
 description: String?
 
 /// The individual maintainers of the project. The format is unspecified.
-maintainers: (*Listing<String> | List<String> | Set<String>)?
+maintainers: Listing<String>?
 
 /// The owner of the project. Can be an individual, team, or
 /// organization. The format is unspecified.

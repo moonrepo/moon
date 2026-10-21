@@ -9,7 +9,7 @@ use moon_process::{Arg, Command, CommandExt, Env};
 use moon_project::Project;
 use moon_task::{Task, TaskCheck};
 use moon_toolchain::{
-    get_version_env_key, get_version_env_value, is_using_global_toolchain,
+    get_toolchain_spec, get_version_env_key, get_version_env_value, is_using_global_toolchain,
     is_using_global_toolchains,
 };
 use rustc_hash::FxHashMap;
@@ -338,30 +338,18 @@ impl<'app> AugmentedCommand<'app> {
         let toolchain_ids = self.get_toolchain_ids(project, task);
         let mut map = FxHashMap::default();
 
-        // First pass, gather workspace-level
-        for (id, config) in &self.context.toolchains_config.plugins {
-            if let Some(version) = &config.version
-                && toolchain_ids.contains(id)
-                && !is_using_global_toolchain(self.bag, id)
+        // Gather versions, where a project-level version overrides the
+        // workspace-level one, and a toolchain disabled by the project has none
+        for id in &toolchain_ids {
+            if !is_using_global_toolchain(self.bag, id)
+                && let Some(version) = get_toolchain_spec(
+                    &self.context.toolchains_config,
+                    id,
+                    project.map(|project| &project.config),
+                )
+                .and_then(|spec| spec.req)
             {
                 map.insert(id, version);
-            }
-        }
-
-        // Second pass, gather project-level (because of overrides)
-        if let Some(project_config) = project.as_ref().map(|p| &p.config) {
-            for (id, config) in &project_config.toolchains.plugins {
-                if !config.is_enabled() {
-                    map.remove(id);
-                    continue;
-                }
-
-                if let Some(version) = config.get_version()
-                    && toolchain_ids.contains(id)
-                    && !is_using_global_toolchain(self.bag, id)
-                {
-                    map.insert(id, version);
-                }
             }
         }
 
@@ -394,9 +382,7 @@ impl<'app> AugmentedCommand<'app> {
 
         // Activate toolchain environments (like `JAVA_HOME`)
         for output in registry
-            .activate_environment_many(ids.clone(), |toolchain| {
-                map.get(&toolchain.id).map(|version| (*version).to_owned())
-            })
+            .activate_environment_many(ids.clone(), |toolchain| map.get(&toolchain.id).cloned())
             .await?
         {
             for (key, value) in output.env {
@@ -412,9 +398,7 @@ impl<'app> AugmentedCommand<'app> {
 
         // Add toolchain specific paths
         let paths = registry
-            .get_command_paths(ids, |toolchain| {
-                map.get(&toolchain.id).map(|version| (*version).to_owned())
-            })
+            .get_command_paths(ids, |toolchain| map.get(&toolchain.id).cloned())
             .await?;
 
         self.apply_paths(paths);

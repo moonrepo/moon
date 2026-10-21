@@ -1,17 +1,16 @@
 use crate::merging::MergeStrategy;
-use crate::patterns::merge_plugin_partials;
+use crate::merging::merge_partials;
 use crate::shapes::OneOrMany;
 use crate::toolchains_config::ToolchainPluginConfig;
-use crate::{config_enum, config_struct};
+use crate::{config_struct, config_untagged_enum};
 use moon_common::{Id, IdExt};
 use rustc_hash::FxHashMap;
 use schematic::Config;
 use version_spec::UnresolvedVersionSpec;
 
-config_enum!(
+config_untagged_enum!(
     /// Variants a project-level toolchain can be configured.
     #[derive(Config)]
-    #[serde(untagged)]
     pub enum ProjectToolchainEntry {
         Disabled, // null
         Enabled(bool),
@@ -49,7 +48,7 @@ config_struct!(
         pub default: Option<OneOrMany<Id>>,
 
         /// Overrides workspace-level toolchains by their identifier.
-        #[setting(flatten, nested, merge = merge_plugin_partials)]
+        #[setting(flatten, nested, merge = merge_partials)]
         pub plugins: FxHashMap<Id, ProjectToolchainEntry>,
     }
 );
@@ -88,7 +87,6 @@ config_struct!(
     #[derive(Config)]
     pub struct ProjectWorkspaceInheritedTasksConfig {
         /// Excludes inheriting tasks by their identifier.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub exclude: Vec<Id>,
 
         /// Only inherits tasks with the provided identifiers,
@@ -99,7 +97,6 @@ config_struct!(
 
         /// Renames inherited tasks by mapping their existing
         /// identifier to a new identifier, scoped to this project.
-        #[serde(default, skip_serializing_if = "FxHashMap::is_empty")]
         pub rename: FxHashMap<Id, Id>,
     }
 );

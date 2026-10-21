@@ -3,14 +3,13 @@
 /// A string enumerable variable.
 module TemplateVariableEnumSetting
 
-import "TemplateVariableEnumDefault.pkl"
-import "TemplateVariableEnumValue.pkl"
+import "TemplateVariableEnumValueConfig.pkl"
 
 /// The default value of the variable if none was provided.
-default: TemplateVariableEnumDefault.TemplateVariableEnumDefault? = defaultValue
+default: TemplateVariableEnumDefault? = defaultValue
 
 /// An alias of `default`.
-hidden defaultValue: TemplateVariableEnumDefault.TemplateVariableEnumDefault?
+hidden defaultValue: TemplateVariableEnumDefault?
 
 /// Marks the variable as internal, and won't be overwritten via CLI arguments.
 internal: Boolean?
@@ -27,4 +26,8 @@ prompt: String?
 type: "enum"
 
 /// List of acceptable values for this variable.
-values: (*Listing<TemplateVariableEnumValue.TemplateVariableEnumValue> | List<TemplateVariableEnumValue.TemplateVariableEnumValue> | Set<TemplateVariableEnumValue.TemplateVariableEnumValue>)?
+values: Listing<TemplateVariableEnumValue>?
+
+typealias TemplateVariableEnumDefault = String | *Listing<String>
+
+typealias TemplateVariableEnumValue = String | TemplateVariableEnumValueConfig

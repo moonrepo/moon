@@ -14,8 +14,8 @@ state of the workspace and VCS.
 # Return affected
 $ moon query affected
 
-# Return affected including dependency relationships
-$ moon query affected --upstream deep
+# Return affected including all of their dependents
+$ moon query affected --dependents deep
 ```
 
 This will output a map of projects and tasks as JSON. The output has the following structure:
@@ -29,5 +29,12 @@ This will output a map of projects and tasks as JSON. The output has the followi
 
 ### Options
 
-- `--downstream` - Include downstream dependents. Supports "none" (default), "direct", "deep".
-- `--upstream` - Include upstream dependencies. Supports "none" (default), "direct", "deep".
+- `--dependents <DEPTH>` - Include the dependents of affected projects and tasks. Supports "none"
+  (default), "direct", "deep", or a number of hops.
+  <VersionLabel version="3.0.0" />
+
+> Included dependents are marked as affected by the dependency they were reached through, in their
+> `dependencies` field, and how many hops away from a directly affected project or task they are, in
+> their `distance` field (`0` when directly affected). The `--dependencies` option is not supported,
+> as the output can only contain affected projects and tasks.
+> [Learn more about graph depth](../../concepts/affected#graph-depth).

@@ -24,11 +24,6 @@ fn create_workspace() -> (Sandbox, WorkspaceMocker) {
                 .unwrap()
                 .config
                 .insert("testInstallCommands".into(), JsonValue::Bool(true));
-        })
-        // Hash with the cache engine instead of the VCS,
-        // as the sandbox is not a git repository
-        .update_workspace_config(|config| {
-            config.experiments.native_file_hashing = true;
         });
 
     (sandbox, mocker)
@@ -38,6 +33,7 @@ async fn run_action(ws: &WorkspaceMocker) -> (Action, ActionStatus) {
     let mut action = Action::default();
     let node = InstallDependenciesNode {
         members: None,
+        owner_project_id: None,
         project_id: None,
         root: WorkspaceRelativePathBuf::default(),
         toolchain_id: Id::raw("tc-tier2"),

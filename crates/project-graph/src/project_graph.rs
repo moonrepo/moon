@@ -1,21 +1,20 @@
 use crate::project_graph_error::ProjectGraphError;
-use daggy::Dag;
 use moon_common::Id;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
-use moon_config::DependencyScope;
+use moon_config::{DependencyScope, InheritedTasks};
 use moon_graph_utils::*;
 use moon_project::Project;
 use moon_project_expander::{ProjectExpander, ProjectExpanderContext};
 use petgraph::Direction;
-use petgraph::algo::{has_path_connecting, toposort};
-use petgraph::graph::{DiGraph, NodeIndex};
+use petgraph::algo::{has_path_connecting, is_cyclic_directed, toposort};
+use petgraph::graph::{DiGraph, EdgeIndex, NodeIndex};
 use petgraph::visit::{EdgeFiltered, EdgeRef};
 use rustc_hash::{FxHashMap, FxHashSet};
 use scc::hash_map::Entry;
 use std::collections::VecDeque;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use tracing::{debug, instrument};
 
 /// The internal graph partition that a dependency scope belongs to. Each
@@ -60,6 +59,39 @@ pub fn would_cycle_in_scope<N>(
     has_path_connecting(&partitioned_graph, target, source, None)
 }
 
+/// Return the first edge (in insertion order) that closes a cycle within the
+/// partition that its scope belongs to, if any. Each partition is checked for
+/// cycles once, and the edges are only replayed to find the offending edge when
+/// a cycle exists, instead of checking for a path on every edge insertion.
+pub fn find_cycle_in_scopes<N>(graph: &DiGraph<N, DependencyScope>) -> Option<EdgeIndex> {
+    let is_cyclic = |production: bool| {
+        is_cyclic_directed(&EdgeFiltered::from_fn(graph, |edge| {
+            edge.weight().is_production_group() == production
+        }))
+    };
+
+    if !is_cyclic(true) && !is_cyclic(false) {
+        return None;
+    }
+
+    let mut replay_graph =
+        DiGraph::<(), DependencyScope>::with_capacity(graph.node_count(), graph.edge_count());
+
+    for _ in graph.node_indices() {
+        replay_graph.add_node(());
+    }
+
+    for edge in graph.edge_references() {
+        if would_cycle_in_scope(&replay_graph, edge.source(), edge.target(), edge.weight()) {
+            return Some(edge.id());
+        }
+
+        replay_graph.add_edge(edge.source(), edge.target(), *edge.weight());
+    }
+
+    None
+}
+
 #[derive(Clone, Debug)]
 pub struct ProjectNode {
     pub index: NodeIndex,
@@ -83,16 +115,21 @@ pub struct ProjectGraph {
     graph: DiGraph<NodeIndex, DependencyScope>,
 
     /// Directed-acyclic graph (DAG) of production and peer dependencies.
-    production_graph: Dag<NodeIndex, DependencyScope>,
+    production_graph: DiGraph<NodeIndex, DependencyScope>,
 
     /// Directed-acyclic graph (DAG) of development, build, and root dependencies.
-    development_graph: Dag<NodeIndex, DependencyScope>,
+    development_graph: DiGraph<NodeIndex, DependencyScope>,
 
-    /// Map of node indexes to project IDs.
-    pub indexes: FxHashMap<NodeIndex, Id>,
+    /// Project IDs by node index. Node indexes are dense (0 to the node
+    /// count), so the ID of a node is at the position of its index.
+    pub indexes: Vec<Id>,
 
     /// Map of project nodes by ID.
     pub nodes: FxHashMap<Id, ProjectNode>,
+
+    /// Every project ID sorted, derived once, as `get_all` is called
+    /// repeatedly (like by affected tracking) and must be deterministic.
+    sorted_ids: OnceLock<Vec<Id>>,
 
     /// Cache of file path lookups, mapped by starting path to project ID (as a string).
     fs_cache: Arc<scc::HashMap<PathBuf, Arc<String>>>,
@@ -138,21 +175,76 @@ impl ProjectGraph {
         Ok(&node.project)
     }
 
-    /// Return all projects from the graph.
+    /// Return all projects from the graph, sorted by ID. Projects are
+    /// expanded in parallel when there are enough of them.
     #[instrument(name = "get_all_projects", skip(self))]
     pub fn get_all(&self) -> miette::Result<Vec<Arc<Project>>> {
-        let mut all = vec![];
+        let ids = self.sorted_ids.get_or_init(|| {
+            let mut ids = self.nodes.keys().cloned().collect::<Vec<_>>();
+            ids.sort();
+            ids
+        });
 
-        for id in self.nodes.keys() {
-            all.push(self.internal_get(id)?);
+        self.get_many(ids)
+    }
+
+    /// Return many projects from the graph by ID or alias, in the order provided.
+    /// Projects are expanded in parallel when there are enough of them. If
+    /// expansion fails, the error of the first failing project (in the provided
+    /// order) is returned, regardless of which thread failed first.
+    #[instrument(name = "get_many_projects", skip_all)]
+    pub fn get_many<T: AsRef<str> + Sync>(
+        &self,
+        ids_or_aliases: &[T],
+    ) -> miette::Result<Vec<Arc<Project>>> {
+        let mut results = Vec::with_capacity(ids_or_aliases.len());
+        results.resize_with(ids_or_aliases.len(), || None);
+
+        // Already expanded projects are returned directly, so that repeated
+        // calls (like by affected tracking) don't spawn threads for cache hits
+        let mut pending = vec![];
+
+        for (position, id) in ids_or_aliases.iter().enumerate() {
+            match self.get_expanded(id.as_ref()) {
+                Some(project) => results[position] = Some(Ok(project)),
+                None => pending.push(position),
+            }
         }
 
-        Ok(all)
+        // Expanding a project never reads other projects,
+        // so there's no need to order the work
+        for (position, result) in pending.iter().zip(map_in_parallel(&pending, |position| {
+            self.internal_get(ids_or_aliases[*position].as_ref())
+        })) {
+            results[*position] = Some(result);
+        }
+
+        results
+            .into_iter()
+            .map(|result| result.expect("Every project is expanded!"))
+            .collect()
     }
 
     /// Return all unexpanded projects from the graph.
     pub fn get_all_unexpanded(&self) -> Vec<&Project> {
         self.nodes.values().map(|node| &node.project).collect()
+    }
+
+    /// Return the task configuration that the project inherited from ".moon/tasks",
+    /// derived from the configs it was inherited from, as it's not stored in the graph.
+    pub fn get_inherited_tasks(&self, project: &Project) -> miette::Result<Arc<InheritedTasks>> {
+        self.context
+            .inherited_tasks
+            .get_inherited_config_from_sources(&project.inherited_from)
+    }
+
+    /// Return a copy of the project that includes its inherited task configuration,
+    /// which is required when outputting the project to consumers.
+    pub fn get_with_inherited_tasks(&self, project: &Project) -> miette::Result<Project> {
+        let mut project = project.to_owned();
+        project.inherited = Some(InheritedTasks::clone(&*self.get_inherited_tasks(&project)?));
+
+        Ok(project)
     }
 
     /// Return the default project if it has been configured and exists.
@@ -208,8 +300,8 @@ impl ProjectGraph {
         partition: ScopePartition,
     ) -> &DiGraph<NodeIndex, DependencyScope> {
         match partition {
-            ScopePartition::Production => self.production_graph.graph(),
-            ScopePartition::Development => self.development_graph.graph(),
+            ScopePartition::Production => &self.production_graph,
+            ScopePartition::Development => &self.development_graph,
         }
     }
 
@@ -268,7 +360,7 @@ impl ProjectGraph {
 
         indices
             .into_iter()
-            .map(|index| self.indexes[&index].clone())
+            .map(|index| self.indexes[index.index()].clone())
             .collect()
     }
 
@@ -280,7 +372,7 @@ impl ProjectGraph {
     ) -> Vec<Id> {
         self.partitioned_graph(partition)
             .neighbors_directed(self.nodes[&project.id].index, direction)
-            .map(|index| self.indexes[&index].clone())
+            .map(|index| self.indexes[index.index()].clone())
             .collect()
     }
 
@@ -299,7 +391,7 @@ impl ProjectGraph {
         while let Some(index) = queue.pop_front() {
             for next_index in graph.neighbors_directed(index, direction) {
                 if visited.insert(next_index) {
-                    results.push(self.indexes[&next_index].clone());
+                    results.push(self.indexes[next_index.index()].clone());
                     queue.push_back(next_index);
                 }
             }
@@ -318,8 +410,8 @@ impl ProjectGraph {
         &mut self,
         mut graph: DiGraph<NodeIndex, DependencyScope>,
     ) -> miette::Result<()> {
-        let mut production_graph = Dag::with_capacity(graph.node_count(), graph.edge_count());
-        let mut development_graph = Dag::with_capacity(graph.node_count(), graph.edge_count());
+        let mut production_graph = DiGraph::with_capacity(graph.node_count(), graph.edge_count());
+        let mut development_graph = DiGraph::with_capacity(graph.node_count(), graph.edge_count());
 
         // Weight-based lookups require each node's weight to be its own
         // index, but the builders may provide stale pre-filtered indices
@@ -336,23 +428,34 @@ impl ProjectGraph {
             development_graph.add_node(graph[index]);
         }
 
-        // Then route each edge into the graph its scope belongs to,
-        // relying on daggy's insertion checks to detect cycles
+        // Then route each edge into the graph its scope belongs to
+        let mut production_edges = vec![];
+        let mut development_edges = vec![];
+
         for edge in graph.edge_references() {
             let scope = *edge.weight();
+            let edge = (edge.source(), edge.target(), scope);
 
-            let partitioned_graph = if scope.is_production_group() {
-                &mut production_graph
+            if scope.is_production_group() {
+                production_edges.push(edge);
             } else {
-                &mut development_graph
-            };
+                development_edges.push(edge);
+            }
+        }
 
-            partitioned_graph
-                .add_edge(edge.source(), edge.target(), scope)
-                .map_err(|_| ProjectGraphError::WouldCycle {
-                    source_id: self.label_index(edge.source()),
-                    target_id: self.label_index(edge.target()),
-                })?;
+        // Adding edges in bulk only checks each graph for cycles once, instead
+        // of on every insertion, so only find the offending edge when one fails
+        if add_acyclic_edges(&mut production_graph, production_edges).is_err()
+            || add_acyclic_edges(&mut development_graph, development_edges).is_err()
+        {
+            let edge = find_cycle_in_scopes(&graph).expect("Partition cycle must exist!");
+            let (source, target) = graph.edge_endpoints(edge).unwrap();
+
+            return Err(ProjectGraphError::WouldCycle {
+                source_id: self.label_index(source),
+                target_id: self.label_index(target),
+            }
+            .into());
         }
 
         self.graph = graph;
@@ -362,14 +465,15 @@ impl ProjectGraph {
         Ok(())
     }
 
-    /// Focus the graph for a specific project by ID.
-    pub fn focus_for(&self, id_or_alias: &Id, with_dependents: bool) -> miette::Result<Self> {
+    /// Focus the graph for a specific project by ID, including all of its
+    /// dependencies, and its dependents within the provided depth.
+    pub fn focus_for(&self, id_or_alias: &Id, dependents: Depth) -> miette::Result<Self> {
         let project = self.get(id_or_alias)?;
-        let focused_graph = self.to_focused_graph(&project, with_dependents);
+        let focused_graph = self.to_focused_graph(&project, dependents);
         let (nodes, edges) = focused_graph.into_nodes_edges();
 
         let mut graph = DiGraph::with_capacity(nodes.len(), edges.len());
-        let mut indexes = FxHashMap::default();
+        let mut indexes = Vec::with_capacity(nodes.len());
         let mut projects = FxHashMap::default();
 
         // The focused graph has different node inndexes,
@@ -377,9 +481,9 @@ impl ProjectGraph {
         for (i, node) in nodes.into_iter().enumerate() {
             let new_index = NodeIndex::from(i as u32);
             let old_index = node.weight;
-            let id = &self.indexes[&old_index];
+            let id = &self.indexes[old_index.index()];
 
-            indexes.insert(new_index, id.to_owned());
+            indexes.push(id.to_owned());
 
             projects.insert(
                 id.to_owned(),
@@ -428,31 +532,50 @@ impl ProjectGraph {
 
     fn label_index(&self, index: NodeIndex) -> String {
         self.indexes
-            .get(&index)
+            .get(index.index())
             .map(|id| id.to_string())
             .unwrap_or_else(|| index.index().to_string())
     }
 
+    /// Return the project if it has already been expanded. This is the hot
+    /// path for graph traversals, so it first reads without locking the bucket
+    /// or allocating an ID, and only resolves aliases when that misses.
+    fn get_expanded(&self, id_or_alias: &str) -> Option<Arc<Project>> {
+        self.projects
+            .read_sync(id_or_alias, |_, project| Arc::clone(project))
+            .or_else(|| {
+                let id = self.resolve_id(id_or_alias);
+
+                self.projects
+                    .read_sync(&id, |_, project| Arc::clone(project))
+            })
+    }
+
     fn internal_get(&self, id_or_alias: &str) -> miette::Result<Arc<Project>> {
+        if let Some(project) = self.get_expanded(id_or_alias) {
+            return Ok(project);
+        }
+
         let id = self.resolve_id(id_or_alias);
 
-        let project = match self.projects.entry_sync(id) {
+        // Expand outside of the map's bucket lock, so that threads expanding
+        // different projects in the same bucket don't block each other
+        let expander = ProjectExpander::new(ProjectExpanderContext {
+            aliases: &self.aliases,
+            workspace_root: &self.context.workspace_root,
+        });
+
+        let project = Arc::new(expander.expand(self.get_unexpanded(&id)?)?);
+
+        // If another thread expanded the same project in the meantime,
+        // keep the first one, so there's only ever one instance per project
+        Ok(match self.projects.entry_sync(id) {
             Entry::Occupied(entry) => Arc::clone(entry.get()),
             Entry::Vacant(entry) => {
-                let expander = ProjectExpander::new(ProjectExpanderContext {
-                    aliases: self.aliases(),
-                    workspace_root: &self.context.workspace_root,
-                });
-
-                let project = Arc::new(expander.expand(self.get_unexpanded(entry.key())?)?);
-
                 entry.insert_entry(Arc::clone(&project));
-
                 project
             }
-        };
-
-        Ok(project)
+        })
     }
 
     fn internal_search(&self, search: &Path) -> miette::Result<Arc<String>> {
@@ -516,6 +639,8 @@ impl ProjectGraph {
 }
 
 impl GraphData<Project, DependencyScope, Id> for ProjectGraph {
+    type NodeWeight = NodeIndex;
+
     fn get_graph(&self) -> &DiGraph<NodeIndex, DependencyScope> {
         &self.graph
     }
@@ -528,7 +653,7 @@ impl GraphData<Project, DependencyScope, Id> for ProjectGraph {
     }
 
     fn get_node_by_index(&self, index: &NodeIndex) -> &Project {
-        &self.nodes[&self.indexes[index]].project
+        &self.nodes[&self.indexes[index.index()]].project
     }
 
     fn get_node_key(&self, node: &Project) -> Id {
@@ -600,12 +725,7 @@ mod tests {
                 DependencyScope::Development,
             ))
             .unwrap();
-        project_graph
-            .indexes
-            .insert(NodeIndex::new(0), Id::raw("a"));
-        project_graph
-            .indexes
-            .insert(NodeIndex::new(1), Id::raw("b"));
+        project_graph.indexes = vec![Id::raw("a"), Id::raw("b")];
 
         // The union cycles, but each partition can still be sorted
         assert_eq!(
@@ -659,6 +779,36 @@ mod tests {
             .unwrap_err();
 
         assert!(error.to_string().contains("would introduce a cycle"));
+    }
+
+    #[test]
+    fn finds_no_cycle_across_partitions() {
+        let graph = loop_graph(DependencyScope::Production, DependencyScope::Development);
+
+        assert_eq!(find_cycle_in_scopes(&graph), None);
+    }
+
+    #[test]
+    fn finds_the_first_edge_that_closes_a_cycle() {
+        // 0 <-> 1 (development) closes before 2 <-> 3 (production)
+        let mut graph = DiGraph::new();
+        let nodes = (0..4)
+            .map(|i| graph.add_node(NodeIndex::new(i)))
+            .collect::<Vec<_>>();
+
+        graph.add_edge(nodes[0], nodes[1], DependencyScope::Development);
+        graph.add_edge(nodes[2], nodes[3], DependencyScope::Production);
+        let closing = graph.add_edge(nodes[1], nodes[0], DependencyScope::Build);
+        graph.add_edge(nodes[3], nodes[2], DependencyScope::Production);
+
+        assert_eq!(find_cycle_in_scopes(&graph), Some(closing));
+
+        let error = ProjectGraph::default().set_graph(graph).unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "Unable to create project graph, adding a relationship from 1 to 0 would introduce a cycle."
+        );
     }
 
     #[test]

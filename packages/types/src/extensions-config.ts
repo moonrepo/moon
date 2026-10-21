@@ -25,6 +25,7 @@ export interface ExtensionsConfigBase {
 	/**
 	 * Extends one or many extensions configuration files.
 	 * Supports a relative file path or a secure URL.
+	 *
 	 * @since 2.0.0
 	 */
 	extends?: ExtendsFrom | null;

@@ -3,23 +3,20 @@
 /// A task referenced by target, with additional parameters to pass through.
 module TaskDependencyConfig
 
-import "TaskDependencyCacheStrategy.pkl"
-import "TaskDependencyType.pkl"
-
 /// Additional arguments to pass to this dependency when it's ran.
-args: (*Listing<String> | List<String> | Set<String>)?
+args: Listing<String>?
 
 /// Controls how this dependency invalidates the current task's cache.
 /// When omitted, defaults to `hash` if the dependency declares outputs,
 /// otherwise `ignored`.
-/// @since 2.3.0
-cacheStrategy: TaskDependencyCacheStrategy.TaskDependencyCacheStrategy?
+@Since { version = "2.3.0" }
+cacheStrategy: TaskDependencyCacheStrategy?
 
 /// A map of environment variables specific to this dependency.
-env: (*Mapping<String, String?> | Map<String, String?>)?
+env: Mapping<String, String?>?
 
 /// Marks the dependency as optional when being inherited from the top-level.
-/// @since 1.20.0
+@Since { version = "1.20.0" }
 optional: Boolean?
 
 /// The target of the depended on task.
@@ -31,5 +28,14 @@ target: String?
 /// the task fails (but not when it was skipped, or hydrated from the cache).
 /// When `wait`, runs before the task, but the task only waits for the
 /// dependency to have started running, not to have completed.
-/// @since 2.6.0
-type: TaskDependencyType.TaskDependencyType?
+@Since { version = "2.6.0" }
+type: TaskDependencyType?
+
+/// Controls how a task dependency invalidates the current task's cache entry.
+/// When omitted, the effective strategy is `Hash` if the dependency declares
+/// outputs, or `Ignored` otherwise.
+@Since { version = "2.3.0" }
+typealias TaskDependencyCacheStrategy = "hash" | "ignored" | "outputs"
+
+/// The task-to-task relationship of the dependency.
+typealias TaskDependencyType = "cleanup" | *"required" | "wait" | "optional"

@@ -3,8 +3,9 @@
 /// Configures how moon integrates with proto.
 module ProtoConfig
 
-import "VersionSpec.pkl"
-
 /// The version of proto to download and install,
 /// and to use for installing and running other toolchains.
-version: VersionSpec.VersionSpec?
+version: VersionSpec?
+
+/// Represents a resolved version or alias.
+typealias VersionSpec = String

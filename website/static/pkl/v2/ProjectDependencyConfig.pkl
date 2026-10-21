@@ -3,18 +3,23 @@
 /// A project referenced by identifier, with additional parameters.
 module ProjectDependencyConfig
 
-import "DependencyScope.pkl"
-import "DependencySource.pkl"
-import "Id.pkl"
-
 /// Identifier of the depended on project.
-id: Id.Id?
+id: Id?
 
 /// Scope of the dependency relationship.
-scope: DependencyScope.DependencyScope?
+scope: DependencyScope?
 
 /// Source of where the dependency came from.
-source: DependencySource.DependencySource?
+source: DependencySource?
 
 /// Metadata about the source.
 via: String?
+
+/// The relationship scope of a dependency.
+typealias DependencyScope = "build" | "development" | "peer" | *"production" | "root"
+
+/// The source where the dependency comes from. Either explicitly
+/// defined in configuration, or implicitly derived from source files.
+typealias DependencySource = *"explicit" | "implicit"
+
+typealias Id = String

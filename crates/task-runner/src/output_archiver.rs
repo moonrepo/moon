@@ -3,8 +3,7 @@ use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
 use moon_cache::{StorageOptions, TaskManifest};
-use moon_common::path::to_relative_virtual_string;
-use moon_common::{color, format_error_chain};
+use moon_common::{format_error_chain, path::to_relative_virtual_string};
 use moon_daemon_client::DaemonClient;
 use moon_hash::ContentHash;
 use moon_manifest::TaskManifestPacker;
@@ -113,7 +112,7 @@ impl OutputArchiver<'_> {
             if !handled_by_daemon {
                 self.app_context
                     .cache_engine
-                    .storage
+                    .actions_storage
                     .with_options(StorageOptions {
                         include_local: use_local,
                         include_remote: use_remote,
@@ -259,14 +258,14 @@ impl OutputArchiver<'_> {
         // Then inherit the execution operation metadata
         packer.inherit_operation(&state.operation)?;
 
-        // Then inherit the source fingerprint, which lives in the local CAS.
-        // Without a local tier there's nothing to attach, and the manifest is
-        // archived without it.
+        // Then inherit the source fingerprint, which lives in the objects
+        // storage. Without an objects backend there's nothing to attach, and
+        // the manifest is archived without it.
         if let Some(blob) = self
             .app_context
             .cache_engine
-            .storage
-            .load_hash_manifest(&state.digest)
+            .objects_storage
+            .load_hash_fingerprint(&state.digest)
             .await?
         {
             packer.inherit_source(&state.digest, blob)?;

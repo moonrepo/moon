@@ -32,19 +32,19 @@ pub enum AppError {
     )]
     MissingConfigFile(String),
 
-    #[diagnostic(code(app::ambiguous_hash_manifest))]
+    #[diagnostic(code(app::ambiguous_hash_fingerprint))]
     #[error(
-        "Found multiple hash manifests starting with {}, provide more characters to disambiguate.",
+        "Found multiple hash fingerprints starting with {}, provide more characters to disambiguate.",
         .0.style(Style::Hash),
     )]
-    AmbiguousHashManifest(String),
+    AmbiguousHashFingerprint(String),
 
-    #[diagnostic(code(app::missing_hash_manifest))]
+    #[diagnostic(code(app::missing_hash_fingerprint))]
     #[error(
-        "Unable to find a hash manifest for {}!",
+        "Unable to find a hash fingerprint for {}!",
         .0.style(Style::Hash),
     )]
-    MissingHashManifest(String),
+    MissingHashFingerprint(String),
 
     #[diagnostic(code(app::missing_home_dir))]
     #[error("Unable to determine your home directory.")]

@@ -2,13 +2,13 @@ use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
 use moon_app_context::AppContext;
 use moon_cache::{StorageOptions, TaskManifest, TaskManifestSource, TaskManifestUnpacker};
-use moon_common::path::WorkspaceRelativePath;
+use moon_common::{format_error_chain, path::WorkspaceRelativePath};
 use moon_daemon_client::DaemonClient;
 use moon_task::Task;
 use starbase_utils::{fs, glob::GlobSet};
 use std::fmt::{self, Debug};
 use std::sync::Arc;
-use tracing::{debug, instrument};
+use tracing::{debug, instrument, warn};
 
 pub enum HydrateFrom {
     PreviousOutput,
@@ -140,7 +140,7 @@ impl OutputHydrater<'_> {
                     manifest = self
                         .app_context
                         .cache_engine
-                        .storage
+                        .actions_storage
                         .with_options(StorageOptions {
                             include_local: use_local,
                             include_remote: use_remote,

@@ -1,15 +1,15 @@
 use crate::workspace_builder::WorkspaceBuilderContext;
 use miette::IntoDiagnostic;
-use moon_cache::{ContentHash, cache_item};
+use moon_blob::Blob;
+use moon_cache::{CacheEngine, ContentHash, cache_item};
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_common::{Id, is_docker};
 use moon_env_var::GlobalEnvBag;
-use moon_hash::{ContentHasher, fingerprint};
+use moon_hash::{ContentHasher, Digest, fingerprint};
 use moon_pdk_api::VirtualPath;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
-use starbase_utils::fs;
-use starbase_utils::json::{JsonError, serde_json};
+use starbase_utils::json::serde_json;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 use std::sync::Arc;
@@ -18,6 +18,10 @@ use tracing::trace;
 cache_item!(
     pub struct WorkspaceGraphCacheState {
         pub last_hash: ContentHash,
+
+        /// The digest of the graph cached for `last_hash` in the objects
+        /// storage, which is content-addressed by the serialized graph.
+        pub graph_digest: Option<Digest>,
 
         /// Input files discovered by plugins while extending the graph
         /// during the last build. Since plugins only run on a cache miss,
@@ -252,31 +256,43 @@ pub async fn create_graph_cache_hasher(
     Ok(hasher)
 }
 
-/// Read the cached graph from the file system. The file is written by moon,
-/// and never contains comments, so it's parsed directly from bytes, without
-/// stripping comments, or converting to a string.
-pub fn read_cache_file<T: DeserializeOwned>(path: &Path) -> miette::Result<T> {
-    let data = fs::read_file_bytes(path)?;
+/// Read the cached graph with the given digest from the objects storage, if
+/// it exists. The object is written by moon, and never contains comments, so
+/// it's parsed directly from bytes, without stripping comments, or converting
+/// to a string.
+pub async fn read_cache_object<T: DeserializeOwned>(
+    cache_engine: &CacheEngine,
+    digest: &Digest,
+) -> miette::Result<Option<T>> {
+    let Some(object) = cache_engine
+        .objects_storage
+        .retrieve_object(digest.to_owned())
+        .await?
+    else {
+        return Ok(None);
+    };
 
-    serde_json::from_slice(&data).map_err(|error| {
-        JsonError::ReadFile {
-            path: path.to_path_buf(),
-            error: Box::new(error),
-        }
-        .into()
-    })
+    let data = object.content.read_bytes()?;
+
+    serde_json::from_slice(&data).map(Some).into_diagnostic()
 }
 
-/// Write the cached graph to the file system, serialized directly into bytes
-/// instead of a string. It's written atomically, so that a partially written
-/// graph is never read.
-pub fn write_cache_file<T: Serialize>(path: &Path, data: &T) -> miette::Result<()> {
-    let data = serde_json::to_vec(data).map_err(|error| JsonError::WriteFile {
-        path: path.to_path_buf(),
-        error: Box::new(error),
-    })?;
+/// Write the cached graph to the objects storage, serialized directly into
+/// bytes instead of a string, and return its digest. Objects are written
+/// atomically, so a partially written graph is never read.
+pub async fn write_cache_object<T: Serialize>(
+    cache_engine: &CacheEngine,
+    data: &T,
+) -> miette::Result<Digest> {
+    let blob = Blob::from_bytes(serde_json::to_vec(data).into_diagnostic()?)?;
+    let digest = blob.digest.clone();
 
-    fs::write_file_atomic(path, data)?;
+    // Replace rather than store, so that a graph that couldn't be read back,
+    // and was rebuilt with the same content (and digest), is repaired
+    cache_engine
+        .objects_storage
+        .replace_objects(vec![blob.into_input()])
+        .await?;
 
-    Ok(())
+    Ok(digest)
 }

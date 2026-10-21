@@ -87,7 +87,7 @@ mod output_archiver {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn stores_the_action_blob_in_storage() {
-            // The action digest addresses moon's fingerprint hash manifest,
+            // The action digest addresses moon's hash fingerprint,
             // which lives in the local CAS and must be uploaded alongside the
             // outputs so an RE-compliant backend can resolve the action result.
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
@@ -246,7 +246,7 @@ mod output_archiver {
             let client = container.create_unreachable_daemon_client().await;
             let archiver = container.create_archiver_with_daemon(client);
             let mut state = container.create_state();
-            setup_cas_state(&mut state);
+            setup_state(&mut state);
 
             assert!(matches!(
                 archiver.archive("hash123", &state).await.unwrap(),

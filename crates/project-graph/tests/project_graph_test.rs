@@ -1,3 +1,4 @@
+use moon_cache::Digest;
 use moon_common::{Id, path::WorkspaceRelativePathBuf};
 use moon_config::{
     DependencyScope, DependencySource, ProjectDependencyConfig, TaskDependencyCacheStrategy,
@@ -10,19 +11,67 @@ use moon_task::{Target, TaskFileInput, TaskFileOutput, TaskGlobInput};
 use moon_test_utils::{
     MoonSandbox, WorkspaceGraph, WorkspaceMockOptions, WorkspaceMocker, create_moon_sandbox,
 };
-use moon_workspace::{WorkspaceBuilder, WorkspaceGraphCacheState};
+use moon_workspace::{STATE_KEY, WorkspaceBuilder, WorkspaceGraphCacheState};
 use rustc_hash::FxHashMap;
 use starbase_sandbox::assert_snapshot;
 use starbase_utils::{fs, json, string_vec};
 use std::fs::OpenOptions;
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 pub fn append_file<P: AsRef<Path>>(path: P, data: &str) {
     let mut file = OpenOptions::new().append(true).open(path.as_ref()).unwrap();
 
     writeln!(file, "\n\n{data}").unwrap();
+}
+
+/// The path of an object in the local objects store, which shards objects by
+/// the first 2 chars of their hash.
+fn object_path(root: &Path, digest: &Digest) -> PathBuf {
+    root.join(".moon/cache/objects")
+        .join(digest.hash.prefix())
+        .join(digest.hash.suffix())
+}
+
+/// The workspace graph's cache state, stored under its key in the objects store.
+fn load_graph_state(root: &Path) -> WorkspaceGraphCacheState {
+    json::read_file(object_path(root, &Digest::from_bytes(STATE_KEY).unwrap())).unwrap()
+}
+
+/// The cached workspace graph, stored by the digest of its content, which the
+/// state records.
+fn graph_cache_path(root: &Path) -> PathBuf {
+    object_path(root, &load_graph_state(root).graph_digest.unwrap())
+}
+
+/// The hashes of every object in the local objects store.
+fn stored_objects(root: &Path) -> Vec<String> {
+    let mut hashes = vec![];
+    let dir = root.join(".moon/cache/objects");
+
+    if !dir.exists() {
+        return hashes;
+    }
+
+    for shard in std::fs::read_dir(dir).unwrap() {
+        let shard = shard.unwrap();
+
+        if shard.file_name() == "temp" {
+            continue;
+        }
+
+        for object in std::fs::read_dir(shard.path()).unwrap() {
+            hashes.push(format!(
+                "{}{}",
+                shard.file_name().to_string_lossy(),
+                object.unwrap().file_name().to_string_lossy()
+            ));
+        }
+    }
+
+    hashes.sort();
+    hashes
 }
 
 fn map_ids(ids: Vec<Id>) -> Vec<String> {
@@ -369,15 +418,16 @@ mod project_graph {
     mod cache {
         use super::*;
 
-        const CACHE_PATH: &str = ".moon/cache/states/workspaceGraph.json";
-        const STATE_PATH: &str = ".moon/cache/states/workspaceGraphStateV1.json";
-
         // Written by the `tc-tier1` test plugin when `extend_project_graph`
         // is called, allowing us to detect if/when it was invoked
         const MARKER_PATH: &str = ".moon/cache/tcExtendProjectGraph";
 
         fn load_state(sandbox: &MoonSandbox) -> WorkspaceGraphCacheState {
-            json::read_file(sandbox.path().join(STATE_PATH)).unwrap()
+            load_graph_state(sandbox.path())
+        }
+
+        fn cache_path(sandbox: &MoonSandbox) -> PathBuf {
+            graph_cache_path(sandbox.path())
         }
 
         async fn do_generate(root: &Path) -> WorkspaceGraph {
@@ -482,7 +532,7 @@ tasks:
         async fn doesnt_cache_if_no_vcs() {
             let (sandbox, _graph) = build_cached_graph(|_| {}).await;
 
-            assert!(!sandbox.path().join(CACHE_PATH).exists())
+            assert!(stored_objects(sandbox.path()).is_empty())
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -498,7 +548,7 @@ tasks:
                 })
                 .await;
 
-            assert!(!sandbox.path().join(CACHE_PATH).exists())
+            assert!(stored_objects(sandbox.path()).is_empty())
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -508,7 +558,7 @@ tasks:
             })
             .await;
 
-            assert!(sandbox.path().join(CACHE_PATH).exists());
+            assert!(cache_path(&sandbox).exists());
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -519,7 +569,7 @@ tasks:
             .await;
 
             // Like a partially written file
-            fs::write_file(sandbox.path().join(CACHE_PATH), "{\"projects\": {").unwrap();
+            fs::write_file(cache_path(&sandbox), "{\"projects\": {").unwrap();
 
             let rebuilt_graph = do_generate(sandbox.path()).await;
 
@@ -529,7 +579,7 @@ tasks:
             );
 
             // And the cache was written again
-            let _: json::JsonValue = json::read_file(sandbox.path().join(CACHE_PATH)).unwrap();
+            let _: json::JsonValue = json::read_file(cache_path(&sandbox)).unwrap();
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -539,7 +589,7 @@ tasks:
             })
             .await;
 
-            fs::remove_file(sandbox.path().join(CACHE_PATH)).unwrap();
+            fs::remove_file(cache_path(&sandbox)).unwrap();
 
             let rebuilt_graph = do_generate(sandbox.path()).await;
 
@@ -547,7 +597,7 @@ tasks:
                 graph.projects.get_node_keys(),
                 rebuilt_graph.projects.get_node_keys()
             );
-            assert!(sandbox.path().join(CACHE_PATH).exists());
+            assert!(cache_path(&sandbox).exists());
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -557,13 +607,13 @@ tasks:
             })
             .await;
 
-            assert!(sandbox.path().join(CACHE_PATH).exists());
+            assert!(cache_path(&sandbox).exists());
 
-            for entry in std::fs::read_dir(sandbox.path().join(".moon/cache/states")).unwrap() {
-                let name = entry.unwrap().file_name();
+            // Objects are staged in the store's temp directory, and moved into
+            // place once fully written
+            let temp_dir = sandbox.path().join(".moon/cache/objects/temp");
 
-                assert!(!name.to_string_lossy().ends_with(".tmp"), "{name:?}");
-            }
+            assert!(std::fs::read_dir(temp_dir).unwrap().next().is_none());
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -573,7 +623,7 @@ tasks:
             })
             .await;
 
-            let cache: json::JsonValue = json::read_file(sandbox.path().join(CACHE_PATH)).unwrap();
+            let cache: json::JsonValue = json::read_file(cache_path(&sandbox)).unwrap();
             let keys = |key: &str| {
                 let mut keys = cache[key]
                     .as_object()
@@ -608,7 +658,7 @@ tasks:
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn creates_states_and_manifests() {
+        async fn creates_states_and_fingerprints() {
             let (sandbox, _graph) = build_cached_graph(|sandbox| {
                 sandbox.enable_git();
             })
@@ -618,12 +668,12 @@ tasks:
 
             assert!(!state.last_hash.as_str().is_empty());
 
-            // The hash manifest is a blob in the local CAS, which
+            // The hash fingerprint is in the local objects store, which
             // shards objects by the first 2 chars of their hash.
             assert!(
                 sandbox
                     .path()
-                    .join(".moon/cache/blobs")
+                    .join(".moon/cache/objects")
                     .join(&state.last_hash.as_str()[0..2])
                     .join(&state.last_hash.as_str()[2..])
                     .exists()
@@ -877,29 +927,25 @@ tasks:
             }
 
             #[tokio::test(flavor = "multi_thread")]
-            async fn stores_one_manifest_after_discovering_plugin_input_files() {
+            async fn stores_one_fingerprint_after_discovering_plugin_input_files() {
                 let sandbox = build_plugins_cached_graph(|sandbox| {
                     sandbox.create_file("a/tc.lock", "");
                 })
                 .await;
 
                 let state = load_state(&sandbox);
-                let mut blobs = vec![];
+                let mut blobs = stored_objects(sandbox.path());
 
-                for shard in std::fs::read_dir(sandbox.path().join(".moon/cache/blobs")).unwrap() {
-                    let shard = shard.unwrap();
+                // The state and graph live in the same store, so leave them out
+                let state_key = Digest::from_bytes(STATE_KEY).unwrap();
+                let graph_digest = state.graph_digest.clone().unwrap();
 
-                    for blob in std::fs::read_dir(shard.path()).unwrap() {
-                        blobs.push(format!(
-                            "{}{}",
-                            shard.file_name().to_string_lossy(),
-                            blob.unwrap().file_name().to_string_lossy()
-                        ));
-                    }
-                }
+                blobs.retain(|blob| {
+                    blob != state_key.hash.as_str() && blob != graph_digest.hash.as_str()
+                });
 
                 // The hash was regenerated with the discovered input files,
-                // but only the final manifest is stored
+                // but only the final fingerprint is stored
                 assert_eq!(blobs, [state.last_hash.as_str()]);
             }
 
@@ -978,13 +1024,11 @@ tasks:
         #[tokio::test(flavor = "multi_thread")]
         async fn loads_vcs_info_when_loaded_from_cache() {
             let sandbox = create_git_sandbox();
-            let cache_path = sandbox
-                .path()
-                .join(".moon/cache/states/workspaceGraph.json");
 
             assert_vcs_context(&build_cached_graph(&sandbox).await);
 
             // The cache isn't written again on a hit
+            let cache_path = graph_cache_path(sandbox.path());
             let modified = std::fs::metadata(&cache_path).unwrap().modified().unwrap();
 
             assert_vcs_context(&build_cached_graph(&sandbox).await);
@@ -1379,9 +1423,7 @@ tasks:
             generate(sandbox.path()).await;
 
             // Only the sources are cached
-            let cache_path = sandbox
-                .path()
-                .join(".moon/cache/states/workspaceGraph.json");
+            let cache_path = graph_cache_path(sandbox.path());
             let mut cache: json::JsonValue = json::read_file(&cache_path).unwrap();
 
             for node in cache["projects"]["graph"]["nodes"].as_array_mut().unwrap() {

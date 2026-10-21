@@ -110,7 +110,7 @@ impl<'task> TaskRunner<'task> {
         let mut cache = app_context
             .cache_engine
             .state
-            .load_target_state::<TaskRunCacheState>(&task.target)?;
+            .load_target_last_run::<TaskRunCacheState>(&task.target)?;
 
         if cache.data.target.is_empty() {
             cache.data.target = task.target.to_string();
@@ -346,7 +346,7 @@ impl<'task> TaskRunner<'task> {
             match self
                 .app_context
                 .cache_engine
-                .storage
+                .actions_storage
                 .with_options(StorageOptions {
                     include_local: self.state.local_cache_readable,
                     include_remote: self.state.remote_cache_readable,
@@ -430,8 +430,8 @@ impl<'task> TaskRunner<'task> {
 
         // Generate the digest and store values
         let digest = cache_engine
-            .storage
-            .store_hash_manifest_with_hasher(hasher)
+            .objects_storage
+            .store_hash_fingerprint_with_hasher(hasher)
             .await?;
 
         operation.meta.set_hash(&digest.hash);

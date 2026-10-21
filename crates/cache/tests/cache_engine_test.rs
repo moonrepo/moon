@@ -39,40 +39,6 @@ mod cache_engine {
     }
 
     #[test]
-    fn returns_default_if_cache_missing() {
-        let sandbox = create_empty_sandbox();
-        let engine = create_engine(&sandbox);
-        let item = engine
-            .state
-            .load_state::<CommonCacheState>("state.json")
-            .unwrap();
-
-        assert_eq!(item.data, CommonCacheState::default());
-    }
-
-    #[test]
-    fn reads_cache_if_exists() {
-        let sandbox = create_empty_sandbox();
-        sandbox.create_file(
-            ".moon/cache/states/state.json",
-            r#"{ "lastHash": "abc123" }"#,
-        );
-
-        let engine = create_engine(&sandbox);
-        let item = engine
-            .state
-            .load_state::<CommonCacheState>("state.json")
-            .unwrap();
-
-        assert_eq!(
-            item.data,
-            CommonCacheState {
-                last_hash: "abc123".into()
-            }
-        );
-    }
-
-    #[test]
     fn can_write_cache_if_mode_off() {
         let sandbox = create_empty_sandbox();
         let engine = create_engine(&sandbox);
@@ -336,6 +302,91 @@ mod cache_engine {
             for path in &files {
                 assert!(result.contains_key(path));
             }
+        }
+    }
+
+    mod clean_stale_cache {
+        use super::*;
+        use moon_cache_local::{LocalObjectsStorage, LocalStorage};
+        use std::path::PathBuf;
+        use std::time::{Duration, SystemTime};
+
+        fn create_engine_with_backends(sandbox: &Sandbox) -> CacheEngine {
+            let context = CacheContext::new(sandbox.path());
+            let mut engine = CacheEngine::new(context.clone()).unwrap();
+
+            engine
+                .actions_storage
+                .add_local_backend(LocalStorage::new(context.clone(), &context.cache_dir).unwrap());
+            engine
+                .objects_storage
+                .add_local_backend(LocalObjectsStorage::new(context).unwrap());
+            engine
+        }
+
+        fn object_path(sandbox: &Sandbox, digest: &Digest) -> PathBuf {
+            sandbox
+                .path()
+                .join(".moon/cache/objects")
+                .join(digest.hash.prefix())
+                .join(digest.hash.suffix())
+        }
+
+        fn backdate(path: &std::path::Path, age: Duration) {
+            let file = std::fs::OpenOptions::new().write(true).open(path).unwrap();
+            file.set_modified(SystemTime::now() - age).unwrap();
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn removes_stale_hash_fingerprints() {
+            let sandbox = create_empty_sandbox();
+            let engine = create_engine_with_backends(&sandbox);
+
+            let stale = engine
+                .objects_storage
+                .store_hash_fingerprint("task", "stale")
+                .await
+                .unwrap();
+            let fresh = engine
+                .objects_storage
+                .store_hash_fingerprint("task", "fresh")
+                .await
+                .unwrap();
+
+            backdate(
+                &object_path(&sandbox, &stale),
+                Duration::from_secs(86400 * 14),
+            );
+
+            let (files_deleted, bytes_saved) =
+                engine.clean_stale_cache("7 days", true).await.unwrap();
+
+            assert_eq!(files_deleted, 1);
+            assert_eq!(bytes_saved, stale.size as u64);
+            assert!(!engine.objects_storage.has_hash_fingerprint(&stale).await);
+            assert!(engine.objects_storage.has_hash_fingerprint(&fresh).await);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn keeps_hash_fingerprints_when_not_cleaning_all() {
+            // The cleanup that runs after a pipeline only clears stale locks.
+            let sandbox = create_empty_sandbox();
+            let engine = create_engine_with_backends(&sandbox);
+
+            let stale = engine
+                .objects_storage
+                .store_hash_fingerprint("task", "stale")
+                .await
+                .unwrap();
+
+            backdate(
+                &object_path(&sandbox, &stale),
+                Duration::from_secs(86400 * 14),
+            );
+
+            engine.clean_stale_cache("7 days", false).await.unwrap();
+
+            assert!(engine.objects_storage.has_hash_fingerprint(&stale).await);
         }
     }
 }

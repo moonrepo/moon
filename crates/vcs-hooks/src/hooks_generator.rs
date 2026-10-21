@@ -1,5 +1,5 @@
 use moon_app_context::AppContext;
-use moon_cache_item::{CacheItem, cache_item};
+use moon_cache_item::cache_item;
 use moon_common::{
     color, is_docker,
     path::{PathExt, WorkspaceRelativePathBuf},
@@ -13,6 +13,8 @@ use std::sync::LazyLock;
 use tracing::{debug, instrument, warn};
 
 static ARG_VAR_PATTERN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\$(ARG\d+)").unwrap());
+
+pub const STATE_KEY: &str = "VcsHooks";
 
 pub enum ShellType {
     Bash,
@@ -64,9 +66,8 @@ impl<'app> HooksGenerator<'app> {
     pub async fn cleanup(self) -> miette::Result<()> {
         debug!("Cleaning up {} hooks", self.config.client);
 
-        let mut state = self.load_state()?;
-        let has_previous_state =
-            state.data.relative_hooks_dir.is_some() || !state.data.hook_names.is_empty();
+        let mut state = self.load_state().await?;
+        let has_previous_state = state.relative_hooks_dir.is_some() || !state.hook_names.is_empty();
 
         if !has_previous_state {
             return Ok(());
@@ -76,10 +77,10 @@ impl<'app> HooksGenerator<'app> {
             self.app_context.vcs.teardown_hooks().await?;
         }
 
-        if let Some(dir) = &state.data.relative_hooks_dir {
+        if let Some(dir) = &state.relative_hooks_dir {
             let hooks_dir = dir.to_logical_path(&self.app_context.workspace_root);
 
-            self.remove_hook_files(&hooks_dir, &state.data.hook_names)?;
+            self.remove_hook_files(&hooks_dir, &state.hook_names)?;
 
             // Only remove the directory itself when moon owns it. State from
             // older moon versions may reference a directory managed by another
@@ -89,20 +90,21 @@ impl<'app> HooksGenerator<'app> {
             }
         }
 
-        state.data.hook_names.clear();
-        state.data.relative_hooks_dir = None;
-        state.save()?;
+        state.hook_names.clear();
+        state.relative_hooks_dir = None;
+
+        self.save_state(&state).await?;
 
         Ok(())
     }
 
-    fn cleanup_previous_state(&self) -> miette::Result<CacheItem<HooksState>> {
-        let state = self.load_state()?;
+    async fn cleanup_previous_state(&self) -> miette::Result<HooksState> {
+        let state = self.load_state().await?;
 
-        if let Some(dir) = &state.data.relative_hooks_dir {
+        if let Some(dir) = &state.relative_hooks_dir {
             self.remove_hook_files(
                 &dir.to_logical_path(&self.app_context.workspace_root),
-                &state.data.hook_names,
+                &state.hook_names,
             )?;
         }
 
@@ -142,35 +144,41 @@ impl<'app> HooksGenerator<'app> {
             return Ok(false);
         };
 
-        let mut state = self.cleanup_previous_state()?;
+        let mut state = self.cleanup_previous_state().await?;
 
         debug!("Generating {} hooks", self.config.client);
 
         self.create_hook_files(&env)?;
 
-        state.data.hook_names = self.config.hooks.keys().cloned().collect();
-        state.data.relative_hooks_dir = env
+        state.hook_names = self.config.hooks.keys().cloned().collect();
+        state.relative_hooks_dir = env
             .hooks_dir
             .relative_to(&self.app_context.workspace_root)
             .ok();
 
-        state.save()?;
+        self.save_state(&state).await?;
 
         Ok(true)
     }
 
-    fn load_state(&self) -> miette::Result<CacheItem<HooksState>> {
-        let state = self
-            .app_context
+    async fn load_state(&self) -> miette::Result<HooksState> {
+        self.app_context
             .cache_engine
-            .state
-            .load_state::<HooksState>("vcsHooks.json")?;
-
-        Ok(state)
+            .objects_storage
+            .load_state(STATE_KEY)
+            .await
     }
 
-    pub fn verify_hooks_exist(&self) -> miette::Result<bool> {
-        let Some(dir) = self.load_state()?.data.relative_hooks_dir else {
+    async fn save_state(&self, state: &HooksState) -> miette::Result<()> {
+        self.app_context
+            .cache_engine
+            .objects_storage
+            .save_state(STATE_KEY, state)
+            .await
+    }
+
+    pub async fn verify_hooks_exist(&self) -> miette::Result<bool> {
+        let Some(dir) = self.load_state().await?.relative_hooks_dir else {
             return Ok(false);
         };
 

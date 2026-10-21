@@ -451,9 +451,8 @@ mod task_runner {
                     assert_eq!(result.operations[1].status, ActionStatus::Cached);
                 }
 
-                #[tokio::test(flavor = "multi_thread")]
-                async fn running_again_reuses_existing_outputs() {
-                    let container = TaskRunnerContainer::new_os("runner", "create-file-glob").await;
+                pub(super) async fn run_reuses_existing_outputs(task_id: &str) {
+                    let container = TaskRunnerContainer::new_os("runner", task_id).await;
                     container.sandbox.enable_git();
 
                     let mut runner = container.create_runner();
@@ -490,9 +489,8 @@ mod task_runner {
                     assert_eq!(get_file_id(&file), file_id);
                 }
 
-                #[tokio::test(flavor = "multi_thread")]
-                async fn running_again_restores_missing_outputs() {
-                    let container = TaskRunnerContainer::new_os("runner", "create-file-glob").await;
+                pub(super) async fn run_restores_missing_outputs(task_id: &str) {
+                    let container = TaskRunnerContainer::new_os("runner", task_id).await;
                     container.sandbox.enable_git();
 
                     let mut runner = container.create_runner();
@@ -531,23 +529,13 @@ mod task_runner {
                 }
 
                 #[tokio::test(flavor = "multi_thread")]
-                async fn running_again_reuses_existing_outputs_from_archive() {
-                    run_reuses_existing_outputs("create-file-glob", false).await;
+                async fn running_again_reuses_existing_outputs() {
+                    run_reuses_existing_outputs("create-file-glob").await;
                 }
 
                 #[tokio::test(flavor = "multi_thread")]
-                async fn running_again_reuses_existing_outputs_from_cas() {
-                    run_reuses_existing_outputs("create-file-glob", true).await;
-                }
-
-                #[tokio::test(flavor = "multi_thread")]
-                async fn running_again_restores_missing_outputs_from_archive() {
-                    run_restores_missing_outputs("create-file-glob", false).await;
-                }
-
-                #[tokio::test(flavor = "multi_thread")]
-                async fn running_again_restores_missing_outputs_from_cas() {
-                    run_restores_missing_outputs("create-file-glob", true).await;
+                async fn running_again_restores_missing_outputs() {
+                    run_restores_missing_outputs("create-file-glob").await;
                 }
             }
 
@@ -557,23 +545,13 @@ mod task_runner {
                 use super::glob_outputs::*;
 
                 #[tokio::test(flavor = "multi_thread")]
-                async fn running_again_reuses_existing_outputs_from_archive() {
-                    run_reuses_existing_outputs("create-file-optional", false).await;
+                async fn running_again_reuses_existing_outputs() {
+                    run_reuses_existing_outputs("create-file-optional").await;
                 }
 
                 #[tokio::test(flavor = "multi_thread")]
-                async fn running_again_reuses_existing_outputs_from_cas() {
-                    run_reuses_existing_outputs("create-file-optional", true).await;
-                }
-
-                #[tokio::test(flavor = "multi_thread")]
-                async fn running_again_restores_missing_outputs_from_archive() {
-                    run_restores_missing_outputs("create-file-optional", false).await;
-                }
-
-                #[tokio::test(flavor = "multi_thread")]
-                async fn running_again_restores_missing_outputs_from_cas() {
-                    run_restores_missing_outputs("create-file-optional", true).await;
+                async fn running_again_restores_missing_outputs() {
+                    run_restores_missing_outputs("create-file-optional").await;
                 }
             }
 
@@ -683,9 +661,14 @@ mod task_runner {
                         }));
                     let task = std::sync::Arc::new(task);
 
-                    let mut runner =
-                        TaskRunner::new(&container.app_context, &container.project, &task, None)
-                            .unwrap();
+                    let mut runner = TaskRunner::new(
+                        &container.app_context,
+                        &container.layout_graph,
+                        &container.project,
+                        &task,
+                        None,
+                    )
+                    .unwrap();
                     let result = runner.run(&ActionContext::default(), &node).await.unwrap();
 
                     assert!(result.error.is_some());
@@ -1147,7 +1130,6 @@ mod task_runner {
                 runner.cache.data.hash = "previous".into();
 
                 // Outputs for the next run, that fail to unpack after one is written
-                runner.state.local_cas_enabled = true;
                 runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
 
                 let digest = container.seed_blob(b"next").await;
@@ -1663,7 +1645,7 @@ mod task_runner {
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn creates_a_manifest_file() {
+        async fn creates_a_fingerprint_file() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             container.sandbox.enable_git();
 
@@ -1673,13 +1655,13 @@ mod task_runner {
 
             let hash = runner.hash(&context, &node).await.unwrap();
 
-            // The fingerprint is stored as a blob in the local CAS, which
+            // The fingerprint is stored in the local objects store, which
             // shards objects by the first 2 chars of their hash.
             assert!(
                 container
                     .sandbox
                     .path()
-                    .join(".moon/cache/blobs")
+                    .join(".moon/cache/objects")
                     .join(&hash[0..2])
                     .join(&hash[2..])
                     .exists()

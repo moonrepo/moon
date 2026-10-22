@@ -6687,6 +6687,8 @@ dependencies = [
  "moon_config",
  "moon_console",
  "moon_daemon_client",
+ "moon_daemon_server",
+ "moon_daemon_utils",
  "moon_env_var",
  "moon_hash",
  "moon_manifest",

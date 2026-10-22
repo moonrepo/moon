@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where, with the daemon enabled, a task would fail with "Failed to make daemon RPC
+  call" when its stdout/stderr, or its list of output files, was larger than 4 MiB. The daemon now
+  accepts messages up to 256 MiB, and if archiving or hydrating outputs through the daemon fails,
+  it's done in-process instead of failing the task.
+
 ## 2.6.3
 
 #### 🛡️ Security

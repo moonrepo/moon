@@ -5,6 +5,11 @@ use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_blob::{BlobContent, BlobInput, Bytes};
 use moon_cache::TaskManifest;
+use moon_daemon_client::DaemonClient;
+#[cfg(unix)]
+use moon_daemon_server::{DaemonService, DaemonState, serve_unix};
+#[cfg(unix)]
+use moon_daemon_utils::endpoint::{get_endpoint, get_sock_path};
 use moon_env_var::GlobalEnvBag;
 use moon_hash::Digest;
 use moon_process::Command;
@@ -22,6 +27,10 @@ use starbase_sandbox::{Sandbox, create_sandbox};
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
+#[cfg(unix)]
+use std::time::Duration;
+#[cfg(unix)]
+use tokio::sync::{RwLock, broadcast};
 
 pub fn create_node(task: &Task) -> ActionNode {
     ActionNode::RunTask(Box::new(RunTaskNode::new(task.target.clone())))
@@ -92,6 +101,69 @@ impl TaskRunnerContainer {
 
     pub fn create_hydrator(&self) -> OutputHydrater<'_> {
         OutputHydrater::new(&self.app_context, &self.task, None).unwrap()
+    }
+
+    pub fn create_archiver_with_daemon(&self, client: DaemonClient) -> OutputArchiver<'_> {
+        OutputArchiver::new(&self.app_context, &self.task, Some(client)).unwrap()
+    }
+
+    pub fn create_hydrator_with_daemon(&self, client: DaemonClient) -> OutputHydrater<'_> {
+        OutputHydrater::new(&self.app_context, &self.task, Some(client)).unwrap()
+    }
+
+    /// Connect a client to a daemon, then stop the daemon and remove its
+    /// socket, so every RPC the client makes fails, as if the daemon went
+    /// away in the middle of a run.
+    #[cfg(unix)]
+    pub async fn create_unreachable_daemon_client(&self) -> DaemonClient {
+        let daemon_dir = self.sandbox.path().join("daemon");
+        let endpoint = get_endpoint(&daemon_dir);
+        let (shutdown_tx, mut shutdown_rx) = broadcast::channel::<()>(1);
+
+        fs::create_dir_all(&daemon_dir).unwrap();
+
+        let service = DaemonService::new(
+            Arc::new(RwLock::new(DaemonState {
+                app_context: Arc::clone(&self.app_context),
+                workspace_graph: Arc::new(WorkspaceGraph::default()),
+            })),
+            endpoint.clone(),
+            std::process::id(),
+            shutdown_tx.clone(),
+        );
+
+        let server = tokio::spawn(async move {
+            let shutdown_signal = async move {
+                let _ = shutdown_rx.recv().await;
+            };
+
+            serve_unix(&endpoint, service, shutdown_signal)
+                .await
+                .unwrap();
+        });
+
+        // Poll rather than sleep a fixed amount, so a slow bind doesn't flake
+        let mut client = None;
+
+        for _ in 0..100 {
+            if let Ok(connected) = DaemonClient::try_connect(&daemon_dir).await {
+                client = Some(connected);
+                break;
+            }
+
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+
+        let mut client = client.expect("daemon should accept connections");
+
+        assert!(client.status().await.is_ok());
+
+        shutdown_tx.send(()).unwrap();
+        server.await.unwrap();
+
+        fs::remove_file(get_sock_path(&daemon_dir)).unwrap();
+
+        client
     }
 
     pub fn create_state(&self) -> TaskRunState {

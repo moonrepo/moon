@@ -662,5 +662,38 @@ mod output_hydrater {
                 assert_eq!(fs::metadata(&path).unwrap().len(), 0);
             }
         }
+
+        #[cfg(unix)]
+        #[tokio::test(flavor = "multi_thread")]
+        async fn falls_back_to_in_process_if_daemon_rpc_fails() {
+            // A daemon that went away, or rejected the request, must not fail
+            // a cache hit; the outputs are hydrated in-process instead
+            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
+            container
+                .sandbox
+                .create_file("project/file.txt", "contents");
+
+            let mut state = container.create_state();
+            setup_cas_state(&mut state);
+
+            let source = archive_and_load(&container, &state).await;
+
+            fs::remove_file(container.sandbox.path().join("project/file.txt")).unwrap();
+
+            let client = container.create_unreachable_daemon_client().await;
+
+            assert_hydrated(
+                container
+                    .create_hydrator_with_daemon(client)
+                    .hydrate(HydrateFrom::Storage(Box::new(source)), "hash123", &state)
+                    .await
+                    .unwrap(),
+            );
+
+            assert_eq!(
+                fs::read_to_string(container.sandbox.path().join("project/file.txt")).unwrap(),
+                "contents"
+            );
+        }
     }
 }

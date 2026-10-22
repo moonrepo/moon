@@ -647,6 +647,33 @@ mod output_archiver {
 
             assert!(container.blob_exists(&empty.digest).await);
         }
+
+        #[cfg(unix)]
+        #[tokio::test(flavor = "multi_thread")]
+        async fn falls_back_to_in_process_if_daemon_rpc_fails() {
+            // The task passed, so a daemon that went away, or rejected the
+            // request, must not fail it; the outputs are archived in-process
+            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
+            container
+                .sandbox
+                .create_file("project/file.txt", "contents");
+
+            let client = container.create_unreachable_daemon_client().await;
+            let archiver = container.create_archiver_with_daemon(client);
+            let mut state = container.create_state();
+            setup_cas_state(&mut state);
+
+            assert!(matches!(
+                archiver.archive("hash123", &state).await.unwrap(),
+                ArchiveOutcome::Queued
+            ));
+            container.flush_storage().await;
+
+            let blob = Blob::from_bytes(b"contents".to_vec()).unwrap();
+
+            assert!(container.manifest_exists(&state.digest).await);
+            assert!(container.blob_exists(&blob.digest).await);
+        }
     }
 
     mod has_outputs {

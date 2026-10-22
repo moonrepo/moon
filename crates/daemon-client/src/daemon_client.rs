@@ -46,6 +46,12 @@ pub enum HandshakeOutcome {
     Restart,
 }
 
+fn create_client(channel: Channel) -> MoonDaemonClient<Channel> {
+    MoonDaemonClient::new(channel)
+        .max_decoding_message_size(MAX_MESSAGE_SIZE)
+        .max_encoding_message_size(MAX_MESSAGE_SIZE)
+}
+
 fn map_rpc_error(error: Status) -> DaemonClientError {
     DaemonClientError::RpcFailed {
         error: Box::new(error),
@@ -133,7 +139,7 @@ impl DaemonClient {
         };
 
         Ok(Self {
-            inner: MoonDaemonClient::new(channel),
+            inner: create_client(channel),
         })
     }
 
@@ -150,7 +156,7 @@ impl DaemonClient {
         with_deadline(
             "Status",
             CONTROL_DEADLINE,
-            MoonDaemonClient::new(channel)
+            create_client(channel)
                 .status(request_with_deadline(StatusRequest {}, CONTROL_DEADLINE)),
         )
         .await

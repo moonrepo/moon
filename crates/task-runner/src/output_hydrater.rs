@@ -3,7 +3,7 @@ use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
 use moon_cache::{StorageOptions, TaskManifest, TaskManifestSource, TaskManifestUnpacker};
-use moon_common::{color, path::WorkspaceRelativePath};
+use moon_common::{color, format_error_chain, path::WorkspaceRelativePath};
 use moon_daemon_client::DaemonClient;
 use moon_task::Task;
 use starbase_archive::Archiver;
@@ -108,25 +108,46 @@ impl OutputHydrater<'_> {
 
                 // Retrieve the manifest from the local/remote caches
                 let mut manifest = None;
+                let mut handled_by_daemon = false;
 
                 if let Some(mut daemon) = self.daemon_client.clone() {
-                    let res = daemon
+                    // The daemon is an optimization, so if the RPC fails (the
+                    // daemon went away, or the message was too large), hydrate
+                    // in-process instead of failing the task. This overwrites
+                    // any outputs the daemon may have already unpacked
+                    match daemon
                         .hydrate_task_outputs(
                             self.task.target.to_string(),
                             state.digest.clone(),
-                            source.manifest,
+                            source.manifest.clone(),
                             use_local,
                             use_remote,
                             source.backend.get_id().to_string(),
                         )
-                        .await?;
-
-                    if res.hydrated
-                        && let Some(action_result) = res.manifest
+                        .await
                     {
-                        manifest = Some(TaskManifest::from_bazel_action_result(action_result)?);
+                        Ok(res) => {
+                            handled_by_daemon = true;
+
+                            if res.hydrated
+                                && let Some(action_result) = res.manifest
+                            {
+                                manifest =
+                                    Some(TaskManifest::from_bazel_action_result(action_result)?);
+                            }
+                        }
+                        Err(error) => {
+                            warn!(
+                                task_target,
+                                hash,
+                                error = format_error_chain(&error),
+                                "Failed to hydrate task outputs in the daemon, hydrating in-process instead"
+                            );
+                        }
                     }
-                } else {
+                }
+
+                if !handled_by_daemon {
                     manifest = self
                         .app_context
                         .cache_engine

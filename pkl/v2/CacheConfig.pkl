@@ -6,7 +6,7 @@ module CacheConfig
 import "CacheCasConfig.pkl"
 
 /// Configures aspects of the content-addressable storage (CAS) cache.
-/// @since 2.3.0
+@Since { version = "2.3.0" }
 cas: CacheCasConfig?
 
 /// Whether to use a shared worktree cache. When enabled, the cache is
@@ -15,6 +15,5 @@ cas: CacheCasConfig?
 ///
 /// Only blobs and manifests will be shared, as they are portable.
 /// Hashes, locks, states, and more will not be, as they are worktree-specific.
-///
-/// @since 2.5.0
+@Since { version = "2.5.0" }
 unstable_sharedWorktreeCache: Boolean?

@@ -4,11 +4,9 @@
 /// file paths and glob patterns to owners. An owner is either a user, team, or group.
 module OwnersConfig
 
-import "OwnersPaths.pkl"
-
 /// `bitbucket-legacy` only. A map of custom groups (prefixed with `@@@`),
 /// to a list of user and normal groups.
-customGroups: (*Mapping<String, *Listing<String> | List<String> | Set<String>> | Map<String, *Listing<String> | List<String> | Set<String>>)?
+customGroups: Mapping<String, Listing<String>>?
 
 /// The default owner for `paths`.
 defaultOwner: String?
@@ -19,9 +17,12 @@ optional: Boolean?
 /// A list or map of file paths and glob patterns to owners.
 /// When a list, the `defaultOwner` is the owner, and each item is a path.
 /// When a map, the key is a path, and the value is a list of owners.
-paths: OwnersPaths.OwnersPaths?
+paths: OwnersPaths?
 
 /// `bitbucket-legacy` and GitLab only. The number of approvals required
 /// for the request to be satisfied. For `bitbucket-legacy`, utilizes the
 /// `Check()` condition. For GitLab, marks the code owners section as required.
 requiredApprovals: UInt8?
+
+/// A mapping of file paths and file globs to owners.
+typealias OwnersPaths = *Listing<String> | Mapping<String, Listing<String>>

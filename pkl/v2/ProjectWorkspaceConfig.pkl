@@ -11,5 +11,5 @@ inheritedTasks: ProjectWorkspaceInheritedTasksConfig?
 
 /// Controls how project settings are merged with inherited
 /// workspace-level settings.
-/// @since 2.5.0
+@Since { version = "2.5.0" }
 mergeStrategies: ProjectWorkspaceMergeStrategiesConfig?

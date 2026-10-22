@@ -552,12 +552,7 @@ mod task_hasher {
             let project = wg.get_project("root").unwrap();
             let task = wg.get_task_from_project("root", "inFileOutFile").unwrap();
 
-            let expected = [
-                ".moon/toolchains.yml",
-                ".moon/workspace.yml",
-                "out/1",
-                "out/3",
-            ];
+            let expected = [".moon/toolchains.yml", "out/1", "out/3"];
 
             // VCS
             let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
@@ -580,7 +575,7 @@ mod task_hasher {
             let project = wg.get_project("root").unwrap();
             let task = wg.get_task_from_project("root", "inFileOutDir").unwrap();
 
-            let expected = [".moon/toolchains.yml", ".moon/workspace.yml"];
+            let expected = [".moon/toolchains.yml"];
 
             // VCS
             let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
@@ -603,7 +598,7 @@ mod task_hasher {
             let project = wg.get_project("root").unwrap();
             let task = wg.get_task_from_project("root", "inFileOutGlob").unwrap();
 
-            let expected = [".moon/toolchains.yml", ".moon/workspace.yml"];
+            let expected = [".moon/toolchains.yml"];
 
             // VCS
             let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;

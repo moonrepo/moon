@@ -25,6 +25,6 @@ Configuration ──────────────────────
 
   Tags: —
   Inputs:
-    - .moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}
+    - .moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}
     - app/**/*
   Outputs: —

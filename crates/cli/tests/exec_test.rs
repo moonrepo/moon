@@ -1391,8 +1391,9 @@ mod exec {
 
             let hash_glob = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
 
-            // Hashes change because `.moon/workspace.yml` is different from `walk_strategy`
-            assert_ne!(hash_vcs, hash_glob);
+            // Both strategies collect the same inputs, and `.moon/workspace.yml`
+            // is not an implicit input, so changing `walk_strategy` is a cache hit
+            assert_eq!(hash_vcs, hash_glob);
         }
     }
 

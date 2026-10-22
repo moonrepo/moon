@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where changing any setting in `.moon/workspace.*`, like `codeowners`, invalidated
+  the cache of every task. Only `.moon/extensions.*` and `.moon/toolchains.*` are now implicit task
+  inputs.
+
 ## 2.6.2
 
 #### 🐞 Fixes

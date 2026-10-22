@@ -11,7 +11,7 @@ use moon_cache::{CacheContext, CacheEngine};
 use moon_cache_local::LocalStorage;
 use moon_cache_remote::{GrpcRemoteStorage, HttpRemoteStorage};
 use moon_codegen::CodeGenerator;
-use moon_common::{is_docker, is_formatted_output, is_test_env};
+use moon_common::{is_ci, is_devbox, is_docker, is_formatted_output, is_test_env};
 use moon_config::{
     ExtensionsConfig, InheritedTasksManager, RemoteApi, ToolchainsConfig, WorkspaceConfig,
 };
@@ -355,7 +355,10 @@ impl MoonSession {
     }
 
     pub fn is_daemon_allowed(&self) -> bool {
-        self.workspace_config.daemon && self.is_pipeline_command() && !is_docker() && !is_test_env()
+        self.workspace_config.daemon
+            && self.is_pipeline_command()
+            && !is_test_env()
+            && get_daemon_unsupported_env(is_ci(), is_docker(), is_devbox()).is_none()
     }
 
     pub fn is_daemon_server_command(&self) -> bool {
@@ -530,10 +533,15 @@ impl AppSession for MoonSession {
         // the pipeline needs it. This shares `acquire` with the pipeline's own
         // `connect_to_daemon`, so the two coordinate and at most one spawns —
         // and a spawn failure degrades to `None` instead of failing the run.
-        if self.is_daemon_allowed()
-            && let Some(client) = self.get_daemon_connector()?.acquire().await?
+        if self.is_daemon_allowed() {
+            if let Some(client) = self.get_daemon_connector()?.acquire().await? {
+                let _ = self.daemon_client.set(client);
+            }
+        } else if self.workspace_config.daemon
+            && self.is_pipeline_command()
+            && let Some(env) = get_daemon_unsupported_env(is_ci(), is_docker(), is_devbox())
         {
-            let _ = self.daemon_client.set(client);
+            debug!("Daemon is enabled but will not be used, as moon is running in {env}");
         }
 
         Ok(None)
@@ -570,5 +578,63 @@ impl fmt::Debug for MoonSession {
             .field("workspace_config", &self.workspace_config)
             .field("workspace_root", &self.workspace_root)
             .finish()
+    }
+}
+
+/// Return the environment the daemon can't be used in, even when enabled,
+/// or `None` if it can be used.
+fn get_daemon_unsupported_env(ci: bool, docker: bool, devbox: bool) -> Option<&'static str> {
+    // Each CI run starts fresh, so there's nothing for a daemon to reuse.
+    // A detached daemon would also outlive the run, and its background work
+    // (like archiving outputs) may not finish before the machine is torn down
+    if ci {
+        return Some("a CI environment");
+    }
+
+    // One-off containers (`docker run`, `docker build`, etc) have the same
+    // lifecycle problems as CI, but development containers are long-lived
+    if docker && !devbox {
+        return Some("a Docker container that isn't a development container");
+    }
+
+    None
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    mod daemon_unsupported_env {
+        use super::*;
+
+        #[test]
+        fn supported_locally() {
+            assert_eq!(get_daemon_unsupported_env(false, false, false), None);
+        }
+
+        #[test]
+        fn supported_in_devbox() {
+            assert_eq!(get_daemon_unsupported_env(false, false, true), None);
+        }
+
+        #[test]
+        fn supported_in_devbox_docker_container() {
+            assert_eq!(get_daemon_unsupported_env(false, true, true), None);
+        }
+
+        #[test]
+        fn unsupported_in_docker_container() {
+            assert!(get_daemon_unsupported_env(false, true, false).is_some());
+        }
+
+        #[test]
+        fn unsupported_in_ci() {
+            assert!(get_daemon_unsupported_env(true, false, false).is_some());
+        }
+
+        #[test]
+        fn unsupported_in_ci_even_if_devbox_docker_container() {
+            assert!(get_daemon_unsupported_env(true, true, true).is_some());
+        }
     }
 }

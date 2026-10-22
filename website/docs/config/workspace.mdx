@@ -335,7 +335,9 @@ and hydration) in the background. Defaults to `false`.
 unstable_daemon: true
 ```
 
-Can also be enabled with the `MOON_DAEMON` environment variable.
+Can also be enabled with the `MOON_DAEMON` environment variable. Even when enabled, the daemon is
+not used in CI environments or in Docker containers (except development containers), as explained
+in the [guide](../guides/daemon#unsupported-environments).
 
 :::caution
 

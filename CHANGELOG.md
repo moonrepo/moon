@@ -8,6 +8,10 @@
   call" when its stdout/stderr, or its list of output files, was larger than 4 MiB. The daemon now
   accepts messages up to 256 MiB, and if archiving or hydrating outputs through the daemon fails,
   it's done in-process instead of failing the task.
+- Fixed an issue where the daemon was silently never used in development containers (like VS Code
+  Dev Containers), yet was used in CI environments that aren't Docker containers (like Kubernetes
+  pods), where it outlived the run. The daemon is now used in development containers, is never used
+  in CI, and the reason it was skipped is logged at the debug level.
 
 ## 2.6.3
 

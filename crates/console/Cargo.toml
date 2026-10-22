@@ -16,6 +16,7 @@ moon_target = { path = "../target" }
 moon_time = { path = "../time" }
 async-trait = { workspace = true }
 iocraft = { workspace = true }
+iocraft-macros = { workspace = true }
 miette = { workspace = true }
 starbase_console = { workspace = true, features = ["ui"] }
 starbase_styles = { workspace = true }

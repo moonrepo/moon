@@ -50,20 +50,24 @@ export interface ProjectDependencyConfig {
 	via?: string | null;
 }
 
+/** Expanded information about a project dependency. */
 export type ProjectDependsOn = Id | ProjectDependencyConfig;
 
 /**
  * Configures our Docker integration.
+ *
  * @since 1.27.0
  */
 export interface ProjectDockerConfig {
 	/**
 	 * Configures aspects of the `Dockerfile` generation process.
+	 *
 	 * @since 1.27.0
 	 */
 	file: DockerFileConfig;
 	/**
 	 * Configures aspects of the Docker scaffolding process.
+	 *
 	 * @since 1.27.0
 	 */
 	scaffold: DockerScaffoldConfig;
@@ -99,6 +103,7 @@ export type LayerType =
 	| 'tool'
 	| 'unknown';
 
+/** A mapping of file paths and file globs to owners. */
 export type OwnersPaths = string[] | Record<string, string[]>;
 
 /**
@@ -157,6 +162,7 @@ export type ProjectMetadataConfig = ProjectMetadataConfigBase & ProjectMetadataC
 /** The technology stack of the project, for categorizing. */
 export type StackType = 'backend' | 'data' | 'frontend' | 'infrastructure' | 'systems' | 'unknown';
 
+/** Variants a project-level toolchain can be configured. */
 export type ProjectToolchainEntry = null | boolean | ToolchainPluginConfig;
 
 export type ProjectToolchainsConfigPlugins = Record<Id, ProjectToolchainEntry>;
@@ -166,12 +172,14 @@ export interface ProjectToolchainsConfigBase {
 	/**
 	 * A single toolchain, or list of toolchains, to inherit for
 	 * this project and all of its tasks.
+	 *
 	 * @since 1.31.0
 	 */
 	defaults?: Id | Id[] | null;
 	/**
 	 * A single toolchain, or list of toolchains, to inherit for
 	 * this project and all of its tasks.
+	 *
 	 * @since 1.31.0
 	 */
 	default?: Id | Id[] | null;
@@ -205,17 +213,17 @@ export interface ProjectWorkspaceMergeStrategiesConfig {
 	/**
 	 * The strategy to use when merging `env` with inherited
 	 * environment variables, applied to the entire map.
-	 * @since 2.5.0
 	 *
 	 * @default 'append'
+	 * @since 2.5.0
 	 */
 	env?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `fileGroups` with
 	 * inherited file groups, applied per group.
-	 * @since 2.5.0
 	 *
 	 * @default 'append'
+	 * @since 2.5.0
 	 */
 	fileGroups?: MergeStrategy | null;
 }
@@ -227,6 +235,7 @@ export interface ProjectWorkspaceConfig {
 	/**
 	 * Controls how project settings are merged with inherited
 	 * workspace-level settings.
+	 *
 	 * @since 2.5.0
 	 */
 	mergeStrategies: ProjectWorkspaceMergeStrategiesConfig;
@@ -244,6 +253,7 @@ export interface ProjectConfig {
 	dependsOn?: ProjectDependsOn[];
 	/**
 	 * Configures Docker integration for this project.
+	 *
 	 * @since 1.27.0
 	 */
 	docker: ProjectDockerConfig;
@@ -260,6 +270,7 @@ export interface ProjectConfig {
 	/**
 	 * Overrides the identifier within the project graph, as defined in
 	 * the workspace `projects` setting.
+	 *
 	 * @since 1.18.0
 	 */
 	id?: Id | null;
@@ -280,6 +291,7 @@ export interface ProjectConfig {
 	/**
 	 * Defines ownership of source code within the current project, by mapping
 	 * file paths and globs to owners. An owner is either a user, team, or group.
+	 *
 	 * @since 1.8.0
 	 */
 	owners: OwnersConfig;
@@ -287,10 +299,10 @@ export interface ProjectConfig {
 	project?: ProjectMetadataConfig | null;
 	/**
 	 * The technology stack of the project, for categorizing.
-	 * @since 1.22.0
 	 *
 	 * @default 'unknown'
 	 * @type {'backend' | 'data' | 'frontend' | 'infrastructure' | 'systems' | 'unknown'}
+	 * @since 1.22.0
 	 */
 	stack: StackType;
 	/**
@@ -300,6 +312,7 @@ export interface ProjectConfig {
 	tags?: Id[];
 	/**
 	 * Shared task options for all tasks. Can be overriden per task.
+	 *
 	 * @since 2.4.0
 	 */
 	taskOptions: TaskOptionsConfig | null;
@@ -334,25 +347,30 @@ export interface PartialProjectDependencyConfig {
 	via?: string | null;
 }
 
+/** Expanded information about a project dependency. */
 export type PartialProjectDependsOn = Id | PartialProjectDependencyConfig;
 
 /**
  * Configures our Docker integration.
+ *
  * @since 1.27.0
  */
 export interface PartialProjectDockerConfig {
 	/**
 	 * Configures aspects of the `Dockerfile` generation process.
+	 *
 	 * @since 1.27.0
 	 */
 	file?: PartialDockerFileConfig | null;
 	/**
 	 * Configures aspects of the Docker scaffolding process.
+	 *
 	 * @since 1.27.0
 	 */
 	scaffold?: PartialDockerScaffoldConfig | null;
 }
 
+/** A mapping of file paths and file globs to owners. */
 export type PartialOwnersPaths = string[] | Record<string, string[]>;
 
 /**
@@ -409,6 +427,7 @@ export interface PartialProjectMetadataConfigBase {
 export type PartialProjectMetadataConfig = PartialProjectMetadataConfigBase &
 	PartialProjectMetadataConfigMetadata;
 
+/** Variants a project-level toolchain can be configured. */
 export type PartialProjectToolchainEntry = null | boolean | PartialToolchainPluginConfig;
 
 export type PartialProjectToolchainsConfigPlugins = Record<Id, PartialProjectToolchainEntry>;
@@ -418,12 +437,14 @@ export interface PartialProjectToolchainsConfigBase {
 	/**
 	 * A single toolchain, or list of toolchains, to inherit for
 	 * this project and all of its tasks.
+	 *
 	 * @since 1.31.0
 	 */
 	defaults?: Id | Id[] | null;
 	/**
 	 * A single toolchain, or list of toolchains, to inherit for
 	 * this project and all of its tasks.
+	 *
 	 * @since 1.31.0
 	 */
 	default?: Id | Id[] | null;
@@ -458,17 +479,17 @@ export interface PartialProjectWorkspaceMergeStrategiesConfig {
 	/**
 	 * The strategy to use when merging `env` with inherited
 	 * environment variables, applied to the entire map.
-	 * @since 2.5.0
 	 *
 	 * @default 'append'
+	 * @since 2.5.0
 	 */
 	env?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `fileGroups` with
 	 * inherited file groups, applied per group.
-	 * @since 2.5.0
 	 *
 	 * @default 'append'
+	 * @since 2.5.0
 	 */
 	fileGroups?: MergeStrategy | null;
 }
@@ -480,6 +501,7 @@ export interface PartialProjectWorkspaceConfig {
 	/**
 	 * Controls how project settings are merged with inherited
 	 * workspace-level settings.
+	 *
 	 * @since 2.5.0
 	 */
 	mergeStrategies?: PartialProjectWorkspaceMergeStrategiesConfig | null;
@@ -497,6 +519,7 @@ export interface PartialProjectConfig {
 	dependsOn?: PartialProjectDependsOn[] | null;
 	/**
 	 * Configures Docker integration for this project.
+	 *
 	 * @since 1.27.0
 	 */
 	docker?: PartialProjectDockerConfig | null;
@@ -513,6 +536,7 @@ export interface PartialProjectConfig {
 	/**
 	 * Overrides the identifier within the project graph, as defined in
 	 * the workspace `projects` setting.
+	 *
 	 * @since 1.18.0
 	 */
 	id?: Id | null;
@@ -531,6 +555,7 @@ export interface PartialProjectConfig {
 	/**
 	 * Defines ownership of source code within the current project, by mapping
 	 * file paths and globs to owners. An owner is either a user, team, or group.
+	 *
 	 * @since 1.8.0
 	 */
 	owners?: PartialOwnersConfig | null;
@@ -538,9 +563,9 @@ export interface PartialProjectConfig {
 	project?: PartialProjectMetadataConfig | null;
 	/**
 	 * The technology stack of the project, for categorizing.
-	 * @since 1.22.0
 	 *
 	 * @default 'unknown'
+	 * @since 1.22.0
 	 */
 	stack?: StackType | null;
 	/**
@@ -550,6 +575,7 @@ export interface PartialProjectConfig {
 	tags?: Id[] | null;
 	/**
 	 * Shared task options for all tasks. Can be overriden per task.
+	 *
 	 * @since 2.4.0
 	 */
 	taskOptions?: PartialTaskOptionsConfig | null;

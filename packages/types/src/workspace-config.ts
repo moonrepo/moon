@@ -10,17 +10,17 @@ export interface CacheCasConfig {
 	 * Maximum total size of the local cache, for example "10gb" or
 	 * "512mib". When exceeded, the least recently used cached task outputs
 	 * are evicted. Unlimited when unset.
-	 * @since 2.4.0
 	 *
 	 * @env MOON_CACHE_CAS_MAX_SIZE
+	 * @since 2.4.0
 	 */
 	maxSize: string | null;
 	/**
 	 * Verify hash on every read. When enabled, reads are slower
 	 * but detect on-disk corruption.
-	 * @since 2.3.0
 	 *
 	 * @env MOON_CACHE_CAS_VERIFY_INTEGRITY
+	 * @since 2.3.0
 	 */
 	verifyIntegrity: boolean;
 }
@@ -29,6 +29,7 @@ export interface CacheCasConfig {
 export interface CacheConfig {
 	/**
 	 * Configures aspects of the content-addressable storage (CAS) cache.
+	 *
 	 * @since 2.3.0
 	 */
 	cas: CacheCasConfig;
@@ -40,9 +41,8 @@ export interface CacheConfig {
 	 * Only blobs and manifests will be shared, as they are portable.
 	 * Hashes, locks, states, and more will not be, as they are worktree-specific.
 	 *
-	 * @since 2.5.0
-	 *
 	 * @env MOON_CACHE_SHARED_WORKTREE_CACHE
+	 * @since 2.5.0
 	 */
 	unstable_sharedWorktreeCache: boolean;
 }
@@ -67,6 +67,7 @@ export interface CodeownersConfig {
 	/**
 	 * `bitbucket-legacy` and GitLab only. The number of approvals required
 	 * for the request to be satisfied. This will be applied to all paths.
+	 *
 	 * @since 1.28.0
 	 */
 	requiredApprovals?: number | null;
@@ -111,12 +112,14 @@ export interface DockerFileConfig {
 	/**
 	 * Run the `moon docker prune` command after building the
 	 * project, but before starting it.
+	 *
 	 * @since 2.0.0
 	 */
 	runPrune?: boolean | null;
 	/**
 	 * Run the `moon docker setup` command after scaffolding,
 	 * but before building the project.
+	 *
 	 * @since 2.0.0
 	 */
 	runSetup?: boolean | null;
@@ -129,6 +132,7 @@ export interface DockerFileConfig {
 	/**
 	 * A custom template file, relative from the workspace root, to use when
 	 * rendering the `Dockerfile`. Powered by Tera.
+	 *
 	 * @since 2.0.0
 	 */
 	template?: string | null;
@@ -163,6 +167,7 @@ export interface DockerScaffoldConfig {
 	 * List of glob patterns in which to include/exclude files in
 	 * the "configs" skeleton. Applies to both project and
 	 * workspace level scaffolding.
+	 *
 	 * @since 2.0.0
 	 */
 	configsPhaseGlobs?: string[];
@@ -170,6 +175,7 @@ export interface DockerScaffoldConfig {
 	 * List of glob patterns in which to include/exclude files in
 	 * the "sources" skeleton. Applies to both project and
 	 * workspace level scaffolding.
+	 *
 	 * @since 2.0.0
 	 */
 	sourcesPhaseGlobs?: string[];
@@ -179,6 +185,7 @@ export interface DockerScaffoldConfig {
 export interface DockerConfig {
 	/**
 	 * Configures aspects of the `Dockerfile` generation process.
+	 *
 	 * @since 2.0.0
 	 */
 	file: DockerFileConfig;
@@ -192,41 +199,41 @@ export interface DockerConfig {
 export interface ExperimentsConfig {
 	/**
 	 * Track and determine affected projects and tasks asynchronously.
-	 * @since 2.2.0
 	 *
 	 * @default true
 	 * @env MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING
+	 * @since 2.2.0
 	 */
 	asyncAffectedTracking?: boolean;
 	/**
 	 * Build the project and task graphs asynchronously.
-	 * @since 2.2.0
 	 *
 	 * @default true
 	 * @env MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING
+	 * @since 2.2.0
 	 */
 	asyncGraphBuilding?: boolean;
 	/**
 	 * Store task outputs in a local CAS (content-addressable storage) cache.
-	 * @since 2.3.0
 	 *
 	 * @env MOON_EXPERIMENT_CAS_OUTPUTS_CACHE
+	 * @since 2.3.0
 	 */
 	casOutputsCache: boolean;
 	/**
 	 * Always use the task's `outputStyle` option, even when running
 	 * the task as a primary target.
-	 * @since 2.6.0
 	 *
 	 * @env MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE
+	 * @since 2.6.0
 	 */
 	explicitTaskOutputStyle: boolean;
 	/**
 	 * Use native file hashing instead of using the VCS.
-	 * @since 2.3.0
 	 *
 	 * @default true
 	 * @env MOON_EXPERIMENT_NATIVE_FILE_HASHING
+	 * @since 2.3.0
 	 */
 	nativeFileHashing?: boolean;
 }
@@ -251,6 +258,7 @@ export interface HasherConfig {
 	/**
 	 * When `warnOnMissingInputs` is enabled, filters missing file
 	 * paths from logging a warning.
+	 *
 	 * @since 1.10.0
 	 */
 	ignoreMissingPatterns?: string[];
@@ -258,6 +266,7 @@ export interface HasherConfig {
 	 * Filters file paths that match a configured glob pattern
 	 * when a hash is being generated. Patterns are workspace relative,
 	 * so prefixing with `**` is recommended.
+	 *
 	 * @since 1.10.0
 	 */
 	ignorePatterns?: string[];
@@ -291,18 +300,18 @@ export type NotifierEventType = 'never' | 'always' | 'failure' | 'success' | 'ta
 export interface NotifierConfig {
 	/**
 	 * Display an OS notification for certain action pipeline events.
-	 * @since 1.38.0
 	 *
 	 * @default 'never'
+	 * @since 1.38.0
 	 */
 	terminalNotifications?: NotifierEventType | null;
 	/**
 	 * Whether webhook requests require acknowledgment (2xx response).
 	 * When enabled, will bypass the daemon and send webhooks in the
 	 * main process.
-	 * @since 1.38.0
 	 *
 	 * @env MOON_WEBHOOK_ACKNOWLEDGE
+	 * @since 1.38.0
 	 */
 	webhookAcknowledge?: boolean;
 	/**
@@ -313,16 +322,17 @@ export interface NotifierConfig {
 	webhookUrl?: string | null;
 }
 
+/** Toggles the state of actions within the pipeline. */
 export type PipelineActionSwitch = null | boolean | Id[];
 
 /** Configures aspects of the action pipeline. */
 export interface PipelineConfig {
 	/**
 	 * Automatically clean the cache after every task run.
-	 * @since 1.24.0
 	 *
 	 * @default true
 	 * @env MOON_PIPELINE_AUTO_CLEAN_CACHE
+	 * @since 1.24.0
 	 */
 	autoCleanCache?: boolean;
 	/**
@@ -341,6 +351,7 @@ export interface PipelineConfig {
 	/**
 	 * Run the `InstallDependencies` actions for each running task
 	 * when changes to lockfiles and manifests are detected.
+	 *
 	 * @since 1.34.0
 	 */
 	installDependencies: PipelineActionSwitch;
@@ -358,22 +369,23 @@ export interface PipelineConfig {
 	/**
 	 * When creating `SyncProject` actions, recursively create a `SyncProject`
 	 * action for each project dependency, and link them as a relationship.
-	 * @since 1.34.0
 	 *
 	 * @default true
+	 * @since 1.34.0
 	 */
 	syncProjectDependencies?: boolean;
 	/**
 	 * Run the `SyncProject` actions in the pipeline for each owning project
 	 * of a running task.
+	 *
 	 * @since 1.34.0
 	 */
 	syncProjects: PipelineActionSwitch;
 	/**
 	 * Run the `SyncWorkspace` action before all actions in the pipeline.
-	 * @since 1.34.0
 	 *
 	 * @default true
+	 * @since 1.34.0
 	 */
 	syncWorkspace?: boolean;
 }
@@ -385,10 +397,10 @@ export type WorkspaceProjectGlobFormat = 'dir-name' | 'source-path';
 export interface WorkspaceProjectsConfig {
 	/**
 	 * The project identifier format for glob located projects.
-	 * @since 2.0.0
 	 *
 	 * @default 'dir-name'
 	 * @type {'dir-name' | 'source-path'}
+	 * @since 2.0.0
 	 */
 	globFormat: WorkspaceProjectGlobFormat;
 	/**
@@ -400,16 +412,19 @@ export interface WorkspaceProjectsConfig {
 	sources: Record<Id, string>;
 }
 
+/** Configures projects in the workspace. */
 export type WorkspaceProjects = WorkspaceProjectsConfig | string[] | Record<Id, string>;
 
 /**
  * The API format of the remote service.
+ *
  * @since 1.32.0
  */
 export type RemoteApi = 'grpc' | 'http';
 
 /**
  * Configures basic HTTP authentication.
+ *
  * @since 1.32.0
  */
 export interface RemoteAuthConfig {
@@ -425,22 +440,24 @@ export interface RemoteAuthConfig {
 
 /**
  * Supported blob compression levels for gRPC APIs.
+ *
  * @since 1.31.0
  */
 export type RemoteCompression = 'none' | 'zstd';
 
 /**
  * Configures the action cache (AC) and content-addressable cache (CAS).
+ *
  * @since 1.30.0
  */
 export interface RemoteCacheConfig {
 	/**
 	 * The compression format to use when uploading/downloading blobs.
-	 * @since 1.31.0
 	 *
 	 * @default 'none'
 	 * @env MOON_REMOTE_CACHE_COMPRESSION
 	 * @type {'none' | 'zstd'}
+	 * @since 1.31.0
 	 */
 	compression: RemoteCompression;
 	/**
@@ -453,34 +470,35 @@ export interface RemoteCacheConfig {
 	/**
 	 * When local, only download matching blobs and do not upload new
 	 * blobs. Blobs will only be uploaded in CI environments.
-	 * @since 1.40.0
 	 *
 	 * @env MOON_REMOTE_CACHE_LOCAL_READ_ONLY
+	 * @since 1.40.0
 	 */
 	localReadOnly?: boolean;
 	/**
 	 * The maximum number of times to retry a request that failed with
 	 * a transient error (connection failure, timeout, 5xx, 429, etc),
 	 * using exponential backoff. Only applies to HTTP APIs.
-	 * @since 2.6.0
 	 *
 	 * @default 3
 	 * @env MOON_REMOTE_CACHE_RETRY_COUNT
+	 * @since 2.6.0
 	 */
 	retryCount?: number;
 	/**
 	 * When downloading blobs, verify the digests/hashes in the response
 	 * match the associated blob contents. This will reduce performance
 	 * but ensure partial or corrupted blobs won't cause failures.
-	 * @since 1.36.0
 	 *
 	 * @env MOON_REMOTE_CACHE_VERIFY_INTEGRITY
+	 * @since 1.36.0
 	 */
 	verifyIntegrity?: boolean;
 }
 
 /**
  * Configures for both server and client authentication with mTLS.
+ *
  * @since 1.30.0
  */
 export interface RemoteMtlsConfig {
@@ -522,6 +540,7 @@ export interface RemoteMtlsConfig {
 
 /**
  * Configures for server-only authentication with TLS.
+ *
  * @since 1.30.0
  */
 export interface RemoteTlsConfig {
@@ -549,20 +568,22 @@ export interface RemoteTlsConfig {
 
 /**
  * Configures the remote service, powered by the Bazel Remote Execution API.
+ *
  * @since 1.30.0
  */
 export interface RemoteConfig {
 	/**
 	 * The API format of the remote service.
-	 * @since 1.32.0
 	 *
 	 * @default 'grpc'
 	 * @env MOON_REMOTE_API
 	 * @type {'grpc' | 'http'}
+	 * @since 1.32.0
 	 */
 	api: RemoteApi;
 	/**
 	 * Connect to the host using basic HTTP authentication.
+	 *
 	 * @since 1.32.0
 	 */
 	auth?: RemoteAuthConfig | null;
@@ -589,6 +610,7 @@ export type VcsClient = 'git';
 
 /**
  * The format to use for generated VCS hook files.
+ *
  * @since 1.29.0
  */
 export type VcsHookFormat = 'bash' | 'native';
@@ -616,24 +638,25 @@ export interface VcsConfig {
 	defaultBranch?: string;
 	/**
 	 * The format to use for generated VCS hook files.
-	 * @since 1.29.0
 	 *
 	 * @default 'native'
 	 * @type {'bash' | 'native'}
+	 * @since 1.29.0
 	 */
 	hookFormat: VcsHookFormat;
 	/**
 	 * A map of hooks to a list of commands to run when the hook is triggered.
+	 *
 	 * @since 1.9.0
 	 */
 	hooks?: Record<string, string[]>;
 	/**
 	 * The upstream version control provider, where the repository
 	 * source code is stored.
-	 * @since 1.8.0
 	 *
 	 * @default 'github'
 	 * @type {'bitbucket' | 'bitbucket-legacy' | 'github' | 'gitlab' | 'other'}
+	 * @since 1.8.0
 	 */
 	provider: VcsProvider;
 	/** List of remote's in which to compare branches against. */
@@ -641,6 +664,7 @@ export interface VcsConfig {
 	/**
 	 * Automatically generate hooks and scripts during a sync operation,
 	 * based on the `hooks` setting.
+	 *
 	 * @since 1.9.0
 	 */
 	sync?: boolean;
@@ -657,11 +681,13 @@ export interface WorkspaceConfig {
 	$schema?: string;
 	/**
 	 * Configures aspects of the caching engine and layer.
+	 *
 	 * @since 2.3.0
 	 */
 	cache: CacheConfig;
 	/**
 	 * Configures code ownership rules for generating a `CODEOWNERS` file.
+	 *
 	 * @since 1.8.0
 	 */
 	codeowners: CodeownersConfig;
@@ -670,22 +696,26 @@ export interface WorkspaceConfig {
 	/**
 	 * The default/main project within the workspace. When a task is
 	 * ran without a project, the default will be used.
+	 *
 	 * @since 2.0.0
 	 */
 	defaultProject?: Id | null;
 	/**
 	 * Configures Docker integration for the workspace.
+	 *
 	 * @since 1.27.0
 	 */
 	docker: DockerConfig;
 	/**
 	 * Configures experiments across the entire moon workspace.
+	 *
 	 * @since 1.11.0
 	 */
 	experiments: ExperimentsConfig;
 	/**
 	 * Extends one or many workspace configuration file.
 	 * Supports a relative file path or a secure URL.
+	 *
 	 * @since 1.12.0
 	 */
 	extends?: ExtendsFrom | null;
@@ -715,9 +745,9 @@ export interface WorkspaceConfig {
 	/**
 	 * Enables a daemon that will process heavy tasks in the background,
 	 * greatly increasing performance of the main thread/executable.
-	 * @since 2.2.0
 	 *
 	 * @env MOON_DAEMON
+	 * @since 2.2.0
 	 */
 	unstable_daemon: boolean;
 	/**
@@ -735,17 +765,17 @@ export interface PartialCacheCasConfig {
 	 * Maximum total size of the local cache, for example "10gb" or
 	 * "512mib". When exceeded, the least recently used cached task outputs
 	 * are evicted. Unlimited when unset.
-	 * @since 2.4.0
 	 *
 	 * @env MOON_CACHE_CAS_MAX_SIZE
+	 * @since 2.4.0
 	 */
 	maxSize?: string | null;
 	/**
 	 * Verify hash on every read. When enabled, reads are slower
 	 * but detect on-disk corruption.
-	 * @since 2.3.0
 	 *
 	 * @env MOON_CACHE_CAS_VERIFY_INTEGRITY
+	 * @since 2.3.0
 	 */
 	verifyIntegrity?: boolean | null;
 }
@@ -754,6 +784,7 @@ export interface PartialCacheCasConfig {
 export interface PartialCacheConfig {
 	/**
 	 * Configures aspects of the content-addressable storage (CAS) cache.
+	 *
 	 * @since 2.3.0
 	 */
 	cas?: PartialCacheCasConfig | null;
@@ -765,9 +796,8 @@ export interface PartialCacheConfig {
 	 * Only blobs and manifests will be shared, as they are portable.
 	 * Hashes, locks, states, and more will not be, as they are worktree-specific.
 	 *
-	 * @since 2.5.0
-	 *
 	 * @env MOON_CACHE_SHARED_WORKTREE_CACHE
+	 * @since 2.5.0
 	 */
 	unstable_sharedWorktreeCache?: boolean | null;
 }
@@ -788,6 +818,7 @@ export interface PartialCodeownersConfig {
 	/**
 	 * `bitbucket-legacy` and GitLab only. The number of approvals required
 	 * for the request to be satisfied. This will be applied to all paths.
+	 *
 	 * @since 1.28.0
 	 */
 	requiredApprovals?: number | null;
@@ -832,12 +863,14 @@ export interface PartialDockerFileConfig {
 	/**
 	 * Run the `moon docker prune` command after building the
 	 * project, but before starting it.
+	 *
 	 * @since 2.0.0
 	 */
 	runPrune?: boolean | null;
 	/**
 	 * Run the `moon docker setup` command after scaffolding,
 	 * but before building the project.
+	 *
 	 * @since 2.0.0
 	 */
 	runSetup?: boolean | null;
@@ -850,6 +883,7 @@ export interface PartialDockerFileConfig {
 	/**
 	 * A custom template file, relative from the workspace root, to use when
 	 * rendering the `Dockerfile`. Powered by Tera.
+	 *
 	 * @since 2.0.0
 	 */
 	template?: string | null;
@@ -884,6 +918,7 @@ export interface PartialDockerScaffoldConfig {
 	 * List of glob patterns in which to include/exclude files in
 	 * the "configs" skeleton. Applies to both project and
 	 * workspace level scaffolding.
+	 *
 	 * @since 2.0.0
 	 */
 	configsPhaseGlobs?: string[] | null;
@@ -891,6 +926,7 @@ export interface PartialDockerScaffoldConfig {
 	 * List of glob patterns in which to include/exclude files in
 	 * the "sources" skeleton. Applies to both project and
 	 * workspace level scaffolding.
+	 *
 	 * @since 2.0.0
 	 */
 	sourcesPhaseGlobs?: string[] | null;
@@ -900,6 +936,7 @@ export interface PartialDockerScaffoldConfig {
 export interface PartialDockerConfig {
 	/**
 	 * Configures aspects of the `Dockerfile` generation process.
+	 *
 	 * @since 2.0.0
 	 */
 	file?: PartialDockerFileConfig | null;
@@ -913,41 +950,41 @@ export interface PartialDockerConfig {
 export interface PartialExperimentsConfig {
 	/**
 	 * Track and determine affected projects and tasks asynchronously.
-	 * @since 2.2.0
 	 *
 	 * @default true
 	 * @env MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING
+	 * @since 2.2.0
 	 */
 	asyncAffectedTracking?: boolean | null;
 	/**
 	 * Build the project and task graphs asynchronously.
-	 * @since 2.2.0
 	 *
 	 * @default true
 	 * @env MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING
+	 * @since 2.2.0
 	 */
 	asyncGraphBuilding?: boolean | null;
 	/**
 	 * Store task outputs in a local CAS (content-addressable storage) cache.
-	 * @since 2.3.0
 	 *
 	 * @env MOON_EXPERIMENT_CAS_OUTPUTS_CACHE
+	 * @since 2.3.0
 	 */
 	casOutputsCache?: boolean | null;
 	/**
 	 * Always use the task's `outputStyle` option, even when running
 	 * the task as a primary target.
-	 * @since 2.6.0
 	 *
 	 * @env MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE
+	 * @since 2.6.0
 	 */
 	explicitTaskOutputStyle?: boolean | null;
 	/**
 	 * Use native file hashing instead of using the VCS.
-	 * @since 2.3.0
 	 *
 	 * @default true
 	 * @env MOON_EXPERIMENT_NATIVE_FILE_HASHING
+	 * @since 2.3.0
 	 */
 	nativeFileHashing?: boolean | null;
 }
@@ -966,6 +1003,7 @@ export interface PartialHasherConfig {
 	/**
 	 * When `warnOnMissingInputs` is enabled, filters missing file
 	 * paths from logging a warning.
+	 *
 	 * @since 1.10.0
 	 */
 	ignoreMissingPatterns?: string[] | null;
@@ -973,6 +1011,7 @@ export interface PartialHasherConfig {
 	 * Filters file paths that match a configured glob pattern
 	 * when a hash is being generated. Patterns are workspace relative,
 	 * so prefixing with `**` is recommended.
+	 *
 	 * @since 1.10.0
 	 */
 	ignorePatterns?: string[] | null;
@@ -1001,18 +1040,18 @@ export interface PartialHasherConfig {
 export interface PartialNotifierConfig {
 	/**
 	 * Display an OS notification for certain action pipeline events.
-	 * @since 1.38.0
 	 *
 	 * @default 'never'
+	 * @since 1.38.0
 	 */
 	terminalNotifications?: NotifierEventType | null;
 	/**
 	 * Whether webhook requests require acknowledgment (2xx response).
 	 * When enabled, will bypass the daemon and send webhooks in the
 	 * main process.
-	 * @since 1.38.0
 	 *
 	 * @env MOON_WEBHOOK_ACKNOWLEDGE
+	 * @since 1.38.0
 	 */
 	webhookAcknowledge?: boolean | null;
 	/**
@@ -1023,16 +1062,17 @@ export interface PartialNotifierConfig {
 	webhookUrl?: string | null;
 }
 
+/** Toggles the state of actions within the pipeline. */
 export type PartialPipelineActionSwitch = null | boolean | Id[];
 
 /** Configures aspects of the action pipeline. */
 export interface PartialPipelineConfig {
 	/**
 	 * Automatically clean the cache after every task run.
-	 * @since 1.24.0
 	 *
 	 * @default true
 	 * @env MOON_PIPELINE_AUTO_CLEAN_CACHE
+	 * @since 1.24.0
 	 */
 	autoCleanCache?: boolean | null;
 	/**
@@ -1051,6 +1091,7 @@ export interface PartialPipelineConfig {
 	/**
 	 * Run the `InstallDependencies` actions for each running task
 	 * when changes to lockfiles and manifests are detected.
+	 *
 	 * @since 1.34.0
 	 */
 	installDependencies?: PartialPipelineActionSwitch;
@@ -1068,22 +1109,23 @@ export interface PartialPipelineConfig {
 	/**
 	 * When creating `SyncProject` actions, recursively create a `SyncProject`
 	 * action for each project dependency, and link them as a relationship.
-	 * @since 1.34.0
 	 *
 	 * @default true
+	 * @since 1.34.0
 	 */
 	syncProjectDependencies?: boolean | null;
 	/**
 	 * Run the `SyncProject` actions in the pipeline for each owning project
 	 * of a running task.
+	 *
 	 * @since 1.34.0
 	 */
 	syncProjects?: PartialPipelineActionSwitch;
 	/**
 	 * Run the `SyncWorkspace` action before all actions in the pipeline.
-	 * @since 1.34.0
 	 *
 	 * @default true
+	 * @since 1.34.0
 	 */
 	syncWorkspace?: boolean | null;
 }
@@ -1092,9 +1134,9 @@ export interface PartialPipelineConfig {
 export interface PartialWorkspaceProjectsConfig {
 	/**
 	 * The project identifier format for glob located projects.
-	 * @since 2.0.0
 	 *
 	 * @default 'dir-name'
+	 * @since 2.0.0
 	 */
 	globFormat?: WorkspaceProjectGlobFormat | null;
 	/**
@@ -1106,6 +1148,7 @@ export interface PartialWorkspaceProjectsConfig {
 	sources?: Record<Id, string> | null;
 }
 
+/** Configures projects in the workspace. */
 export type PartialWorkspaceProjects =
 	| PartialWorkspaceProjectsConfig
 	| string[]
@@ -1113,6 +1156,7 @@ export type PartialWorkspaceProjects =
 
 /**
  * Configures basic HTTP authentication.
+ *
  * @since 1.32.0
  */
 export interface PartialRemoteAuthConfig {
@@ -1128,15 +1172,16 @@ export interface PartialRemoteAuthConfig {
 
 /**
  * Configures the action cache (AC) and content-addressable cache (CAS).
+ *
  * @since 1.30.0
  */
 export interface PartialRemoteCacheConfig {
 	/**
 	 * The compression format to use when uploading/downloading blobs.
-	 * @since 1.31.0
 	 *
 	 * @default 'none'
 	 * @env MOON_REMOTE_CACHE_COMPRESSION
+	 * @since 1.31.0
 	 */
 	compression?: RemoteCompression | null;
 	/**
@@ -1149,34 +1194,35 @@ export interface PartialRemoteCacheConfig {
 	/**
 	 * When local, only download matching blobs and do not upload new
 	 * blobs. Blobs will only be uploaded in CI environments.
-	 * @since 1.40.0
 	 *
 	 * @env MOON_REMOTE_CACHE_LOCAL_READ_ONLY
+	 * @since 1.40.0
 	 */
 	localReadOnly?: boolean | null;
 	/**
 	 * The maximum number of times to retry a request that failed with
 	 * a transient error (connection failure, timeout, 5xx, 429, etc),
 	 * using exponential backoff. Only applies to HTTP APIs.
-	 * @since 2.6.0
 	 *
 	 * @default 3
 	 * @env MOON_REMOTE_CACHE_RETRY_COUNT
+	 * @since 2.6.0
 	 */
 	retryCount?: number | null;
 	/**
 	 * When downloading blobs, verify the digests/hashes in the response
 	 * match the associated blob contents. This will reduce performance
 	 * but ensure partial or corrupted blobs won't cause failures.
-	 * @since 1.36.0
 	 *
 	 * @env MOON_REMOTE_CACHE_VERIFY_INTEGRITY
+	 * @since 1.36.0
 	 */
 	verifyIntegrity?: boolean | null;
 }
 
 /**
  * Configures for both server and client authentication with mTLS.
+ *
  * @since 1.30.0
  */
 export interface PartialRemoteMtlsConfig {
@@ -1218,6 +1264,7 @@ export interface PartialRemoteMtlsConfig {
 
 /**
  * Configures for server-only authentication with TLS.
+ *
  * @since 1.30.0
  */
 export interface PartialRemoteTlsConfig {
@@ -1245,19 +1292,21 @@ export interface PartialRemoteTlsConfig {
 
 /**
  * Configures the remote service, powered by the Bazel Remote Execution API.
+ *
  * @since 1.30.0
  */
 export interface PartialRemoteConfig {
 	/**
 	 * The API format of the remote service.
-	 * @since 1.32.0
 	 *
 	 * @default 'grpc'
 	 * @env MOON_REMOTE_API
+	 * @since 1.32.0
 	 */
 	api?: RemoteApi | null;
 	/**
 	 * Connect to the host using basic HTTP authentication.
+	 *
 	 * @since 1.32.0
 	 */
 	auth?: PartialRemoteAuthConfig | null;
@@ -1295,22 +1344,23 @@ export interface PartialVcsConfig {
 	defaultBranch?: string | null;
 	/**
 	 * The format to use for generated VCS hook files.
-	 * @since 1.29.0
 	 *
 	 * @default 'native'
+	 * @since 1.29.0
 	 */
 	hookFormat?: VcsHookFormat | null;
 	/**
 	 * A map of hooks to a list of commands to run when the hook is triggered.
+	 *
 	 * @since 1.9.0
 	 */
 	hooks?: Record<string, string[]> | null;
 	/**
 	 * The upstream version control provider, where the repository
 	 * source code is stored.
-	 * @since 1.8.0
 	 *
 	 * @default 'github'
+	 * @since 1.8.0
 	 */
 	provider?: VcsProvider | null;
 	/** List of remote's in which to compare branches against. */
@@ -1318,6 +1368,7 @@ export interface PartialVcsConfig {
 	/**
 	 * Automatically generate hooks and scripts during a sync operation,
 	 * based on the `hooks` setting.
+	 *
 	 * @since 1.9.0
 	 */
 	sync?: boolean | null;
@@ -1332,11 +1383,13 @@ export interface PartialWorkspaceConfig {
 	$schema?: string | null;
 	/**
 	 * Configures aspects of the caching engine and layer.
+	 *
 	 * @since 2.3.0
 	 */
 	cache?: PartialCacheConfig | null;
 	/**
 	 * Configures code ownership rules for generating a `CODEOWNERS` file.
+	 *
 	 * @since 1.8.0
 	 */
 	codeowners?: PartialCodeownersConfig | null;
@@ -1345,22 +1398,26 @@ export interface PartialWorkspaceConfig {
 	/**
 	 * The default/main project within the workspace. When a task is
 	 * ran without a project, the default will be used.
+	 *
 	 * @since 2.0.0
 	 */
 	defaultProject?: Id | null;
 	/**
 	 * Configures Docker integration for the workspace.
+	 *
 	 * @since 1.27.0
 	 */
 	docker?: PartialDockerConfig | null;
 	/**
 	 * Configures experiments across the entire moon workspace.
+	 *
 	 * @since 1.11.0
 	 */
 	experiments?: PartialExperimentsConfig | null;
 	/**
 	 * Extends one or many workspace configuration file.
 	 * Supports a relative file path or a secure URL.
+	 *
 	 * @since 1.12.0
 	 */
 	extends?: ExtendsFrom | null;
@@ -1390,9 +1447,9 @@ export interface PartialWorkspaceConfig {
 	/**
 	 * Enables a daemon that will process heavy tasks in the background,
 	 * greatly increasing performance of the main thread/executable.
-	 * @since 2.2.0
 	 *
 	 * @env MOON_DAEMON
+	 * @since 2.2.0
 	 */
 	unstable_daemon?: boolean | null;
 	/**

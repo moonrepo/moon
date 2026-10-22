@@ -147,6 +147,7 @@ export interface TemplateVariableStringSetting {
 	type: 'string';
 }
 
+/** Each type of template variable. */
 export type TemplateVariable =
 	| TemplateVariableArraySetting
 	| TemplateVariableBoolSetting
@@ -296,6 +297,7 @@ export interface PartialTemplateVariableStringSetting {
 	type?: 'string' | null;
 }
 
+/** Each type of template variable. */
 export type PartialTemplateVariable =
 	| PartialTemplateVariableArraySetting
 	| PartialTemplateVariableBoolSetting

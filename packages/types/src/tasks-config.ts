@@ -96,6 +96,7 @@ export type Input = string | FileInput | FileGroupInput | GlobInput | ProjectInp
  * Controls how a task dependency invalidates the current task's cache entry.
  * When omitted, the effective strategy is `Hash` if the dependency declares
  * outputs, or `Ignored` otherwise.
+ *
  * @since 2.3.0
  */
 export type TaskDependencyCacheStrategy = 'hash' | 'ignored' | 'outputs';
@@ -108,6 +109,7 @@ export interface TaskDependencyConfig {
 	 * Controls how this dependency invalidates the current task's cache.
 	 * When omitted, defaults to `hash` if the dependency declares outputs,
 	 * otherwise `ignored`.
+	 *
 	 * @since 2.3.0
 	 */
 	cacheStrategy?: TaskDependencyCacheStrategy | null;
@@ -115,6 +117,7 @@ export interface TaskDependencyConfig {
 	env: Record<string, string | null>;
 	/**
 	 * Marks the dependency as optional when being inherited from the top-level.
+	 *
 	 * @since 1.20.0
 	 */
 	optional?: boolean | null;
@@ -127,14 +130,15 @@ export interface TaskDependencyConfig {
 	 * the task fails (but not when it was skipped, or hydrated from the cache).
 	 * When `wait`, runs before the task, but the task only waits for the
 	 * dependency to have started running, not to have completed.
-	 * @since 2.6.0
 	 *
 	 * @default 'required'
 	 * @type {'cleanup' | 'required' | 'wait' | 'optional'}
+	 * @since 2.6.0
 	 */
 	type?: TaskDependencyType;
 }
 
+/** Configures another task that this task depends on. */
 export type TaskDependency = string | TaskDependencyConfig;
 
 /** Condition applies using logical operator clauses. */
@@ -147,6 +151,7 @@ export interface InheritedClauseConfig {
 	or?: Id | Id[] | null;
 }
 
+/** Patterns in which a condition can be configured as. */
 export type InheritedConditionConfig = Id | Id[] | InheritedClauseConfig;
 
 /**
@@ -223,6 +228,7 @@ export interface InheritedByConfig {
 	toolchains?: InheritedConditionConfig | null;
 }
 
+/** Configures a command and its arguments to execute. */
 export type TaskArgs = null | string | string[];
 
 /** Task check configuration for conditions. */
@@ -359,6 +365,7 @@ export interface TaskOptionsConfig {
 	affectedFiles?: TaskOptionAffectedFilesEntry | null;
 	/**
 	 * Allow the task to fail without failing the entire action pipeline.
+	 *
 	 * @since 1.13.0
 	 */
 	allowFailure?: boolean | null;
@@ -375,6 +382,7 @@ export interface TaskOptionsConfig {
 	/**
 	 * Lifetime to cache the task itself, in the format of "1h", "30m", etc.
 	 * If not defined, caches live forever, or until inputs change.
+	 *
 	 * @since 1.29.0
 	 */
 	cacheLifetime?: string | null;
@@ -387,6 +395,7 @@ export interface TaskOptionsConfig {
 	 * Override system environment variables with the task's `env`, instead
 	 * of only setting them when missing. When a list of variable names,
 	 * only those variables will be overridden.
+	 *
 	 * @since 2.6.0
 	 */
 	envOverride?: TaskOptionEnvOverride | null;
@@ -394,24 +403,28 @@ export interface TaskOptionsConfig {
 	 * Expect the task to fail, and fail the entire action pipeline if it
 	 * passes. Useful for checks that are known to be broken, which should
 	 * be re-enabled once fixed. The task is never cached.
+	 *
 	 * @since 2.6.0
 	 */
 	expectFailure?: boolean | null;
 	/**
 	 * Automatically infer inputs from file groups or environment variables
 	 * that were utilized within `command`, `script`, `args`, and `env`.
+	 *
 	 * @since 1.31.0
 	 */
 	inferInputs?: boolean | null;
 	/**
 	 * Marks the task as interactive, so that it will run in isolation,
 	 * and have direct access to stdin.
+	 *
 	 * @since 1.12.0
 	 */
 	interactive?: boolean | null;
 	/**
 	 * Marks the task as internal, which disables it from being ran
 	 * from the command line, but can still be depended on by other tasks.
+	 *
 	 * @since 1.23.0
 	 */
 	internal?: boolean | null;
@@ -431,9 +444,9 @@ export interface TaskOptionsConfig {
 	mergeArgs?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `checks` with an inherited task.
-	 * @since 2.4.0
 	 *
 	 * @default 'append'
+	 * @since 2.4.0
 	 */
 	mergeChecks?: MergeStrategy | null;
 	/**
@@ -462,21 +475,22 @@ export interface TaskOptionsConfig {
 	mergeOutputs?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `tags` with an inherited task.
-	 * @since 2.3.0
 	 *
 	 * @default 'append'
+	 * @since 2.3.0
 	 */
 	mergeTags?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `toolchains` with an inherited task.
-	 * @since 2.0.0
 	 *
 	 * @default 'append'
+	 * @since 2.0.0
 	 */
 	mergeToolchains?: MergeStrategy | null;
 	/**
 	 * Creates an exclusive lock on a virtual resource, preventing other
 	 * tasks using the same resource from running concurrently.
+	 *
 	 * @since 1.24.0
 	 */
 	mutex?: string | null;
@@ -492,6 +506,7 @@ export interface TaskOptionsConfig {
 	/**
 	 * Marks the task as persistent (continuously running). This is ideal
 	 * for watchers, servers, or never-ending processes.
+	 *
 	 * @since 1.6.0
 	 */
 	persistent?: boolean | null;
@@ -532,16 +547,16 @@ export interface TaskOptionsConfig {
 	timeout?: number | null;
 	/**
 	 * The shell to run the task in when on a Unix-based machine.
-	 * @since 1.21.0
 	 *
 	 * @default 'bash'
+	 * @since 1.21.0
 	 */
 	unixShell?: TaskUnixShell | null;
 	/**
 	 * The shell to run the task in when on a Windows machine.
-	 * @since 1.21.0
 	 *
 	 * @default 'pwsh'
+	 * @since 1.21.0
 	 */
 	windowsShell?: TaskWindowsShell | null;
 }
@@ -564,6 +579,7 @@ export interface TaskConfig {
 	 * and are categorized into three types: conditions, requirements,
 	 * and fingerprints. Depending on the result of the script and the
 	 * type of check, the task may be skipped, will fail, or continue.
+	 *
 	 * @since 2.4.0
 	 */
 	checks?: TaskCheck[] | null;
@@ -587,6 +603,7 @@ export interface TaskConfig {
 	deps?: TaskDependency[] | null;
 	/**
 	 * A human-readable description about the task.
+	 *
 	 * @since 1.22.0
 	 */
 	description?: string | null;
@@ -621,12 +638,14 @@ export interface TaskConfig {
 	 * A script to run within a shell. A script is anything from a single command,
 	 * to multiple commands, or shell specific syntax. Does not support
 	 * arguments, merging, or inheritance. This overrides `command` and `args`.
+	 *
 	 * @since 1.27.0
 	 */
 	script?: string | null;
 	/**
 	 * A list of tags to categorize this task with. Tags are inherited and can
 	 * be used for querying and filtering tasks.
+	 *
 	 * @since 2.3.0
 	 */
 	tags?: Id[] | null;
@@ -660,12 +679,14 @@ export interface InheritedTasksConfig {
 	/**
 	 * A map of environment variables that will be inherited by all
 	 * matching projects, and merged into their `env` setting.
+	 *
 	 * @since 2.5.0
 	 */
 	env?: Record<string, string | null>;
 	/**
 	 * Extends one or many tasks configuration files.
 	 * Supports a relative file path or a secure URL.
+	 *
 	 * @since 1.12.0
 	 */
 	extends?: ExtendsFrom | null;
@@ -687,11 +708,13 @@ export interface InheritedTasksConfig {
 	/**
 	 * A map of conditions that define which projects will inherit these
 	 * tasks and configuration. If not defined, will be inherited by all projects.
+	 *
 	 * @since 2.0.0
 	 */
 	inheritedBy?: InheritedByConfig | null;
 	/**
 	 * Default task options for all inherited tasks.
+	 *
 	 * @since 1.20.0
 	 */
 	taskOptions?: TaskOptionsConfig | null;
@@ -710,6 +733,7 @@ export interface PartialTaskDependencyConfig {
 	 * Controls how this dependency invalidates the current task's cache.
 	 * When omitted, defaults to `hash` if the dependency declares outputs,
 	 * otherwise `ignored`.
+	 *
 	 * @since 2.3.0
 	 */
 	cacheStrategy?: TaskDependencyCacheStrategy | null;
@@ -717,6 +741,7 @@ export interface PartialTaskDependencyConfig {
 	env?: Record<string, string | null> | null;
 	/**
 	 * Marks the dependency as optional when being inherited from the top-level.
+	 *
 	 * @since 1.20.0
 	 */
 	optional?: boolean | null;
@@ -729,13 +754,14 @@ export interface PartialTaskDependencyConfig {
 	 * the task fails (but not when it was skipped, or hydrated from the cache).
 	 * When `wait`, runs before the task, but the task only waits for the
 	 * dependency to have started running, not to have completed.
-	 * @since 2.6.0
 	 *
 	 * @default 'required'
+	 * @since 2.6.0
 	 */
 	type?: TaskDependencyType | null;
 }
 
+/** Configures another task that this task depends on. */
 export type PartialTaskDependency = string | PartialTaskDependencyConfig;
 
 /** Condition applies using logical operator clauses. */
@@ -748,6 +774,7 @@ export interface PartialInheritedClauseConfig {
 	or?: Id | Id[] | null;
 }
 
+/** Patterns in which a condition can be configured as. */
 export type PartialInheritedConditionConfig = Id | Id[] | PartialInheritedClauseConfig;
 
 /**
@@ -824,6 +851,7 @@ export interface PartialInheritedByConfig {
 	toolchains?: PartialInheritedConditionConfig | null;
 }
 
+/** Configures a command and its arguments to execute. */
 export type PartialTaskArgs = null | string | string[];
 
 /** Expanded information about affected files handling. */
@@ -861,6 +889,7 @@ export interface PartialTaskOptionsConfig {
 	affectedFiles?: TaskOptionAffectedFilesEntry | null;
 	/**
 	 * Allow the task to fail without failing the entire action pipeline.
+	 *
 	 * @since 1.13.0
 	 */
 	allowFailure?: boolean | null;
@@ -877,6 +906,7 @@ export interface PartialTaskOptionsConfig {
 	/**
 	 * Lifetime to cache the task itself, in the format of "1h", "30m", etc.
 	 * If not defined, caches live forever, or until inputs change.
+	 *
 	 * @since 1.29.0
 	 */
 	cacheLifetime?: string | null;
@@ -889,6 +919,7 @@ export interface PartialTaskOptionsConfig {
 	 * Override system environment variables with the task's `env`, instead
 	 * of only setting them when missing. When a list of variable names,
 	 * only those variables will be overridden.
+	 *
 	 * @since 2.6.0
 	 */
 	envOverride?: TaskOptionEnvOverride | null;
@@ -896,24 +927,28 @@ export interface PartialTaskOptionsConfig {
 	 * Expect the task to fail, and fail the entire action pipeline if it
 	 * passes. Useful for checks that are known to be broken, which should
 	 * be re-enabled once fixed. The task is never cached.
+	 *
 	 * @since 2.6.0
 	 */
 	expectFailure?: boolean | null;
 	/**
 	 * Automatically infer inputs from file groups or environment variables
 	 * that were utilized within `command`, `script`, `args`, and `env`.
+	 *
 	 * @since 1.31.0
 	 */
 	inferInputs?: boolean | null;
 	/**
 	 * Marks the task as interactive, so that it will run in isolation,
 	 * and have direct access to stdin.
+	 *
 	 * @since 1.12.0
 	 */
 	interactive?: boolean | null;
 	/**
 	 * Marks the task as internal, which disables it from being ran
 	 * from the command line, but can still be depended on by other tasks.
+	 *
 	 * @since 1.23.0
 	 */
 	internal?: boolean | null;
@@ -933,9 +968,9 @@ export interface PartialTaskOptionsConfig {
 	mergeArgs?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `checks` with an inherited task.
-	 * @since 2.4.0
 	 *
 	 * @default 'append'
+	 * @since 2.4.0
 	 */
 	mergeChecks?: MergeStrategy | null;
 	/**
@@ -964,21 +999,22 @@ export interface PartialTaskOptionsConfig {
 	mergeOutputs?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `tags` with an inherited task.
-	 * @since 2.3.0
 	 *
 	 * @default 'append'
+	 * @since 2.3.0
 	 */
 	mergeTags?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `toolchains` with an inherited task.
-	 * @since 2.0.0
 	 *
 	 * @default 'append'
+	 * @since 2.0.0
 	 */
 	mergeToolchains?: MergeStrategy | null;
 	/**
 	 * Creates an exclusive lock on a virtual resource, preventing other
 	 * tasks using the same resource from running concurrently.
+	 *
 	 * @since 1.24.0
 	 */
 	mutex?: string | null;
@@ -994,6 +1030,7 @@ export interface PartialTaskOptionsConfig {
 	/**
 	 * Marks the task as persistent (continuously running). This is ideal
 	 * for watchers, servers, or never-ending processes.
+	 *
 	 * @since 1.6.0
 	 */
 	persistent?: boolean | null;
@@ -1034,16 +1071,16 @@ export interface PartialTaskOptionsConfig {
 	timeout?: number | null;
 	/**
 	 * The shell to run the task in when on a Unix-based machine.
-	 * @since 1.21.0
 	 *
 	 * @default 'bash'
+	 * @since 1.21.0
 	 */
 	unixShell?: TaskUnixShell | null;
 	/**
 	 * The shell to run the task in when on a Windows machine.
-	 * @since 1.21.0
 	 *
 	 * @default 'pwsh'
+	 * @since 1.21.0
 	 */
 	windowsShell?: TaskWindowsShell | null;
 }
@@ -1060,6 +1097,7 @@ export interface PartialTaskConfig {
 	 * and are categorized into three types: conditions, requirements,
 	 * and fingerprints. Depending on the result of the script and the
 	 * type of check, the task may be skipped, will fail, or continue.
+	 *
 	 * @since 2.4.0
 	 */
 	checks?: TaskCheck[] | null;
@@ -1083,6 +1121,7 @@ export interface PartialTaskConfig {
 	deps?: PartialTaskDependency[] | null;
 	/**
 	 * A human-readable description about the task.
+	 *
 	 * @since 1.22.0
 	 */
 	description?: string | null;
@@ -1117,12 +1156,14 @@ export interface PartialTaskConfig {
 	 * A script to run within a shell. A script is anything from a single command,
 	 * to multiple commands, or shell specific syntax. Does not support
 	 * arguments, merging, or inheritance. This overrides `command` and `args`.
+	 *
 	 * @since 1.27.0
 	 */
 	script?: string | null;
 	/**
 	 * A list of tags to categorize this task with. Tags are inherited and can
 	 * be used for querying and filtering tasks.
+	 *
 	 * @since 2.3.0
 	 */
 	tags?: Id[] | null;
@@ -1156,12 +1197,14 @@ export interface PartialInheritedTasksConfig {
 	/**
 	 * A map of environment variables that will be inherited by all
 	 * matching projects, and merged into their `env` setting.
+	 *
 	 * @since 2.5.0
 	 */
 	env?: Record<string, string | null> | null;
 	/**
 	 * Extends one or many tasks configuration files.
 	 * Supports a relative file path or a secure URL.
+	 *
 	 * @since 1.12.0
 	 */
 	extends?: ExtendsFrom | null;
@@ -1183,11 +1226,13 @@ export interface PartialInheritedTasksConfig {
 	/**
 	 * A map of conditions that define which projects will inherit these
 	 * tasks and configuration. If not defined, will be inherited by all projects.
+	 *
 	 * @since 2.0.0
 	 */
 	inheritedBy?: PartialInheritedByConfig | null;
 	/**
 	 * Default task options for all inherited tasks.
+	 *
 	 * @since 1.20.0
 	 */
 	taskOptions?: PartialTaskOptionsConfig | null;

@@ -6,31 +6,28 @@
 /// be inherited by all projects.
 module InheritedByConfig
 
-import "InheritedConditionConfig.pkl"
-import "LanguageType.pkl"
-import "LayerType.pkl"
-import "StackType.pkl"
+import "InheritedClauseConfig.pkl"
 
 /// Condition that matches against literal files within a project.
 /// If multiple values are provided, at least 1 file needs to exist.
-files: (String | Listing<String> | List<String> | Set<String>)? = file
+files: (String | Listing<String>)? = file
 
 /// An alias of `files`.
-hidden file: (String | Listing<String> | List<String> | Set<String>)?
+hidden file: (String | Listing<String>)?
 
 /// Condition that matches against a project's `language`.
 /// If multiple values are provided, it matches using an OR operator.
-languages: (LanguageType.LanguageType | Listing<LanguageType.LanguageType> | List<LanguageType.LanguageType> | Set<LanguageType.LanguageType>)? = language
+languages: (LanguageType | Listing<LanguageType>)? = language
 
 /// An alias of `languages`.
-hidden language: (LanguageType.LanguageType | Listing<LanguageType.LanguageType> | List<LanguageType.LanguageType> | Set<LanguageType.LanguageType>)?
+hidden language: (LanguageType | Listing<LanguageType>)?
 
 /// Condition that matches against a project's `layer`.
 /// If multiple values are provided, it matches using an OR operator.
-layers: (LayerType.LayerType | Listing<LayerType.LayerType> | List<LayerType.LayerType> | Set<LayerType.LayerType>)? = layer
+layers: (LayerType | Listing<LayerType>)? = layer
 
 /// An alias of `layers`.
-hidden layer: (LayerType.LayerType | Listing<LayerType.LayerType> | List<LayerType.LayerType> | Set<LayerType.LayerType>)?
+hidden layer: (LayerType | Listing<LayerType>)?
 
 /// The order in which this configuration is inherited by a project.
 /// Lower is inherited first, while higher is last.
@@ -38,19 +35,33 @@ order: UInt16?
 
 /// Condition that matches against a project's `stack`.
 /// If multiple values are provided, it matches using an OR operator.
-stacks: (StackType.StackType | Listing<StackType.StackType> | List<StackType.StackType> | Set<StackType.StackType>)? = stack
+stacks: (StackType | Listing<StackType>)? = stack
 
 /// An alias of `stacks`.
-hidden stack: (StackType.StackType | Listing<StackType.StackType> | List<StackType.StackType> | Set<StackType.StackType>)?
+hidden stack: (StackType | Listing<StackType>)?
 
 /// Condition that matches against a tag within the project.
-tags: InheritedConditionConfig.InheritedConditionConfig? = tag
+tags: InheritedConditionConfig? = tag
 
 /// An alias of `tags`.
-hidden tag: InheritedConditionConfig.InheritedConditionConfig?
+hidden tag: InheritedConditionConfig?
 
 /// Condition that matches against a toolchain detected for a project.
-toolchains: InheritedConditionConfig.InheritedConditionConfig? = toolchain
+toolchains: InheritedConditionConfig? = toolchain
 
 /// An alias of `toolchains`.
-hidden toolchain: InheritedConditionConfig.InheritedConditionConfig?
+hidden toolchain: InheritedConditionConfig?
+
+typealias Id = String
+
+/// Patterns in which a condition can be configured as.
+typealias InheritedConditionConfig = Id | Listing<Id> | InheritedClauseConfig
+
+/// Supported programming languages that each project can be written in.
+typealias LanguageType = "bash" | "batch" | "cplusplus" | "csharp" | "dotnet" | "go" | "java" | "javascript" | "kotlin" | "php" | "python" | "ruby" | "rust" | "swift" | "typescript" | *"unknown" | String
+
+/// The layer within the technology stack, for categorizing.
+typealias LayerType = "application" | "automation" | "configuration" | "library" | "scaffolding" | "tool" | *"unknown"
+
+/// The technology stack of the project, for categorizing.
+typealias StackType = "backend" | "data" | "frontend" | "infrastructure" | "systems" | *"unknown"

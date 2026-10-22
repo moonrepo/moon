@@ -4,7 +4,6 @@
 /// Docs: https://moonrepo.dev/docs/config/toolchain
 open module ToolchainsConfig
 
-import "ExtendsFrom.pkl"
 import "MoonConfig.pkl"
 import "ProtoConfig.pkl"
 
@@ -15,11 +14,13 @@ $schema: String?
 
 /// Extends one or many toolchain configuration files.
 /// Supports a relative file path or a secure URL.
-/// @since 1.12.0
-`extends`: ExtendsFrom.ExtendsFrom?
+@Since { version = "1.12.0" }
+`extends`: ExtendsFrom?
 
 /// Configures moon itself.
 moon: MoonConfig?
 
 /// Configures how moon integrates with proto.
 proto: ProtoConfig?
+
+typealias ExtendsFrom = String | Listing<String>

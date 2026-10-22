@@ -3,17 +3,18 @@
 /// Configures how and where notifications are sent.
 module NotifierConfig
 
-import "NotifierEventType.pkl"
-
 /// Display an OS notification for certain action pipeline events.
-/// @since 1.38.0
-terminalNotifications: NotifierEventType.NotifierEventType?
+@Since { version = "1.38.0" }
+terminalNotifications: NotifierEventType?
 
 /// Whether webhook requests require acknowledgment (2xx response).
 /// When enabled, will bypass the daemon and send webhooks in the
 /// main process.
-/// @since 1.38.0
+@Since { version = "1.38.0" }
 webhookAcknowledge: Boolean?
 
 /// A secure URL in which to send webhooks to.
 webhookUrl: String?
+
+/// The types of events in which to send notifications.
+typealias NotifierEventType = *"never" | "always" | "failure" | "success" | "task-failure"

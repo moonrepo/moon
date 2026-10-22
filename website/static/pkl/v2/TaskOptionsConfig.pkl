@@ -3,21 +3,13 @@
 /// Options to control task inheritance, execution, and more.
 module TaskOptionsConfig
 
-import "MergeStrategy.pkl"
-import "TaskOperatingSystem.pkl"
-import "TaskOptionAffectedFilesEntry.pkl"
-import "TaskOptionEnvFile.pkl"
-import "TaskOptionEnvOverride.pkl"
-import "TaskOutputStyle.pkl"
-import "TaskPriority.pkl"
-import "TaskUnixShell.pkl"
-import "TaskWindowsShell.pkl"
+import "TaskOptionAffectedFilesConfig.pkl"
 
 /// The pattern in which affected files will be passed to the task.
-affectedFiles: TaskOptionAffectedFilesEntry.TaskOptionAffectedFilesEntry?
+affectedFiles: TaskOptionAffectedFilesEntry?
 
 /// Allow the task to fail without failing the entire action pipeline.
-/// @since 1.13.0
+@Since { version = "1.13.0" }
 allowFailure: Boolean?
 
 /// Cache the `outputs` of the task for incremental builds.
@@ -30,91 +22,91 @@ cacheKey: String?
 
 /// Lifetime to cache the task itself, in the format of "1h", "30m", etc.
 /// If not defined, caches live forever, or until inputs change.
-/// @since 1.29.0
+@Since { version = "1.29.0" }
 cacheLifetime: String?
 
 /// Loads and sets environment variables from the `.env` file(s) when
 /// running the task.
-envFile: TaskOptionEnvFile.TaskOptionEnvFile?
+envFile: TaskOptionEnvFile?
 
 /// Override system environment variables with the task's `env`, instead
 /// of only setting them when missing. When a list of variable names,
 /// only those variables will be overridden.
-/// @since 2.6.0
-envOverride: TaskOptionEnvOverride.TaskOptionEnvOverride?
+@Since { version = "2.6.0" }
+envOverride: TaskOptionEnvOverride?
 
 /// Expect the task to fail, and fail the entire action pipeline if it
 /// passes. Useful for checks that are known to be broken, which should
 /// be re-enabled once fixed. The task is never cached.
-/// @since 2.6.0
+@Since { version = "2.6.0" }
 expectFailure: Boolean?
 
 /// Automatically infer inputs from file groups or environment variables
 /// that were utilized within `command`, `script`, `args`, and `env`.
-/// @since 1.31.0
+@Since { version = "1.31.0" }
 inferInputs: Boolean?
 
 /// Marks the task as interactive, so that it will run in isolation,
 /// and have direct access to stdin.
-/// @since 1.12.0
+@Since { version = "1.12.0" }
 interactive: Boolean?
 
 /// Marks the task as internal, which disables it from being ran
 /// from the command line, but can still be depended on by other tasks.
-/// @since 1.23.0
+@Since { version = "1.23.0" }
 internal: Boolean?
 
 /// The default strategy to use when merging `args`, `deps`, `env`,
 /// `inputs`, or `outputs` with an inherited task. Can be overridden
 /// with the other field-specific merge options.
-merge: MergeStrategy.MergeStrategy?
+merge: MergeStrategy?
 
 /// The strategy to use when merging `args` with an inherited task.
-mergeArgs: MergeStrategy.MergeStrategy?
+mergeArgs: MergeStrategy?
 
 /// The strategy to use when merging `checks` with an inherited task.
-/// @since 2.4.0
-mergeChecks: MergeStrategy.MergeStrategy?
+@Since { version = "2.4.0" }
+mergeChecks: MergeStrategy?
 
 /// The strategy to use when merging `deps` with an inherited task.
-mergeDeps: MergeStrategy.MergeStrategy?
+mergeDeps: MergeStrategy?
 
 /// The strategy to use when merging `env` with an inherited task.
-mergeEnv: MergeStrategy.MergeStrategy?
+mergeEnv: MergeStrategy?
 
 /// The strategy to use when merging `inputs` with an inherited task.
-mergeInputs: MergeStrategy.MergeStrategy?
+mergeInputs: MergeStrategy?
 
 /// The strategy to use when merging `outputs` with an inherited task.
-mergeOutputs: MergeStrategy.MergeStrategy?
+mergeOutputs: MergeStrategy?
 
 /// The strategy to use when merging `tags` with an inherited task.
-/// @since 2.3.0
-mergeTags: MergeStrategy.MergeStrategy?
+@Since { version = "2.3.0" }
+mergeTags: MergeStrategy?
 
 /// The strategy to use when merging `toolchains` with an inherited task.
-/// @since 2.0.0
-mergeToolchains: MergeStrategy.MergeStrategy?
+@Since { version = "2.0.0" }
+mergeToolchains: MergeStrategy?
 
 /// Creates an exclusive lock on a virtual resource, preventing other
 /// tasks using the same resource from running concurrently.
-/// @since 1.24.0
+@Since { version = "1.24.0" }
 mutex: String?
 
 /// The operating system in which to only run this task on.
-os: (TaskOperatingSystem.TaskOperatingSystem | Listing<TaskOperatingSystem.TaskOperatingSystem> | List<TaskOperatingSystem.TaskOperatingSystem> | Set<TaskOperatingSystem.TaskOperatingSystem>)?
+os: (TaskOperatingSystem | Listing<TaskOperatingSystem>)?
 
 /// The style in which task output will be printed to the console.
-outputStyle: TaskOutputStyle.TaskOutputStyle?
+outputStyle: TaskOutputStyle?
 
 /// Marks the task as persistent (continuously running). This is ideal
 /// for watchers, servers, or never-ending processes.
-/// @since 1.6.0
+@Since { version = "1.6.0" }
 persistent: Boolean?
 
 /// Marks the task with a certain priority, which determines the order
 /// in which it is ran within the action pipeline.
-priority: TaskPriority.TaskPriority?
+priority: TaskPriority?
 
 /// The number of times a failing task will be retried to succeed.
 retryCount: UInt8?
@@ -142,9 +134,34 @@ shell: Boolean?
 timeout: UInt?
 
 /// The shell to run the task in when on a Unix-based machine.
-/// @since 1.21.0
-unixShell: TaskUnixShell.TaskUnixShell?
+@Since { version = "1.21.0" }
+unixShell: TaskUnixShell?
 
 /// The shell to run the task in when on a Windows machine.
-/// @since 1.21.0
-windowsShell: TaskWindowsShell.TaskWindowsShell?
+@Since { version = "1.21.0" }
+windowsShell: TaskWindowsShell?
+
+/// The strategy in which to merge two configuration values.
+typealias MergeStrategy = *"append" | "prepend" | "preserve" | "replace"
+
+/// The operating system in which to only run this task on.
+typealias TaskOperatingSystem = "linux" | "macos" | "windows"
+
+typealias TaskOptionAffectedFilesEntry = Boolean | "args" | "env" | TaskOptionAffectedFilesConfig
+
+typealias TaskOptionEnvFile = Boolean | String | Listing<String>
+
+typealias TaskOptionEnvOverride = Boolean | Listing<String>
+
+/// The style in which task output will be printed to the console.
+typealias TaskOutputStyle = *"buffer" | "buffer-only-failure" | "hash" | "none" | "stream"
+
+/// The priority levels a task can be bucketed into when running
+/// in the action pipeline.
+typealias TaskPriority = "critical" | "high" | *"normal" | "low"
+
+/// A list of available shells on Unix.
+typealias TaskUnixShell = *"bash" | "elvish" | "fish" | "ion" | "murex" | "nu" | "pwsh" | "sh" | "xonsh" | "zsh"
+
+/// A list of available shells on Windows.
+typealias TaskWindowsShell = "bash" | "elvish" | "fish" | "murex" | "nu" | *"pwsh" | "powershell" | "xonsh"

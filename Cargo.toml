@@ -38,10 +38,10 @@ libc = "0.2.190"
 md5 = "0.8.1"
 miette = "7.6.0"
 num_cpus = "1.17.0"
-opentelemetry = { version = "0.32.0", default-features = false, features = [
+opentelemetry = { version = "0.33.1", default-features = false, features = [
   "metrics",
 ] }
-opentelemetry_sdk = { version = "0.32.1", default-features = false, features = [
+opentelemetry_sdk = { version = "0.33.1", default-features = false, features = [
   "metrics",
   "testing",
 ] }

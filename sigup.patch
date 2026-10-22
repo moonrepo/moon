@@ -1,0 +1,361 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index c588f9202f..e18dd828a6 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -1,5 +1,15 @@
+ # Changelog
+ 
++## Unreleased
++
++#### 🐞 Fixes
++
++- Fixed an issue where `SIGHUP` (for example, closing the terminal) immediately killed moon without
++  shutting down running tasks, leaving their processes orphaned. Running tasks now receive `SIGHUP`
++  and moon exits 129, like it does for `SIGINT` and `SIGTERM`.
++  - On Windows, closing the console window is now also treated as a hangup, so the run is reported
++    as terminated (exit 129) instead of aborted (exit 131).
++
+ ## 2.6.2
+ 
+ #### 🐞 Fixes
+diff --git a/Cargo.lock b/Cargo.lock
+index d92dec540a..ff0288548e 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -4655,11 +4655,28 @@ dependencies = [
+  "unicode-width 0.1.14",
+ ]
+ 
++[[package]]
++name = "iocraft"
++version = "0.9.3"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "aecfd9349af14dc10983c7009c8613da8936dbdeb19851a2e4b5d3f1cf84dda6"
++dependencies = [
++ "bitflags 2.13.2",
++ "crossterm",
++ "futures",
++ "generational-box",
++ "iocraft-macros",
++ "regex",
++ "serde",
++ "taffy",
++ "unicode-width 0.1.14",
++]
++
+ [[package]]
+ name = "iocraft-macros"
+-version = "0.2.4"
++version = "0.2.5"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "5e8c51048da5618a10af1135e9e474700f19946f456c857ae0b12ebff2a91b4d"
++checksum = "6e938637cb8e9a299dded6c51cc22003483ef8ec0928ba37d2bc5a3260afc764"
+ dependencies = [
+  "proc-macro2",
+  "quote",
+@@ -5623,7 +5640,7 @@ dependencies = [
+  "convert_case 0.12.0",
+  "diff",
+  "indexmap",
+- "iocraft",
++ "iocraft 0.9.3",
+  "miette 7.6.0",
+  "moon_action",
+  "moon_action_context",
+@@ -6030,14 +6047,14 @@ name = "moon_console"
+ version = "0.0.1"
+ dependencies = [
+  "async-trait",
+- "iocraft",
++ "iocraft 0.9.3",
+  "miette 7.6.0",
+  "moon_action",
+  "moon_common",
+  "moon_config",
+  "moon_target",
+  "moon_time",
+- "starbase_console",
++ "starbase_console 0.7.0",
+  "starbase_styles",
+  "tracing",
+ ]
+@@ -8248,7 +8265,7 @@ dependencies = [
+  "docker_credential",
+  "dotenv-ng",
+  "indexmap",
+- "iocraft",
++ "iocraft 0.8.5",
+  "miette 7.6.0",
+  "minisign-verify",
+  "oci-client",
+@@ -8265,7 +8282,7 @@ dependencies = [
+  "serde_json",
+  "shell-words",
+  "starbase_archive",
+- "starbase_console",
++ "starbase_console 0.6.34",
+  "starbase_shell",
+  "starbase_styles",
+  "starbase_utils",
+@@ -9862,7 +9879,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "fd3e97b059b90ddb6e48168e12034ef5a126eaebe656c0b172529c2b66d65adf"
+ dependencies = [
+  "crossterm",
+- "iocraft",
++ "iocraft 0.8.5",
+  "miette 7.6.0",
+  "parking_lot",
+  "serde",
+@@ -9873,6 +9890,22 @@ dependencies = [
+  "tracing",
+ ]
+ 
++[[package]]
++name = "starbase_console"
++version = "0.7.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "c7eb967413b5d1cbb92a38a4fcff7ba3099fa3d3063781d0666da7e71b60562a"
++dependencies = [
++ "crossterm",
++ "iocraft 0.9.3",
++ "miette 7.6.0",
++ "parking_lot",
++ "starbase_styles",
++ "thiserror 2.0.21",
++ "tokio",
++ "tracing",
++]
++
+ [[package]]
+ name = "starbase_id"
+ version = "0.4.0"
+@@ -9889,9 +9922,9 @@ dependencies = [
+ 
+ [[package]]
+ name = "starbase_process"
+-version = "0.1.2"
++version = "0.2.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "bb2e4b45f38113082088430af3d372f0872ee623c097119eab86a2dedc77f451"
++checksum = "6599efd2cebe66bac056d0d8d63911d9027dd5c628c4d9dc79e07fbac2479a23"
+ dependencies = [
+  "bytes",
+  "libc",
+@@ -9899,7 +9932,7 @@ dependencies = [
+  "rustc-hash",
+  "scc",
+  "serde",
+- "starbase_console",
++ "starbase_console 0.7.0",
+  "starbase_shell",
+  "starbase_styles",
+  "system_env",
+@@ -9925,9 +9958,9 @@ dependencies = [
+ 
+ [[package]]
+ name = "starbase_shell"
+-version = "0.14.1"
++version = "0.14.2"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "ae466d726755c9899691ab616adf9911913efe0f56dcc929faccfb41af7e4b8a"
++checksum = "3c0c759561f2b7237d24e354d973fae57168ef713e93b8f0a7fd76f765516bbb"
+ dependencies = [
+  "base64 0.23.1",
+  "miette 7.6.0",
+@@ -10160,9 +10193,9 @@ dependencies = [
+ 
+ [[package]]
+ name = "system_env"
+-version = "0.10.4"
++version = "0.10.5"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "77b597c4f3e486b30ec42eed3af9e151306f3663efc91d11d69af954de9053fd"
++checksum = "fe6c522ad936bb3dd20dbcad9b5955abc652f3479104a7fbbe3653d296496d9c"
+ dependencies = [
+  "regex",
+  "schematic",
+@@ -10421,9 +10454,9 @@ checksum = "fd3ca314f692efd6c868f8408f53fe444634a845f96c028b97d35f6a1f79f0ee"
+ 
+ [[package]]
+ name = "tokio"
+-version = "1.53.2"
++version = "1.54.1"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "e95f91fcc7a621e8b030f6aa23c71fe9838ae2fb4d8118b75602a328f5144044"
++checksum = "b52fd3255258d26fac7264ab5a76b53c13367136dc011d3d6ad4f8ed070396a3"
+ dependencies = [
+  "bytes",
+  "libc",
+diff --git a/Cargo.toml b/Cargo.toml
+index 211daf2601..5ff56d4bfd 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -33,7 +33,7 @@ dirs = "6.0.0"
+ futures = "0.3.34"
+ httpmock = "0.8.3"
+ indexmap = "2.14.2"
+-iocraft = "0.8.5"
++iocraft = "0.9.3"
+ libc = "0.2.190"
+ md5 = "0.8.1"
+ miette = "7.6.0"
+@@ -78,9 +78,9 @@ starbase_archive = { version = "0.14.6", default-features = false, features = [
+   "zip-all",
+ ] }
+ starbase_args = { version = "0.1.15" }
+-starbase_console = { version = "0.6.33", features = ["miette"] }
++starbase_console = { version = "0.7.0", features = ["miette"] }
+ starbase_id = { version = "0.4.0", features = ["miette", "schematic"] }
+-starbase_process = "0.1.2"
++starbase_process = "0.2.0"
+ starbase_sandbox = "0.12.0"
+ starbase_shell = "0.14.1"
+ starbase_styles = { version = "0.6.1", features = ["relative-path"] }
+diff --git a/crates/action-pipeline/src/action_pipeline.rs b/crates/action-pipeline/src/action_pipeline.rs
+index 3ae2e3e309..b095f0c9dc 100644
+--- a/crates/action-pipeline/src/action_pipeline.rs
++++ b/crates/action-pipeline/src/action_pipeline.rs
+@@ -900,7 +900,7 @@ async fn exhaust_job_handles<T: 'static>(set: &mut JoinSet<T>, job_context: &Job
+     job_context.is_aborted_or_cancelled()
+ }
+ 
+-/// `128 + signal`. `SIGINT` is 130, `SIGTERM` is 143.
++/// `128 + signal`. `SIGHUP` is 129, `SIGINT` is 130, `SIGTERM` is 143.
+ pub(crate) fn exit_code_for_signal(signal: SignalType) -> u8 {
+     (128 + signal.get_code()) as u8
+ }
+@@ -908,7 +908,8 @@ pub(crate) fn exit_code_for_signal(signal: SignalType) -> u8 {
+ fn status_for_signal(signal: SignalType) -> ActionPipelineStatus {
+     match signal {
+         SignalType::Interrupt => ActionPipelineStatus::Interrupted,
+-        SignalType::Terminate => ActionPipelineStatus::Terminated,
++        // A hangup (the terminal was closed) is a request to terminate
++        SignalType::Hangup | SignalType::Terminate => ActionPipelineStatus::Terminated,
+         _ => ActionPipelineStatus::Aborted,
+     }
+ }
+@@ -928,6 +929,15 @@ mod signal_exit_tests {
+         );
+     }
+ 
++    #[test]
++    fn hangup_exits_129_and_is_terminated() {
++        assert_eq!(exit_code_for_signal(SignalType::Hangup), 129);
++        assert_eq!(
++            status_for_signal(SignalType::Hangup),
++            ActionPipelineStatus::Terminated
++        );
++    }
++
+     #[test]
+     fn terminate_exits_143_and_is_terminated() {
+         assert_eq!(exit_code_for_signal(SignalType::Terminate), 143);
+diff --git a/crates/cli/tests/signal_exit_test.rs b/crates/cli/tests/signal_exit_test.rs
+index 73cc4817c0..0c7a8d86c7 100644
+--- a/crates/cli/tests/signal_exit_test.rs
++++ b/crates/cli/tests/signal_exit_test.rs
+@@ -1,7 +1,9 @@
+-//! A running task interrupted by SIGINT or SIGTERM must not exit 0, and the
+-//! summary must not count that task as skipped.
++//! A running task interrupted by SIGHUP, SIGINT, or SIGTERM must not exit 0,
++//! the summary must not count that task as skipped, and its process must not
++//! outlive moon.
+ //!
+-//! Before the fix this exits 0 and prints "skipped".
++//! Before the fix this exits 0 and prints "skipped". SIGHUP wasn't listened
++//! for at all, so moon died immediately and orphaned the running task.
+ 
+ #![cfg(unix)]
+ 
+@@ -45,11 +47,12 @@ fn interrupt_running_task(signal: &str, expected: i32) {
+         "\
+ tasks:
+   wait:
+-    command: \"sleep 30\"
++    command: \"sh ./wait.sh\"
+     options:
+       cache: false
+ ",
+     );
++    sandbox.create_file("app/wait.sh", "echo $$ > child.pid\nexec sleep 30\n");
+ 
+     sandbox.run_git(|cmd| {
+         cmd.args(["config", "user.email", "fakeemail@somedomain.dev"]);
+@@ -82,11 +85,13 @@ tasks:
+     let stdout_thread = pump(child.stdout.take().expect("stdout"), Arc::clone(&output));
+     let stderr_thread = pump(child.stderr.take().expect("stderr"), Arc::clone(&output));
+ 
+-    // Wait until the task line is printed, so the signal lands while the
+-    // 30s command is running, not during startup on a slow runner.
++    // Wait until the task line is printed and its process has started, so
++    // the signal lands while the 30s command is running, not during startup
++    // on a slow runner.
+     let deadline = Instant::now() + Duration::from_secs(60);
++    let child_pid_file = root.join("app/child.pid");
+ 
+-    while !output.lock().is_ok_and(|buf| buf.contains("app:wait")) {
++    while !output.lock().is_ok_and(|buf| buf.contains("app:wait")) || !child_pid_file.exists() {
+         if Instant::now() > deadline {
+             let _ = child.kill();
+ 
+@@ -99,9 +104,14 @@ tasks:
+         std::thread::sleep(Duration::from_millis(100));
+     }
+ 
+-    // Give the task a moment to spawn `sleep` after its line is printed.
++    // Give the task a moment to `exec` into `sleep` after writing its pid.
+     std::thread::sleep(Duration::from_secs(1));
+ 
++    let child_pid = std::fs::read_to_string(&child_pid_file)
++        .expect("read child pid")
++        .trim()
++        .to_owned();
++
+     let killed = Command::new("kill")
+         .args([signal, &pid.to_string()])
+         .status()
+@@ -125,6 +135,28 @@ tasks:
+ 
+     let output = output.lock().map(|buf| buf.clone()).unwrap_or_default();
+ 
++    // The task must not outlive moon. An exited task may linger briefly
++    // until its new parent reaps it. Kill it before asserting, so a failure
++    // doesn't leave it running.
++    let is_running = || {
++        Command::new("kill")
++            .args(["-0", &child_pid])
++            .stderr(Stdio::null())
++            .status()
++            .is_ok_and(|status| status.success())
++    };
++    let deadline = Instant::now() + Duration::from_secs(5);
++
++    while is_running() && Instant::now() < deadline {
++        std::thread::sleep(Duration::from_millis(100));
++    }
++
++    let orphaned = is_running();
++
++    if orphaned {
++        let _ = Command::new("kill").args(["-KILL", &child_pid]).status();
++    }
++
+     assert_eq!(
+         status.code(),
+         Some(expected),
+@@ -138,6 +170,15 @@ tasks:
+         output.to_ascii_lowercase().contains("failed"),
+         "summary should count the interrupted task as failed:\n{output}"
+     );
++    assert!(
++        !orphaned,
++        "signal {signal} orphaned the running task (pid {child_pid}):\n{output}"
++    );
++}
++
++#[test]
++fn sighup_exits_129_and_is_not_skipped() {
++    interrupt_running_task("-HUP", 129);
+ }
+ 
+ #[test]

@@ -7,6 +7,9 @@
 - Fixed an issue where changing any setting in `.moon/workspace.*`, like `codeowners`, invalidated
   the cache of every task. Only `.moon/extensions.*` and `.moon/toolchains.*` are now implicit task
   inputs.
+- Fixed an issue where a task that stopped before running its command, because another task failed
+  or a requirement check failed, would be cached on the next run, reusing outputs from its previous
+  inputs.
 
 ## 2.6.2
 

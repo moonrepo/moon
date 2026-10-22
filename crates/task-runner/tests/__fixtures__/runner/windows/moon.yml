@@ -67,6 +67,16 @@ tasks:
     options:
       shell: true
 
+  copy-input:
+    command: 'Copy-Item input.txt output.txt'
+    inputs:
+      - 'input.txt'
+    outputs:
+      - 'output.txt'
+    toolchain: system
+    options:
+      shell: true
+
   with-mutex:
     extends: success
     options:

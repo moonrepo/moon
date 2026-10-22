@@ -154,8 +154,6 @@ impl<'task> TaskRunner<'task> {
                     task_target = self.task.target.as_str(),
                     "Not hydrating task, as another task depends on it running its command"
                 );
-
-                self.cache.data.hash = hash.to_string();
             }
             // Exit early if this build has already been cached/hashed
             else if self.hydrate(&hash).await? {
@@ -334,9 +332,6 @@ impl<'task> TaskRunner<'task> {
 
             return Ok(None);
         }
-
-        // Set this *after* we checked the previous outputs above
-        self.cache.data.hash = hash.to_owned();
 
         // If the previous run was a failure, avoid hydrating
         if self.cache.data.exit_code > 0 {
@@ -1005,6 +1000,7 @@ impl<'task> TaskRunner<'task> {
                 self.record_output_globs()?;
             }
 
+            self.cache.data.hash = hash.to_owned();
             self.state.target = Some(TargetState::Passed(hash.to_owned()));
         }
 
@@ -1069,7 +1065,16 @@ impl<'task> TaskRunner<'task> {
         let out_path = state_dir.join("stdout.log");
 
         if let Some(output) = operation.get_exec_output() {
+            // Only record the hash once the task has a result for it, as the
+            // outputs on disk are then from this hash, and not a previous one.
+            // If the task stopped before running, they are still from the
+            // previous hash, and must not be reused for this one!
             self.cache.data.exit_code = output.get_exit_code();
+            self.cache.data.hash = if self.is_cache_enabled() {
+                self.state.digest.hash.to_string()
+            } else {
+                String::new()
+            };
 
             fs::write_file(
                 err_path,

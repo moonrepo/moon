@@ -10,6 +10,8 @@
 - Fixed an issue where a task that stopped before running its command, because another task failed
   or a requirement check failed, would be cached on the next run, reusing outputs from its previous
   inputs.
+- Fixed an issue where deleted `optional: true` file outputs were not restored on a cache hit, when
+  the hash matched the task's last run.
 
 ## 2.6.2
 

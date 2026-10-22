@@ -1007,9 +1007,10 @@ impl<'task> TaskRunner<'task> {
         Ok(hydrated)
     }
 
-    /// Record a hash of the files currently matched by output globs, so that
-    /// a subsequent run with the same hash can verify the outputs still exist,
-    /// and reuse them instead of hydrating (which deletes and recreates them).
+    /// Record a hash of the files currently matched by output globs, and of
+    /// optional output files that exist, so that a subsequent run with the same
+    /// hash can verify the outputs still exist, and reuse them instead of
+    /// hydrating (which deletes and recreates them).
     fn record_output_globs(&mut self) -> miette::Result<()> {
         self.cache.data.output_globs_hash = self.archiver.hash_output_globs()?.unwrap_or_default();
 

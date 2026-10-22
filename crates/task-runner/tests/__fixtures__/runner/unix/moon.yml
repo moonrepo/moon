@@ -67,6 +67,18 @@ tasks:
     options:
       shell: true
 
+  create-file-optional:
+    command: 'touch file.txt'
+    outputs:
+      - file: 'file.txt'
+        optional: true
+      # Never created, like an output that only exists on another OS
+      - file: 'file.exe'
+        optional: true
+    toolchain: system
+    options:
+      shell: true
+
   copy-input:
     command: 'cp input.txt output.txt'
     inputs:

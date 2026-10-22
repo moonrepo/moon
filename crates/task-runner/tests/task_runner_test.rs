@@ -413,7 +413,7 @@ mod task_runner {
 
                 /// A unique identifier for the file on disk, to verify that an
                 /// output was reused as-is instead of being deleted and recreated.
-                fn get_file_id(path: &std::path::Path) -> u64 {
+                pub(super) fn get_file_id(path: &std::path::Path) -> u64 {
                     #[cfg(unix)]
                     {
                         use std::os::unix::fs::MetadataExt;
@@ -428,7 +428,7 @@ mod task_runner {
                     }
                 }
 
-                fn assert_hydrated(result: &moon_task_runner::TaskRunResult) {
+                pub(super) fn assert_hydrated(result: &moon_task_runner::TaskRunResult) {
                     assert_eq!(result.operations.len(), 2);
                     assert!(result.operations[0].meta.is_hash_generation());
                     assert!(result.operations[1].meta.is_output_hydration());
@@ -436,8 +436,8 @@ mod task_runner {
                     assert_eq!(result.operations[1].status, ActionStatus::Cached);
                 }
 
-                async fn run_reuses_existing_outputs(cas_enabled: bool) {
-                    let container = TaskRunnerContainer::new_os("runner", "create-file-glob").await;
+                pub(super) async fn run_reuses_existing_outputs(task_id: &str, cas_enabled: bool) {
+                    let container = TaskRunnerContainer::new_os("runner", task_id).await;
                     container.sandbox.enable_git();
 
                     let mut runner = container.create_runner();
@@ -475,8 +475,8 @@ mod task_runner {
                     assert_eq!(get_file_id(&file), file_id);
                 }
 
-                async fn run_restores_missing_outputs(cas_enabled: bool) {
-                    let container = TaskRunnerContainer::new_os("runner", "create-file-glob").await;
+                pub(super) async fn run_restores_missing_outputs(task_id: &str, cas_enabled: bool) {
+                    let container = TaskRunnerContainer::new_os("runner", task_id).await;
                     container.sandbox.enable_git();
 
                     let mut runner = container.create_runner();
@@ -517,22 +517,48 @@ mod task_runner {
 
                 #[tokio::test(flavor = "multi_thread")]
                 async fn running_again_reuses_existing_outputs_from_archive() {
-                    run_reuses_existing_outputs(false).await;
+                    run_reuses_existing_outputs("create-file-glob", false).await;
                 }
 
                 #[tokio::test(flavor = "multi_thread")]
                 async fn running_again_reuses_existing_outputs_from_cas() {
-                    run_reuses_existing_outputs(true).await;
+                    run_reuses_existing_outputs("create-file-glob", true).await;
                 }
 
                 #[tokio::test(flavor = "multi_thread")]
                 async fn running_again_restores_missing_outputs_from_archive() {
-                    run_restores_missing_outputs(false).await;
+                    run_restores_missing_outputs("create-file-glob", false).await;
                 }
 
                 #[tokio::test(flavor = "multi_thread")]
                 async fn running_again_restores_missing_outputs_from_cas() {
-                    run_restores_missing_outputs(true).await;
+                    run_restores_missing_outputs("create-file-glob", true).await;
+                }
+            }
+
+            // Optional files are not required to exist, but one that existed in the
+            // previous run and has since been removed must still be restored
+            mod optional_file_outputs {
+                use super::glob_outputs::*;
+
+                #[tokio::test(flavor = "multi_thread")]
+                async fn running_again_reuses_existing_outputs_from_archive() {
+                    run_reuses_existing_outputs("create-file-optional", false).await;
+                }
+
+                #[tokio::test(flavor = "multi_thread")]
+                async fn running_again_reuses_existing_outputs_from_cas() {
+                    run_reuses_existing_outputs("create-file-optional", true).await;
+                }
+
+                #[tokio::test(flavor = "multi_thread")]
+                async fn running_again_restores_missing_outputs_from_archive() {
+                    run_restores_missing_outputs("create-file-optional", false).await;
+                }
+
+                #[tokio::test(flavor = "multi_thread")]
+                async fn running_again_restores_missing_outputs_from_cas() {
+                    run_restores_missing_outputs("create-file-optional", true).await;
                 }
             }
 
@@ -1003,6 +1029,78 @@ mod task_runner {
             #[tokio::test(flavor = "multi_thread")]
             async fn skips_if_glob_outputs_dont_match_previous_hash() {
                 let container = TaskRunnerContainer::new("runner", "glob-outputs").await;
+                let mut runner = container.create_runner();
+
+                container.sandbox.create_file("project/file.txt", "");
+
+                runner.cache.data.exit_code = 0;
+                runner.cache.data.hash = "hash123".into();
+                runner.cache.data.output_globs_hash = container
+                    .create_archiver()
+                    .hash_output_globs()
+                    .unwrap()
+                    .unwrap();
+
+                std::fs::remove_file(container.sandbox.path().join("project/file.txt")).unwrap();
+
+                assert!(runner.is_cached("hash123").await.unwrap().is_none());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_if_optional_outputs_have_no_previous_hash() {
+                let container = TaskRunnerContainer::new("runner", "optional-outputs").await;
+                let mut runner = container.create_runner();
+
+                runner.cache.data.exit_code = 0;
+                runner.cache.data.hash = "hash123".into();
+                container.sandbox.create_file("project/file.txt", "");
+
+                assert!(runner.is_cached("hash123").await.unwrap().is_none());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn returns_if_optional_outputs_match_previous_hash() {
+                let container = TaskRunnerContainer::new("runner", "optional-outputs").await;
+                let mut runner = container.create_runner();
+
+                container.sandbox.create_file("project/file.txt", "");
+
+                runner.cache.data.exit_code = 0;
+                runner.cache.data.hash = "hash123".into();
+                runner.cache.data.output_globs_hash = container
+                    .create_archiver()
+                    .hash_output_globs()
+                    .unwrap()
+                    .unwrap();
+
+                assert!(matches!(
+                    runner.is_cached("hash123").await.unwrap(),
+                    Some(HydrateFrom::PreviousOutput)
+                ));
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn returns_if_optional_outputs_were_never_created() {
+                let container = TaskRunnerContainer::new("runner", "optional-outputs").await;
+                let mut runner = container.create_runner();
+
+                runner.cache.data.exit_code = 0;
+                runner.cache.data.hash = "hash123".into();
+                runner.cache.data.output_globs_hash = container
+                    .create_archiver()
+                    .hash_output_globs()
+                    .unwrap()
+                    .unwrap();
+
+                assert!(matches!(
+                    runner.is_cached("hash123").await.unwrap(),
+                    Some(HydrateFrom::PreviousOutput)
+                ));
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_if_optional_outputs_were_removed() {
+                let container = TaskRunnerContainer::new("runner", "optional-outputs").await;
                 let mut runner = container.create_runner();
 
                 container.sandbox.create_file("project/file.txt", "");

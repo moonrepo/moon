@@ -12,6 +12,12 @@ tasks:
     outputs:
       - '*.txt'
 
+  optional-outputs:
+    command: noop
+    outputs:
+      - file: 'file.txt'
+        optional: true
+
   dep:
     command: noop
 

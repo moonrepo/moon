@@ -824,6 +824,77 @@ mod output_archiver {
 
             assert!(!archiver.has_previous_outputs_been_created(&hash).unwrap());
         }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_false_if_optional_file_without_previous_hash() {
+            let container = TaskRunnerContainer::new("archive", "file-outputs-optional").await;
+            container.sandbox.create_file("project/file.txt", "");
+
+            let archiver = container.create_archiver();
+
+            assert!(!archiver.has_previous_outputs_been_created("").unwrap());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_true_if_optional_file_was_never_created() {
+            let container = TaskRunnerContainer::new("archive", "file-outputs-optional").await;
+            let archiver = container.create_archiver();
+            let hash = archiver.hash_output_globs().unwrap().unwrap();
+
+            assert!(archiver.has_previous_outputs_been_created(&hash).unwrap());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_true_if_optional_file_still_exists() {
+            let container = TaskRunnerContainer::new("archive", "file-outputs-optional").await;
+            container.sandbox.create_file("project/file.txt", "");
+
+            let archiver = container.create_archiver();
+            let hash = archiver.hash_output_globs().unwrap().unwrap();
+
+            assert!(archiver.has_previous_outputs_been_created(&hash).unwrap());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_false_if_optional_file_was_removed() {
+            let container = TaskRunnerContainer::new("archive", "file-outputs-optional").await;
+            container.sandbox.create_file("project/file.txt", "");
+
+            let archiver = container.create_archiver();
+            let hash = archiver.hash_output_globs().unwrap().unwrap();
+
+            fs::remove_file(container.sandbox.path().join("project/file.txt")).unwrap();
+
+            assert!(!archiver.has_previous_outputs_been_created(&hash).unwrap());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_false_if_optional_file_was_added() {
+            let container = TaskRunnerContainer::new("archive", "file-outputs-optional").await;
+            let archiver = container.create_archiver();
+            let hash = archiver.hash_output_globs().unwrap().unwrap();
+
+            container.sandbox.create_file("project/file.txt", "");
+
+            assert!(!archiver.has_previous_outputs_been_created(&hash).unwrap());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_false_if_globs_match_but_optional_file_removed() {
+            let container =
+                TaskRunnerContainer::new("archive", "glob-outputs-with-optional-file").await;
+            container.sandbox.create_file("project/a.txt", "");
+            container.sandbox.create_file("project/dist/file.bin", "");
+
+            let archiver = container.create_archiver();
+            let hash = archiver.hash_output_globs().unwrap().unwrap();
+
+            assert!(archiver.has_previous_outputs_been_created(&hash).unwrap());
+
+            fs::remove_file(container.sandbox.path().join("project/dist/file.bin")).unwrap();
+
+            assert!(!archiver.has_previous_outputs_been_created(&hash).unwrap());
+        }
     }
 
     mod hash_output_globs {
@@ -894,6 +965,41 @@ mod output_archiver {
             container.sandbox.create_file("project/c.txt", "");
 
             assert_ne!(hash1, archiver.hash_output_globs().unwrap().unwrap());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_some_if_only_optional_files() {
+            let container = TaskRunnerContainer::new("archive", "file-outputs-optional").await;
+            let archiver = container.create_archiver();
+
+            assert!(archiver.hash_output_globs().unwrap().is_some());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn changes_with_existing_optional_files() {
+            let container =
+                TaskRunnerContainer::new("archive", "glob-outputs-with-optional-file").await;
+            container.sandbox.create_file("project/a.txt", "");
+
+            let archiver = container.create_archiver();
+            let hash1 = archiver.hash_output_globs().unwrap().unwrap();
+
+            container.sandbox.create_file("project/dist/file.bin", "");
+
+            let hash2 = archiver.hash_output_globs().unwrap().unwrap();
+
+            assert_ne!(hash1, hash2);
+
+            // Only existence is verified
+            container
+                .sandbox
+                .create_file("project/dist/file.bin", "modified");
+
+            assert_eq!(hash2, archiver.hash_output_globs().unwrap().unwrap());
+
+            fs::remove_file(container.sandbox.path().join("project/dist/file.bin")).unwrap();
+
+            assert_eq!(hash1, archiver.hash_output_globs().unwrap().unwrap());
         }
     }
 }

@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- The Pkl modules generated since v2.6.3 type lists and maps as Pkl's amendable `Listing` and
+  `Mapping` only, as Pkl recommends for configuration data. A config that amends its module, and
+  assigns a `List`, `Set`, or `Map` to a setting, must convert it with `toListing()` or
+  `toMapping()`, or create it with `new Listing { ... }` instead. Updated the Pkl docs and examples
+  to match.
+
 #### 🐞 Fixes
 
 - Fixed an issue where, with the daemon enabled, a task would fail with "Failed to make daemon RPC

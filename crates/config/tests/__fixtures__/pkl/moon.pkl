@@ -18,7 +18,7 @@ docker {
 		startTask = "start"
 	}
 	scaffold {
-		sourcesPhaseGlobs = List("*.js")
+		sourcesPhaseGlobs = new Listing { "*.js" }
 	}
 }
 
@@ -27,7 +27,7 @@ env {
 }
 
 fileGroups {
-	["sources"] = List("src/**/*")
+	["sources"] = new Listing { "src/**/*" }
 	["tests"] = new Listing {
 		"/**/*.test.*"
 	}
@@ -41,7 +41,7 @@ owners {
 	customGroups {}
 	defaultOwner = "owner"
 	optional = true
-	paths = List("dir/", "file.txt")
+	paths = new Listing { "dir/"; "file.txt" }
 	requiredApprovals = 5
 }
 
@@ -56,7 +56,7 @@ project {
 
 stack = "frontend"
 
-tags = List("a", "b", "c")
+tags = new Listing { "a"; "b"; "c" }
 
 tasks {}
 
@@ -73,8 +73,8 @@ layer = "library"
 
 workspace {
 	inheritedTasks {
-		exclude = List("build")
-		include = List("test")
+		exclude = new Listing { "build" }
+		include = new Listing { "test" }
 		rename {
 			["old"] = "new"
 		}

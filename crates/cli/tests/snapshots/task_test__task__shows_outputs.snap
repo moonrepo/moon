@@ -24,7 +24,7 @@ Configuration ──────────────────────
     - quality
     - lint
   Inputs:
-    - .moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}
+    - .moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}
     - tasks/**/*
   Outputs:
     - tasks/cache

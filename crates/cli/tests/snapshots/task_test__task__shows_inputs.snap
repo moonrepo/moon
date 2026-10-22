@@ -24,6 +24,6 @@ Configuration ──────────────────────
     - quality
     - test
   Inputs:
-    - .moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}
+    - .moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}
     - tasks/tests/**/*
   Outputs: —

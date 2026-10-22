@@ -1021,9 +1021,11 @@ impl<'proj> TasksBuilder<'proj> {
             .map(|dep| (*dep).to_owned())
             .collect::<Vec<_>>();
 
+        // Plugins read these configs when extending task commands and hashing,
+        // so changes must invalidate the cache, but workspace settings do not
         global_inputs.push(
             Input::parse(format!(
-                "/{}/*.{}",
+                "/{}/{{extensions,toolchains}}.{}",
                 self.context.config_loader.dir_prefix,
                 self.context.config_loader.get_ext_glob()
             ))

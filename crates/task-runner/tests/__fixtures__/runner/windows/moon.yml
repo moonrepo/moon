@@ -67,6 +67,28 @@ tasks:
     options:
       shell: true
 
+  create-file-optional:
+    command: 'New-Item file.txt'
+    outputs:
+      - file: 'file.txt'
+        optional: true
+      # Never created, like an output that only exists on another OS
+      - file: 'file.exe'
+        optional: true
+    toolchain: system
+    options:
+      shell: true
+
+  copy-input:
+    command: 'Copy-Item input.txt output.txt'
+    inputs:
+      - 'input.txt'
+    outputs:
+      - 'output.txt'
+    toolchain: system
+    options:
+      shell: true
+
   with-mutex:
     extends: success
     options:

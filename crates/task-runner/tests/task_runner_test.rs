@@ -2,7 +2,7 @@ mod utils;
 
 use moon_action::ActionStatus;
 use moon_action_context::*;
-use moon_cache::{CacheMode, TaskManifest};
+use moon_cache::{CacheMode, TaskManifest, TaskManifestFile, TaskManifestSymlink};
 use moon_config::{
     TaskCheck, TaskCheckConditionConfig, TaskCheckFingerprint, TaskCheckFingerprintConfig,
     TaskCheckRequirementConfig,
@@ -413,7 +413,7 @@ mod task_runner {
 
                 /// A unique identifier for the file on disk, to verify that an
                 /// output was reused as-is instead of being deleted and recreated.
-                fn get_file_id(path: &std::path::Path) -> u64 {
+                pub(super) fn get_file_id(path: &std::path::Path) -> u64 {
                     #[cfg(unix)]
                     {
                         use std::os::unix::fs::MetadataExt;
@@ -428,7 +428,7 @@ mod task_runner {
                     }
                 }
 
-                fn assert_hydrated(result: &moon_task_runner::TaskRunResult) {
+                pub(super) fn assert_hydrated(result: &moon_task_runner::TaskRunResult) {
                     assert_eq!(result.operations.len(), 2);
                     assert!(result.operations[0].meta.is_hash_generation());
                     assert!(result.operations[1].meta.is_output_hydration());
@@ -436,8 +436,8 @@ mod task_runner {
                     assert_eq!(result.operations[1].status, ActionStatus::Cached);
                 }
 
-                async fn run_reuses_existing_outputs(cas_enabled: bool) {
-                    let container = TaskRunnerContainer::new_os("runner", "create-file-glob").await;
+                pub(super) async fn run_reuses_existing_outputs(task_id: &str, cas_enabled: bool) {
+                    let container = TaskRunnerContainer::new_os("runner", task_id).await;
                     container.sandbox.enable_git();
 
                     let mut runner = container.create_runner();
@@ -475,8 +475,8 @@ mod task_runner {
                     assert_eq!(get_file_id(&file), file_id);
                 }
 
-                async fn run_restores_missing_outputs(cas_enabled: bool) {
-                    let container = TaskRunnerContainer::new_os("runner", "create-file-glob").await;
+                pub(super) async fn run_restores_missing_outputs(task_id: &str, cas_enabled: bool) {
+                    let container = TaskRunnerContainer::new_os("runner", task_id).await;
                     container.sandbox.enable_git();
 
                     let mut runner = container.create_runner();
@@ -517,22 +517,222 @@ mod task_runner {
 
                 #[tokio::test(flavor = "multi_thread")]
                 async fn running_again_reuses_existing_outputs_from_archive() {
-                    run_reuses_existing_outputs(false).await;
+                    run_reuses_existing_outputs("create-file-glob", false).await;
                 }
 
                 #[tokio::test(flavor = "multi_thread")]
                 async fn running_again_reuses_existing_outputs_from_cas() {
-                    run_reuses_existing_outputs(true).await;
+                    run_reuses_existing_outputs("create-file-glob", true).await;
                 }
 
                 #[tokio::test(flavor = "multi_thread")]
                 async fn running_again_restores_missing_outputs_from_archive() {
-                    run_restores_missing_outputs(false).await;
+                    run_restores_missing_outputs("create-file-glob", false).await;
                 }
 
                 #[tokio::test(flavor = "multi_thread")]
                 async fn running_again_restores_missing_outputs_from_cas() {
-                    run_restores_missing_outputs(true).await;
+                    run_restores_missing_outputs("create-file-glob", true).await;
+                }
+            }
+
+            // Optional files are not required to exist, but one that existed in the
+            // previous run and has since been removed must still be restored
+            mod optional_file_outputs {
+                use super::glob_outputs::*;
+
+                #[tokio::test(flavor = "multi_thread")]
+                async fn running_again_reuses_existing_outputs_from_archive() {
+                    run_reuses_existing_outputs("create-file-optional", false).await;
+                }
+
+                #[tokio::test(flavor = "multi_thread")]
+                async fn running_again_reuses_existing_outputs_from_cas() {
+                    run_reuses_existing_outputs("create-file-optional", true).await;
+                }
+
+                #[tokio::test(flavor = "multi_thread")]
+                async fn running_again_restores_missing_outputs_from_archive() {
+                    run_restores_missing_outputs("create-file-optional", false).await;
+                }
+
+                #[tokio::test(flavor = "multi_thread")]
+                async fn running_again_restores_missing_outputs_from_cas() {
+                    run_restores_missing_outputs("create-file-optional", true).await;
+                }
+            }
+
+            // The task never ran for the new inputs, so the outputs on disk are
+            // from the previous inputs, and must not be reused for the new hash
+            mod not_ran_for_hash {
+                use super::*;
+
+                fn create_container_input(container: &TaskRunnerContainer, content: &str) {
+                    container
+                        .sandbox
+                        .create_file(format!("{}/input.txt", container.project_id), content);
+                }
+
+                fn assert_executed(result: &moon_task_runner::TaskRunResult) {
+                    assert_eq!(
+                        result
+                            .operations
+                            .get_last_execution()
+                            .map(|operation| operation.status),
+                        Some(ActionStatus::Passed),
+                        "expected the command to run, not be hydrated"
+                    );
+                }
+
+                fn read_container_output(container: &TaskRunnerContainer) -> String {
+                    std::fs::read_to_string(
+                        container
+                            .sandbox
+                            .path()
+                            .join(&container.project_id)
+                            .join("output.txt"),
+                    )
+                    .unwrap()
+                }
+
+                #[tokio::test(flavor = "multi_thread")]
+                async fn doesnt_reuse_previous_outputs_after_being_stopped() {
+                    let container = TaskRunnerContainer::new_os("runner", "copy-input").await;
+                    container.sandbox.enable_git();
+
+                    let node = container.create_action_node();
+
+                    create_container_input(&container, "before");
+
+                    container
+                        .create_runner()
+                        .run_with_panic(&ActionContext::default(), &node)
+                        .await
+                        .unwrap();
+
+                    assert_eq!(read_container_output(&container), "before");
+
+                    // Another task failed while this task was checking the cache
+                    create_container_input(&container, "after");
+
+                    let context = ActionContext::default();
+                    context.abort_token.cancel();
+
+                    let mut runner = container.create_runner();
+                    let result = runner.run_with_panic(&context, &node).await.unwrap();
+
+                    assert_eq!(
+                        result.operations.get_last_execution().unwrap().status,
+                        ActionStatus::Skipped
+                    );
+
+                    // Then ran again on its own
+                    let result = container
+                        .create_runner()
+                        .run_with_panic(&ActionContext::default(), &node)
+                        .await
+                        .unwrap();
+
+                    assert_eq!(
+                        runner.report.hash,
+                        result.hash.as_ref().map(|h| h.to_string())
+                    );
+                    assert_executed(&result);
+                    assert_eq!(read_container_output(&container), "after");
+                }
+
+                #[tokio::test(flavor = "multi_thread")]
+                async fn doesnt_reuse_previous_outputs_after_a_requirement_fails() {
+                    let container = TaskRunnerContainer::new_os("runner", "copy-input").await;
+                    container.sandbox.enable_git();
+
+                    let node = container.create_action_node();
+
+                    create_container_input(&container, "before");
+
+                    container
+                        .create_runner()
+                        .run_with_panic(&ActionContext::default(), &node)
+                        .await
+                        .unwrap();
+
+                    assert_eq!(read_container_output(&container), "before");
+
+                    // Requirements are not hashed, so the hash is the same with or without
+                    create_container_input(&container, "after");
+
+                    let mut task = container.task.as_ref().to_owned();
+                    task.checks
+                        .push(TaskCheck::Requirement(TaskCheckRequirementConfig {
+                            script: "exit 1".into(),
+                        }));
+                    let task = std::sync::Arc::new(task);
+
+                    let mut runner =
+                        TaskRunner::new(&container.app_context, &container.project, &task, None)
+                            .unwrap();
+                    let result = runner.run(&ActionContext::default(), &node).await.unwrap();
+
+                    assert!(result.error.is_some());
+
+                    // Then ran again once the requirement is met
+                    let result = container
+                        .create_runner()
+                        .run_with_panic(&ActionContext::default(), &node)
+                        .await
+                        .unwrap();
+
+                    assert_eq!(
+                        runner.report.hash,
+                        result.hash.as_ref().map(|h| h.to_string())
+                    );
+                    assert_executed(&result);
+                    assert_eq!(read_container_output(&container), "after");
+                }
+
+                #[tokio::test(flavor = "multi_thread")]
+                async fn doesnt_reuse_forced_outputs_for_the_previous_hash() {
+                    let container = TaskRunnerContainer::new_os("runner", "copy-input").await;
+                    container.sandbox.enable_git();
+
+                    let node = container.create_action_node();
+
+                    create_container_input(&container, "before");
+
+                    container
+                        .create_runner()
+                        .run_with_panic(&ActionContext::default(), &node)
+                        .await
+                        .unwrap();
+
+                    // Forced with new inputs, so the outputs are for the new hash
+                    create_container_input(&container, "after");
+
+                    container
+                        .app_context
+                        .cache_engine
+                        .force_mode(CacheMode::Write);
+
+                    container
+                        .create_runner()
+                        .run_with_panic(&ActionContext::default(), &node)
+                        .await
+                        .unwrap();
+
+                    GlobalEnvBag::instance().remove("MOON_CACHE");
+
+                    assert_eq!(read_container_output(&container), "after");
+
+                    // Then reverted to the previous inputs
+                    create_container_input(&container, "before");
+
+                    container
+                        .create_runner()
+                        .run_with_panic(&ActionContext::default(), &node)
+                        .await
+                        .unwrap();
+
+                    assert_eq!(read_container_output(&container), "before");
                 }
             }
 
@@ -707,14 +907,15 @@ mod task_runner {
             assert!(runner.is_cached("hash123").await.unwrap().is_none());
         }
 
+        // The hash is set once the task has ran or been hydrated
         #[tokio::test(flavor = "multi_thread")]
-        async fn sets_the_hash_to_cache() {
+        async fn doesnt_set_the_hash_to_cache() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             let mut runner = container.create_runner();
 
             runner.is_cached("hash123").await.unwrap();
 
-            assert_eq!(runner.cache.data.hash, "hash123");
+            assert_eq!(runner.cache.data.hash, "");
         }
 
         mod previous_output {
@@ -843,6 +1044,129 @@ mod task_runner {
                 std::fs::remove_file(container.sandbox.path().join("project/file.txt")).unwrap();
 
                 assert!(runner.is_cached("hash123").await.unwrap().is_none());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_if_optional_outputs_have_no_previous_hash() {
+                let container = TaskRunnerContainer::new("runner", "optional-outputs").await;
+                let mut runner = container.create_runner();
+
+                runner.cache.data.exit_code = 0;
+                runner.cache.data.hash = "hash123".into();
+                container.sandbox.create_file("project/file.txt", "");
+
+                assert!(runner.is_cached("hash123").await.unwrap().is_none());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn returns_if_optional_outputs_match_previous_hash() {
+                let container = TaskRunnerContainer::new("runner", "optional-outputs").await;
+                let mut runner = container.create_runner();
+
+                container.sandbox.create_file("project/file.txt", "");
+
+                runner.cache.data.exit_code = 0;
+                runner.cache.data.hash = "hash123".into();
+                runner.cache.data.output_globs_hash = container
+                    .create_archiver()
+                    .hash_output_globs()
+                    .unwrap()
+                    .unwrap();
+
+                assert!(matches!(
+                    runner.is_cached("hash123").await.unwrap(),
+                    Some(HydrateFrom::PreviousOutput)
+                ));
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn returns_if_optional_outputs_were_never_created() {
+                let container = TaskRunnerContainer::new("runner", "optional-outputs").await;
+                let mut runner = container.create_runner();
+
+                runner.cache.data.exit_code = 0;
+                runner.cache.data.hash = "hash123".into();
+                runner.cache.data.output_globs_hash = container
+                    .create_archiver()
+                    .hash_output_globs()
+                    .unwrap()
+                    .unwrap();
+
+                assert!(matches!(
+                    runner.is_cached("hash123").await.unwrap(),
+                    Some(HydrateFrom::PreviousOutput)
+                ));
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_if_optional_outputs_were_removed() {
+                let container = TaskRunnerContainer::new("runner", "optional-outputs").await;
+                let mut runner = container.create_runner();
+
+                container.sandbox.create_file("project/file.txt", "");
+
+                runner.cache.data.exit_code = 0;
+                runner.cache.data.hash = "hash123".into();
+                runner.cache.data.output_globs_hash = container
+                    .create_archiver()
+                    .hash_output_globs()
+                    .unwrap()
+                    .unwrap();
+
+                std::fs::remove_file(container.sandbox.path().join("project/file.txt")).unwrap();
+
+                assert!(runner.is_cached("hash123").await.unwrap().is_none());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_if_a_failed_hydration_replaced_outputs() {
+                let container = TaskRunnerContainer::new("runner", "dir-outputs").await;
+                let mut runner = container.create_runner();
+
+                // Outputs from the previous run
+                container
+                    .sandbox
+                    .create_file("project/dist/file.txt", "previous");
+
+                runner.cache.data.exit_code = 0;
+                runner.cache.data.hash = "previous".into();
+
+                // Outputs for the next run, that fail to unpack after one is written
+                runner.state.local_cas_enabled = true;
+                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
+
+                let digest = container.seed_blob(b"next").await;
+
+                container
+                    .seed_manifest(
+                        &runner.state.digest,
+                        TaskManifest {
+                            files: vec![TaskManifestFile {
+                                digest: Some(digest),
+                                path: "project/dist/file.txt".into(),
+                                ..Default::default()
+                            }],
+                            symlinks: vec![TaskManifestSymlink {
+                                path: "project/dist/link".into(),
+                                target: "../outside".into(),
+                                ..Default::default()
+                            }],
+                            ..Default::default()
+                        },
+                    )
+                    .await;
+
+                assert!(runner.hydrate("hash123").await.is_err());
+                assert_eq!(
+                    std::fs::read_to_string(container.sandbox.path().join("project/dist/file.txt"))
+                        .unwrap(),
+                    "next"
+                );
+
+                // The outputs are no longer from the previous run, so must not be reused
+                runner.state.digest = Digest::from_bytes(b"previous").unwrap();
+
+                assert!(runner.is_cached("previous").await.unwrap().is_none());
             }
         }
 
@@ -1841,6 +2165,19 @@ mod task_runner {
                 assert!(operation.meta.is_output_hydration());
                 assert_eq!(operation.status, ActionStatus::Skipped);
             }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_set_the_hash_to_cache() {
+                let container = TaskRunnerContainer::new("runner", "outputs").await;
+                container.sandbox.enable_git();
+
+                let mut runner = container.create_runner();
+                runner.cache.data.hash = "otherhash456".into();
+
+                runner.hydrate("hash123").await.unwrap();
+
+                assert_eq!(runner.cache.data.hash, "otherhash456");
+            }
         }
 
         mod previous_output {
@@ -1928,6 +2265,18 @@ mod task_runner {
                     runner.state.target.as_ref().unwrap(),
                     &TargetState::Passed("hash123".into())
                 );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn sets_the_hash_to_cache() {
+                let container = TaskRunnerContainer::new("runner", "outputs").await;
+                let mut runner = container.create_runner();
+
+                setup_local_state(&container, &mut runner);
+
+                runner.hydrate("hash123").await.unwrap();
+
+                assert_eq!(runner.cache.data.hash, "hash123");
             }
 
             #[tokio::test(flavor = "multi_thread")]

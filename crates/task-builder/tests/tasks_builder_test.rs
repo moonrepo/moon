@@ -26,7 +26,7 @@ mod tasks_builder {
             vec![
                 Input::File(stub_file_input("abc")),
                 Input::Glob(stub_glob_input(
-                    "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                 )),
             ]
         );
@@ -40,7 +40,7 @@ mod tasks_builder {
             vec![
                 Input::File(stub_file_input("xyz")),
                 Input::Glob(stub_glob_input(
-                    "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                 )),
             ]
         );
@@ -54,7 +54,7 @@ mod tasks_builder {
             vec![
                 Input::Glob(stub_glob_input("**/*")),
                 Input::Glob(stub_glob_input(
-                    "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                 )),
             ]
         );
@@ -77,7 +77,7 @@ mod tasks_builder {
                 vec![
                     Input::File(stub_file_input("abc")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                 ]
             );
@@ -91,7 +91,7 @@ mod tasks_builder {
                 vec![
                     Input::File(stub_file_input("xyz")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                 ]
             );
@@ -756,7 +756,7 @@ mod tasks_builder {
                         group: Some(Id::raw("sources")),
                     }),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                 ]
             );
@@ -784,7 +784,7 @@ mod tasks_builder {
                         group: Some(Id::raw("sources")),
                     }),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                 ]
             );
@@ -807,7 +807,7 @@ mod tasks_builder {
                         group: None,
                     }),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                 ]
             );
@@ -843,7 +843,7 @@ tasks:
                         group: None,
                     }),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                 ]
             );
@@ -1455,7 +1455,7 @@ tasks:
                 vec![
                     Input::Glob(stub_glob_input("**/*")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                 ]
             );
@@ -1466,7 +1466,7 @@ tasks:
             assert_eq!(
                 task.inputs,
                 vec![Input::Glob(stub_glob_input(
-                    "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                 ))]
             );
             assert!(task.state.empty_inputs);
@@ -1478,7 +1478,7 @@ tasks:
                 vec![
                     Input::Glob(stub_glob_input("local/*")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                 ]
             );
@@ -1497,7 +1497,7 @@ tasks:
             assert_eq!(
                 task.inputs,
                 vec![Input::Glob(stub_glob_input(
-                    "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                 ))]
             );
             assert!(task.state.empty_inputs);
@@ -1508,7 +1508,7 @@ tasks:
             assert_eq!(
                 task.inputs,
                 vec![Input::Glob(stub_glob_input(
-                    "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                 ))]
             );
             assert!(task.state.empty_inputs);
@@ -1521,7 +1521,7 @@ tasks:
                 vec![
                     Input::Glob(stub_glob_input("local/*")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     ))
                 ]
             );
@@ -1543,7 +1543,7 @@ tasks:
                 vec![
                     Input::Glob(stub_glob_input("**/*")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     ))
                 ]
             );
@@ -1555,7 +1555,7 @@ tasks:
             assert_eq!(
                 task.inputs,
                 vec![Input::Glob(stub_glob_input(
-                    "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                 ))]
             );
             assert!(task.state.empty_inputs);
@@ -1568,7 +1568,7 @@ tasks:
                 vec![
                     Input::Glob(stub_glob_input("local/*")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     ))
                 ]
             );
@@ -1591,7 +1591,7 @@ tasks:
                     Input::Glob(stub_glob_input("src/**/*")),
                     Input::File(stub_file_input("/workspace-local")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                     Input::File(stub_file_input("/global/tasks/all.yml")),
                 ]
@@ -1605,7 +1605,7 @@ tasks:
                 vec![
                     Input::File(stub_file_input("local.json")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                     Input::File(stub_file_input("/global/tasks/all.yml")),
                 ]
@@ -1618,7 +1618,7 @@ tasks:
                 task.inputs,
                 vec![
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                     Input::File(stub_file_input("/global/tasks/all.yml")),
                 ]
@@ -1670,7 +1670,7 @@ tasks:
                     Input::File(stub_file_input("global")),
                     Input::File(stub_file_input("local")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                     Input::File(stub_file_input("/global/tasks/tag-merge.yml")),
                 ]
@@ -1729,7 +1729,7 @@ tasks:
                     Input::File(stub_file_input("global")),
                     Input::File(stub_file_input("local")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                     Input::File(stub_file_input("/global/tasks/tag-merge.yml")),
                 ]
@@ -1788,7 +1788,7 @@ tasks:
                     Input::File(stub_file_input("local")),
                     Input::File(stub_file_input("global")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                     Input::File(stub_file_input("/global/tasks/tag-merge.yml")),
                 ]
@@ -1847,7 +1847,7 @@ tasks:
                     Input::File(stub_file_input("local")),
                     Input::File(stub_file_input("global")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                     Input::File(stub_file_input("/global/tasks/tag-merge.yml")),
                 ]
@@ -1903,7 +1903,7 @@ tasks:
                 vec![
                     Input::File(stub_file_input("local")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                     Input::File(stub_file_input("/global/tasks/tag-merge.yml")),
                 ]
@@ -1953,7 +1953,7 @@ tasks:
                 vec![
                     Input::File(stub_file_input("local")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                     Input::File(stub_file_input("/global/tasks/tag-merge.yml")),
                 ]
@@ -2068,7 +2068,7 @@ tasks:
                 vec![
                     Input::File(stub_file_input("global")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                     Input::File(stub_file_input("/global/tasks/tag-merge.yml")),
                 ]
@@ -2120,7 +2120,7 @@ tasks:
                 vec![
                     Input::File(stub_file_input("global")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                     Input::File(stub_file_input("/global/tasks/tag-merge.yml")),
                 ]
@@ -2171,7 +2171,7 @@ tasks:
                 vec![
                     Input::File(stub_file_input("global")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                     Input::File(stub_file_input("/global/tasks/tag-merge.yml")),
                 ]
@@ -2221,7 +2221,7 @@ tasks:
                 vec![
                     Input::File(stub_file_input("global")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                     Input::File(stub_file_input("/global/tasks/tag-merge.yml")),
                 ]
@@ -2466,7 +2466,7 @@ tasks:
                     Input::Glob(stub_glob_input("project/**/*")),
                     Input::File(stub_file_input("/workspace.json")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                 ]
             );
@@ -2487,7 +2487,7 @@ tasks:
                     Input::Glob(stub_glob_input("project/**/*")),
                     Input::File(stub_file_input("/workspace.json")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                 ]
             );
@@ -2509,7 +2509,7 @@ tasks:
                     Input::Glob(stub_glob_input("project/**/*")),
                     Input::File(stub_file_input("/workspace.json")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                 ]
             );
@@ -2646,7 +2646,7 @@ tasks:
                 vec![
                     Input::Glob(stub_glob_input("src/**/*")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                 ]
             );
@@ -2684,7 +2684,7 @@ tasks:
                     Input::File(stub_file_input("local-base")),
                     Input::File(stub_file_input("local-extender")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                     Input::File(stub_file_input("/global/tasks/tag-extends.yml")),
                 ]
@@ -2711,7 +2711,7 @@ tasks:
                     Input::File(stub_file_input("global-base")),
                     Input::File(stub_file_input("local-extender")),
                     Input::Glob(stub_glob_input(
-                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                     )),
                     Input::File(stub_file_input("/global/tasks/tag-extends.yml")),
                 ]

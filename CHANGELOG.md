@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where changing any setting in `.moon/workspace.*`, like `codeowners`, invalidated
+  the cache of every task. Only `.moon/extensions.*` and `.moon/toolchains.*` are now implicit task
+  inputs.
+- Fixed an issue where a task that stopped before running its command, because another task failed
+  or a requirement check failed, would be cached on the next run, reusing outputs from its previous
+  inputs.
+- Fixed an issue where deleted `optional: true` file outputs were not restored on a cache hit, when
+  the hash matched the task's last run.
+- Fixed an issue where outputs partially restored by a failed cache hydration could be reused as a
+  cache hit on the next run.
+
 ## 2.6.2
 
 #### 🐞 Fixes

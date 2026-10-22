@@ -7,10 +7,21 @@ tasks:
     outputs:
       - 'file.txt'
 
+  dir-outputs:
+    command: noop
+    outputs:
+      - 'dist'
+
   glob-outputs:
     command: noop
     outputs:
       - '*.txt'
+
+  optional-outputs:
+    command: noop
+    outputs:
+      - file: 'file.txt'
+        optional: true
 
   dep:
     command: noop

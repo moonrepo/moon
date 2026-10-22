@@ -157,7 +157,7 @@ impl OutputArchiver<'_> {
         {
             debug!(
                 task_target = self.task.target.as_str(),
-                "Files matched by output globs differ from the previous run, will hydrate"
+                "Files matched by output globs, or optional output files, differ from the previous run, will hydrate"
             );
 
             return Ok(false);
@@ -167,23 +167,42 @@ impl OutputArchiver<'_> {
     }
 
     /// Create a hash from the workspace relative paths of all files currently
-    /// matched by output globs, so that a subsequent run can verify that the
-    /// exact same set of files still exists. Returns `None` if the task has
-    /// no globs that can match files (negated globs are ignored).
+    /// matched by output globs, and of optional output files that currently
+    /// exist, so that a subsequent run can verify that the exact same set of
+    /// files still exists. Returns `None` if the task has no globs that can
+    /// match files (negated globs are ignored), and no optional files.
     #[instrument(skip(self))]
     pub fn hash_output_globs(&self) -> miette::Result<Option<String>> {
-        if !self.has_output_globs() {
+        let has_globs = self.has_output_globs();
+        let has_optional_files = self
+            .task
+            .output_files
+            .values()
+            .any(|params| params.optional);
+
+        if !has_globs && !has_optional_files {
             return Ok(None);
         }
 
         let workspace_root = &self.app_context.workspace_root;
         let mut paths = vec![];
 
-        for file in self.task.get_output_files(workspace_root, false)? {
-            paths.push(to_relative_virtual_string(file, workspace_root)?);
+        if has_globs {
+            for file in self.task.get_output_files(workspace_root, false)? {
+                paths.push(to_relative_virtual_string(file, workspace_root)?);
+            }
         }
 
-        // Walk order is not guaranteed
+        // Optional files are not required to exist, so their existence
+        // checks are skipped, but if one existed in the previous run and
+        // has since been removed, we must hydrate to restore it
+        for (output, params) in &self.task.output_files {
+            if params.optional && output.to_path(workspace_root).exists() {
+                paths.push(output.to_string());
+            }
+        }
+
+        // Walk and map order are not guaranteed
         paths.sort();
 
         Ok(Some(ContentHash::hash_bytes(paths.join("\0"))?.to_string()))

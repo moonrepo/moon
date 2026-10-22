@@ -1491,7 +1491,7 @@ tasks:
                 FxHashMap::from_iter([
                     (
                         WorkspaceRelativePathBuf::from(
-                            ".moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                            ".moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                         ),
                         TaskGlobInput::default()
                     ),
@@ -1571,7 +1571,7 @@ tasks:
                 FxHashMap::from_iter([
                     (
                         WorkspaceRelativePathBuf::from(
-                            ".moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                            ".moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
                         ),
                         TaskGlobInput::default()
                     ),

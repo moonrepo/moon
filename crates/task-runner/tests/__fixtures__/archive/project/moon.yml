@@ -46,6 +46,13 @@ tasks:
       - glob: '*.txt'
         optional: true
 
+  glob-outputs-with-optional-file:
+    command: noop
+    outputs:
+      - '*.txt'
+      - file: 'dist/file.bin'
+        optional: true
+
   negated-outputs-only:
     command: noop
     outputs:

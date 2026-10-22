@@ -308,9 +308,9 @@ dependencies = [
 
 [[package]]
 name = "deserialize_untagged_verbose_error"
-version = "0.1.8"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2ca37f6cd655f43d6506a439f92e4827e63a8b3424834194c8e5f9a7ef1f33a"
+checksum = "4efca3626c4a42fed8ba39f446cba2a22f959e504b05ff5878ed274dbba51ebe"
 dependencies = [
  "deserialize_untagged_verbose_error_macro",
  "serde",
@@ -319,9 +319,9 @@ dependencies = [
 
 [[package]]
 name = "deserialize_untagged_verbose_error_macro"
-version = "0.1.6"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5683062913e8ec54c3d45c761c83415991154b36a59259307eb1abe57fc4c821"
+checksum = "fc223b7eaabf55a0ed689da1ee2fc8aca80bb4af35c8e187a47f4e4e59654e00"
 dependencies = [
  "proc-macro-error",
  "proc-macro2",
@@ -826,7 +826,7 @@ dependencies = [
 
 [[package]]
 name = "moon_config"
-version = "2.2.2"
+version = "2.2.1"
 dependencies = [
  "deserialize_untagged_verbose_error",
  "deserialize_untagged_verbose_error_macro",

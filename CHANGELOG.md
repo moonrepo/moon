@@ -13,10 +13,6 @@
 - Fixed an issue where deleted `optional: true` file outputs were not restored on a cache hit, when
   the hash matched the task's last run.
 
-#### ⚙️ Internal
-
-- Updated dependencies.
-
 ## 2.6.2
 
 #### 🐞 Fixes

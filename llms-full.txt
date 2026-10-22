@@ -2231,8 +2231,8 @@ INHERITS FROM
 
 INPUTS
 
-  - .moon/*.yml
   - .moon/tasks/node.yml
+  - .moon/{extensions,toolchains}.yml
   - packages/runtime/package.json
   - packages/runtime/src/**/*
   - packages/runtime/tsconfig.*.json

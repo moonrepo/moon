@@ -914,6 +914,13 @@ impl<'task> TaskRunner<'task> {
 
         let from_previous_outputs = matches!(from, HydrateFrom::PreviousOutput);
 
+        // Hydrating deletes and replaces the outputs on disk, and may fail part
+        // way through, so they are no longer from the previous hash, and must
+        // not be reused for it. The new hash is recorded once hydrated.
+        if !from_previous_outputs {
+            self.cache.data.hash.clear();
+        }
+
         let hydrated = match self.hydrater.hydrate(from, hash, &self.state).await? {
             HydrateOutcome::Skipped => {
                 debug!(task_target, "Skipping hydration");

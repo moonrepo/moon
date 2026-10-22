@@ -2,7 +2,7 @@ mod utils;
 
 use moon_action::ActionStatus;
 use moon_action_context::*;
-use moon_cache::{CacheMode, TaskManifest};
+use moon_cache::{CacheMode, TaskManifest, TaskManifestFile, TaskManifestSymlink};
 use moon_config::{
     TaskCheck, TaskCheckConditionConfig, TaskCheckFingerprint, TaskCheckFingerprintConfig,
     TaskCheckRequirementConfig,
@@ -1116,6 +1116,57 @@ mod task_runner {
                 std::fs::remove_file(container.sandbox.path().join("project/file.txt")).unwrap();
 
                 assert!(runner.is_cached("hash123").await.unwrap().is_none());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_if_a_failed_hydration_replaced_outputs() {
+                let container = TaskRunnerContainer::new("runner", "dir-outputs").await;
+                let mut runner = container.create_runner();
+
+                // Outputs from the previous run
+                container
+                    .sandbox
+                    .create_file("project/dist/file.txt", "previous");
+
+                runner.cache.data.exit_code = 0;
+                runner.cache.data.hash = "previous".into();
+
+                // Outputs for the next run, that fail to unpack after one is written
+                runner.state.local_cas_enabled = true;
+                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
+
+                let digest = container.seed_blob(b"next").await;
+
+                container
+                    .seed_manifest(
+                        &runner.state.digest,
+                        TaskManifest {
+                            files: vec![TaskManifestFile {
+                                digest: Some(digest),
+                                path: "project/dist/file.txt".into(),
+                                ..Default::default()
+                            }],
+                            symlinks: vec![TaskManifestSymlink {
+                                path: "project/dist/link".into(),
+                                target: "../outside".into(),
+                                ..Default::default()
+                            }],
+                            ..Default::default()
+                        },
+                    )
+                    .await;
+
+                assert!(runner.hydrate("hash123").await.is_err());
+                assert_eq!(
+                    std::fs::read_to_string(container.sandbox.path().join("project/dist/file.txt"))
+                        .unwrap(),
+                    "next"
+                );
+
+                // The outputs are no longer from the previous run, so must not be reused
+                runner.state.digest = Digest::from_bytes(b"previous").unwrap();
+
+                assert!(runner.is_cached("previous").await.unwrap().is_none());
             }
         }
 

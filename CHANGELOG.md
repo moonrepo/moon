@@ -12,6 +12,8 @@
   inputs.
 - Fixed an issue where deleted `optional: true` file outputs were not restored on a cache hit, when
   the hash matched the task's last run.
+- Fixed an issue where outputs partially restored by a failed cache hydration could be reused as a
+  cache hit on the next run.
 
 ## 2.6.2
 

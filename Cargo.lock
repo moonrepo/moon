@@ -5898,6 +5898,7 @@ dependencies = [
  "moon_codegen",
  "moon_common",
  "moon_config",
+ "moon_console",
  "moon_env_var",
  "moon_task",
  "moon_task_runner",
@@ -9917,9 +9918,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_process"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb2e4b45f38113082088430af3d372f0872ee623c097119eab86a2dedc77f451"
+checksum = "4d14eb7a951ea9043fddbce94f5efef7d22a3f75c84e9db1f0857c7f4b0617c4"
 dependencies = [
  "bytes",
  "libc",

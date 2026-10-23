@@ -908,7 +908,9 @@ pub(crate) fn exit_code_for_signal(signal: SignalType) -> u8 {
 fn status_for_signal(signal: SignalType) -> ActionPipelineStatus {
     match signal {
         SignalType::Interrupt => ActionPipelineStatus::Interrupted,
-        SignalType::Terminate => ActionPipelineStatus::Terminated,
+        // The terminal (or console window) was closed, which stops the
+        // pipeline from the outside, so it's not a failure of the pipeline
+        SignalType::Hangup | SignalType::Terminate => ActionPipelineStatus::Terminated,
         _ => ActionPipelineStatus::Aborted,
     }
 }
@@ -933,6 +935,15 @@ mod signal_exit_tests {
         assert_eq!(exit_code_for_signal(SignalType::Terminate), 143);
         assert_eq!(
             status_for_signal(SignalType::Terminate),
+            ActionPipelineStatus::Terminated
+        );
+    }
+
+    #[test]
+    fn hangup_exits_129_and_is_terminated() {
+        assert_eq!(exit_code_for_signal(SignalType::Hangup), 129);
+        assert_eq!(
+            status_for_signal(SignalType::Hangup),
             ActionPipelineStatus::Terminated
         );
     }

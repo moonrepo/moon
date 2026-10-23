@@ -379,7 +379,7 @@ impl MoonDaemon for DaemonService {
 ///
 /// The server shuts down cleanly on:
 /// - A `Stop` RPC call from a client
-/// - `SIGINT` or `SIGTERM` (Unix) / `Ctrl+C` (Windows)
+/// - `SIGHUP`, `SIGINT`, or `SIGTERM` (Unix) / `Ctrl+C` (Windows)
 ///
 /// On shutdown the state file and socket are removed and the ownership lock
 /// is released.

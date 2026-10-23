@@ -1,4 +1,4 @@
-//! A running task interrupted by SIGINT or SIGTERM must not exit 0, and the
+//! A running task interrupted by SIGHUP, SIGINT, or SIGTERM must not exit 0, and the
 //! summary must not count that task as skipped.
 //!
 //! Before the fix this exits 0 and prints "skipped".
@@ -34,7 +34,7 @@ fn pump(
     })
 }
 
-fn interrupt_running_task(signal: &str, expected: i32) {
+fn interrupt_running_task(signal: &str, expected: i32, expected_status: &str) {
     let sandbox = create_empty_moon_sandbox();
     let root = sandbox.path().to_path_buf();
 
@@ -138,14 +138,23 @@ tasks:
         output.to_ascii_lowercase().contains("failed"),
         "summary should count the interrupted task as failed:\n{output}"
     );
+    assert!(
+        output.contains(&format!("({expected_status})")),
+        "summary should mark the pipeline as {expected_status}:\n{output}"
+    );
 }
 
 #[test]
 fn sigint_exits_130_and_is_not_skipped() {
-    interrupt_running_task("-INT", 130);
+    interrupt_running_task("-INT", 130, "interrupted");
 }
 
 #[test]
 fn sigterm_exits_143_and_is_not_skipped() {
-    interrupt_running_task("-TERM", 143);
+    interrupt_running_task("-TERM", 143, "terminated");
+}
+
+#[test]
+fn sighup_exits_129_and_is_not_skipped() {
+    interrupt_running_task("-HUP", 129, "terminated");
 }

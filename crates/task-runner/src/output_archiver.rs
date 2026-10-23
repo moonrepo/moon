@@ -3,8 +3,8 @@ use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
 use moon_cache::{StorageOptions, TaskManifest};
-use moon_common::color;
 use moon_common::path::to_relative_virtual_string;
+use moon_common::{color, format_error_chain};
 use moon_daemon_client::DaemonClient;
 use moon_hash::ContentHash;
 use moon_manifest::TaskManifestPacker;
@@ -81,18 +81,37 @@ impl OutputArchiver<'_> {
         // Store the manifest in the local/remote caches
         if use_local || use_remote {
             let manifest = self.create_cache_manifest(state).await?;
+            let mut handled_by_daemon = false;
 
             if let Some(mut daemon) = self.daemon_client.clone() {
-                daemon
+                // The daemon is an optimization, so if the RPC fails (the
+                // daemon went away, or the message was too large), archive
+                // in-process instead of failing a task that passed
+                match daemon
                     .archive_task_outputs(
                         self.task.target.to_string(),
                         state.digest.clone(),
-                        manifest,
+                        manifest.clone(),
                         use_local,
                         use_remote,
                     )
-                    .await?;
-            } else {
+                    .await
+                {
+                    Ok(_) => {
+                        handled_by_daemon = true;
+                    }
+                    Err(error) => {
+                        warn!(
+                            task_target,
+                            hash,
+                            error = format_error_chain(&error),
+                            "Failed to archive task outputs in the daemon, archiving in-process instead"
+                        );
+                    }
+                }
+            }
+
+            if !handled_by_daemon {
                 self.app_context
                     .cache_engine
                     .storage

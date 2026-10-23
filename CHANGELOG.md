@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- The Pkl modules generated since v2.6.3 type lists and maps as Pkl's amendable `Listing` and
+  `Mapping` only, as Pkl recommends for configuration data. A config that amends its module, and
+  assigns a `List`, `Set`, or `Map` to a setting, must convert it with `toListing()` or
+  `toMapping()`, or create it with `new Listing { ... }` instead. Updated the Pkl docs and examples
+  to match.
+
+#### 🐞 Fixes
+
+- Fixed an issue where, with the daemon enabled, a task would fail with "Failed to make daemon RPC
+  call" when its stdout/stderr, or its list of output files, was larger than 4 MiB. The daemon now
+  accepts messages up to 256 MiB, and if archiving or hydrating outputs through the daemon fails,
+  it's done in-process instead of failing the task.
+- Fixed an issue where the daemon was silently never used in development containers (like VS Code
+  Dev Containers), yet was used in CI environments that aren't Docker containers (like Kubernetes
+  pods), where it outlived the run. The daemon is now used in development containers, is never used
+  in CI, and the reason it was skipped is logged at the debug level.
+
 ## 2.6.3
 
 #### 🛡️ Security

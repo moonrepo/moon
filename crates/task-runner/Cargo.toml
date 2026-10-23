@@ -41,6 +41,8 @@ tracing = { workspace = true }
 
 [dev-dependencies]
 moon_affected = { path = "../affected" }
+moon_daemon_server = { path = "../daemon-server" }
+moon_daemon_utils = { path = "../daemon-utils" }
 moon_test_utils = { path = "../test-utils" }
 starbase_sandbox = { workspace = true }
 

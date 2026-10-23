@@ -40,6 +40,19 @@ configuration. This is useful for trying it out before committing to the change.
 MOON_DAEMON=true moon run :build
 ```
 
+### Unsupported environments
+
+Even when enabled, commands that run the action pipeline (`moon ci`, `moon check`, `moon exec`,
+`moon run`, and `moon sync`) will not use the daemon in the following environments, and will run as
+if it were disabled. Enabling it with `MOON_DAEMON` does not change this.
+
+- **CI environments** — Each run starts fresh, so there's nothing for the daemon to reuse.
+- **Docker containers** — One-off containers (`docker run`, `docker build`, etc) exit after a
+  command, so like CI, the daemon brings no benefit. However, development containers (like VS Code
+  Dev Containers, GitHub Codespaces, DevPod, and Gitpod) are long-lived, and _do_ support the daemon.
+
+To verify whether the daemon was skipped, and why, run a command with `--log debug`.
+
 ## How it works
 
 ### Background server
@@ -165,6 +178,8 @@ of v2.4, log files are rotated up to 7 times, with older files automatically del
 - Verify the daemon is enabled: check that `unstable_daemon: true` is set in
   [`.moon/workspace.yml`](../config/workspace), or that the `MOON_DAEMON` environment variable is
   set.
+- Verify you're not in an [unsupported environment](#unsupported-environments), by running the
+  command with `--log debug`.
 - Check if a daemon is already running with [`moon daemon status`](../commands/daemon/status).
 - As of v2.4, a crashed daemon releases its workspace lock automatically, so a stale state file no
   longer blocks startup. If startup still fails, delete `.moon/cache/daemon` and try again.
@@ -192,8 +207,12 @@ to force it, restart the daemon manually with
 
 The daemon is designed for local development where a persistent background process can be reused
 across multiple CLI invocations. In CI environments, where each run starts fresh, the daemon
-provides no benefit since there's no long-lived process to connect to. Enabling it in CI won't cause
-harm, but it won't improve performance either.
+provides no benefit since there's no long-lived process to connect to. Because of this, the daemon
+is [never used in CI](#unsupported-environments), even when enabled, so it's safe to enable in a
+configuration that's shared between local development and CI.
+
+If you start a daemon manually with [`moon daemon start`](../commands/daemon/start) in CI, it will
+not be used by other commands.
 
 ## Limitations
 

@@ -571,6 +571,12 @@ async fn monitor_lifecycle(
     }
 }
 
+fn create_server(service: DaemonService) -> MoonDaemonServer<DaemonService> {
+    MoonDaemonServer::new(service)
+        .max_decoding_message_size(MAX_MESSAGE_SIZE)
+        .max_encoding_message_size(MAX_MESSAGE_SIZE)
+}
+
 pub async fn serve(
     endpoint: &str,
     service: DaemonService,
@@ -605,7 +611,7 @@ pub async fn serve_unix(
     let incoming = UnixListenerStream::new(listener);
 
     Server::builder()
-        .serve_with_incoming_shutdown(MoonDaemonServer::new(service), incoming, shutdown_signal)
+        .serve_with_incoming_shutdown(create_server(service), incoming, shutdown_signal)
         .await
         .map_err(|error| DaemonServerError::ServerFailed {
             error: Box::new(error),
@@ -624,7 +630,7 @@ pub async fn serve_windows(
 
     Server::builder()
         .serve_with_incoming_shutdown(
-            MoonDaemonServer::new(service),
+            create_server(service),
             get_named_pipe_server_stream(endpoint),
             shutdown_signal,
         )

@@ -20,6 +20,9 @@ use tokio::sync::{RwLock, broadcast};
 /// The id the mocker's local storage backend registers itself under.
 const LOCAL_BACKEND: &str = "local-cache";
 
+/// Larger than tonic's default message size limit of 4 MiB.
+const OVER_DEFAULT_LIMIT: usize = 5 * 1024 * 1024;
+
 struct TestDaemon {
     app_context: Arc<AppContext>,
     client: DaemonClient,
@@ -267,6 +270,61 @@ mod archive {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn accepts_console_output_over_the_default_message_limit() {
+        // The console output is sent inline, so a verbose task easily
+        // exceeds tonic's default limit, which failed the RPC
+        let daemon = TestDaemon::start().await;
+        let action = action_digest();
+        let stdout = vec![b'x'; OVER_DEFAULT_LIMIT];
+        let stdout_digest = Digest::from_bytes(&stdout).unwrap();
+
+        let mut manifest = manifest_with_output(b"output");
+        manifest.stdout_bytes = Some(stdout.into());
+        manifest.stdout_digest = Some(stdout_digest.clone());
+
+        let response = daemon
+            .client
+            .clone()
+            .archive_task_outputs("app:build".into(), action.clone(), manifest, true, false)
+            .await
+            .unwrap();
+
+        assert!(response.archived);
+        assert!(daemon.wait_for_manifest(&action).await);
+        assert!(daemon.blob_exists(&stdout_digest).await);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn accepts_many_output_files_over_the_default_message_limit() {
+        // Every output file is an entry in the manifest, so a large build
+        // exceeds tonic's default limit even without any console output
+        let daemon = TestDaemon::start().await;
+        let action = action_digest();
+        let empty = Digest::from_bytes(b"").unwrap();
+
+        let manifest = TaskManifest {
+            files: (0..50_000)
+                .map(|i| TaskManifestFile {
+                    digest: Some(empty.clone()),
+                    path: format!("project/dist/chunks/module-{i:06}.js").into(),
+                    ..Default::default()
+                })
+                .collect(),
+            ..Default::default()
+        };
+
+        let response = daemon
+            .client
+            .clone()
+            .archive_task_outputs("app:build".into(), action.clone(), manifest, true, false)
+            .await
+            .unwrap();
+
+        assert!(response.archived);
+        assert!(daemon.wait_for_manifest(&action).await);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn drops_the_action_blob_over_the_rpc() {
         // KNOWN DEFECT, pinned here so a fix trips this test.
         //
@@ -395,6 +453,41 @@ mod hydrate {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn returns_console_output_over_the_default_message_limit() {
+        // The console output is shipped back inline, so the client must
+        // accept a response over tonic's default limit too
+        let daemon = TestDaemon::start().await;
+        let action = action_digest();
+        let stdout = vec![b'x'; OVER_DEFAULT_LIMIT];
+
+        let mut manifest = manifest_with_output(b"output");
+        manifest.stdout_digest = Some(Digest::from_bytes(&stdout).unwrap());
+        manifest.stdout_bytes = Some(stdout.into());
+
+        daemon.seed(&action, manifest).await;
+
+        let response = daemon
+            .client
+            .clone()
+            .hydrate_task_outputs(
+                "app:build".into(),
+                action,
+                daemon.load_source_manifest(&action_digest()).await,
+                true,
+                false,
+                LOCAL_BACKEND.into(),
+            )
+            .await
+            .unwrap();
+
+        assert!(response.hydrated);
+        assert_eq!(
+            response.manifest.unwrap().stdout_raw.len(),
+            OVER_DEFAULT_LIMIT
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn reports_a_miss_when_the_blobs_are_unavailable() {
         // Nothing was ever archived, so the referenced blob can't be resolved
         // and the task has to re-run. The manifest carries no inline bytes —
@@ -451,8 +544,8 @@ mod hydrate {
             )
             .await;
 
-        // Note this is a hard error rather than a miss, so a backend-id
-        // mismatch fails the task instead of just re-running it.
+        // Note this is a hard error rather than a miss, so the task runner
+        // falls back to hydrating in-process.
         assert!(result.is_err());
         assert!(!daemon.sandbox.path().join("project/out.txt").exists());
     }

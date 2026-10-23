@@ -216,10 +216,16 @@ node {
 }
 ```
 
-Lists and maps can be amended, or assigned a `List`, `Set`, or `Map`, so the
-[examples below](#example-functionality) type check as is. However, a setting that accepts several
-shapes, such as a task dependency that is either a target or an object, can't tell which shape
-`new { ... }` creates. Import the module of the object, and create it by name instead.
+Lists and maps are typed as Pkl's amendable `Listing` and `Mapping`, which a config amends, as in
+`tags { "web" }`, or creates, as in `tags = new Listing { "web" }`. Pkl's eager `List`, `Set`, and
+`Map` are for computing values, such as concatenating two lists, and must be converted with
+`toListing()` or `toMapping()` before being assigned to a setting, as in the
+[examples below](#example-functionality).
+
+A setting that accepts several shapes, such as task `args` that is either a string or a list, or a
+task dependency that is either a target or an object, can't be amended, and can't tell which shape
+`new { ... }` creates. Create the list with `new Listing { ... }`, and import the module of the
+object to create it by name.
 
 ```pkl title="moon.pkl"
 amends ".../.moon/cache/schemas/pkl/ProjectConfig.pkl"
@@ -229,13 +235,13 @@ import ".../.moon/cache/schemas/pkl/TaskDependencyConfig.pkl"
 tasks {
   ["build"] {
     command = "vite build"
-    deps = List(
-      "^:build",
+    deps = new Listing {
+      "^:build"
       new TaskDependencyConfig {
         target = "codegen"
         optional = true
       }
-    )
+    }
   }
 }
 ```
@@ -283,7 +289,7 @@ tasks {
           else if (_os == "macos") "x86_64-apple-darwin"
           else "i686-pc-windows-msvc",
         "--verbose"
-      )
+      ).toListing()
       options {
         os = _os
       }
@@ -300,11 +306,11 @@ local _sharedInputs = List("src/**/*")
 tasks {
   ["test"] {
     // ...
-    inputs = List("tests/**/*") + _sharedInputs
+    inputs = (List("tests/**/*") + _sharedInputs).toListing()
   }
   ["lint"] {
     // ...
-    inputs = List("**/*.graphql") + _sharedInputs
+    inputs = (List("**/*.graphql") + _sharedInputs).toListing()
   }
 }
 ```

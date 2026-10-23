@@ -112,6 +112,34 @@ mod dotenv {
     }
 
     #[test]
+    fn line_comment_suffix_with_comment_markers() {
+        let dot = DotEnv::default();
+
+        // A comment can contain another `#`
+        assert_eq!(
+            dot.parse_line("KEY=value # comment # another").unwrap(),
+            Some(("KEY".to_owned(), "value".to_owned(), QuoteStyle::Unquoted))
+        );
+
+        // A comment can contain the same quotes as the value
+        assert_eq!(
+            dot.parse_line("KEY=\"value\" # default is \"foo\"")
+                .unwrap(),
+            Some(("KEY".to_owned(), "value".to_owned(), QuoteStyle::Double))
+        );
+        assert_eq!(
+            dot.parse_line("KEY='value' # don't change").unwrap(),
+            Some(("KEY".to_owned(), "value".to_owned(), QuoteStyle::Single))
+        );
+
+        // An apostrophe in an unquoted value is not a quote
+        assert_eq!(
+            dot.parse_line("KEY=don't # comment").unwrap(),
+            Some(("KEY".to_owned(), "don't".to_owned(), QuoteStyle::Unquoted))
+        );
+    }
+
+    #[test]
     fn key_prefix() {
         let dot = DotEnv::default();
 

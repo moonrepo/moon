@@ -91,12 +91,8 @@ impl<'a> DotEnv<'a> {
         };
 
         // Handle trailing comment
-        if let Some(index) = line_content.rfind(" #") {
-            let quote_indexes = get_quote_indices(line_content);
-
-            if quote_indexes.is_none_or(|(_l, r)| index > r) {
-                line_content = &line_content[0..index];
-            }
+        if let Some(index) = find_trailing_comment(line_content) {
+            line_content = &line_content[0..index];
         }
 
         // Find the = separator
@@ -204,19 +200,38 @@ impl<'a> DotEnv<'a> {
     }
 }
 
-fn get_quote_indices(value: &str) -> Option<(usize, usize)> {
-    if let Some(l) = value.find("'")
-        && let Some(r) = value.rfind("'")
-        && l != r
-    {
-        return Some((l, r));
-    }
+fn find_trailing_comment(line: &str) -> Option<usize> {
+    let value_start = line.find('=')? + 1;
+    let value = &line[value_start..];
+    let first_char = value.len() - value.trim_start().len();
 
-    if let Some(l) = value.find("\"")
-        && let Some(r) = value.rfind("\"")
-        && l != r
-    {
-        return Some((l, r));
+    let mut quote: Option<char> = None;
+    let mut escaped = false;
+
+    for (index, ch) in value.char_indices() {
+        if escaped {
+            escaped = false;
+            continue;
+        }
+
+        match quote {
+            Some(open) => {
+                if ch == '\\' && open == '"' {
+                    escaped = true;
+                } else if ch == open {
+                    quote = None;
+                }
+            }
+            None => {
+                // Only a quote at the start of the value opens a string; an
+                // apostrophe in an unquoted value ("don't") is not a quote.
+                if index == first_char && (ch == '"' || ch == '\'') {
+                    quote = Some(ch);
+                } else if ch == '#' && index > 0 && value[..index].ends_with(' ') {
+                    return Some(value_start + index - 1);
+                }
+            }
+        }
     }
 
     None

@@ -9,9 +9,17 @@
   assigns a `List`, `Set`, or `Map` to a setting, must convert it with `toListing()` or
   `toMapping()`, or create it with `new Listing { ... }` instead. Updated the Pkl docs and examples
   to match.
+- moon now handles `SIGHUP`, which is sent when the terminal is closed, like `SIGTERM`. Running
+  tasks receive `SIGHUP`, and are force killed after `pipeline.killProcessThreshold`, the pipeline
+  is marked as terminated, and moon exits with code 129. Previously moon was killed immediately, so
+  a `kill -HUP` left its tasks running. On Windows, closing the console window is handled the same
+  way, instead of aborting the pipeline with code 131.
 
 #### 🐞 Fixes
 
+- Fixed an issue where moon exited with code 1 and printed "Failed to flush buffered output to
+  console" when the command reading its output exited early (a broken pipe), instead of exiting
+  quietly with code 141.
 - Fixed an issue where, with the daemon enabled, a task would fail with "Failed to make daemon RPC
   call" when its stdout/stderr, or its list of output files, was larger than 4 MiB. The daemon now
   accepts messages up to 256 MiB, and if archiving or hydrating outputs through the daemon fails,
@@ -20,6 +28,13 @@
   Dev Containers), yet was used in CI environments that aren't Docker containers (like Kubernetes
   pods), where it outlived the run. The daemon is now used in development containers, is never used
   in CI, and the reason it was skipped is logged at the debug level.
+- Fixed an issue where `hasher.ignorePatterns` and `hasher.ignoreMissingPatterns` were matched
+  against absolute file paths instead of workspace relative paths. A pattern that matched a parent
+  directory of the workspace, like `**/.worktrees/**` for a git worktree nested in the repository,
+  ignored every input, so tasks were always cached and restored stale outputs. Patterns without a
+  `**/` prefix, like `docs/**`, now match as well.
+- Fixed an issue where `.env` files with multiple trailing comment markers (`#`) would not parse
+  correctly.
 
 ## 2.6.3
 

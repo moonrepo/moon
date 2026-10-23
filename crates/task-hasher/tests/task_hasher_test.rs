@@ -90,6 +90,68 @@ mod task_hasher {
         );
     }
 
+    // https://github.com/moonrepo/moon/issues/2781
+    #[tokio::test(flavor = "multi_thread")]
+    async fn matches_ignore_patterns_against_workspace_relative_paths() {
+        let sandbox = create_sandbox("ignore-patterns");
+        sandbox.create_file(".gitignore", ".worktrees\nnode_modules\ntarget\n");
+        sandbox.enable_git();
+        sandbox.run_git(|cmd| {
+            cmd.args(["worktree", "add", ".worktrees/test"]);
+        });
+
+        let hasher_config = HasherConfig {
+            ignore_patterns: vec![GlobPath::parse("**/.worktrees/**").unwrap()],
+            ..HasherConfig::default()
+        };
+
+        // Main checkout: files in the nested worktree are ignored
+        let (wg, app) = mock_workspace(sandbox.path()).await;
+        let project = wg.get_project("root").unwrap();
+        let task = wg.get_task_from_project("root", "testPatterns").unwrap();
+
+        let result = generate_hash(&project, &task, &wg, &app, &hasher_config).await;
+
+        assert_eq!(
+            get_input_files(result.inputs),
+            [".gitignore", "package.json"]
+        );
+
+        // Worktree: the absolute path contains `.worktrees`,
+        // but the workspace relative paths do not
+        let (wg, app) = mock_workspace(&sandbox.path().join(".worktrees/test")).await;
+        let project = wg.get_project("root").unwrap();
+        let task = wg.get_task_from_project("root", "testPatterns").unwrap();
+
+        let result = generate_hash(&project, &task, &wg, &app, &hasher_config).await;
+
+        assert_eq!(
+            get_input_files(result.inputs),
+            [".gitignore", "package.json"]
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn matches_ignore_patterns_with_and_without_globstar_prefix() {
+        let sandbox = create_sandbox("ignore-patterns");
+        sandbox.enable_git();
+
+        let (wg, app) = mock_workspace(sandbox.path()).await;
+        let project = wg.get_project("root").unwrap();
+        let task = wg.get_task_from_project("root", "testPatterns").unwrap();
+
+        for pattern in ["package.json", "**/package.json"] {
+            let hasher_config = HasherConfig {
+                ignore_patterns: vec![GlobPath::parse(pattern).unwrap()],
+                ..HasherConfig::default()
+            };
+
+            let result = generate_hash(&project, &task, &wg, &app, &hasher_config).await;
+
+            assert_eq!(get_input_files(result.inputs), [".gitignore"]);
+        }
+    }
+
     mod input_aggregation {
         use super::*;
 

@@ -10,6 +10,8 @@ use moon_app::commands::query::QueryCommands;
 use moon_app::commands::sync::SyncCommands;
 use moon_app::commands::toolchain::ToolchainCommands;
 use moon_app::{Cli, Commands, MoonSession, commands};
+#[cfg(unix)]
+use moon_console::ConsoleError;
 use moon_env_var::GlobalEnvBag;
 use starbase::diagnostics::IntoDiagnostic;
 use starbase::tracing::{OtelOptions, TracingOptions};
@@ -17,6 +19,8 @@ use starbase::{App, MainResult};
 use starbase_styles::color;
 use starbase_utils::{dirs, string_vec};
 use std::env;
+#[cfg(unix)]
+use std::error::Error;
 use std::ffi::OsString;
 use std::process::{Command, ExitCode};
 use tracing::debug;
@@ -34,17 +38,48 @@ static GLOBAL: MiMalloc = MiMalloc;
 /// killed moon with 141.
 const BROKEN_PIPE_EXIT_CODE: u8 = 141;
 
-fn is_broken_pipe(report: &miette::Report) -> bool {
-    report.chain().any(|error| {
+/// The conventional exit code for a process killed by SIGHUP (128 + 1).
+/// When the terminal is closed, moon receives SIGHUP and shuts down, but
+/// writing to the closed terminal fails with `EIO`; there's no one left
+/// to read the output, so exit quietly with this code instead.
+const HANGUP_EXIT_CODE: u8 = 129;
+
+/// Errors like `ConsoleError` box their I/O error source, which
+/// doesn't downcast to `io::Error` directly.
+fn as_io_error<'a>(error: &'a (dyn std::error::Error + 'static)) -> Option<&'a std::io::Error> {
+    error.downcast_ref::<std::io::Error>().or_else(|| {
         error
-            .downcast_ref::<std::io::Error>()
-            .is_some_and(|io_error| io_error.kind() == std::io::ErrorKind::BrokenPipe)
+            .downcast_ref::<Box<std::io::Error>>()
+            .map(|io_error| io_error.as_ref())
     })
+}
+
+fn is_broken_pipe(report: &miette::Report) -> bool {
+    report
+        .chain()
+        .filter_map(as_io_error)
+        .any(|io_error| io_error.kind() == std::io::ErrorKind::BrokenPipe)
+}
+
+/// Only console errors are checked, as `EIO` from anything else
+/// (like a failing disk) is a real error that must be rendered.
+#[cfg(unix)]
+fn is_terminal_hangup(report: &miette::Report) -> bool {
+    report
+        .chain()
+        .filter_map(|error| error.downcast_ref::<ConsoleError>()?.source())
+        .filter_map(as_io_error)
+        .any(|io_error| io_error.raw_os_error() == Some(libc::EIO))
+}
+
+#[cfg(not(unix))]
+fn is_terminal_hangup(_report: &miette::Report) -> bool {
+    false
 }
 
 /// `print!`/`println!` and friends panic when stdout goes away instead of
 /// returning an error. Catch specifically that panic and exit quietly with
-/// the conventional broken-pipe code.
+/// the conventional broken-pipe (or hangup) code.
 fn install_broken_pipe_panic_hook() {
     let previous_hook = std::panic::take_hook();
 
@@ -61,6 +96,13 @@ fn install_broken_pipe_panic_hook() {
         // EPIPE, covering non-English locales where the text may differ.
         if message.contains("Broken pipe") || message.contains("os error 32") {
             std::process::exit(BROKEN_PIPE_EXIT_CODE as i32);
+        }
+
+        // "os error 5" is EIO, which printing to a closed terminal fails with.
+        // The previous hook prints too, which would panic again and abort.
+        #[cfg(unix)]
+        if message.starts_with("failed printing to std") && message.contains("(os error 5)") {
+            std::process::exit(HANGUP_EXIT_CODE as i32);
         }
 
         previous_hook(panic_info);
@@ -301,5 +343,50 @@ pub async fn run_cli(args: Vec<OsString>) -> MainResult {
         return Ok(ExitCode::from(BROKEN_PIPE_EXIT_CODE));
     }
 
+    // Likewise when our terminal was closed, as rendering the error would
+    // fail (and panic) the same way
+    if outcome.error.as_ref().is_some_and(is_terminal_hangup) {
+        return Ok(ExitCode::from(HANGUP_EXIT_CODE));
+    }
+
     outcome.into_miette_result()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use moon_console::ConsoleError;
+    use std::io;
+
+    fn console_error(error: io::Error) -> miette::Report {
+        miette::Report::new(ConsoleError::FlushFailed {
+            error: Box::new(error),
+        })
+    }
+
+    #[test]
+    fn detects_broken_pipe_from_console_errors() {
+        assert!(is_broken_pipe(&console_error(
+            io::ErrorKind::BrokenPipe.into()
+        )));
+        assert!(!is_broken_pipe(&console_error(io::ErrorKind::Other.into())));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn detects_terminal_hangup_from_console_errors() {
+        assert!(is_terminal_hangup(&console_error(
+            io::Error::from_raw_os_error(libc::EIO)
+        )));
+        assert!(!is_terminal_hangup(&console_error(
+            io::ErrorKind::BrokenPipe.into()
+        )));
+
+        // Not from the console, so it's a real error
+        let disk_error = Err::<(), _>(io::Error::from_raw_os_error(libc::EIO))
+            .into_diagnostic()
+            .unwrap_err();
+
+        assert!(!is_terminal_hangup(&disk_error));
+    }
 }

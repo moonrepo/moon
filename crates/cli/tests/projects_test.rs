@@ -24,6 +24,7 @@ mod projects {
         let sandbox = create_projects_sandbox();
 
         let assert = sandbox.run_bin(|cmd| {
+            cmd.env("COLUMNS", "160");
             cmd.arg("projects");
         });
 

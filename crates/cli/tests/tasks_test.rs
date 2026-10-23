@@ -35,6 +35,7 @@ mod tasks {
         let sandbox = create_projects_sandbox();
 
         let assert = sandbox.run_bin(|cmd| {
+            cmd.env("COLUMNS", "160");
             cmd.arg("tasks");
         });
 
@@ -47,6 +48,7 @@ mod tasks {
         let sandbox = create_projects_sandbox();
 
         let assert = sandbox.run_bin(|cmd| {
+            cmd.env("COLUMNS", "160");
             cmd.arg("tasks").arg("tasks");
         });
 

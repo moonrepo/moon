@@ -36,6 +36,12 @@
 - Fixed an issue where `.env` files with multiple trailing comment markers (`#`) would not parse
   correctly.
 
+#### ⚙️ Internal
+
+- Updated the npm release to publish `@moonrepo/cli` after the `@moonrepo/core-*` packages, and to
+  skip versions that are already published, so a failed release can be re-ran. Previously a failure
+  could publish a `@moonrepo/cli` version whose binaries were never published.
+
 ## 2.6.3
 
 #### 🛡️ Security

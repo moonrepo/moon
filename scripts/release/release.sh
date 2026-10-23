@@ -119,10 +119,21 @@ if [[ -z "$GITHUB_TOKEN" ]]; then
   exit 0
 fi
 
-# We must publish with npm instead of yarn for OIDC to work correctly
-for package in packages/cli packages/core-* packages/types; do
-	echo "  $package"
+# The cli package depends on the core packages, so publish it last,
+# otherwise a failed run leaves a cli version without its binaries
+for package in packages/core-* packages/types packages/cli; do
+  echo "  $package"
 
+  name=$(jq -r '.name' "$package/package.json")
+  pkgVersion=$(jq -r '.version' "$package/package.json")
+
+  # Skip versions already published, so that a failed run can be re-ran
+  if [[ -n "$(npm view "$name@$pkgVersion" version 2>/dev/null || true)" ]]; then
+    echo "    Skipping $name@$pkgVersion (already published)"
+    continue
+  fi
+
+  # We must publish with npm instead of yarn for OIDC to work correctly
   cd "./$package" || exit
   npm publish --tag "$tag" --access public
   cd ../..

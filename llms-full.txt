@@ -8654,8 +8654,8 @@ pipeline:
 <HeadingApiLink to="/api/types/interface/PipelineConfig#killProcessThreshold" />
 
 Threshold in milliseconds in which to force kill running child processes after the pipeline receives
-an external signal (like `SIGINT` or `SIGTERM`). A value of 0 will not kill the process and let them
-run to completion. Defaults to `2000` (2 seconds).
+an external signal (like `SIGHUP`, `SIGINT`, or `SIGTERM`). A value of 0 will not kill the process
+and let them run to completion. Defaults to `2000` (2 seconds).
 
 ```yaml title=".moon/workspace.yml" {2}
 pipeline:

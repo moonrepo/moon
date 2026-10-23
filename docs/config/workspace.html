@@ -14,7 +14,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.15ce4d42.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.ea6e0081.js" defer="defer"></script>
 <script src="/assets/js/main.92cc8011.js" defer="defer"></script>
 </head>
 <body>
@@ -373,8 +373,8 @@ install dependencies.</p>
 <h3 class="anchor anchorTargetStickyNavbar_tleR" id="killprocessthreshold"><code>killProcessThreshold</code><span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.32.1</span><a href="#killprocessthreshold" class="hash-link" aria-label="Direct link to killprocessthreshold" title="Direct link to killprocessthreshold" translate="no">​</a></h3>
 <!-- -->
 <p>Threshold in milliseconds in which to force kill running child processes after the pipeline receives
-an external signal (like <code>SIGINT</code> or <code>SIGTERM</code>). A value of 0 will not kill the process and let them
-run to completion. Defaults to <code>2000</code> (2 seconds).</p>
+an external signal (like <code>SIGHUP</code>, <code>SIGINT</code>, or <code>SIGTERM</code>). A value of 0 will not kill the process
+and let them run to completion. Defaults to <code>2000</code> (2 seconds).</p>
 <div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">pipeline</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line theme-code-block-highlighted-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">killProcessThreshold</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token number" style="color:#94dded">5000</span><br></div></code></pre></div></div>
 <h3 class="anchor anchorTargetStickyNavbar_tleR" id="logrunningcommand"><code>logRunningCommand</code><a href="#logrunningcommand" class="hash-link" aria-label="Direct link to logrunningcommand" title="Direct link to logrunningcommand" translate="no">​</a></h3>
 <!-- -->

@@ -14,7 +14,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.2357d64e.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.15ce4d42.js" defer="defer"></script>
 <script src="/assets/js/main.92cc8011.js" defer="defer"></script>
 </head>
 <body>
@@ -169,7 +169,9 @@ in this case <code>react</code>, an error will occur.</p>
 hot in memory, watches for file changes, and processes heavy operations (like task output archiving
 and hydration) in the background. Defaults to <code>false</code>.</p>
 <div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">unstable_daemon</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></div></code></pre></div></div>
-<p>Can also be enabled with the <code>MOON_DAEMON</code> environment variable.</p>
+<p>Can also be enabled with the <code>MOON_DAEMON</code> environment variable. Even when enabled, the daemon is
+not used in CI environments or in Docker containers (except development containers), as explained
+in the <a class="" href="/docs/guides/daemon#unsupported-environments">guide</a>.</p>
 <div class="theme-admonition theme-admonition-caution admonition_WCGJ alert alert--warning"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"></path></svg></span>caution</div><div class="admonitionContent_pbrs"><p>The daemon is currently <strong>unstable</strong>, and its behavior and configuration may change in future
 releases. Learn more about it in the <a class="" href="/docs/guides/daemon">official guide</a>.</p></div></div>
 <h2 class="anchor anchorTargetStickyNavbar_tleR" id="docker"><code>docker</code><span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.27.0</span><a href="#docker" class="hash-link" aria-label="Direct link to docker" title="Direct link to docker" translate="no">​</a></h2>

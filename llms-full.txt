@@ -4727,10 +4727,16 @@ node {
 }
 ```
 
-Lists and maps can be amended, or assigned a `List`, `Set`, or `Map`, so the
-[examples below](#example-functionality) type check as is. However, a setting that accepts several
-shapes, such as a task dependency that is either a target or an object, can't tell which shape
-`new { ... }` creates. Import the module of the object, and create it by name instead.
+Lists and maps are typed as Pkl's amendable `Listing` and `Mapping`, which a config amends, as in
+`tags { "web" }`, or creates, as in `tags = new Listing { "web" }`. Pkl's eager `List`, `Set`, and
+`Map` are for computing values, such as concatenating two lists, and must be converted with
+`toListing()` or `toMapping()` before being assigned to a setting, as in the
+[examples below](#example-functionality).
+
+A setting that accepts several shapes, such as task `args` that is either a string or a list, or a
+task dependency that is either a target or an object, can't be amended, and can't tell which shape
+`new { ... }` creates. Create the list with `new Listing { ... }`, and import the module of the
+object to create it by name.
 
 ```pkl title="moon.pkl"
 amends ".../.moon/cache/schemas/pkl/ProjectConfig.pkl"
@@ -4738,13 +4744,13 @@ amends ".../.moon/cache/schemas/pkl/ProjectConfig.pkl"
 tasks {
   ["build"] {
     command = "vite build"
-    deps = List(
-      "^:build",
+    deps = new Listing {
+      "^:build"
       new TaskDependencyConfig {
         target = "codegen"
         optional = true
       }
-    )
+    }
   }
 }
 ```
@@ -4792,7 +4798,7 @@ tasks {
           else if (_os == "macos") "x86_64-apple-darwin"
           else "i686-pc-windows-msvc",
         "--verbose"
-      )
+      ).toListing()
       options {
         os = _os
       }
@@ -4809,11 +4815,11 @@ local _sharedInputs = List("src/**/*")
 tasks {
   ["test"] {
     // ...
-    inputs = List("tests/**/*") + _sharedInputs
+    inputs = (List("tests/**/*") + _sharedInputs).toListing()
   }
   ["lint"] {
     // ...
-    inputs = List("**/*.graphql") + _sharedInputs
+    inputs = (List("**/*.graphql") + _sharedInputs).toListing()
   }
 }
 ```
@@ -8241,7 +8247,9 @@ and hydration) in the background. Defaults to `false`.
 unstable_daemon: true
 ```
 
-Can also be enabled with the `MOON_DAEMON` environment variable.
+Can also be enabled with the `MOON_DAEMON` environment variable. Even when enabled, the daemon is
+not used in CI environments or in Docker containers (except development containers), as explained
+in the [guide](../guides/daemon#unsupported-environments).
 
 :::caution
 
@@ -11435,6 +11443,19 @@ configuration. This is useful for trying it out before committing to the change.
 MOON_DAEMON=true moon run :build
 ```
 
+### Unsupported environments
+
+Even when enabled, commands that run the action pipeline (`moon ci`, `moon check`, `moon exec`,
+`moon run`, and `moon sync`) will not use the daemon in the following environments, and will run as
+if it were disabled. Enabling it with `MOON_DAEMON` does not change this.
+
+- **CI environments** — Each run starts fresh, so there's nothing for the daemon to reuse.
+- **Docker containers** — One-off containers (`docker run`, `docker build`, etc) exit after a
+  command, so like CI, the daemon brings no benefit. However, development containers (like VS Code
+  Dev Containers, GitHub Codespaces, DevPod, and Gitpod) are long-lived, and _do_ support the daemon.
+
+To verify whether the daemon was skipped, and why, run a command with `--log debug`.
+
 ## How it works
 
 ### Background server
@@ -11560,6 +11581,8 @@ of v2.4, log files are rotated up to 7 times, with older files automatically del
 - Verify the daemon is enabled: check that `unstable_daemon: true` is set in
   [`.moon/workspace.yml`](../config/workspace), or that the `MOON_DAEMON` environment variable is
   set.
+- Verify you're not in an [unsupported environment](#unsupported-environments), by running the
+  command with `--log debug`.
 - Check if a daemon is already running with [`moon daemon status`](../commands/daemon/status).
 - As of v2.4, a crashed daemon releases its workspace lock automatically, so a stale state file no
   longer blocks startup. If startup still fails, delete `.moon/cache/daemon` and try again.
@@ -11587,8 +11610,12 @@ to force it, restart the daemon manually with
 
 The daemon is designed for local development where a persistent background process can be reused
 across multiple CLI invocations. In CI environments, where each run starts fresh, the daemon
-provides no benefit since there's no long-lived process to connect to. Enabling it in CI won't cause
-harm, but it won't improve performance either.
+provides no benefit since there's no long-lived process to connect to. Because of this, the daemon
+is [never used in CI](#unsupported-environments), even when enabled, so it's safe to enable in a
+configuration that's shared between local development and CI.
+
+If you start a daemon manually with [`moon daemon start`](../commands/daemon/start) in CI, it will
+not be used by other commands.
 
 ## Limitations
 

@@ -252,7 +252,7 @@ impl<'task> TaskHasher<'task> {
 
                 if self.hasher_config.warn_on_missing_inputs
                     && (self.hasher_config.ignore_missing_patterns.is_empty()
-                        || !ignore_missing.is_included(abs_path))
+                        || !ignore_missing.is_included(rel_path.as_str()))
                 {
                     warn!(
                         "Attempted to hash input {} but it does not exist, skipping",
@@ -263,7 +263,9 @@ impl<'task> TaskHasher<'task> {
                 continue;
             }
 
-            if ignore.is_included(&abs_path) {
+            // Patterns are workspace relative, so never match against the absolute
+            // path, otherwise parent directories (e.g. nested worktrees) would match
+            if ignore.is_included(rel_path.as_str()) {
                 debug!(
                     "Not hashing input {} as it matches an ignore pattern",
                     color::rel_path(&rel_path),

@@ -20,6 +20,11 @@
   Dev Containers), yet was used in CI environments that aren't Docker containers (like Kubernetes
   pods), where it outlived the run. The daemon is now used in development containers, is never used
   in CI, and the reason it was skipped is logged at the debug level.
+- Fixed an issue where `hasher.ignorePatterns` and `hasher.ignoreMissingPatterns` were matched
+  against absolute file paths instead of workspace relative paths. A pattern that matched a parent
+  directory of the workspace, like `**/.worktrees/**` for a git worktree nested in the repository,
+  ignored every input, so tasks were always cached and restored stale outputs. Patterns without a
+  `**/` prefix, like `docs/**`, now match as well.
 
 ## 2.6.3
 

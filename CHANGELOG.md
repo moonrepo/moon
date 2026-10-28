@@ -197,6 +197,13 @@
     workspace's members also match, and a member that overrides the workspace's version. Also
     supports `--dot` and `--json` output, and placing a single project, like a run would.
 - **Configuration**
+  - Added support for parent traversal globs, with a `...` path segment, like `.../package.json`.
+    They match the path after `...` in the directory before it (the project root for project
+    relative globs), or in any parent directory up to the workspace root, but never in sibling or
+    nested directories. Supported by task inputs, file groups, and other glob settings, but not by
+    task outputs or code owners. Token functions that return globs as-is, like `@globs` and
+    `@group`, error for them outside of task inputs.
+    [Learn more](https://moonrepo.dev/docs/concepts/file-pattern#parent-traversal).
   - Stabilized the `cache.unstable_sharedWorktreeCache` setting in `.moon/workspace.config`. Use
     `cache.sharedWorktreeCache` instead.
   - Stabilized the `unstable_daemon` setting in `.moon/workspace.config`. Use `daemon` instead.

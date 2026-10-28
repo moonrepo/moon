@@ -9,7 +9,7 @@ use moon_env_var::GlobalEnvBag;
 use moon_project::Project;
 use moon_task::{Target, Task};
 use rustc_hash::{FxHashMap, FxHashSet};
-use starbase_utils::glob::GlobSet;
+use starbase_utils::glob::{GlobSet, has_parent_traversal};
 use std::path::PathBuf;
 use tracing::{debug, warn};
 
@@ -145,10 +145,14 @@ impl<'task> TaskHasher<'task> {
                 }
 
                 // However that completely ignores workspace level globs,
-                // so we must still manually glob those here!
+                // so we must still manually glob those here! Parent traversal
+                // globs may also match outside of the project
                 let workspace_globs = input_globs
                     .into_iter()
-                    .filter(|(glob, _)| !glob.starts_with(&self.project.source))
+                    .filter(|(glob, _)| {
+                        !glob.starts_with(&self.project.source)
+                            || has_parent_traversal(glob.as_str())
+                    })
                     .collect::<FxHashMap<_, _>>();
 
                 if !workspace_globs.is_empty() {

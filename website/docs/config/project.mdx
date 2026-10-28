@@ -1152,6 +1152,24 @@ tasks:
       - glob: '!/workspace/relative/**/*'
 ```
 
+Globs can also match files in parent directories with a
+[parent traversal](../concepts/file-pattern#parent-traversal) segment, `...`
+
+<VersionLabel inline version="3.0.0" />, which matches the path after it in the project root, or in
+any parent directory up to the workspace root, but never in sibling or nested directories. This
+pairs well with `affectedOnly`, for files that tools look up from the project, like manifests and
+lockfiles.
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    inputs:
+      # Matches package.json in the project root, or any parent directory
+      - '.../package.json'
+      - glob: '.../*.lock'
+        affectedOnly: true
+```
+
 :::warning
 
 Glob patterns that contain `?`, for example `*.tsx?`, cannot be used in URI format, as it conflicts

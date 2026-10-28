@@ -836,6 +836,43 @@ mod task_expander {
         }
 
         #[test]
+        fn keeps_parent_traversal_globs() {
+            let sandbox = create_sandbox("file-group");
+            let project_graph = create_project_graph([]);
+            let project = create_project(sandbox.path());
+
+            let mut task = create_task();
+            task.inputs.push(Input::parse(".../package.json").unwrap());
+            task.inputs
+                .push(Input::parse("glob://dir/.../*.lock?affectedOnly").unwrap());
+            task.inputs.push(Input::parse("/.../root.json").unwrap());
+
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project_graph, &project, &context, &EMPTY_TASK_LOOKUP)
+                .expand_inputs(&mut task)
+                .unwrap();
+
+            assert_eq!(
+                task.input_globs,
+                FxHashMap::from_iter([
+                    (
+                        "project/source/.../package.json".into(),
+                        TaskGlobInput::default()
+                    ),
+                    (
+                        "project/source/dir/.../*.lock".into(),
+                        TaskGlobInput {
+                            affected_only: true,
+                            ..Default::default()
+                        }
+                    ),
+                    (".../root.json".into(), TaskGlobInput::default()),
+                ])
+            );
+            assert!(task.input_files.is_empty());
+        }
+
+        #[test]
         fn marks_affected_only_inputs() {
             let sandbox = create_sandbox("file-group");
             let project_graph = create_project_graph([]);

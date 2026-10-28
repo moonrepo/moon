@@ -3,6 +3,7 @@ use crate::{config_struct, config_untagged_enum};
 use indexmap::IndexMap;
 use rustc_hash::FxHashMap;
 use schematic::{Config, PathSegment, ValidateError};
+use starbase_utils::glob::has_parent_traversal;
 
 config_untagged_enum!(
     /// A mapping of file paths and file globs to owners.
@@ -27,6 +28,18 @@ impl OwnersPaths {
     }
 }
 
+// Code owners files are read by VCS providers, which can't expand them
+fn validate_path(path: &GlobPath, segment: PathSegment) -> Result<(), ValidateError> {
+    if has_parent_traversal(path.as_str()) {
+        return Err(ValidateError::with_segment(
+            "parent traversal globs (...) are not supported for code owners",
+            segment,
+        ));
+    }
+
+    Ok(())
+}
+
 fn validate_paths<C>(
     value: &PartialOwnersPaths,
     data: &PartialOwnersConfig,
@@ -40,9 +53,15 @@ fn validate_paths<C>(
                     "a default owner is required when defining a list of paths",
                 ));
             }
+
+            for (index, path) in list.iter().enumerate() {
+                validate_path(path, PathSegment::Index(index))?;
+            }
         }
         PartialOwnersPaths::Map(map) => {
             for (key, value) in map {
+                validate_path(key, PathSegment::Key(key.to_string()))?;
+
                 if value.is_empty() && data.default_owner.is_none() {
                     return Err(ValidateError::with_segment(
                         "a default owner is required when defining an empty list of owners",

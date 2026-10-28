@@ -427,6 +427,76 @@ mod input_shape {
         fn errors_for_parent_traversal_inner() {
             Input::parse("dir/../../file.txt").unwrap();
         }
+
+        #[test]
+        fn glob_parent_traversal() {
+            assert_eq!(
+                Input::parse(".../package.json").unwrap(),
+                Input::Glob(stub_glob_input(".../package.json"))
+            );
+            assert_eq!(
+                Input::parse("./.../package.json").unwrap(),
+                Input::Glob(stub_glob_input(".../package.json"))
+            );
+            assert_eq!(
+                Input::parse("dir/.../*.lock").unwrap(),
+                Input::Glob(stub_glob_input("dir/.../*.lock"))
+            );
+            assert_eq!(
+                Input::parse("!.../package.json").unwrap(),
+                Input::Glob(stub_glob_input("!.../package.json"))
+            );
+            assert_eq!(
+                Input::parse("/.../package.json").unwrap(),
+                Input::Glob(stub_glob_input("/.../package.json"))
+            );
+            assert_eq!(
+                Input::parse("glob://.../package.json?affectedOnly").unwrap(),
+                Input::Glob({
+                    let mut inner = stub_glob_input(".../package.json");
+                    inner.affected_only = true;
+                    inner
+                })
+            );
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "parent traversal (...) is not valid, as a path is required after it"
+        )]
+        fn errors_for_parent_traversal_glob_without_path() {
+            Input::parse("dir/...").unwrap();
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "parent traversal (...) is not valid, as only 1 is allowed per pattern"
+        )]
+        fn errors_for_parent_traversal_glob_multiple() {
+            Input::parse(".../dir/.../file.txt").unwrap();
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "parent traversal (...) is not valid, as globstars are not allowed after it"
+        )]
+        fn errors_for_parent_traversal_glob_globstar() {
+            Input::parse(".../**/file.txt").unwrap();
+        }
+
+        #[test]
+        #[should_panic(expected = "parent directory traversal (..) is not supported")]
+        fn errors_for_parent_traversal_glob_with_parent_dir() {
+            Input::parse(".../../file.txt").unwrap();
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "parent traversal globs (...) are not supported, expected a literal file path"
+        )]
+        fn errors_for_parent_traversal_file_protocol() {
+            Input::parse("file://.../file.txt").unwrap();
+        }
     }
 
     mod parse_object {
@@ -503,6 +573,32 @@ mod input_shape {
         #[should_panic] // Swallowed by enum expecting message
         fn errors_for_parent_traversal_inner() {
             let _: Input = serde_json::from_str(r#"{ "glob": "dir/../../file.*" }"#).unwrap();
+        }
+
+        #[test]
+        fn glob_parent_traversal() {
+            let input: Input = serde_json::from_str(r#""dir/.../package.json""#).unwrap();
+
+            assert_eq!(input, Input::Glob(stub_glob_input("dir/.../package.json")));
+
+            let input: Input =
+                serde_json::from_str(r#"{ "glob": "/.../package.json", "affectedOnly": true }"#)
+                    .unwrap();
+
+            assert_eq!(
+                input,
+                Input::Glob({
+                    let mut inner = stub_glob_input("/.../package.json");
+                    inner.affected_only = true;
+                    inner
+                })
+            );
+        }
+
+        #[test]
+        #[should_panic] // Swallowed by enum expecting message
+        fn errors_for_parent_traversal_file() {
+            let _: Input = serde_json::from_str(r#"{ "file": ".../package.json" }"#).unwrap();
         }
 
         #[test]
@@ -877,6 +973,41 @@ mod input_shape {
         }
 
         #[test]
+        fn parent_traversal() {
+            let input = stub_glob_input(".../package.json");
+
+            assert_eq!(input.glob, ".../package.json");
+            assert_eq!(input.get_path(), ".../package.json");
+            assert_eq!(
+                input.to_workspace_relative("packages/a").as_str(),
+                "packages/a/.../package.json"
+            );
+            assert!(!input.is_workspace_relative());
+            assert!(!input.is_negated());
+
+            let input = stub_glob_input("/.../package.json");
+
+            assert_eq!(input.glob, "/.../package.json");
+            assert_eq!(input.get_path(), ".../package.json");
+            assert_eq!(
+                input.to_workspace_relative("packages/a").as_str(),
+                ".../package.json"
+            );
+            assert!(input.is_workspace_relative());
+            assert!(!input.is_negated());
+
+            let input = stub_glob_input("!.../package.json");
+
+            assert_eq!(input.glob, "!.../package.json");
+            assert_eq!(
+                input.to_workspace_relative("packages/a").as_str(),
+                "!packages/a/.../package.json"
+            );
+            assert!(!input.is_workspace_relative());
+            assert!(input.is_negated());
+        }
+
+        #[test]
         fn supports_cache_field() {
             let input = stub_glob_input("glob://file.*?cache");
 
@@ -1016,6 +1147,12 @@ mod input_shape {
                     .unwrap();
 
             assert_eq!(input.filter, ["a", "b"]);
+
+            let input =
+                ProjectInput::from_uri(Uri::parse("project://app?filter=.../*.json").unwrap())
+                    .unwrap();
+
+            assert_eq!(input.filter, [".../*.json"]);
         }
 
         #[test]

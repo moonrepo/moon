@@ -32,6 +32,7 @@ schematic = { workspace = true, features = [
 ] }
 serde = { workspace = true }
 serde_json = { workspace = true }
+starbase_utils = { workspace = true, features = ["glob"] }
 version_spec = { workspace = true, features = ["schematic"] }
 warpgate_api = { workspace = true, features = ["schematic"] }
 

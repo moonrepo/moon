@@ -10,6 +10,7 @@ use moon_time::{now_millis, now_timestamp};
 use pathdiff::diff_paths;
 use regex::Regex;
 use rustc_hash::{FxHashMap, FxHashSet};
+use starbase_utils::glob::has_parent_traversal;
 use std::borrow::Cow;
 use std::env;
 use std::mem;
@@ -658,6 +659,22 @@ impl<'graph> TokenExpander<'graph> {
                 .into());
             }
         };
+
+        // Parent traversal globs are expanded when moon globs, so they
+        // can't be passed through to commands, env vars, or outputs
+        if self.scope != TokenScope::Inputs
+            && let Some(glob) = result
+                .globs
+                .iter()
+                .find(|glob| has_parent_traversal(glob.as_str()))
+        {
+            return Err(TokenExpanderError::ParentTraversalGlob {
+                glob: glob.to_string(),
+                target: task.target.to_string(),
+                token: token.to_owned(),
+            }
+            .into());
+        }
 
         Ok(result)
     }

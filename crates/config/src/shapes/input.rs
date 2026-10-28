@@ -13,6 +13,7 @@ use schematic::{
     schema::UnionType,
 };
 use serde::{Deserialize, Serialize, Serializer};
+use starbase_utils::glob::has_parent_traversal;
 use std::str::FromStr;
 
 config_struct!(
@@ -342,7 +343,7 @@ impl Input {
 
         // Convert literal paths to a URI
         if !value.contains("://") {
-            if is_glob_like(&value) {
+            if is_glob_like(&value) || has_parent_traversal(&value) {
                 value = format!("glob://{}", value.replace("?", "__QM__"));
             } else {
                 value = format!("file://{value}");

@@ -22,6 +22,9 @@ tasks:
         affectedOnly: true
       - glob: '*.md'
         affectedOnly: true
+  by-parent-traversal:
+    inputs:
+      - '.../package.json'
 
   no-inputs:
     inputs: []

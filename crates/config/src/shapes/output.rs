@@ -6,6 +6,7 @@ use moon_common::path::{
 };
 use schematic::{Config, ParseError, Schema, SchemaBuilder, Schematic, schema::UnionType};
 use serde::{Deserialize, Serialize, Serializer};
+use starbase_utils::glob::has_parent_traversal;
 use std::str::FromStr;
 
 config_struct!(
@@ -71,6 +72,8 @@ impl GlobOutput {
             optional: None,
         };
 
+        output.validate_glob()?;
+
         for (key, value) in uri.query {
             match key.as_str() {
                 "optional" => {
@@ -83,6 +86,17 @@ impl GlobOutput {
         }
 
         Ok(output)
+    }
+
+    // Outputs are created by the task, so can't be found in parent directories
+    fn validate_glob(&self) -> Result<(), ParseError> {
+        if has_parent_traversal(self.glob.as_str()) {
+            return Err(ParseError::new(
+                "parent traversal globs (...) are not supported for outputs",
+            ));
+        }
+
+        Ok(())
     }
 }
 
@@ -104,7 +118,7 @@ impl Output {
 
         // Convert literal paths to a URI
         if !value.contains("://") {
-            if is_glob_like(&value) {
+            if is_glob_like(&value) || has_parent_traversal(&value) {
                 value = format!("glob://{}", value.replace("?", "__QM__"));
             } else {
                 value = format!("file://{value}");
@@ -223,7 +237,12 @@ impl TryFrom<PartialOutputShape> for Output {
         Ok(match base {
             PartialOutputShape::String(output) => Self::parse(output)?,
             PartialOutputShape::File(output) => Self::File(finalize_partial(output)?),
-            PartialOutputShape::Glob(output) => Self::Glob(finalize_partial(output)?),
+            PartialOutputShape::Glob(output) => {
+                let output: GlobOutput = finalize_partial(output)?;
+                output.validate_glob()?;
+
+                Self::Glob(output)
+            }
         })
     }
 }

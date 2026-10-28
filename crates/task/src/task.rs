@@ -227,7 +227,7 @@ impl Task {
         Ok(match GLOBSET_CACHE.entry_sync(key) {
             Entry::Occupied(entry) => Arc::clone(entry.get()),
             Entry::Vacant(entry) => {
-                let globset = Arc::new(glob::GlobSet::new_split_owned(expressions, negations)?);
+                let globset = glob::GlobSet::new_split_cached(expressions, negations)?;
 
                 entry.insert_entry(Arc::clone(&globset));
 

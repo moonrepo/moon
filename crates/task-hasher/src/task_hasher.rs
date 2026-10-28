@@ -226,8 +226,8 @@ impl<'task> TaskHasher<'task> {
         inputs: FxHashSet<PathBuf>,
     ) -> miette::Result<FxHashSet<WorkspaceRelativePathBuf>> {
         let mut files = FxHashSet::default();
-        let ignore = GlobSet::new(&self.hasher_config.ignore_patterns)?;
-        let ignore_missing = GlobSet::new(&self.hasher_config.ignore_missing_patterns)?;
+        let ignore = GlobSet::new_cached(&self.hasher_config.ignore_patterns)?;
+        let ignore_missing = GlobSet::new_cached(&self.hasher_config.ignore_missing_patterns)?;
         let globset = self.task.create_globset_without_affected_only()?;
 
         // Inputs that are only used to determine affected status still filter,

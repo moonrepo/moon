@@ -981,8 +981,9 @@ impl<'proj> TasksBuilder<'proj> {
     }
 
     // Changes to a toolchain's manifests and lockfiles, in the project or any parent
-    // directory (like a dependencies workspace root), affect the task. Toolchains
-    // already hash the dependencies they care about, so they're only used for affected
+    // directory (like a dependencies workspace root), affect the task, unless the toolchain
+    // opts out. Toolchains already hash the dependencies they care about, so they're only
+    // used for affected
     async fn inherit_toolchain_inputs(&self, task: &mut Task) -> miette::Result<()> {
         // Tasks without inputs are never affected
         if task.state.empty_inputs {
@@ -996,7 +997,10 @@ impl<'proj> TasksBuilder<'proj> {
             .await?;
         let mut names = BTreeSet::default();
 
-        for toolchain in &toolchains {
+        for toolchain in toolchains
+            .iter()
+            .filter(|toolchain| toolchain.metadata.inject_task_inputs)
+        {
             for name in toolchain
                 .metadata
                 .manifest_file_names

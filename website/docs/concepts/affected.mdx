@@ -33,7 +33,7 @@ manifests and lockfiles of its [toolchains](../config/toolchain) (like `package.
 any parent directory up to the workspace root, like the root of a dependencies workspace. These are
 inherited as an `affectedOnly` [parent traversal glob](./file-pattern#parent-traversal) input, like
 `.../{Cargo.lock,Cargo.toml}`, as toolchains already hash the dependencies they use. Tasks that
-disable their inputs (`inputs: []`) don't inherit them.
+disable their inputs (`inputs: []`) don't inherit them, and toolchains can opt out.
 
 ### Environment variables
 

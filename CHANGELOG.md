@@ -166,7 +166,8 @@
     `package.json` and `yarn.lock`), in the project root, or in any parent directory up to the
     workspace root, like the root of a dependencies workspace. They're inherited as an
     `affectedOnly` parent traversal glob input, like `.../{Cargo.lock,Cargo.toml}`, so they don't
-    change the task's hash. Tasks that disable their inputs (`inputs: []`) don't inherit them.
+    change the task's hash. Tasks that disable their inputs (`inputs: []`) don't inherit them, and
+    toolchains can opt out with `inject_task_inputs`.
   - Improved the performance of affected tracking.
     - Tasks and projects that were checked while tracking, and found to not be affected, are no
       longer checked again when building the action graph. Previously, every unaffected task had its
@@ -252,6 +253,9 @@
     it, every project that shares the toolchain's config is located in one call while building the
     layout graph, instead of a call for each project, which is 37% faster for 1000 projects with a
     test plugin. Toolchains that don't implement it still locate one root per call.
+  - Added an `inject_task_inputs` field to `RegisterToolchainOutput` in the toolchain plugin API,
+    which controls whether the toolchain's manifest and lock file names are injected as an affected
+    only input into the tasks that use it. Defaults to `true`.
   - Added support for proto v0.63's config trust. As moon already runs the workspace's tasks,
     `.prototools` configs within the workspace are always trusted, while other local configs, like
     one in a parent directory, must be trusted with `proto trust` before their security-sensitive

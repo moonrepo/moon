@@ -1003,6 +1003,9 @@ tasks:
   system:
     command: noop
     toolchain: system
+  opted-out:
+    command: noop
+    toolchain: tc-tier2-setup-env
 ",
             );
             sandbox
@@ -1101,6 +1104,18 @@ tasks:
             let task = tasks.get("system").unwrap();
 
             assert_eq!(task.toolchains, [Id::raw("system")]);
+            assert!(get_affected_only_inputs(&task.inputs).is_empty());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_inject_for_opted_out_toolchains() {
+            let sandbox = create_toolchain_inputs_sandbox();
+            let container = TasksBuilderContainer::new(sandbox.path()).with_test_toolchains();
+
+            let tasks = container.build_tasks("toolchain-inputs").await;
+            let task = tasks.get("opted-out").unwrap();
+
+            assert_eq!(task.toolchains, [Id::raw("tc-tier2-setup-env")]);
             assert!(get_affected_only_inputs(&task.inputs).is_empty());
         }
 

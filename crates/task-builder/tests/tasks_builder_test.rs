@@ -976,6 +976,150 @@ tasks:
         }
     }
 
+    mod toolchain_inputs {
+        use super::*;
+        use starbase_sandbox::Sandbox;
+
+        fn create_toolchain_inputs_sandbox() -> Sandbox {
+            let sandbox = create_sandbox("builder");
+            sandbox.create_file(
+                "toolchain-inputs/moon.yml",
+                r"
+tasks:
+  tier1:
+    command: noop
+    toolchain: tc-tier1
+  multiple:
+    command: noop
+    toolchains: [tc-tier1, tc-tier2]
+  with-inputs:
+    command: noop
+    toolchain: tc-tier1
+    inputs: ['src/**/*']
+  empty-inputs:
+    command: noop
+    toolchain: tc-tier1
+    inputs: []
+  system:
+    command: noop
+    toolchain: system
+",
+            );
+            sandbox
+        }
+
+        fn create_affected_only_input(glob: &str) -> Input {
+            Input::Glob(GlobInput {
+                glob: GlobPath::parse(glob).unwrap(),
+                cache: true,
+                affected_only: true,
+            })
+        }
+
+        fn get_affected_only_inputs(inputs: &[Input]) -> Vec<&Input> {
+            inputs
+                .iter()
+                .filter(|input| matches!(input, Input::Glob(glob) if glob.affected_only))
+                .collect()
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn injects_manifests_and_lockfiles() {
+            let sandbox = create_toolchain_inputs_sandbox();
+            let container = TasksBuilderContainer::new(sandbox.path()).with_test_toolchains();
+
+            let tasks = container.build_tasks("toolchain-inputs").await;
+            let task = tasks.get("tier1").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                [
+                    Input::Glob(stub_glob_input("**/*")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
+                    create_affected_only_input(".../{tc.cfg,tc.lock,tc.root.cfg}"),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn dedupes_names_across_toolchains() {
+            let sandbox = create_toolchain_inputs_sandbox();
+            let container = TasksBuilderContainer::new(sandbox.path()).with_test_toolchains();
+
+            let tasks = container.build_tasks("toolchain-inputs").await;
+            let task = tasks.get("multiple").unwrap();
+
+            assert!(task.toolchains.len() > 1);
+            assert_eq!(
+                get_affected_only_inputs(&task.inputs),
+                [&create_affected_only_input(
+                    ".../{tc.cfg,tc.lock,tc.root.cfg}"
+                )]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn appends_to_configured_inputs() {
+            let sandbox = create_toolchain_inputs_sandbox();
+            let container = TasksBuilderContainer::new(sandbox.path()).with_test_toolchains();
+
+            let tasks = container.build_tasks("toolchain-inputs").await;
+            let task = tasks.get("with-inputs").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                [
+                    Input::Glob(stub_glob_input("src/**/*")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
+                    create_affected_only_input(".../{tc.cfg,tc.lock,tc.root.cfg}"),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_inject_for_empty_inputs() {
+            let sandbox = create_toolchain_inputs_sandbox();
+            let container = TasksBuilderContainer::new(sandbox.path()).with_test_toolchains();
+
+            let tasks = container.build_tasks("toolchain-inputs").await;
+            let task = tasks.get("empty-inputs").unwrap();
+
+            assert!(task.state.empty_inputs);
+            assert!(get_affected_only_inputs(&task.inputs).is_empty());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_inject_without_names() {
+            let sandbox = create_toolchain_inputs_sandbox();
+            let container = TasksBuilderContainer::new(sandbox.path()).with_test_toolchains();
+
+            let tasks = container.build_tasks("toolchain-inputs").await;
+            let task = tasks.get("system").unwrap();
+
+            assert_eq!(task.toolchains, [Id::raw("system")]);
+            assert!(get_affected_only_inputs(&task.inputs).is_empty());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn injects_for_detected_toolchains() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
+
+            let tasks = container.build_tasks("toolchains").await;
+            let task = tasks.get("rust-via-cmd").unwrap();
+
+            assert_eq!(task.toolchains, [Id::raw("rust")]);
+            assert_eq!(
+                get_affected_only_inputs(&task.inputs),
+                [&create_affected_only_input(".../{Cargo.lock,Cargo.toml}")]
+            );
+        }
+    }
+
     mod special_options {
         use super::*;
 

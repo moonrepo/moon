@@ -25,6 +25,10 @@ tasks:
   by-parent-traversal:
     inputs:
       - '.../package.json'
+  by-toolchain:
+    toolchain: tc-tier1
+    inputs:
+      - 'file.txt'
 
   no-inputs:
     inputs: []

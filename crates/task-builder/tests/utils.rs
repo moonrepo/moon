@@ -23,6 +23,11 @@ impl TasksBuilderContainer {
         self
     }
 
+    pub fn with_test_toolchains(mut self) -> Self {
+        self.mocker = self.mocker.with_test_toolchains();
+        self
+    }
+
     pub fn with_global_tasks(mut self, dir: &str) -> Self {
         self.mocker = self.mocker.load_inherited_tasks_from(dir);
         self

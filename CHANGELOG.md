@@ -162,6 +162,11 @@
     affected, and is excluded from the task's hash and affected files, so a change to it doesn't
     invalidate the task's cache. When a file is also hashed by another input, it's still hashed.
     [Learn more](https://moonrepo.dev/docs/config/project#inputs).
+  - Tasks are now affected by changes to the manifests and lockfiles of their toolchains (like
+    `package.json` and `yarn.lock`), in the project root, or in any parent directory up to the
+    workspace root, like the root of a dependencies workspace. They're inherited as an
+    `affectedOnly` parent traversal glob input, like `.../{Cargo.lock,Cargo.toml}`, so they don't
+    change the task's hash. Tasks that disable their inputs (`inputs: []`) don't inherit them.
   - Improved the performance of affected tracking.
     - Tasks and projects that were checked while tracking, and found to not be affected, are no
       longer checked again when building the action graph. Previously, every unaffected task had its

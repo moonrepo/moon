@@ -1001,6 +1001,14 @@ Inputs support the following source types:
 - Files, folders, and globs
 - [Token functions and variables](../concepts/token)
 
+:::info
+
+The manifests and lockfiles of the task's toolchains <VersionLabel inline version="3.0.0" />, in
+the project root or any parent directory, are automatically inherited as an `affectedOnly` input,
+so that changes to them [affect the task](../concepts/affected#files).
+
+:::
+
 ```yaml title="moon.yml" {4-12}
 tasks:
   lint:

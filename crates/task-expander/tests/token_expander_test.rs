@@ -2189,6 +2189,18 @@ mod token_expander {
             project
         }
 
+        // Asserted on the error's message, as miette wraps panic messages on CI
+        fn assert_parent_traversal_error(error: miette::Report, token: &str) {
+            let message = error.to_string();
+
+            assert!(
+                message.contains(&format!(
+                    "Token {token} in task project:task returned the parent traversal glob project/source/.../package.json"
+                )),
+                "{message}"
+            );
+        }
+
         #[test]
         fn supports_globs_func_in_inputs() {
             let sandbox = create_empty_sandbox();
@@ -2245,9 +2257,6 @@ mod token_expander {
         }
 
         #[test]
-        #[should_panic(
-            expected = "Token @globs(manifests) in task project:task returned the parent traversal glob project/source/.../package.json"
-        )]
         fn errors_for_globs_func_in_args() {
             let sandbox = create_empty_sandbox();
             let project_graph = create_project_graph([]);
@@ -2259,13 +2268,13 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project_graph, &project, &context);
 
-            expander.expand_args(&mut task).unwrap();
+            assert_parent_traversal_error(
+                expander.expand_args(&mut task).unwrap_err(),
+                "@globs(manifests)",
+            );
         }
 
         #[test]
-        #[should_panic(
-            expected = "Token @group(manifests) in task project:task returned the parent traversal glob project/source/.../package.json"
-        )]
         fn errors_for_group_func_in_script() {
             let sandbox = create_empty_sandbox();
             let project_graph = create_project_graph([]);
@@ -2277,13 +2286,13 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project_graph, &project, &context);
 
-            expander.expand_script(&mut task).unwrap();
+            assert_parent_traversal_error(
+                expander.expand_script(&mut task).unwrap_err(),
+                "@group(manifests)",
+            );
         }
 
         #[test]
-        #[should_panic(
-            expected = "Token @globs(manifests) in task project:task returned the parent traversal glob project/source/.../package.json"
-        )]
         fn errors_for_globs_func_in_env() {
             let sandbox = create_empty_sandbox();
             let project_graph = create_project_graph([]);
@@ -2296,13 +2305,13 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project_graph, &project, &context);
 
-            expander.expand_env(&mut task).unwrap();
+            assert_parent_traversal_error(
+                expander.expand_env(&mut task).unwrap_err(),
+                "@globs(manifests)",
+            );
         }
 
         #[test]
-        #[should_panic(
-            expected = "Token @globs(manifests) in task project:task returned the parent traversal glob project/source/.../package.json"
-        )]
         fn errors_for_globs_func_in_outputs() {
             let sandbox = create_empty_sandbox();
             let project_graph = create_project_graph([]);
@@ -2314,13 +2323,13 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project_graph, &project, &context);
 
-            expander.expand_outputs(&task).unwrap();
+            assert_parent_traversal_error(
+                expander.expand_outputs(&task).unwrap_err(),
+                "@globs(manifests)",
+            );
         }
 
         #[test]
-        #[should_panic(
-            expected = "Token @in(0) in task project:task returned the parent traversal glob project/source/.../package.json"
-        )]
         fn errors_for_in_func_referencing_glob() {
             let sandbox = create_empty_sandbox();
             let project_graph = create_project_graph([]);
@@ -2333,7 +2342,7 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project_graph, &project, &context);
 
-            expander.expand_args(&mut task).unwrap();
+            assert_parent_traversal_error(expander.expand_args(&mut task).unwrap_err(), "@in(0)");
         }
     }
 }

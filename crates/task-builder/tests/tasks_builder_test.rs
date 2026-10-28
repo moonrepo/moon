@@ -744,16 +744,19 @@ mod tasks_builder {
                         project: "dep-b".into(),
                         filter: vec![],
                         group: Some(Id::raw("sources")),
+                        affected_only: false,
                     }),
                     Input::Project(ProjectInput {
                         project: "dep-a".into(),
                         filter: vec![],
                         group: Some(Id::raw("sources")),
+                        affected_only: false,
                     }),
                     Input::Project(ProjectInput {
                         project: "dep-c".into(),
                         filter: vec![],
                         group: Some(Id::raw("sources")),
+                        affected_only: false,
                     }),
                     Input::Glob(stub_glob_input(
                         "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
@@ -777,11 +780,13 @@ mod tasks_builder {
                         project: "dep-a".into(),
                         filter: vec![],
                         group: Some(Id::raw("sources")),
+                        affected_only: false,
                     }),
                     Input::Project(ProjectInput {
                         project: "dep-c".into(),
                         filter: vec![],
                         group: Some(Id::raw("sources")),
+                        affected_only: false,
                     }),
                     Input::Glob(stub_glob_input(
                         "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
@@ -805,6 +810,7 @@ mod tasks_builder {
                         project: "dep-a".into(),
                         filter: vec!["src/**/*".into()],
                         group: None,
+                        affected_only: false,
                     }),
                     Input::Glob(stub_glob_input(
                         "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
@@ -841,6 +847,7 @@ tasks:
                         project: "dep-a".into(),
                         filter: vec!["src/**/*".into()],
                         group: None,
+                        affected_only: false,
                     }),
                     Input::Glob(stub_glob_input(
                         "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"

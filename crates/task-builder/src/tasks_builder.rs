@@ -898,6 +898,7 @@ impl<'proj> TasksBuilder<'proj> {
                             project: dep_config.id.to_string(),
                             filter: inner.filter.clone(),
                             group: inner.group.clone(),
+                            affected_only: inner.affected_only,
                         }));
                     }
                 } else if let Some(dep_scope) = inner.get_deps_scope() {
@@ -907,6 +908,7 @@ impl<'proj> TasksBuilder<'proj> {
                                 project: dep_config.id.to_string(),
                                 filter: inner.filter.clone(),
                                 group: inner.group.clone(),
+                                affected_only: inner.affected_only,
                             }));
                         }
                     }

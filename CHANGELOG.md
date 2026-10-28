@@ -157,6 +157,11 @@
   - Reading the states of task dependencies, while hashing and running tasks, no longer takes an
     exclusive lock, which serialized tasks running concurrently.
 - **Affected**
+  - Added an `affectedOnly` setting to file, glob, file group, and project task inputs (as an object
+    field, or a URI query). When enabled, the input is only used to determine whether the task is
+    affected, and is excluded from the task's hash and affected files, so a change to it doesn't
+    invalidate the task's cache. When a file is also hashed by another input, it's still hashed.
+    [Learn more](https://moonrepo.dev/docs/config/project#inputs).
   - Improved the performance of affected tracking.
     - Tasks and projects that were checked while tracking, and found to not be affected, are no
       longer checked again when building the action graph. Previously, every unaffected task had its

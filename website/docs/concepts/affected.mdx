@@ -23,7 +23,9 @@ For a project, any changed file that is within the project folder (starts with t
 triggers affected.
 
 For a task, any changed file that is configured within the task's
-[`inputs`](../config/project#inputs) triggers affected.
+[`inputs`](../config/project#inputs) triggers affected. This includes inputs that are marked as
+`affectedOnly` <VersionLabel inline version="3.0.0" />, which only determine affected state, and
+are excluded from the task's hash, so a change to them doesn't invalidate the task's cache.
 
 ### Environment variables
 

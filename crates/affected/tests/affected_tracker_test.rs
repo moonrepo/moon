@@ -487,6 +487,29 @@ mod affected_tasks {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn affected_by_affected_only_inputs() {
+        for file in ["base/file.txt", "base/docs.md"] {
+            let workspace_graph = build_graph("tasks").await;
+            let changed_files = FxHashSet::from_iter([file.into()]);
+
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
+            tracker
+                .track_tasks_by_target(&[Target::parse("base:by-affected-only").unwrap()])
+                .await
+                .unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(
+                affected.tasks,
+                FxHashMap::from_iter([(
+                    Target::parse("base:by-affected-only").unwrap(),
+                    create_state_from_file(file)
+                )])
+            );
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn affected_by_file_if_content_matches() {
         let (workspace_graph, sandbox) = build_graph_with_sandbox("tasks").await;
         sandbox.create_file("base/file.txt", "bar");

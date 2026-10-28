@@ -37,6 +37,11 @@ config_struct!(
         /// when hashing a task.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub optional: Option<bool>,
+
+        /// Only use the file to determine affected status, and exclude
+        /// it from the task's hash and affected files.
+        #[serde(default, skip_serializing_if = "is_false")]
+        pub affected_only: bool,
     }
 );
 
@@ -58,6 +63,9 @@ impl FileInput {
                 }
                 "optional" => {
                     input.optional = Some(parse_bool_field(&key, &value)?);
+                }
+                "affectedOnly" | "affectedonly" => {
+                    input.affected_only = parse_bool_field(&key, &value)?;
                 }
                 _ => {
                     return Err(ParseError::new(format!("unknown file field `{key}`")));
@@ -101,6 +109,11 @@ config_struct!(
         // Marks the setting as optional in schemas
         #[serde(default, alias = "as")]
         pub format: FileGroupInputFormat,
+
+        /// Only use the files and globs of the group to determine affected
+        /// status, and exclude them from the task's hash and affected files.
+        #[serde(default, skip_serializing_if = "is_false")]
+        pub affected_only: bool,
     }
 );
 
@@ -120,6 +133,9 @@ impl FileGroupInput {
                 "as" | "format" => {
                     input.format =
                         FileGroupInputFormat::from_str(&value).map_err(map_parse_error)?
+                }
+                "affectedOnly" | "affectedonly" => {
+                    input.affected_only = parse_bool_field(&key, &value)?;
                 }
                 _ => {
                     return Err(ParseError::new(format!("unknown file group field `{key}`")));
@@ -142,6 +158,11 @@ config_struct!(
         /// Cache the glob walking result for increased performance.
         #[setting(default = true)]
         pub cache: bool,
+
+        /// Only use the glob to determine affected status, and exclude
+        /// its files from the task's hash and affected files.
+        #[serde(default, skip_serializing_if = "is_false")]
+        pub affected_only: bool,
     }
 );
 
@@ -158,6 +179,9 @@ impl GlobInput {
             match key.as_str() {
                 "cache" => {
                     input.cache = parse_bool_field(&key, &value)?;
+                }
+                "affectedOnly" | "affectedonly" => {
+                    input.affected_only = parse_bool_field(&key, &value)?;
                 }
                 _ => {
                     return Err(ParseError::new(format!("unknown glob field `{key}`")));
@@ -234,6 +258,11 @@ config_struct!(
         /// to determine affected status.
         #[serde(default, alias = "fileGroup", skip_serializing_if = "Option::is_none")]
         pub group: Option<Id>,
+
+        /// Only use the project's files to determine affected status, and
+        /// exclude them from the task's hash and affected files.
+        #[serde(default, skip_serializing_if = "is_false")]
+        pub affected_only: bool,
     }
 );
 
@@ -261,6 +290,9 @@ impl ProjectInput {
                     if !value.is_empty() {
                         input.group = Some(Id::new(&value).map_err(map_parse_error)?);
                     }
+                }
+                "affectedOnly" | "affectedonly" => {
+                    input.affected_only = parse_bool_field(&key, &value)?;
                 }
                 _ => {
                     return Err(ParseError::new(format!("unknown project field `{key}`")));

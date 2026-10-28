@@ -1,5 +1,6 @@
 mod utils;
 
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{
     EnvMap, Input, Output, TaskDependencyConfig, schematic::RegexSetting, test_utils::*,
 };
@@ -781,6 +782,7 @@ mod task_expander {
                         TaskFileInput {
                             content: Some(RegexSetting::try_from("a|b|c".to_owned()).unwrap()),
                             optional: Some(false),
+                            affected_only: false,
                         }
                     ),
                 ])
@@ -808,13 +810,136 @@ mod task_expander {
             assert_eq!(
                 task.input_globs,
                 FxHashMap::from_iter([
-                    ("project/source/a.*".into(), TaskGlobInput { cache: true }),
+                    (
+                        "project/source/a.*".into(),
+                        TaskGlobInput {
+                            cache: true,
+                            ..Default::default()
+                        }
+                    ),
                     (
                         "project/source/dir/b.*".into(),
-                        TaskGlobInput { cache: false }
+                        TaskGlobInput {
+                            cache: false,
+                            ..Default::default()
+                        }
                     ),
-                    ("root/c.*".into(), TaskGlobInput { cache: true }),
+                    (
+                        "root/c.*".into(),
+                        TaskGlobInput {
+                            cache: true,
+                            ..Default::default()
+                        }
+                    ),
                 ])
+            );
+        }
+
+        #[test]
+        fn marks_affected_only_inputs() {
+            let sandbox = create_sandbox("file-group");
+            let project_graph = create_project_graph([]);
+            let project = create_project(sandbox.path());
+
+            let mut task = create_task();
+            task.inputs
+                .push(Input::parse("file://a.txt?affectedOnly").unwrap());
+            task.inputs
+                .push(Input::parse("glob://dir/b.*?affectedOnly").unwrap());
+            task.inputs
+                .push(Input::parse("group://all?affectedOnly").unwrap());
+
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project_graph, &project, &context, &EMPTY_TASK_LOOKUP)
+                .expand_inputs(&mut task)
+                .unwrap();
+
+            for file in [
+                "project/source/a.txt",
+                "project/source/config.yml",
+                "project/source/dir/subdir",
+            ] {
+                assert!(
+                    task.input_files[&WorkspaceRelativePathBuf::from(file)].affected_only,
+                    "{file}"
+                );
+            }
+
+            for glob in [
+                "project/source/dir/b.*",
+                "project/source/*.md",
+                "project/source/**/*.json",
+            ] {
+                assert!(
+                    task.input_globs[&WorkspaceRelativePathBuf::from(glob)].affected_only,
+                    "{glob}"
+                );
+            }
+        }
+
+        #[test]
+        fn prefers_hashed_inputs_for_the_same_path() {
+            let sandbox = create_sandbox("file-group");
+            let project_graph = create_project_graph([]);
+            let project = create_project(sandbox.path());
+
+            let mut task = create_task();
+            // Affected only, then hashed
+            task.inputs
+                .push(Input::parse("file://a.txt?affectedOnly").unwrap());
+            task.inputs.push(Input::parse("a.txt").unwrap());
+            // Hashed, then affected only
+            task.inputs.push(Input::parse("*.md").unwrap());
+            task.inputs
+                .push(Input::parse("group://all?affectedOnly").unwrap());
+            // Only affected only
+            task.inputs
+                .push(Input::parse("glob://b.*?affectedOnly").unwrap());
+
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project_graph, &project, &context, &EMPTY_TASK_LOOKUP)
+                .expand_inputs(&mut task)
+                .unwrap();
+
+            assert!(
+                !task.input_files[&WorkspaceRelativePathBuf::from("project/source/a.txt")]
+                    .affected_only
+            );
+            assert!(
+                !task.input_globs[&WorkspaceRelativePathBuf::from("project/source/*.md")]
+                    .affected_only
+            );
+            assert!(
+                task.input_globs[&WorkspaceRelativePathBuf::from("project/source/b.*")]
+                    .affected_only
+            );
+        }
+
+        #[test]
+        fn keeps_affected_only_when_moving_dirs_to_globs() {
+            let sandbox = create_sandbox("file-group");
+            let project_graph = create_project_graph([]);
+            let project = create_project(sandbox.path());
+
+            let mut task = create_task();
+            task.inputs
+                .push(Input::parse("file://dir?affectedOnly").unwrap());
+
+            let context = create_context(sandbox.path());
+            let task = TaskExpander::new(&project_graph, &project, &context, &EMPTY_TASK_LOOKUP)
+                .expand(&task)
+                .unwrap();
+
+            assert!(task.input_files.is_empty());
+            assert_eq!(
+                task.input_globs,
+                FxHashMap::from_iter([(
+                    "project/source/dir/**/*".into(),
+                    TaskGlobInput {
+                        affected_only: true,
+                        ..Default::default()
+                    }
+                )])
             );
         }
 
@@ -1123,6 +1248,7 @@ mod task_expander {
                         TaskFileInput {
                             content: None,
                             optional: Some(false),
+                            affected_only: false,
                         },
                     ),
                     (
@@ -1130,11 +1256,55 @@ mod task_expander {
                         TaskFileInput {
                             content: None,
                             optional: Some(false),
+                            affected_only: false,
                         },
                     ),
                 ]);
             assert_eq!(task.input_files, expected);
             assert!(task.input_globs.is_empty());
+        }
+
+        #[test]
+        fn hashes_dep_outputs_that_are_affected_only_inputs() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let project_graph = create_project_graph([]);
+
+            let lookup = MapTaskLookup::default().with_task(task_with_outputs(
+                &[("other/source/dist/index.js", false)],
+                &["other/source/dist/**/*.css"],
+            ));
+
+            let mut task = create_task();
+            task.deps.push(outputs_dep());
+            task.input_files.insert(
+                "other/source/dist/index.js".into(),
+                TaskFileInput {
+                    affected_only: true,
+                    ..Default::default()
+                },
+            );
+            task.input_globs.insert(
+                "other/source/dist/**/*.css".into(),
+                TaskGlobInput {
+                    affected_only: true,
+                    ..Default::default()
+                },
+            );
+
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project_graph, &project, &context, &lookup)
+                .inject_deps_outputs(&mut task)
+                .unwrap();
+
+            assert!(
+                !task.input_files[&WorkspaceRelativePathBuf::from("other/source/dist/index.js")]
+                    .affected_only
+            );
+            assert!(
+                !task.input_globs[&WorkspaceRelativePathBuf::from("other/source/dist/**/*.css")]
+                    .affected_only
+            );
         }
 
         #[test]
@@ -1187,6 +1357,7 @@ mod task_expander {
                 Some(&TaskFileInput {
                     content: None,
                     optional: Some(true),
+                    affected_only: false,
                 })
             );
         }

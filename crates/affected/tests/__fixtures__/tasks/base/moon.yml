@@ -16,6 +16,12 @@ tasks:
   by-glob:
     inputs:
       - '*.txt'
+  by-affected-only:
+    inputs:
+      - file: 'file.txt'
+        affectedOnly: true
+      - glob: '*.md'
+        affectedOnly: true
 
   no-inputs:
     inputs: []

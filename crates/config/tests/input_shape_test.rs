@@ -206,7 +206,8 @@ mod input_shape {
                 assert_eq!(
                     Input::Glob(GlobInput {
                         glob: GlobPath(pat.into()),
-                        cache: true
+                        cache: true,
+                        affected_only: false,
                     }),
                     Input::Glob(input)
                 );
@@ -217,7 +218,8 @@ mod input_shape {
                 assert_eq!(
                     Input::Glob(GlobInput {
                         glob: GlobPath(pat.into()),
-                        cache: false
+                        cache: false,
+                        affected_only: false,
                     }),
                     Input::Glob(input)
                 );
@@ -314,6 +316,7 @@ mod input_shape {
                 Input::FileGroup(FileGroupInput {
                     group: Id::raw("sources"),
                     format: FileGroupInputFormat::Dirs,
+                    affected_only: false,
                 })
             );
             assert_eq!(
@@ -321,6 +324,7 @@ mod input_shape {
                 Input::FileGroup(FileGroupInput {
                     group: Id::raw("sources"),
                     format: FileGroupInputFormat::Root,
+                    affected_only: false,
                 })
             );
         }
@@ -521,6 +525,7 @@ mod input_shape {
                 Input::FileGroup(FileGroupInput {
                     group: Id::raw("sources"),
                     format: FileGroupInputFormat::Files,
+                    affected_only: false,
                 })
             );
         }
@@ -560,6 +565,7 @@ mod input_shape {
                     project: "app".into(),
                     group: Some(Id::raw("sources")),
                     filter: vec!["src/**/*".into()],
+                    affected_only: false,
                 })
             );
         }
@@ -599,8 +605,40 @@ mod input_shape {
                     project: "^".into(),
                     group: Some(Id::raw("sources")),
                     filter: vec!["src/**/*".into()],
+                    affected_only: false,
                 })
             );
+        }
+
+        #[test]
+        fn affected_only() {
+            for (json, expected) in [
+                (
+                    r#"{ "file": "file.txt", "affectedOnly": true }"#,
+                    Input::parse("file://file.txt?affectedOnly").unwrap(),
+                ),
+                (
+                    r#"{ "glob": "*.txt", "affectedOnly": true }"#,
+                    Input::parse("glob://*.txt?affectedOnly").unwrap(),
+                ),
+                (
+                    r#"{ "group": "sources", "affectedOnly": true }"#,
+                    Input::parse("group://sources?affectedOnly").unwrap(),
+                ),
+                (
+                    r#"{ "project": "app", "affectedOnly": true }"#,
+                    Input::parse("project://app?affectedOnly").unwrap(),
+                ),
+            ] {
+                let input: Input = serde_json::from_str(json).unwrap();
+
+                assert_eq!(input, expected, "{json}");
+                assert_eq!(
+                    serde_json::to_value(&input).unwrap()["affectedOnly"],
+                    true,
+                    "{json}"
+                );
+            }
         }
     }
 
@@ -670,6 +708,20 @@ mod input_shape {
         }
 
         #[test]
+        fn supports_affected_only_field() {
+            assert!(!stub_file_input("file.txt").affected_only);
+            assert!(stub_file_input("file://file.txt?affectedOnly").affected_only);
+            assert!(stub_file_input("file://file.txt?affectedonly=true").affected_only);
+            assert!(!stub_file_input("file://file.txt?affectedOnly=false").affected_only);
+        }
+
+        #[test]
+        #[should_panic(expected = "unsupported value for `affectedOnly`")]
+        fn errors_invalid_affected_only_field() {
+            stub_file_input("file://file.txt?affectedOnly=invalid");
+        }
+
+        #[test]
         #[should_panic(expected = "globs are not supported")]
         fn errors_for_glob() {
             stub_file_input("file.*");
@@ -710,6 +762,15 @@ mod input_shape {
                 FileGroupInput::from_uri(Uri::parse("group://sources?as=root").unwrap()).unwrap();
 
             assert_eq!(input.format, FileGroupInputFormat::Root);
+        }
+
+        #[test]
+        fn supports_affected_only_field() {
+            let input =
+                FileGroupInput::from_uri(Uri::parse("group://sources?affectedOnly").unwrap())
+                    .unwrap();
+
+            assert!(input.affected_only);
         }
 
         #[test]
@@ -831,6 +892,13 @@ mod input_shape {
         }
 
         #[test]
+        fn supports_affected_only_field() {
+            assert!(!stub_glob_input("file.*").affected_only);
+            assert!(stub_glob_input("glob://file.*?affectedOnly").affected_only);
+            assert!(stub_glob_input("glob://file.*?cache=false&affectedOnly=true").affected_only);
+        }
+
+        #[test]
         #[should_panic(expected = "unsupported value for `cache`")]
         fn errors_invalid_cache_field() {
             stub_glob_input("glob://file.*?cache=invalid");
@@ -948,6 +1016,14 @@ mod input_shape {
                     .unwrap();
 
             assert_eq!(input.filter, ["a", "b"]);
+        }
+
+        #[test]
+        fn supports_affected_only_field() {
+            let input =
+                ProjectInput::from_uri(Uri::parse("project://app?affectedOnly").unwrap()).unwrap();
+
+            assert!(input.affected_only);
         }
 
         #[test]

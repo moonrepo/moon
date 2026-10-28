@@ -1307,6 +1307,7 @@ mod token_expander {
             task.inputs = vec![Input::FileGroup(FileGroupInput {
                 group: Id::raw("all"),
                 format: FileGroupInputFormat::Static,
+                affected_only: false,
             })];
 
             let context = create_context(sandbox.path());
@@ -1364,6 +1365,7 @@ mod token_expander {
             task.inputs = vec![Input::FileGroup(FileGroupInput {
                 group: Id::raw("dirs"),
                 format: FileGroupInputFormat::Dirs,
+                affected_only: false,
             })];
 
             let context = create_context(sandbox.path());
@@ -1419,6 +1421,7 @@ mod token_expander {
             task.inputs = vec![Input::FileGroup(FileGroupInput {
                 group: Id::raw("all"),
                 format: FileGroupInputFormat::Files,
+                affected_only: false,
             })];
 
             let context = create_context(sandbox.path());
@@ -1475,6 +1478,7 @@ mod token_expander {
             task.inputs = vec![Input::FileGroup(FileGroupInput {
                 group: Id::raw("all"),
                 format: FileGroupInputFormat::Globs,
+                affected_only: false,
             })];
 
             let context = create_context(sandbox.path());
@@ -1526,6 +1530,7 @@ mod token_expander {
             task.inputs = vec![Input::FileGroup(FileGroupInput {
                 group: Id::raw("all"),
                 format: FileGroupInputFormat::Root,
+                affected_only: false,
             })];
 
             let context = create_context(sandbox.path());

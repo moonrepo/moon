@@ -392,6 +392,14 @@ with coarse timestamps can't serve a stale hash.
 Files are also now hashed by a fixed pool of workers, instead of spawning a task per file, and each
 file is stat-ed once instead of twice.
 
+Glob sets are now compiled once per process as well. Compiling one takes ~175-280µs, while a cached
+one takes ~0.1µs, and previously, the
+[`hasher.ignorePatterns`](/docs/config/workspace#ignorepatterns) and
+[`hasher.ignoreMissingPatterns`](/docs/config/workspace#ignoremissingpatterns) settings were
+compiled for every task that was hashed, which added ~450µs to each task. Every other place that
+matches globs, like hydrating a task's outputs from the cache, and the
+[`affectedFiles.filter`](/docs/config/project#affectedfiles) option, now shares the same cache.
+
 ### Project and task graphs
 
 Building the project and task graphs is now **~3x faster**, and far more consistent. In our

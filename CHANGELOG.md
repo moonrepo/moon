@@ -239,6 +239,12 @@
   - Hashing a task's toolchains now reads the dependencies root of each toolchain from where the
     action graph placed it, instead of calling the toolchain's plugin to locate it again for every
     task. Hashes are unchanged.
+  - Compiled glob sets are now cached for the lifetime of the process, and shared everywhere the
+    same patterns are matched. Compiling a glob set takes ~175-280µs, while a cached one takes
+    ~0.1µs, and previously, the `hasher.ignorePatterns` and `hasher.ignoreMissingPatterns` settings
+    were compiled for every task that was hashed, which cost ~450µs per task. The same applies to a
+    task's outputs when hydrating them from the cache, the `affectedFiles.filter` task option, and
+    the project globs that the daemon's watcher matches on every file change.
 - **Plugins**
   - Improved the performance of calling plugins concurrently, like when building projects and their
     tasks in parallel. Looking up a loaded plugin, and a toolchain's cached tool locations, no

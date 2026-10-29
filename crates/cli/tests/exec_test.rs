@@ -110,6 +110,34 @@ mod exec {
             assert.success().stdout(predicate::str::contains("hello"));
         }
 
+        // https://github.com/moonrepo/moon/issues/2791
+        #[test]
+        fn runs_in_a_repository_without_commits() {
+            let sandbox = moon_test_utils::create_empty_moon_sandbox();
+            sandbox.create_file(".moon/workspace.yml", "projects:\n  app: app\n");
+            sandbox.create_file(
+                "app/moon.yml",
+                r#"
+tasks:
+  vcs:
+    command: echo
+    args: ['branch=$vcsBranch', 'revision=$vcsRevision', 'end']
+"#,
+            );
+            sandbox.run_git(|cmd| {
+                cmd.args(["init", "--initial-branch", "master"]);
+            });
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("app:vcs");
+            });
+
+            assert
+                .success()
+                .stdout(predicate::str::contains("branch=master"))
+                .stdout(predicate::str::is_match(r"revision=\s+end").unwrap());
+        }
+
         #[test]
         fn handles_ls() {
             let sandbox = create_pipeline_sandbox();

@@ -8,6 +8,10 @@
   inherited file group of the same name. Since v2, they are merged together, with project-level
   inputs appended last, and since v2.5, `workspace.mergeStrategies.fileGroups` can be used to
   replace instead.
+- Fixed an issue where every `moon run` and `moon ci` failed in a Git repository without any commits
+  (after `git init`), as `HEAD` couldn't be resolved. Until the first commit, the `$vcsRevision`
+  token is empty, and there are no revisions to compare, so all uncommitted files are considered
+  changed.
 
 ## 2.6.4
 

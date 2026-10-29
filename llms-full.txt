@@ -3033,14 +3033,13 @@ tasks:
 
 ## Inheritance and merging
 
-When a file group of the same name exists in both [configuration files](#configuration), the
-project-level group will override the workspace-level group, and all other workspace-level groups
-will be inherited as-is.
+When a file group of the same name exists in multiple [configuration files](#configuration), the
+groups are _merged_ together, in the order the configs are inherited: workspace-level groups first,
+then project-level groups last. By default, the inputs of each subsequent group are appended to the
+inputs of the previous group. Groups that are only defined in a single config are inherited as-is.
 
-A primary scenario in which to define file groups at the project-level is when you want to
-_override_ file groups defined at the workspace-level. For example, say we want to override the
-`sources` file group because our source folder is named "lib" and not "src", we would define our
-file groups as followed.
+For example, say we want to add a `lib` folder to the inherited `sources` file group, we would
+define our file groups as followed.
 
 ```yaml title=".moon/tasks/all.yml"
 fileGroups:
@@ -3054,15 +3053,48 @@ fileGroups:
 
 ```yaml title="moon.yml"
 fileGroups:
-  # Overrides global
   sources:
     - 'lib/**/*'
+```
+
+Which results in the following file groups for the project:
+
+```yaml
+fileGroups:
+  # Merged with global
+  sources:
+    - 'src/**/*'
     - 'types/**/*'
+    - 'lib/**/*'
   # Inherited as-is
   tests:
     - 'tests/**/*.test.*'
     - '**/__tests__/**/*'
 ```
+
+### Merge strategies<VersionLabel version="2.5.0" />
+
+If you'd prefer to _override_ an inherited file group instead of merging with it, for example,
+because our source folder is named "lib" and not "src", the merge behavior can be customized per
+project with the [`workspace.mergeStrategies.fileGroups`](../config/project#mergestrategies) setting.
+This setting supports the `append` (default), `prepend`, `preserve`, and `replace`
+[strategies](./task-inheritance#merge-strategies).
+
+```yaml title="moon.yml" {2,3}
+workspace:
+  mergeStrategies:
+    fileGroups: 'replace'
+
+fileGroups:
+  # Replaces global
+  sources:
+    - 'lib/**/*'
+    - 'types/**/*'
+```
+
+The chosen strategy applies to all of the project's file groups, but only changes groups that are
+defined in more than one config, including those defined in multiple `.moon/tasks/**/*` configs. An
+empty list can be used with the `replace` strategy to remove all inputs from an inherited group.
 
 ---
 
@@ -7137,6 +7169,11 @@ env:
 Defines [file groups](../concepts/file-group) that will be inherited by projects, and also enables
 enforcement of organizational patterns and file locations. For example, encourage projects to place
 source files in a `src` folder, and all test files in `tests`.
+
+When a file group of the same name is defined in multiple configs, their inputs are
+[merged together](../concepts/file-group#inheritance-and-merging), with project-level inputs
+appended last. The merge behavior can be customized per project with the
+[`workspace.mergeStrategies.fileGroups`](./project#mergestrategies) setting.
 
 ```yaml title=".moon/tasks/all.yml"
 fileGroups:
@@ -11490,6 +11527,11 @@ The following directories are always ignored by the watcher:
 
 - `.git`, `.svn`, `node_modules`
 - `.moon/cache`, `.moon/docker`
+
+On Linux, where every watched directory requires its own watch (counted against the
+`fs.inotify.max_user_watches` limit), directories ignored by your VCS (the root `.gitignore`) are
+also not watched, and symlinks are not followed. On macOS and Windows, the workspace is watched with
+a single recursive watch.
 
 Changes to the following files and directories trigger an asynchronous graph rebuild:
 
@@ -18892,6 +18934,9 @@ run. We achieve this by comparing lockfile modified timestamps, parsing manifest
 resolved dependency versions.
 
 - When dependencies do _not_ need to be installed, this action will be skipped.
+- When running against affected files (`--affected`) outside of CI, like in a VCS hook, this action
+  will be skipped, unless dependencies have never been installed (the vendor directory, like
+  `node_modules`, is missing or empty).
 - Depending on the language and configuration, we may install dependencies in a project, or in the
   workspace root for all projects.
 - Actions will be scoped by toolchain and dependencies root.
@@ -20149,6 +20194,17 @@ fileGroups:
 
 In v1, the final `sources` file group would only include `docs/**`, as the second config would
 replace the first. In v2, the final `sources` file group includes both `src/**` and `docs/**`.
+
+This also applies to file groups defined at the project-level in [`moon.*`](../config/project),
+which are now merged with (appended to) inherited file groups of the same name, instead of replacing
+them. As of v2.5, the previous replace behavior can be restored per project with the
+[`workspace.mergeStrategies.fileGroups`](../config/project#mergestrategies) setting.
+
+```yaml title="moon.yml"
+workspace:
+  mergeStrategies:
+    fileGroups: 'replace'
+```
 
 ## VCS
 

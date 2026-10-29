@@ -14,7 +14,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.5dcb931a.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.12579431.js" defer="defer"></script>
 <script src="/assets/js/main.92cc8011.js" defer="defer"></script>
 </head>
 <body>
@@ -65,6 +65,9 @@ run. We achieve this by comparing lockfile modified timestamps, parsing manifest
 resolved dependency versions.</p>
 <ul>
 <li class="">When dependencies do <em>not</em> need to be installed, this action will be skipped.</li>
+<li class="">When running against affected files (<code>--affected</code>) outside of CI, like in a VCS hook, this action
+will be skipped, unless dependencies have never been installed (the vendor directory, like
+<code>node_modules</code>, is missing or empty).</li>
 <li class="">Depending on the language and configuration, we may install dependencies in a project, or in the
 workspace root for all projects.</li>
 <li class="">Actions will be scoped by toolchain and dependencies root.</li>

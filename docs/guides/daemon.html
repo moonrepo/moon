@@ -14,7 +14,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.5dcb931a.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.12579431.js" defer="defer"></script>
 <script src="/assets/js/main.92cc8011.js" defer="defer"></script>
 </head>
 <body>
@@ -77,6 +77,10 @@ during rapid edits.</p>
 <li class=""><code>.git</code>, <code>.svn</code>, <code>node_modules</code></li>
 <li class=""><code>.moon/cache</code>, <code>.moon/docker</code></li>
 </ul>
+<p>On Linux, where every watched directory requires its own watch (counted against the
+<code>fs.inotify.max_user_watches</code> limit), directories ignored by your VCS (the root <code>.gitignore</code>) are
+also not watched, and symlinks are not followed. On macOS and Windows, the workspace is watched with
+a single recursive watch.</p>
 <p>Changes to the following files and directories trigger an asynchronous graph rebuild:</p>
 <ul>
 <li class=""><a class="" href="/docs/proto/config"><code>.prototools</code></a> — reloads toolchain configuration</li>

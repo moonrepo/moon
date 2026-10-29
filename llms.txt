@@ -56,7 +56,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Feature comparison](https://moonrepo.dev/docs/comparison): import {
 - [Affected](https://moonrepo.dev/docs/concepts/affected): Affected is a term to describe when a project or task is _affected by a change_ in the environment
 - [Cache](https://moonrepo.dev/docs/concepts/cache): moon's able to achieve high performance and blazing speeds by implementing a cache that's powered by
-- [File groups](https://moonrepo.dev/docs/concepts/file-group): File groups are a mechanism for grouping similar types of files and environment variables within a
+- [File groups](https://moonrepo.dev/docs/concepts/file-group): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [File patterns](https://moonrepo.dev/docs/concepts/file-pattern): Globs in moon are [Rust-based globs](https://github.com/olson-sean-k/wax), _not_ JavaScript-based.
 - [Projects](https://moonrepo.dev/docs/concepts/project): A project is a library, application, package, binary, tool, etc, that contains source files, test
 - [Query language](https://moonrepo.dev/docs/concepts/query-lang): import VersionLabel from '@site/src/components/Docs/VersionLabel';

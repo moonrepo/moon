@@ -299,6 +299,7 @@ pub async fn run_cli(args: Vec<OsString>) -> MainResult {
                     QueryCommands::Projects(args) => {
                         commands::query::projects::projects(session, args).await
                     }
+                    QueryCommands::PreExec(args) => commands::ci::pre_exec(session, args).await,
                     QueryCommands::Tasks(args) => {
                         commands::query::tasks::tasks(session, args).await
                     }

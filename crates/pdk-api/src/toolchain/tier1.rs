@@ -1,5 +1,6 @@
 use crate::common::{InitializePluginInput, InitializePluginOutput};
 use crate::context::*;
+use crate::is_true;
 use moon_common::Id;
 use moon_config::{DockerPruneConfig, DockerScaffoldConfig, LanguageType};
 use moon_project::ProjectFragment;
@@ -24,6 +25,7 @@ api_struct!(
 );
 
 api_struct!(
+    no_default,
     /// Output returned from the `register_toolchain` function.
     #[serde(default)]
     pub struct RegisterToolchainOutput {
@@ -41,6 +43,13 @@ api_struct!(
         /// Will be used for task usage detection.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub exe_names: Vec<String>,
+
+        /// Inject the lock and manifest file names as an affected only input
+        /// into every task that uses this toolchain, so that changes to them,
+        /// in the project root or any parent directory, affect the task.
+        /// Defaults to `true`.
+        #[serde(skip_serializing_if = "is_true")]
+        pub inject_task_inputs: bool,
 
         /// The programming language this toolchain applies to. This value
         /// will be used for 2 purposes:
@@ -73,6 +82,23 @@ api_struct!(
         pub vendor_dir_name: Option<String>,
     }
 );
+
+impl Default for RegisterToolchainOutput {
+    fn default() -> Self {
+        Self {
+            config_file_globs: vec![],
+            description: None,
+            exe_names: vec![],
+            inject_task_inputs: true,
+            language: None,
+            lock_file_names: vec![],
+            manifest_file_names: vec![],
+            name: String::new(),
+            plugin_version: String::new(),
+            vendor_dir_name: None,
+        }
+    }
+}
 
 api_struct!(
     /// Output returned from the `define_toolchain_config` function.

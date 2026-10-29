@@ -157,6 +157,17 @@
   - Reading the states of task dependencies, while hashing and running tasks, no longer takes an
     exclusive lock, which serialized tasks running concurrently.
 - **Affected**
+  - Added an `affectedOnly` setting to file, glob, file group, and project task inputs (as an object
+    field, or a URI query). When enabled, the input is only used to determine whether the task is
+    affected, and is excluded from the task's hash and affected files, so a change to it doesn't
+    invalidate the task's cache. When a file is also hashed by another input, it's still hashed.
+    [Learn more](https://moonrepo.dev/docs/config/project#inputs).
+  - Tasks are now affected by changes to the manifests and lockfiles of their toolchains (like
+    `package.json` and `yarn.lock`), in the project root, or in any parent directory up to the
+    workspace root, like the root of a dependencies workspace. They're inherited as an
+    `affectedOnly` parent traversal glob input, like `.../{Cargo.lock,Cargo.toml}`, so they don't
+    change the task's hash. Tasks that disable their inputs (`inputs: []`) don't inherit them, and
+    toolchains can opt out with `inject_task_inputs`.
   - Improved the performance of affected tracking.
     - Tasks and projects that were checked while tracking, and found to not be affected, are no
       longer checked again when building the action graph. Previously, every unaffected task had its
@@ -192,6 +203,13 @@
     workspace's members also match, and a member that overrides the workspace's version. Also
     supports `--dot` and `--json` output, and placing a single project, like a run would.
 - **Configuration**
+  - Added support for parent traversal globs, with a `...` path segment, like `.../package.json`.
+    They match the path after `...` in the directory before it (the project root for project
+    relative globs), or in any parent directory up to the workspace root, but never in sibling or
+    nested directories. Supported by task inputs, file groups, and other glob settings, but not by
+    task outputs or code owners. Token functions that return globs as-is, like `@globs` and
+    `@group`, error for them outside of task inputs.
+    [Learn more](https://moonrepo.dev/docs/concepts/file-pattern#parent-traversal).
   - Stabilized the `cache.unstable_sharedWorktreeCache` setting in `.moon/workspace.config`. Use
     `cache.sharedWorktreeCache` instead.
   - Stabilized the `unstable_daemon` setting in `.moon/workspace.config`. Use `daemon` instead.
@@ -221,6 +239,12 @@
   - Hashing a task's toolchains now reads the dependencies root of each toolchain from where the
     action graph placed it, instead of calling the toolchain's plugin to locate it again for every
     task. Hashes are unchanged.
+  - Compiled glob sets are now cached for the lifetime of the process, and shared everywhere the
+    same patterns are matched. Compiling a glob set takes ~175-280µs, while a cached one takes
+    ~0.1µs, and previously, the `hasher.ignorePatterns` and `hasher.ignoreMissingPatterns` settings
+    were compiled for every task that was hashed, which cost ~450µs per task. The same applies to a
+    task's outputs when hydrating them from the cache, the `affectedFiles.filter` task option, and
+    the project globs that the daemon's watcher matches on every file change.
 - **Plugins**
   - Improved the performance of calling plugins concurrently, like when building projects and their
     tasks in parallel. Looking up a loaded plugin, and a toolchain's cached tool locations, no
@@ -235,6 +259,9 @@
     it, every project that shares the toolchain's config is located in one call while building the
     layout graph, instead of a call for each project, which is 37% faster for 1000 projects with a
     test plugin. Toolchains that don't implement it still locate one root per call.
+  - Added an `inject_task_inputs` field to `RegisterToolchainOutput` in the toolchain plugin API,
+    which controls whether the toolchain's manifest and lock file names are injected as an affected
+    only input into the tasks that use it. Defaults to `true`.
   - Added support for proto v0.63's config trust. As moon already runs the workspace's tasks,
     `.prototools` configs within the workspace are always trusted, while other local configs, like
     one in a parent directory, must be trusted with `proto trust` before their security-sensitive

@@ -66,11 +66,13 @@ export interface TaskState {
 }
 
 export interface TaskFileInput {
+	affectedOnly?: boolean;
 	content?: string | null;
 	optional?: boolean | null;
 }
 
 export interface TaskGlobInput {
+	affectedOnly?: boolean;
 	cache?: boolean;
 }
 

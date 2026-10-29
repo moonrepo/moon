@@ -11,6 +11,11 @@ export type TaskDependencyType = 'cleanup' | 'required' | 'wait' | 'optional';
 /** A file path input. */
 export interface FileInput {
 	/**
+	 * Only use the file to determine affected status, and exclude
+	 * it from the task's hash and affected files.
+	 */
+	affectedOnly?: boolean;
+	/**
 	 * Regex pattern to match the file's contents against
 	 * when determining affected status.
 	 */
@@ -40,6 +45,11 @@ export type FileGroupInputFormat = 'static' | 'dirs' | 'envs' | 'files' | 'globs
 /** A file group input. */
 export interface FileGroupInput {
 	/**
+	 * Only use the files and globs of the group to determine affected
+	 * status, and exclude them from the task's hash and affected files.
+	 */
+	affectedOnly?: boolean;
+	/**
 	 * Format to resolve the file group into.
 	 *
 	 * @default 'static'
@@ -60,6 +70,11 @@ export interface FileGroupInput {
 /** A glob pattern input. */
 export interface GlobInput {
 	/**
+	 * Only use the glob to determine affected status, and exclude
+	 * its files from the task's hash and affected files.
+	 */
+	affectedOnly?: boolean;
+	/**
 	 * Cache the glob walking result for increased performance.
 	 *
 	 * @default true
@@ -71,6 +86,11 @@ export interface GlobInput {
 
 /** An external project input. */
 export interface ProjectInput {
+	/**
+	 * Only use the project's files to determine affected status, and
+	 * exclude them from the task's hash and affected files.
+	 */
+	affectedOnly?: boolean;
 	/**
 	 * A list of globs, relative from the project's root,
 	 * in which to determine affected status.

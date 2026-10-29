@@ -3,6 +3,7 @@
 use moon_common::path::RelativePathBuf;
 use schematic::{ParseError, Schema, SchemaBuilder, Schematic};
 use serde::{Deserialize, Serialize};
+use starbase_utils::glob::{GlobError, expand_parent_traversal, has_parent_traversal};
 use std::fmt;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
@@ -68,10 +69,31 @@ pub fn validate_relative_path(value: &str) -> Result<(), ParseError> {
 }
 
 pub fn validate_child_relative_path(value: &str) -> Result<(), ParseError> {
-    if value.contains("..") {
+    // A `...` segment is a parent traversal glob, which is validated separately
+    if value
+        .trim_start_matches('!')
+        .split('/')
+        .any(|part| part != "..." && part.contains(".."))
+    {
         return Err(ParseError::new(
             "parent directory traversal (..) is not supported",
         ));
+    }
+
+    Ok(())
+}
+
+pub fn validate_parent_traversal(value: &str) -> Result<(), ParseError> {
+    // Validate up front, otherwise it fails when the glob is compiled
+    if has_parent_traversal(value)
+        && let Err(error) = expand_parent_traversal(value)
+    {
+        return Err(ParseError::new(match error {
+            GlobError::InvalidParentTraversal { reason, .. } => {
+                format!("parent traversal (...) is not valid, as {reason}")
+            }
+            other => other.to_string(),
+        }));
     }
 
     Ok(())
@@ -217,6 +239,7 @@ impl PortablePath for GlobPath {
         };
 
         validate_child_relative_path(&value)?;
+        validate_parent_traversal(&value)?;
 
         Ok(GlobPath(value.into()))
     }
@@ -230,6 +253,12 @@ impl PortablePath for FilePath {
         let value = value.as_ref();
 
         validate_child_relative_path(value)?;
+
+        if has_parent_traversal(value) {
+            return Err(ParseError::new(
+                "parent traversal globs (...) are not supported, expected a literal file path",
+            ));
+        }
 
         if is_glob_like(value) {
             return Err(ParseError::new(
@@ -297,5 +326,31 @@ mod tests {
         // Globs should still be rejected
         assert!(FilePath::parse("*.js").is_err());
         assert!(FilePath::parse("config.{js,ts}").is_err());
+    }
+
+    #[test]
+    fn test_parent_traversal() {
+        assert!(GlobPath::parse(".../file.txt").is_ok());
+        assert!(GlobPath::parse("dir/.../*.json").is_ok());
+        assert!(GlobPath::parse("!.../file.txt").is_ok());
+        assert!(GlobPath::parse("!/.../file.txt").is_ok());
+        assert!(GlobPath::parse("/!.../file.txt").is_ok());
+
+        // Invalid parent traversal globs
+        assert!(GlobPath::parse("dir/...").is_err());
+        assert!(GlobPath::parse(".../.../file.txt").is_err());
+        assert!(GlobPath::parse(".../**/file.txt").is_err());
+
+        // Parent directories are still rejected
+        assert!(GlobPath::parse("..../file.txt").is_err());
+        assert!(GlobPath::parse(".../../file.txt").is_err());
+        assert!(GlobPath::parse("!../file.txt").is_err());
+
+        // Files must be literal
+        assert!(FilePath::parse(".../file.txt").is_err());
+
+        // Not a glob, as `go test ./...` is a common arg
+        assert!(!is_glob_like(".../file.txt"));
+        assert!(!is_glob_like("./..."));
     }
 }

@@ -357,6 +357,35 @@ owners:
                 |path| load_config_from_root(path, "."),
             );
         }
+
+        #[test]
+        #[should_panic(expected = "parent traversal globs (...) are not supported for code owners")]
+        fn errors_on_paths_list_parent_traversal() {
+            test_load_config(
+                "moon.yml",
+                r"
+owners:
+  defaultOwner: x
+  paths:
+    - .../file.txt
+",
+                |path| load_config_from_root(path, "."),
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "parent traversal globs (...) are not supported for code owners")]
+        fn errors_on_paths_map_parent_traversal() {
+            test_load_config(
+                "moon.yml",
+                r"
+owners:
+  paths:
+    '.../file.txt': [x]
+",
+                |path| load_config_from_root(path, "."),
+            );
+        }
     }
 
     mod project {

@@ -269,6 +269,84 @@ $ moon layout-graph --info
 were focused while scaffolding, so its plugins receive the same root and settings as the rest of
 moon.
 
+## Affected by manifests and lockfiles
+
+Adding, upgrading, or removing a dependency changes a toolchain's manifest and lockfile, like
+`package.json` and `yarn.lock`, or `Cargo.toml` and `Cargo.lock`. In a dependencies workspace, the
+lockfile lives at the workspace root, outside of every project. Toolchains already hash the
+dependencies that a task uses, so its cache was invalidated, but the task wasn't _affected_, as its
+inputs only cover its project's files (or a subset of them, like `src/**/*`). So `--affected` and
+`moon ci` skipped these tasks when the only change was to a root lockfile. Adding the lockfile as an
+input worked around it, but hashed the entire lockfile, so any dependency change in the workspace
+invalidated the cache of every task.
+
+In v3, a task is [affected](/docs/concepts/affected#files) by changes to the manifests and lockfiles
+of its toolchains, in its project root, and in every parent directory up to the workspace root,
+without changing its hash. This is built from 2 new input features, which you can also use on their
+own.
+
+### Affected only inputs
+
+File, glob, file group, and project [inputs](/docs/config/project#inputs) support a new
+`affectedOnly` setting. These inputs only determine whether the task is affected, and are excluded
+from its hash and its [affected files](/docs/config/project#affectedfiles), so a change to them
+doesn't invalidate the task's cache. When a file is also matched by another input, it's still
+hashed.
+
+```yaml title="moon.yml" {6,8}
+tasks:
+  build:
+    command: 'vite build'
+    inputs:
+      - 'src/**/*'
+      - 'glob://**/*.md?affectedOnly'
+      - file: '/.github/workflows/build.yml'
+        affectedOnly: true
+```
+
+### Parent traversal globs
+
+Globs now support a `...` path segment, which matches the path after it in the directory before it,
+or in any parent directory up to the workspace root, but never in sibling or nested directories. For
+a project at `packages/a`, the input `.../package.json` matches `packages/a/package.json`,
+`packages/package.json`, and `package.json`, while `packages/b/package.json` and
+`packages/a/src/package.json` are not matched.
+
+```yaml title="moon.yml"
+tasks:
+  lint:
+    command: 'eslint .'
+    inputs:
+      - 'src/**/*'
+      - '.../{.eslintrc.json,eslint.config.js}'
+```
+
+Task outputs and code owners don't support them, and token functions that pass globs to commands
+as-is, like `@globs`, only support them within inputs, as shells can't expand them.
+[Learn more about parent traversal](/docs/concepts/file-pattern#parent-traversal).
+
+### Toolchain inputs
+
+Every task now inherits an `affectedOnly` parent traversal glob for the manifests and lockfiles of
+its toolchains, so a Rust task inherits `.../{Cargo.lock,Cargo.toml}`. As the glob matches every
+parent directory, it covers the dependencies root wherever it's located, without having to locate
+it.
+
+```yaml title="moon.yml"
+tasks:
+  test:
+    command: 'cargo test'
+    inputs:
+      - 'src/**/*'
+      # Inherited automatically
+      # - glob: '.../{Cargo.lock,Cargo.toml}'
+      #   affectedOnly: true
+```
+
+Tasks that disable their inputs (`inputs: []`) don't inherit them, as they're never affected.
+Toolchain plugins can also opt out, by returning `inject_task_inputs: false` from their
+`register_toolchain` function.
+
 ## Performance improvements
 
 With the experiments resolved, we no longer have to keep two implementations of the same code path
@@ -313,6 +391,14 @@ with coarse timestamps can't serve a stale hash.
 
 Files are also now hashed by a fixed pool of workers, instead of spawning a task per file, and each
 file is stat-ed once instead of twice.
+
+Glob sets are now compiled once per process as well. Compiling one takes ~175-280µs, while a cached
+one takes ~0.1µs, and previously, the
+[`hasher.ignorePatterns`](/docs/config/workspace#ignorepatterns) and
+[`hasher.ignoreMissingPatterns`](/docs/config/workspace#ignoremissingpatterns) settings were
+compiled for every task that was hashed, which added ~450µs to each task. Every other place that
+matches globs, like hydrating a task's outputs from the cache, and the
+[`affectedFiles.filter`](/docs/config/project#affectedfiles) option, now shares the same cache.
 
 ### Project and task graphs
 

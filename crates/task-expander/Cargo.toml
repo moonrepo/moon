@@ -24,6 +24,7 @@ miette = { workspace = true }
 pathdiff = { workspace = true }
 regex = { workspace = true }
 rustc-hash = { workspace = true }
+starbase_utils = { workspace = true, features = ["glob"] }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 

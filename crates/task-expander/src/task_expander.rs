@@ -1,5 +1,5 @@
 use crate::task_lookup::TaskLookup;
-use crate::token_expander::TokenExpander;
+use crate::token_expander::{TokenExpander, merge_file_input, merge_glob_input};
 use moon_common::color;
 use moon_common::path::WorkspaceRelativeGlob;
 use moon_config::{EnvMap, TaskDependencyCacheStrategy};
@@ -94,18 +94,23 @@ impl<'graph> TaskExpander<'graph> {
                 "Injecting dep outputs as inputs of the current task"
             );
 
+            // The outputs are hashed, even if they're also an input
+            // that's only used to determine affected status
             for (path, output) in dep_task.output_files.iter() {
                 task.input_files
                     .entry(path.clone())
+                    .and_modify(|input| input.affected_only = false)
                     .or_insert_with(|| TaskFileInput {
                         content: None,
                         optional: Some(output.optional),
+                        affected_only: false,
                     });
             }
 
             for (glob, output) in dep_task.output_globs.iter() {
                 task.input_globs
                     .entry(glob.clone())
+                    .and_modify(|input| input.affected_only = false)
                     .or_insert_with(|| TaskGlobInput {
                         escaped: output.escaped.clone(),
                         ..Default::default()
@@ -266,7 +271,10 @@ impl<'graph> TaskExpander<'graph> {
 
         task.input_env.extend(result.env);
 
-        task.input_files.extend(result.files_for_input);
+        for (file, params) in result.files_for_input {
+            merge_file_input(&mut task.input_files, file, params);
+        }
+
         task.input_files.extend(
             result
                 .files
@@ -274,7 +282,10 @@ impl<'graph> TaskExpander<'graph> {
                 .map(|file| (file, TaskFileInput::default())),
         );
 
-        task.input_globs.extend(result.globs_for_input);
+        for (glob, params) in result.globs_for_input {
+            merge_glob_input(&mut task.input_globs, glob, params);
+        }
+
         task.input_globs
             .extend(result.globs.into_iter().map(TaskGlobInput::from_glob));
 
@@ -316,7 +327,7 @@ impl<'graph> TaskExpander<'graph> {
     pub fn move_input_dirs_to_globs(&mut self, task: &mut Task) {
         let mut to_remove = vec![];
 
-        for file in task.input_files.keys() {
+        for (file, params) in &task.input_files {
             // If this dir is actually an output dir, just remove it
             if task.output_files.contains_key(file) {
                 to_remove.push(file.to_owned());
@@ -327,10 +338,11 @@ impl<'graph> TaskExpander<'graph> {
             let abs_file = file.to_path(&self.context.workspace_root);
 
             if abs_file.is_dir() {
-                let (glob, params) =
+                let (glob, mut glob_params) =
                     TaskGlobInput::from_glob(WorkspaceRelativeGlob::join(file.as_str(), "**/*"));
+                glob_params.affected_only = params.affected_only;
 
-                task.input_globs.insert(glob, params);
+                merge_glob_input(&mut task.input_globs, glob, glob_params);
 
                 to_remove.push(file.to_owned());
             }

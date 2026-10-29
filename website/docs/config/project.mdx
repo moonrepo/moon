@@ -1001,6 +1001,14 @@ Inputs support the following source types:
 - Files, folders, and globs
 - [Token functions and variables](../concepts/token)
 
+:::info
+
+The manifests and lockfiles of the task's toolchains <VersionLabel inline version="3.0.0" />, in
+the project root or any parent directory, are automatically inherited as an `affectedOnly` input,
+so that changes to them [affect the task](../concepts/affected#files).
+
+:::
+
 ```yaml title="moon.yml" {4-12}
 tasks:
   lint:
@@ -1051,6 +1059,9 @@ following parameters are supported as a URI query or as object fields:
 - `optional` (`boolean`) - When hashing and set to `true` and the file is missing, will not log a
   warning. When set to `false` and the file is missing, will fail with an error. Defaults to logging
   a warning.
+- `affectedOnly` (`boolean`) <VersionLabel inline version="3.0.0" /> - Only use the file to
+  determine affected state, and exclude it from the task's hash and
+  [affected files](#affectedfiles). Defaults to `false`.
 
 ```yaml title="moon.yml"
 tasks:
@@ -1067,7 +1078,11 @@ tasks:
         optional: true
       - file: '/workspace/relative/file.js'
         content: 'a|b|c'
+      - file: '/workspace/relative/file.lock'
+        affectedOnly: true
 ```
+
+When a file is also hashed by another input, like a glob, it's still hashed.
 
 #### File groups<VersionLabel version="1.41.0" />
 
@@ -1077,6 +1092,9 @@ Additionally, the following parameters are supported as a URI query or as object
 
 - `format`, `as` (`string`) - The format in which to gather the file group results. Supported values
   are `static` (default), `files`, `dirs`, `globs`, `envs`, and `root`.
+- `affectedOnly` (`boolean`) <VersionLabel inline version="3.0.0" /> - Only use the group's files
+  and globs to determine affected state, and exclude them from the task's hash and
+  [affected files](#affectedfiles). Environment variables are still hashed. Defaults to `false`.
 
 ```yaml title="moon.yml"
 fileGroups:
@@ -1089,9 +1107,12 @@ tasks:
     inputs:
       # Using group protocol
       - 'group://sources?format=dirs'
+      - 'group://sources?affectedOnly'
       # Using an object
       - group: 'sources'
         format: 'dirs'
+      - group: 'sources'
+        affectedOnly: true
 ```
 
 #### Glob patterns
@@ -1104,6 +1125,9 @@ following parameters are supported as a URI query or as object fields:
 
 - `cache` (`boolean`) - When gathering inputs for hashing, defines whether the glob results should
   be cached for the duration of the moon process. Defaults to `true`.
+- `affectedOnly` (`boolean`) <VersionLabel inline version="3.0.0" /> - Only use the glob to
+  determine affected state, and exclude its files from the task's hash and
+  [affected files](#affectedfiles). Defaults to `false`.
 
 ```yaml title="moon.yml"
 tasks:
@@ -1115,10 +1139,13 @@ tasks:
       # Using glob protocol
       - 'glob://project/relative/file.*?cache=false'
       - 'glob:///workspace/relative/**/*?cache'
+      - 'glob://project/relative/**/*.md?affectedOnly'
       # Using an object
       - glob: 'project/relative/file.*'
         cache: false
       - glob: '/workspace/relative/**/*'
+      - glob: 'project/relative/**/*.md'
+        affectedOnly: true
 ```
 
 Globs can also be negated by prefixing the path with `!`, which will exclude all files that match
@@ -1131,6 +1158,24 @@ tasks:
       - '!**/*.md'
       - 'glob://!/workspace/relative/**/*'
       - glob: '!/workspace/relative/**/*'
+```
+
+Globs can also match files in parent directories with a
+[parent traversal](../concepts/file-pattern#parent-traversal) segment, `...`
+
+<VersionLabel inline version="3.0.0" />, which matches the path after it in the project root, or in
+any parent directory up to the workspace root, but never in sibling or nested directories. This
+pairs well with `affectedOnly`, for files that tools look up from the project, like manifests and
+lockfiles.
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    inputs:
+      # Matches package.json in the project root, or any parent directory
+      - '.../package.json'
+      - glob: '.../*.lock'
+        affectedOnly: true
 ```
 
 :::warning
@@ -1162,6 +1207,9 @@ following parameters are supported as a URI query or as object fields:
 - `filter` (`string[]`) - A list of
   [project relative glob patterns](../concepts/file-pattern#project-relative) that will be used for
   matching.
+- `affectedOnly` (`boolean`) <VersionLabel inline version="3.0.0" /> - Only use the external
+  project's files to determine affected state, and exclude them from the task's hash and
+  [affected files](#affectedfiles). Defaults to `false`.
 
 If neither `group` nor `filter` are defined, all files within the external project are considered a
 match (`**/*`).
@@ -1174,12 +1222,15 @@ tasks:
       - 'project://foo'
       - 'project://bar?group=sources'
       - 'project://baz?filter=src/**/*'
+      - 'project://qux?affectedOnly'
       # Using an object
       - project: 'foo'
       - project: 'bar'
         group: 'sources'
       - project: 'baz'
         filter: ['src/**/*']
+      - project: 'qux'
+        affectedOnly: true
 ```
 
 ### `outputs`

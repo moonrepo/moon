@@ -69,3 +69,21 @@ tasks:
     command: noop
     inputs:
       - 'moon.yml'
+
+  affectedOnly:
+    command: noop
+    inputs:
+      - '*.txt'
+      - file: 'dir/abc.txt'
+        affectedOnly: true
+      - glob: 'dir/x*.txt'
+        affectedOnly: true
+      - 'file://package.json?affectedOnly'
+
+  affectedOnlyAll:
+    command: noop
+    inputs:
+      - file: '2.txt'
+        affectedOnly: true
+      - glob: 'dir/**/*'
+        affectedOnly: true

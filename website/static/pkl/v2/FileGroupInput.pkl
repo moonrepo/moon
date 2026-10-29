@@ -3,6 +3,10 @@
 /// A file group input.
 module FileGroupInput
 
+/// Only use the files and globs of the group to determine affected
+/// status, and exclude them from the task's hash and affected files.
+affectedOnly: Boolean
+
 /// Format to resolve the file group into.
 format: FileGroupInputFormat
 

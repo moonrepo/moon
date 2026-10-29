@@ -8,11 +8,11 @@ use moon_common::{
     path::{WorkspaceRelativePath, encode_component, is_root_level_source},
 };
 use moon_config::{
-    EnvMap, InheritedTasksConfig, Input, MergeStrategy, ProjectConfig, ProjectDependencyConfig,
-    ProjectInput, ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
-    TaskDependencyConfig, TaskDependencyType, TaskOptionAffectedFilesEntry, TaskOptionCache,
-    TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskPriority, TaskType,
-    ToolchainsConfig, is_glob_like, merge,
+    EnvMap, GlobInput, GlobPath, InheritedTasksConfig, Input, MergeStrategy, PortablePath,
+    ProjectConfig, ProjectDependencyConfig, ProjectInput, ProjectWorkspaceInheritedTasksConfig,
+    TaskArgs, TaskConfig, TaskDependency, TaskDependencyConfig, TaskDependencyType,
+    TaskOptionAffectedFilesEntry, TaskOptionCache, TaskOptionRunInCI, TaskOptionsConfig,
+    TaskOutputStyle, TaskPreset, TaskPriority, TaskType, ToolchainsConfig, is_glob_like, merge,
 };
 use moon_config_loader::ConfigLoader;
 use moon_env_var::contains_env_var;
@@ -24,7 +24,7 @@ use moon_task::{
 use moon_toolchain::filter_and_resolve_toolchain_ids;
 use moon_toolchain_plugin::{ToolchainRegistry, api::DefineRequirementsInput};
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 use std::sync::{Arc, OnceLock};
 use system_env::is_command_on_path;
@@ -647,6 +647,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         self.resolve_task_inputs(&mut task)?;
         self.resolve_task_toolchains(&mut task).await?;
+        self.inherit_toolchain_inputs(&mut task).await?;
 
         Ok(task)
     }
@@ -898,6 +899,7 @@ impl<'proj> TasksBuilder<'proj> {
                             project: dep_config.id.to_string(),
                             filter: inner.filter.clone(),
                             group: inner.group.clone(),
+                            affected_only: inner.affected_only,
                         }));
                     }
                 } else if let Some(dep_scope) = inner.get_deps_scope() {
@@ -907,6 +909,7 @@ impl<'proj> TasksBuilder<'proj> {
                                 project: dep_config.id.to_string(),
                                 filter: inner.filter.clone(),
                                 group: inner.group.clone(),
+                                affected_only: inner.affected_only,
                             }));
                         }
                     }
@@ -973,6 +976,64 @@ impl<'proj> TasksBuilder<'proj> {
         // Resolve them to valid identifiers
         task.toolchains =
             filter_and_resolve_toolchain_ids(self.context.enabled_toolchains, toolchains, true);
+
+        Ok(())
+    }
+
+    // Changes to a toolchain's manifests and lockfiles, in the project or any parent
+    // directory (like a dependencies workspace root), affect the task, unless the toolchain
+    // opts out. Toolchains already hash the dependencies they care about, so they're only
+    // used for affected
+    async fn inherit_toolchain_inputs(&self, task: &mut Task) -> miette::Result<()> {
+        // Tasks without inputs are never affected
+        if task.state.empty_inputs {
+            return Ok(());
+        }
+
+        let toolchains = self
+            .context
+            .toolchain_registry
+            .load_many(&task.toolchains)
+            .await?;
+        let mut names = BTreeSet::default();
+
+        for toolchain in toolchains
+            .iter()
+            .filter(|toolchain| toolchain.metadata.inject_task_inputs)
+        {
+            for name in toolchain
+                .metadata
+                .manifest_file_names
+                .iter()
+                .chain(&toolchain.metadata.lock_file_names)
+            {
+                // Only literal file names can be combined into a single glob
+                if !name.is_empty() && !name.contains(['/', '\\', ',']) && !is_glob_like(name) {
+                    names.insert(name.as_str());
+                }
+            }
+        }
+
+        let glob = match names.len() {
+            0 => return Ok(()),
+            1 => format!(".../{}", names.first().unwrap()),
+            _ => format!(
+                ".../{{{}}}",
+                names.into_iter().collect::<Vec<_>>().join(",")
+            ),
+        };
+
+        trace!(
+            task_target = task.target.as_str(),
+            input = &glob,
+            "Inheriting toolchain manifests and lockfiles as affected only inputs",
+        );
+
+        task.inputs.push(Input::Glob(GlobInput {
+            glob: GlobPath::parse(glob)?,
+            cache: true,
+            affected_only: true,
+        }));
 
         Ok(())
     }

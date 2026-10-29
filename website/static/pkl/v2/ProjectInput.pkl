@@ -3,6 +3,10 @@
 /// An external project input.
 module ProjectInput
 
+/// Only use the project's files to determine affected status, and
+/// exclude them from the task's hash and affected files.
+affectedOnly: Boolean
+
 /// A list of globs, relative from the project's root,
 /// in which to determine affected status.
 filter: Listing<String>

@@ -52,6 +52,10 @@ cacheable!(
 
         #[serde(skip_serializing_if = "Option::is_none")]
         pub optional: Option<bool>,
+
+        // Only used to determine affected status, and not hashed
+        #[serde(skip_serializing_if = "is_false")]
+        pub affected_only: bool,
     }
 );
 
@@ -61,12 +65,19 @@ cacheable!(
     pub struct TaskGlobInput {
         #[serde(skip_serializing_if = "is_true")]
         pub cache: bool,
+
+        // Only used to determine affected status, and not hashed
+        #[serde(skip_serializing_if = "is_false")]
+        pub affected_only: bool,
     }
 );
 
 impl Default for TaskGlobInput {
     fn default() -> Self {
-        Self { cache: true }
+        Self {
+            cache: true,
+            affected_only: false,
+        }
     }
 }
 
@@ -163,9 +174,30 @@ impl Task {
     /// Create a globset of all input globs to match with. Compiled sets
     /// are cached, and shared between all tasks with the same patterns.
     pub fn create_globset(&self) -> miette::Result<Arc<glob::GlobSet<'static>>> {
+        self.create_globset_from(self.input_globs.keys())
+    }
+
+    /// Create a globset of the input globs to match with, excluding those that
+    /// are only used to determine affected status, for hashing and affected files.
+    pub fn create_globset_without_affected_only(
+        &self,
+    ) -> miette::Result<Arc<glob::GlobSet<'static>>> {
+        self.create_globset_from(
+            self.input_globs
+                .iter()
+                .filter(|(_, params)| !params.affected_only)
+                .map(|(glob, _)| glob)
+                .collect::<Vec<_>>(),
+        )
+    }
+
+    fn create_globset_from<'glob>(
+        &self,
+        input_globs: impl IntoIterator<Item = &'glob WorkspaceRelativePathBuf> + fmt::Debug,
+    ) -> miette::Result<Arc<glob::GlobSet<'static>>> {
         // Both inputs/outputs may have a mix of negated and
         // non-negated globs, so we must split them into groups
-        let (gi, ni) = split_patterns(self.input_globs.keys());
+        let (gi, ni) = split_patterns(input_globs);
         let (go, no) = split_patterns(self.output_globs.keys());
 
         // We then only match against non-negated inputs
@@ -195,7 +227,7 @@ impl Task {
         Ok(match GLOBSET_CACHE.entry_sync(key) {
             Entry::Occupied(entry) => Arc::clone(entry.get()),
             Entry::Vacant(entry) => {
-                let globset = Arc::new(glob::GlobSet::new_split_owned(expressions, negations)?);
+                let globset = glob::GlobSet::new_split_cached(expressions, negations)?;
 
                 entry.insert_entry(Arc::clone(&globset));
 
@@ -204,8 +236,9 @@ impl Task {
         })
     }
 
-    /// Return a list of affected files filtered down from
-    /// the provided changed files list.
+    /// Return a list of affected files filtered down from the provided
+    /// changed files list. Inputs that are only used to determine
+    /// affected status are not included.
     pub fn get_affected_files(
         &self,
         workspace_root: &Path,
@@ -215,14 +248,17 @@ impl Task {
 
         // Only compile the glob set when there are input globs, as nothing
         // can match without them, and compiling is expensive
-        let globset = if self.input_globs.is_empty() {
+        let globset = if self.input_globs.values().all(|params| params.affected_only) {
             None
         } else {
-            Some(self.create_globset()?)
+            Some(self.create_globset_without_affected_only()?)
         };
 
         for file in changed_files {
-            if self.input_files.contains_key(file)
+            if self
+                .input_files
+                .get(file)
+                .is_some_and(|params| !params.affected_only)
                 || globset
                     .as_ref()
                     .is_some_and(|globset| globset.matches(file.as_str()))
@@ -250,11 +286,16 @@ impl Task {
         })
     }
 
-    /// Return a list of all workspace-relative input files.
+    /// Return a list of all workspace-relative input files, excluding
+    /// those that are only used to determine affected status.
     pub fn get_input_files(&self, workspace_root: &Path) -> miette::Result<Vec<PathBuf>> {
         let mut list = FxHashSet::default();
 
-        for path in self.input_files.keys() {
+        for (path, params) in &self.input_files {
+            if params.affected_only {
+                continue;
+            }
+
             let file = path.to_logical_path(workspace_root);
 
             // Detect if file actually exists
@@ -264,7 +305,13 @@ impl Task {
         }
 
         list.extend(
-            self.get_input_files_with_globs(workspace_root, self.input_globs.iter().collect())?,
+            self.get_input_files_with_globs(
+                workspace_root,
+                self.input_globs
+                    .iter()
+                    .filter(|(_, params)| !params.affected_only)
+                    .collect(),
+            )?,
         );
 
         Ok(list.into_iter().collect())

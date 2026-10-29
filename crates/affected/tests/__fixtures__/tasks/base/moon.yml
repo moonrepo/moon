@@ -16,6 +16,19 @@ tasks:
   by-glob:
     inputs:
       - '*.txt'
+  by-affected-only:
+    inputs:
+      - file: 'file.txt'
+        affectedOnly: true
+      - glob: '*.md'
+        affectedOnly: true
+  by-parent-traversal:
+    inputs:
+      - '.../package.json'
+  by-toolchain:
+    toolchain: tc-tier1
+    inputs:
+      - 'file.txt'
 
   no-inputs:
     inputs: []

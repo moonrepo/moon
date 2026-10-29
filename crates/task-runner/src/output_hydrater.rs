@@ -36,7 +36,7 @@ pub enum HydrateOutcome {
 pub struct OutputHydrater<'task> {
     app_context: &'task Arc<AppContext>,
     task: &'task Arc<Task>,
-    task_output_globset: GlobSet<'static>,
+    task_output_globset: Arc<GlobSet<'static>>,
     daemon_client: Option<DaemonClient>,
 }
 
@@ -47,7 +47,7 @@ impl OutputHydrater<'_> {
         daemon_client: Option<DaemonClient>,
     ) -> miette::Result<OutputHydrater<'task>> {
         Ok(OutputHydrater {
-            task_output_globset: GlobSet::new_owned(task.output_globs.keys())?,
+            task_output_globset: GlobSet::new_cached(task.output_globs.keys())?,
             task,
             app_context,
             daemon_client,

@@ -12,6 +12,13 @@
   (after `git init`), as `HEAD` couldn't be resolved. Until the first commit, the `$vcsRevision`
   token is empty, and there are no revisions to compare, so all uncommitted files are considered
   changed.
+- Fixed an issue where the daemon's memory grew without bound on Linux, and it couldn't be stopped
+  with `moon daemon stop` or `SIGTERM`. Its file watcher registered a watch for every directory in
+  the workspace, including `node_modules` and VCS ignored directories, and followed symlinks, which
+  revisits the same directories through every link to them, so in a pnpm workspace the registration
+  never finished. The watcher now skips ignored directories and symlinks, and is registered on its
+  own thread, so the daemon can shut down at any time. The same symlink walk on macOS and Windows
+  has also been removed.
 
 ## 2.6.4
 

@@ -6111,6 +6111,7 @@ dependencies = [
  "moon_process",
  "moon_target",
  "moon_test_utils",
+ "moon_vcs",
  "moon_workspace_graph",
  "notify-debouncer-full",
  "rustc-hash",

@@ -5528,6 +5528,7 @@ dependencies = [
  "miette 7.6.0",
  "moon_action",
  "moon_action_context",
+ "moon_affected",
  "moon_app_context",
  "moon_cache",
  "moon_cache_item",

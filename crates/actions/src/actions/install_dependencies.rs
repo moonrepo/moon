@@ -79,18 +79,6 @@ pub async fn install_dependencies(
         return Ok(ActionStatus::Skipped);
     }
 
-    // When running against affected files, avoid install as it interrupts the workflow,
-    // especially when used with VSC hooks
-    if action_context.affected.is_some() && !is_ci() {
-        debug!(
-            root = node.root.as_str(),
-            toolchain_id = node.toolchain_id.as_str(),
-            "Running against affected files, skipping dependency install"
-        );
-
-        return Ok(ActionStatus::Skipped);
-    }
-
     // Load the toolchain and its state
     let toolchain = app_context
         .toolchain_registry
@@ -105,6 +93,32 @@ pub async fn install_dependencies(
         );
 
         return Ok(ActionStatus::Skipped);
+    }
+
+    // Determine this before any commands run, as the install itself
+    // will create the vendor directory
+    let first_install = toolchain.metadata.vendor_dir_name.is_some()
+        && !has_vendor_installed_dependencies(&toolchain, &deps_root);
+
+    // When running against affected files, avoid install as it interrupts the workflow,
+    // especially when used with VSC hooks. However, if dependencies have never been
+    // installed (a fresh clone or worktree), the tasks would fail without them
+    if action_context.affected.is_some() && !is_ci() {
+        if !first_install {
+            debug!(
+                root = node.root.as_str(),
+                toolchain_id = node.toolchain_id.as_str(),
+                "Running against affected files, skipping dependency install"
+            );
+
+            return Ok(ActionStatus::Skipped);
+        }
+
+        debug!(
+            root = node.root.as_str(),
+            toolchain_id = node.toolchain_id.as_str(),
+            "Running against affected files, but dependencies are missing, installing them"
+        );
     }
 
     // When in CI, we can avoid installing dependencies if the vendor directory exists
@@ -141,11 +155,6 @@ pub async fn install_dependencies(
         }
         None => None,
     };
-
-    // Determine this before any commands run, as the install itself
-    // will create the vendor directory
-    let first_install = toolchain.metadata.vendor_dir_name.is_some()
-        && !has_vendor_installed_dependencies(&toolchain, &deps_root);
 
     // Create a lock if we haven't run before
     let cache_engine = Arc::clone(&app_context.cache_engine);

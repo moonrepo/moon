@@ -19,6 +19,10 @@
   never finished. The watcher now skips ignored directories and symlinks, and is registered on its
   own thread, so the daemon can shut down at any time. The same symlink walk on macOS and Windows
   has also been removed.
+- Fixed an issue where running tasks with `--affected` outside of CI, like in a VCS hook, never
+  installed dependencies, so the tasks failed in a fresh clone or worktree. Dependencies are now
+  installed when the toolchain's vendor directory (like `node_modules`) is missing or empty, but
+  continue to be skipped when it exists.
 
 ## 2.6.4
 

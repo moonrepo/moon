@@ -56,6 +56,11 @@ Defines [file groups](../concepts/file-group) that will be inherited by projects
 enforcement of organizational patterns and file locations. For example, encourage projects to place
 source files in a `src` folder, and all test files in `tests`.
 
+When a file group of the same name is defined in multiple configs, their inputs are
+[merged together](../concepts/file-group#inheritance-and-merging), with project-level inputs
+appended last. The merge behavior can be customized per project with the
+[`workspace.mergeStrategies.fileGroups`](./project#mergestrategies) setting.
+
 ```yaml title=".moon/tasks/all.yml"
 fileGroups:
   configs:

@@ -73,6 +73,9 @@ run. We achieve this by comparing lockfile modified timestamps, parsing manifest
 resolved dependency versions.
 
 - When dependencies do _not_ need to be installed, this action will be skipped.
+- When running against affected files (`--affected`) outside of CI, like in a VCS hook, this action
+  will be skipped, unless dependencies have never been installed (the vendor directory, like
+  `node_modules`, is missing or empty).
 - Depending on the language and configuration, we may install dependencies in a project, or in the
   workspace root for all projects.
 - Actions will be scoped by toolchain and dependencies root.

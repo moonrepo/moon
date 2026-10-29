@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where the file groups docs stated that a project-level file group overrides an
+  inherited file group of the same name. Since v2, they are merged together, with project-level
+  inputs appended last, and since v2.5, `workspace.mergeStrategies.fileGroups` can be used to
+  replace instead.
+- Fixed an issue where every `moon run` and `moon ci` failed in a Git repository without any commits
+  (after `git init`), as `HEAD` couldn't be resolved. Until the first commit, the `$vcsRevision`
+  token is empty, and there are no revisions to compare, so all uncommitted files are considered
+  changed.
+- Fixed an issue where the daemon's memory grew without bound on Linux, and it couldn't be stopped
+  with `moon daemon stop` or `SIGTERM`. Its file watcher registered a watch for every directory in
+  the workspace, including `node_modules` and VCS ignored directories, and followed symlinks, which
+  revisits the same directories through every link to them, so in a pnpm workspace the registration
+  never finished. The watcher now skips ignored directories and symlinks, and is registered on its
+  own thread, so the daemon can shut down at any time. The same symlink walk on macOS and Windows
+  has also been removed.
+- Fixed an issue where running tasks with `--affected` outside of CI, like in a VCS hook, never
+  installed dependencies, so the tasks failed in a fresh clone or worktree. Dependencies are now
+  installed when the toolchain's vendor directory (like `node_modules`) is missing or empty, but
+  continue to be skipped when it exists.
+
 ## 2.6.4
 
 #### 🚀 Updates

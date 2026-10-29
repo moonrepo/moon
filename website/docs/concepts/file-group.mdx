@@ -2,6 +2,8 @@
 title: File groups
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 File groups are a mechanism for grouping similar types of files and environment variables within a
 project using [file glob patterns or literal file paths](./file-pattern). These groups are then used
 by [tasks](./task) to calculate functionality like cache computation, affected files since last
@@ -27,14 +29,13 @@ tasks:
 
 ## Inheritance and merging
 
-When a file group of the same name exists in both [configuration files](#configuration), the
-project-level group will override the workspace-level group, and all other workspace-level groups
-will be inherited as-is.
+When a file group of the same name exists in multiple [configuration files](#configuration), the
+groups are _merged_ together, in the order the configs are inherited: workspace-level groups first,
+then project-level groups last. By default, the inputs of each subsequent group are appended to the
+inputs of the previous group. Groups that are only defined in a single config are inherited as-is.
 
-A primary scenario in which to define file groups at the project-level is when you want to
-_override_ file groups defined at the workspace-level. For example, say we want to override the
-`sources` file group because our source folder is named "lib" and not "src", we would define our
-file groups as followed.
+For example, say we want to add a `lib` folder to the inherited `sources` file group, we would
+define our file groups as followed.
 
 ```yaml title=".moon/tasks/all.yml"
 fileGroups:
@@ -48,12 +49,45 @@ fileGroups:
 
 ```yaml title="moon.yml"
 fileGroups:
-  # Overrides global
   sources:
     - 'lib/**/*'
+```
+
+Which results in the following file groups for the project:
+
+```yaml
+fileGroups:
+  # Merged with global
+  sources:
+    - 'src/**/*'
     - 'types/**/*'
+    - 'lib/**/*'
   # Inherited as-is
   tests:
     - 'tests/**/*.test.*'
     - '**/__tests__/**/*'
 ```
+
+### Merge strategies<VersionLabel version="2.5.0" />
+
+If you'd prefer to _override_ an inherited file group instead of merging with it, for example,
+because our source folder is named "lib" and not "src", the merge behavior can be customized per
+project with the [`workspace.mergeStrategies.fileGroups`](../config/project#mergestrategies) setting.
+This setting supports the `append` (default), `prepend`, `preserve`, and `replace`
+[strategies](./task-inheritance#merge-strategies).
+
+```yaml title="moon.yml" {2,3}
+workspace:
+  mergeStrategies:
+    fileGroups: 'replace'
+
+fileGroups:
+  # Replaces global
+  sources:
+    - 'lib/**/*'
+    - 'types/**/*'
+```
+
+The chosen strategy applies to all of the project's file groups, but only changes groups that are
+defined in more than one config, including those defined in multiple `.moon/tasks/**/*` configs. An
+empty list can be used with the `replace` strategy to remove all inputs from an inherited group.

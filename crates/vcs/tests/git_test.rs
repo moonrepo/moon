@@ -714,6 +714,97 @@ mod git {
         }
     }
 
+    // https://github.com/moonrepo/moon/issues/2791
+    mod no_commits {
+        use super::*;
+
+        fn create_no_commits_sandbox() -> (Sandbox, Git) {
+            let sandbox = create_sandbox("vcs");
+
+            sandbox.run_git(|cmd| {
+                cmd.args(["init", "--initial-branch", "master"]);
+            });
+
+            let git = Git::load(sandbox.path(), "master", &["origin".into()]).unwrap();
+
+            (sandbox, git)
+        }
+
+        #[tokio::test]
+        async fn returns_branch_and_empty_revision() {
+            let (_sandbox, git) = create_no_commits_sandbox();
+
+            assert!(git.is_enabled());
+            assert_eq!(git.get_local_branch().await.unwrap(), "master");
+            assert_eq!(git.get_local_branch_revision().await.unwrap(), "");
+        }
+
+        #[tokio::test]
+        async fn returns_untracked_changed_files() {
+            let (_sandbox, git) = create_no_commits_sandbox();
+
+            let changed_files = git.get_changed_files().await.unwrap();
+
+            assert_eq!(
+                changed_files
+                    .files
+                    .get(&WorkspaceRelativePathBuf::from("foo/file1.txt")),
+                Some(&vec![ChangedStatus::Untracked])
+            );
+        }
+
+        #[tokio::test]
+        async fn returns_no_changes_against_previous_revision() {
+            let (_sandbox, git) = create_no_commits_sandbox();
+
+            assert_eq!(
+                git.get_changed_files_against_previous_revision("master")
+                    .await
+                    .unwrap(),
+                ChangedFiles::default()
+            );
+        }
+
+        #[tokio::test]
+        async fn returns_no_changes_between_revisions() {
+            let (_sandbox, git) = create_no_commits_sandbox();
+
+            assert_eq!(
+                git.get_changed_files_between_revisions("master", "")
+                    .await
+                    .unwrap(),
+                ChangedFiles::default()
+            );
+
+            assert_eq!(
+                git.get_changed_files_between_revisions("master", "HEAD")
+                    .await
+                    .unwrap(),
+                ChangedFiles::default()
+            );
+        }
+
+        #[tokio::test]
+        async fn errors_between_revisions_for_an_explicit_head() {
+            let (_sandbox, git) = create_no_commits_sandbox();
+
+            assert!(
+                git.get_changed_files_between_revisions("master", "feature")
+                    .await
+                    .is_err()
+            );
+        }
+
+        #[tokio::test]
+        async fn errors_for_revision_if_not_a_repository() {
+            let sandbox = create_sandbox("vcs");
+
+            let git = Git::load(sandbox.path(), "master", &["origin".into()]).unwrap();
+
+            assert!(git.get_local_branch_revision().await.is_err());
+        }
+    }
+
     mod file_hashing {
         use super::*;
 

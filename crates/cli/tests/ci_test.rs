@@ -132,4 +132,36 @@ mod ci {
             assert.success();
         }
     }
+
+    // https://github.com/moonrepo/moon/issues/2791
+    mod no_commits {
+        use super::*;
+
+        #[test]
+        fn runs_tasks_affected_by_uncommitted_files() {
+            let sandbox = create_empty_moon_sandbox();
+            sandbox.with_default_projects();
+            sandbox.create_file(
+                "app/moon.yml",
+                r#"
+tasks:
+  build:
+    command: 'noop'
+"#,
+            );
+            sandbox.run_git(|cmd| {
+                cmd.args(["init", "--initial-branch", "master"]);
+            });
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("ci");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("RunTask(app:build)").eval(&output));
+
+            assert.success();
+        }
+    }
 }

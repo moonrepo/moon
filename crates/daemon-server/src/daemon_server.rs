@@ -389,6 +389,7 @@ pub async fn start_daemon_server(
 ) -> miette::Result<()> {
     let daemon_dir = state.app_context.daemon_dir.clone();
     let workspace_root = state.app_context.workspace_root.clone();
+    let vcs = Arc::clone(&state.app_context.vcs);
     let version = state.app_context.cli_version.to_string();
     let endpoint = get_endpoint(&daemon_dir);
 
@@ -445,6 +446,7 @@ pub async fn start_daemon_server(
     let (event_tx, event_rx) = broadcast::channel::<FileEvent>(EVENT_CHANNEL_CAPACITY);
     let watcher_handle = tokio::spawn(start_file_watcher(
         workspace_root.clone(),
+        vcs,
         event_tx,
         shutdown_tx.subscribe(),
     ));
@@ -502,8 +504,7 @@ pub async fn start_daemon_server(
     monitor_handle.abort();
 
     // Give the aborted tasks a moment to unwind, but don't block shutdown on a
-    // slow teardown (dropping a recursive OS watch over a large tree can't be
-    // preempted). Past this bound we exit anyway and let the OS clean up.
+    // slow teardown. Past this bound we exit anyway and let the OS clean up.
     let _ = timeout(TASK_SHUTDOWN_TIMEOUT, async {
         let _ = watcher_handle.await;
         let _ = listener_handle.await;

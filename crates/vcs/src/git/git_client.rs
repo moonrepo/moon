@@ -236,6 +236,18 @@ impl Git {
         trees
     }
 
+    /// A repository without commits has an unborn HEAD, so there are no
+    /// revisions to compare against, and all files are local changes.
+    async fn is_head_unborn(&self) -> miette::Result<bool> {
+        if self.get_local_branch_revision().await?.is_empty() {
+            debug!("HEAD does not point to a commit yet, so there are no revisions to compare");
+
+            return Ok(true);
+        }
+
+        Ok(false)
+    }
+
     fn has_linked_worktrees(&self) -> bool {
         self.worktree
             .git_dir
@@ -331,10 +343,23 @@ impl Vcs for Git {
     }
 
     async fn get_local_branch_revision(&self) -> miette::Result<String> {
-        let output = self
-            .create_command(["rev-parse", "HEAD"])
-            .exec_capture_output()
-            .await?;
+        let mut command = self.create_command(["rev-parse", "--verify", "--quiet", "HEAD"]);
+        command.set_error_on_nonzero(false);
+
+        let output = command.exec_capture_output().await?;
+
+        if !output.success() {
+            // A repository without commits has an unborn HEAD, which
+            // `--quiet` reports by silently exiting with 1, so there's
+            // no revision yet, instead of failing the entire command
+            if output.code() == Some(1) {
+                debug!("HEAD does not point to a commit yet, using an empty revision");
+
+                return Ok(String::new());
+            }
+
+            return Err(output.to_error("git", true).into());
+        }
 
         Ok(output_to_trimmed_string(&output.stdout))
     }
@@ -533,6 +558,10 @@ impl Vcs for Git {
             revision
         };
 
+        if revision == "HEAD" && self.is_head_unborn().await? {
+            return Ok(ChangedFiles::default());
+        }
+
         // If the revision is a root commit (no parent), then the diff
         // command will error, so detect this by counting the commits.
         // The count is capped to avoid walking the entire history!
@@ -568,6 +597,10 @@ impl Vcs for Git {
         } else {
             normalize_branch_ref(head_revision)
         };
+
+        if resolved_head_revision == "HEAD" && self.is_head_unborn().await? {
+            return Ok(ChangedFiles::default());
+        }
 
         // Determine the merge base revision based on the base/head
         let merge_base = self

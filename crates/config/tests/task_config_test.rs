@@ -762,6 +762,7 @@ inputs:
                     Input::FileGroup(FileGroupInput {
                         group: Id::raw("sources"),
                         format: FileGroupInputFormat::Dirs,
+                        affected_only: false,
                     }),
                     Input::FileGroup(FileGroupInput {
                         group: Id::raw("tests"),
@@ -770,6 +771,7 @@ inputs:
                     Input::FileGroup(FileGroupInput {
                         group: Id::raw("tests"),
                         format: FileGroupInputFormat::Files,
+                        affected_only: false,
                     })
                 ]
             );

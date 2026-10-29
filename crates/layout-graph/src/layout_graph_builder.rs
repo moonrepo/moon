@@ -88,7 +88,7 @@ fn diagnose(
         .roots
         .iter()
         .map(|root| match &root.kind {
-            RootKind::Workspace { members } => GlobSet::new(members).ok(),
+            RootKind::Workspace { members } => GlobSet::new_cached(members).ok(),
             RootKind::Package => None,
         })
         .collect::<Vec<_>>();

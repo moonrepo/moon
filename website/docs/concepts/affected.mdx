@@ -23,7 +23,17 @@ For a project, any changed file that is within the project folder (starts with t
 triggers affected.
 
 For a task, any changed file that is configured within the task's
-[`inputs`](../config/project#inputs) triggers affected.
+[`inputs`](../config/project#inputs) triggers affected. This includes inputs that are marked as
+`affectedOnly` <VersionLabel inline version="3.0.0" />, which only determine affected state, and
+are excluded from the task's hash, so a change to them doesn't invalidate the task's cache.
+
+Additionally <VersionLabel inline version="3.0.0" />, a task is affected by changes to the
+manifests and lockfiles of its [toolchains](../config/toolchain) (like `package.json` and
+`yarn.lock` for JavaScript, or `Cargo.toml` and `Cargo.lock` for Rust), in the project root, or in
+any parent directory up to the workspace root, like the root of a dependencies workspace. These are
+inherited as an `affectedOnly` [parent traversal glob](./file-pattern#parent-traversal) input, like
+`.../{Cargo.lock,Cargo.toml}`, as toolchains already hash the dependencies they use. Tasks that
+disable their inputs (`inputs: []`) don't inherit them, and toolchains can opt out.
 
 ### Environment variables
 

@@ -3,6 +3,10 @@
 /// A file path input.
 module FileInput
 
+/// Only use the file to determine affected status, and exclude
+/// it from the task's hash and affected files.
+affectedOnly: Boolean
+
 /// Regex pattern to match the file's contents against
 /// when determining affected status.
 content: String? = match ?? matches

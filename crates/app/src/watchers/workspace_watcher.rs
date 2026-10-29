@@ -118,7 +118,7 @@ impl WorkspaceWatcher {
         }
 
         if !globs.is_empty() {
-            return Ok(GlobSet::new(globs)?.matches(path.as_str()));
+            return Ok(GlobSet::new_cached(globs)?.matches(path.as_str()));
         }
 
         Ok(false)

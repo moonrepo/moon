@@ -1307,6 +1307,7 @@ mod token_expander {
             task.inputs = vec![Input::FileGroup(FileGroupInput {
                 group: Id::raw("all"),
                 format: FileGroupInputFormat::Static,
+                affected_only: false,
             })];
 
             let context = create_context(sandbox.path());
@@ -1364,6 +1365,7 @@ mod token_expander {
             task.inputs = vec![Input::FileGroup(FileGroupInput {
                 group: Id::raw("dirs"),
                 format: FileGroupInputFormat::Dirs,
+                affected_only: false,
             })];
 
             let context = create_context(sandbox.path());
@@ -1419,6 +1421,7 @@ mod token_expander {
             task.inputs = vec![Input::FileGroup(FileGroupInput {
                 group: Id::raw("all"),
                 format: FileGroupInputFormat::Files,
+                affected_only: false,
             })];
 
             let context = create_context(sandbox.path());
@@ -1475,6 +1478,7 @@ mod token_expander {
             task.inputs = vec![Input::FileGroup(FileGroupInput {
                 group: Id::raw("all"),
                 format: FileGroupInputFormat::Globs,
+                affected_only: false,
             })];
 
             let context = create_context(sandbox.path());
@@ -1526,6 +1530,7 @@ mod token_expander {
             task.inputs = vec![Input::FileGroup(FileGroupInput {
                 group: Id::raw("all"),
                 format: FileGroupInputFormat::Root,
+                affected_only: false,
             })];
 
             let context = create_context(sandbox.path());
@@ -2165,6 +2170,179 @@ mod token_expander {
                 expander.expand_script(&mut task).unwrap(),
                 "bin --name name"
             );
+        }
+    }
+
+    mod parent_traversal {
+        use super::*;
+        use moon_project::{FileGroup, Project};
+        use std::path::Path;
+
+        fn create_project_with_manifests(workspace_root: &Path) -> Project {
+            let mut project = create_project(workspace_root);
+
+            project.file_groups.insert(
+                Id::raw("manifests"),
+                FileGroup::new_with_source("manifests", [project.source.join(".../package.json")])
+                    .unwrap(),
+            );
+            project
+        }
+
+        // Asserted on the error's message, as miette wraps panic messages on CI
+        fn assert_parent_traversal_error(error: miette::Report, token: &str) {
+            let message = error.to_string();
+
+            assert!(
+                message.contains(&format!(
+                    "Token {token} in task project:task returned the parent traversal glob project/source/.../package.json"
+                )),
+                "{message}"
+            );
+        }
+
+        #[test]
+        fn supports_globs_func_in_inputs() {
+            let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph([]);
+            let project = create_project_with_manifests(sandbox.path());
+            let mut task = create_task();
+
+            task.inputs = vec![Input::TokenFunc("@globs(manifests)".into())];
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project_graph, &project, &context);
+
+            assert_eq!(
+                expander.expand_inputs(&task).unwrap(),
+                ExpandedResult {
+                    globs: vec![WorkspaceRelativePathBuf::from(
+                        "project/source/.../package.json"
+                    )],
+                    ..ExpandedResult::default()
+                }
+            );
+        }
+
+        #[test]
+        fn supports_files_func_in_args() {
+            let sandbox = create_empty_sandbox();
+            sandbox.create_file("package.json", "{}");
+            sandbox.create_file("project/package.json", "{}");
+            sandbox.create_file("project/source/package.json", "{}");
+            sandbox.create_file("project/source/nested/package.json", "{}");
+            sandbox.create_file("project/sibling/package.json", "{}");
+            sandbox.create_file("other/package.json", "{}");
+
+            let project_graph = create_project_graph([]);
+            let project = create_project_with_manifests(sandbox.path());
+            let mut task = create_task();
+
+            task.args.push("@files(manifests)".into());
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project_graph, &project, &context);
+
+            let mut args = expander.expand_args(&mut task).unwrap();
+            args.sort();
+
+            assert_eq!(
+                args,
+                vec![
+                    path::normalize_separators("../../package.json"),
+                    path::normalize_separators("../package.json"),
+                    "package.json".to_owned(),
+                ]
+            );
+        }
+
+        #[test]
+        fn errors_for_globs_func_in_args() {
+            let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph([]);
+            let project = create_project_with_manifests(sandbox.path());
+            let mut task = create_task();
+
+            task.args.push("@globs(manifests)".into());
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project_graph, &project, &context);
+
+            assert_parent_traversal_error(
+                expander.expand_args(&mut task).unwrap_err(),
+                "@globs(manifests)",
+            );
+        }
+
+        #[test]
+        fn errors_for_group_func_in_script() {
+            let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph([]);
+            let project = create_project_with_manifests(sandbox.path());
+            let mut task = create_task();
+
+            task.script = Some("cat @group(manifests)".into());
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project_graph, &project, &context);
+
+            assert_parent_traversal_error(
+                expander.expand_script(&mut task).unwrap_err(),
+                "@group(manifests)",
+            );
+        }
+
+        #[test]
+        fn errors_for_globs_func_in_env() {
+            let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph([]);
+            let project = create_project_with_manifests(sandbox.path());
+            let mut task = create_task();
+
+            task.env
+                .insert("GLOBS".into(), Some("@globs(manifests)".into()));
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project_graph, &project, &context);
+
+            assert_parent_traversal_error(
+                expander.expand_env(&mut task).unwrap_err(),
+                "@globs(manifests)",
+            );
+        }
+
+        #[test]
+        fn errors_for_globs_func_in_outputs() {
+            let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph([]);
+            let project = create_project_with_manifests(sandbox.path());
+            let mut task = create_task();
+
+            task.outputs = vec![Output::TokenFunc("@globs(manifests)".into())];
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project_graph, &project, &context);
+
+            assert_parent_traversal_error(
+                expander.expand_outputs(&task).unwrap_err(),
+                "@globs(manifests)",
+            );
+        }
+
+        #[test]
+        fn errors_for_in_func_referencing_glob() {
+            let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph([]);
+            let project = create_project_with_manifests(sandbox.path());
+            let mut task = create_task();
+
+            task.inputs = vec![Input::parse(".../package.json").unwrap()];
+            task.args.push("@in(0)".into());
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project_graph, &project, &context);
+
+            assert_parent_traversal_error(expander.expand_args(&mut task).unwrap_err(), "@in(0)");
         }
     }
 }

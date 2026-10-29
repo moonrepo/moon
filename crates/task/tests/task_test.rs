@@ -54,6 +54,39 @@ mod task {
         assert_eq!(files.len(), 0);
     }
 
+    #[test]
+    fn filters_out_affected_only_input_files() {
+        let sandbox = create_sandbox("files");
+
+        let task = Task {
+            input_files: FxHashMap::from_iter([(
+                WorkspaceRelativePathBuf::from("c.jsx"),
+                TaskFileInput {
+                    affected_only: true,
+                    ..Default::default()
+                },
+            )]),
+            input_globs: FxHashMap::from_iter([
+                (
+                    WorkspaceRelativePathBuf::from("a.*"),
+                    TaskGlobInput::default(),
+                ),
+                (
+                    WorkspaceRelativePathBuf::from("*.rs"),
+                    TaskGlobInput {
+                        affected_only: true,
+                        ..Default::default()
+                    },
+                ),
+            ]),
+            ..Default::default()
+        };
+
+        let files = task.get_input_files(sandbox.path()).unwrap();
+
+        assert_eq!(files, vec![sandbox.path().join("a.js")]);
+    }
+
     mod create_globset {
         use super::*;
         use std::sync::Arc;
@@ -109,6 +142,26 @@ mod task {
             assert!(!Arc::ptr_eq(&a, &b));
             assert!(!Arc::ptr_eq(&a, &c));
             assert!(!Arc::ptr_eq(&b, &c));
+        }
+
+        #[test]
+        fn can_exclude_affected_only_inputs() {
+            let mut task = create_task(&["src/**/*"], &[]);
+
+            task.input_globs.insert(
+                WorkspaceRelativePathBuf::from("*.json"),
+                TaskGlobInput {
+                    affected_only: true,
+                    ..Default::default()
+                },
+            );
+
+            let all = task.create_globset().unwrap();
+            let globset = task.create_globset_without_affected_only().unwrap();
+
+            assert!(all.matches("package.json"));
+            assert!(globset.matches("src/index.ts"));
+            assert!(!globset.matches("package.json"));
         }
 
         #[test]
@@ -172,6 +225,36 @@ mod task {
             files.sort();
 
             assert_eq!(files, vec![root.join("a.js"), root.join("b.js")]);
+        }
+
+        #[test]
+        fn doesnt_match_affected_only_inputs() {
+            let sandbox = create_sandbox("files");
+            let root = sandbox.path();
+
+            let task = Task {
+                input_files: FxHashMap::from_iter([(
+                    WorkspaceRelativePathBuf::from("c.jsx"),
+                    TaskFileInput {
+                        affected_only: true,
+                        ..Default::default()
+                    },
+                )]),
+                input_globs: FxHashMap::from_iter([(
+                    WorkspaceRelativePathBuf::from("*.js"),
+                    TaskGlobInput {
+                        affected_only: true,
+                        ..Default::default()
+                    },
+                )]),
+                ..Default::default()
+            };
+
+            let files = task
+                .get_affected_files(root, &create_changed_files(&["a.js", "c.jsx"]))
+                .unwrap();
+
+            assert!(files.is_empty());
         }
 
         #[test]
@@ -299,10 +382,32 @@ mod task_serde {
         assert_eq!(json, "{}");
         assert!(input.cache);
 
-        let (json, input) = round_trip(&TaskGlobInput { cache: false });
+        let (json, input) = round_trip(&TaskGlobInput {
+            cache: false,
+            ..Default::default()
+        });
 
         assert_eq!(json, r#"{"cache":false}"#);
         assert!(!input.cache);
+    }
+
+    #[test]
+    fn round_trips_inputs_affected_only() {
+        let (json, input) = round_trip(&TaskFileInput {
+            affected_only: true,
+            ..Default::default()
+        });
+
+        assert_eq!(json, r#"{"affectedOnly":true}"#);
+        assert!(input.affected_only);
+
+        let (json, input) = round_trip(&TaskGlobInput {
+            affected_only: true,
+            ..Default::default()
+        });
+
+        assert_eq!(json, r#"{"affectedOnly":true}"#);
+        assert!(input.affected_only);
     }
 
     #[test]

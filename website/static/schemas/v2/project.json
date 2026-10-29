@@ -305,6 +305,11 @@
       "description": "A file group input.",
       "type": "object",
       "properties": {
+        "affectedOnly": {
+          "title": "affectedOnly",
+          "description": "Only use the files and globs of the group to determine affected status, and exclude them from the task's hash and affected files.",
+          "type": "boolean"
+        },
         "as": {
           "title": "as",
           "description": "Format to resolve the file group into.",
@@ -346,6 +351,11 @@
       "description": "A file path input.",
       "type": "object",
       "properties": {
+        "affectedOnly": {
+          "title": "affectedOnly",
+          "description": "Only use the file to determine affected status, and exclude it from the task's hash and affected files.",
+          "type": "boolean"
+        },
         "content": {
           "title": "content",
           "description": "Regex pattern to match the file's contents against when determining affected status.",
@@ -433,6 +443,11 @@
       "description": "A glob pattern input.",
       "type": "object",
       "properties": {
+        "affectedOnly": {
+          "title": "affectedOnly",
+          "description": "Only use the glob to determine affected status, and exclude its files from the task's hash and affected files.",
+          "type": "boolean"
+        },
         "cache": {
           "title": "cache",
           "description": "Cache the glob walking result for increased performance.",
@@ -780,6 +795,11 @@
       "description": "An external project input.",
       "type": "object",
       "properties": {
+        "affectedOnly": {
+          "title": "affectedOnly",
+          "description": "Only use the project's files to determine affected status, and exclude them from the task's hash and affected files.",
+          "type": "boolean"
+        },
         "fileGroup": {
           "title": "fileGroup",
           "description": "A file group identifier within the project in which to determine affected status.",

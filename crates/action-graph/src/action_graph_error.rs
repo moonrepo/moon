@@ -1,7 +1,7 @@
 #![allow(unused_assignments)]
 
 use miette::Diagnostic;
-use moon_common::{Style, Stylize};
+use moon_common::{IdError, Style, Stylize};
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
@@ -19,6 +19,19 @@ pub enum ActionGraphError {
     )]
     InvalidJobIndex { index: usize, total: usize },
 
+    #[diagnostic(code(action_graph::invalid_toolchain_requirement))]
+    #[error(
+        "Toolchain {} requires {}, which is not a valid toolchain ID.",
+        .id.style(Style::Id),
+        .dep_id.style(Style::Id),
+    )]
+    InvalidToolchainRequirement {
+        id: String,
+        dep_id: String,
+        #[source]
+        error: Box<IdError>,
+    },
+
     #[diagnostic(code(action_graph::exec_plan::invalid_jobs))]
     #[error(
         "An execution plan was provided with task targets partitioned across jobs, but the pipeline has not been configured for parallelism. Please pass the {} and {} options, or define them in the plan.",
@@ -26,6 +39,13 @@ pub enum ActionGraphError {
         "--job-total".style(Style::Shell),
     )]
     InvalidPlanJobs,
+
+    #[diagnostic(
+        code(action_graph::missing_changed_files),
+        help = "Set the changed files before tracking affected state."
+    )]
+    #[error("Unable to track affected state, as the changed files have not been set.")]
+    MissingChangedFiles,
 
     #[diagnostic(code(action_graph::missing_toolchain_requirement))]
     #[error(
@@ -50,5 +70,9 @@ pub enum ActionGraphError {
     WouldCycle {
         source_action: String,
         target_action: String,
+
+        /// The actions that form the cycle, when known.
+        #[help]
+        cycle: Option<String>,
     },
 }

@@ -688,20 +688,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "blake3"
-version = "1.8.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d9e454fc11f76977dc803893aff6304ed33d6a26efae8696573bea74baa27ae"
-dependencies = [
- "arrayvec",
- "cc",
- "cfg-if",
- "constant_time_eq",
- "cpufeatures 0.3.1",
- "memmap2 0.9.12",
-]
-
-[[package]]
 name = "block-buffer"
 version = "0.10.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1044,28 +1030,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "chrono-tz"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "93698b29de5e97ad0ae26447b344c482a7284c737d9ddc5f9e52b74a336671bb"
-dependencies = [
- "chrono",
- "chrono-tz-build",
- "phf",
-]
-
-[[package]]
-name = "chrono-tz-build"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c088aee841df9c3041febbb73934cfc39708749bf96dc827e3359cd39ef11b1"
-dependencies = [
- "parse-zoneinfo",
- "phf",
- "phf_codegen",
-]
-
-[[package]]
 name = "chunked_transfer"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1405,12 +1369,6 @@ dependencies = [
  "quote",
  "unicode-xid",
 ]
-
-[[package]]
-name = "constant_time_eq"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d52eff69cd5e647efe296129160853a42795992097e8af39800e1060caeea9b"
 
 [[package]]
 name = "content_inspector"
@@ -1832,16 +1790,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "daggy"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "804169db156b21258a2545757336922d93dfa229892c75911a0ad141aa0ff241"
-dependencies = [
- "petgraph 0.8.3",
- "serde",
-]
-
-[[package]]
 name = "darling"
 version = "0.20.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2114,36 +2062,6 @@ checksum = "ffdd80ce8ce993de27e9f063a444a4d53ce8e8db4c1f00cc03af5ad5a9867a1e"
 dependencies = [
  "cipher",
 ]
-
-[[package]]
-name = "deserialize_untagged_verbose_error"
-version = "0.1.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2ca37f6cd655f43d6506a439f92e4827e63a8b3424834194c8e5f9a7ef1f33a"
-dependencies = [
- "deserialize_untagged_verbose_error_macro",
- "serde",
- "serde-value",
-]
-
-[[package]]
-name = "deserialize_untagged_verbose_error_macro"
-version = "0.1.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5683062913e8ec54c3d45c761c83415991154b36a59259307eb1abe57fc4c821"
-dependencies = [
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "serde",
- "syn 2.0.119",
-]
-
-[[package]]
-name = "deunicode"
-version = "1.6.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "abd57806937c9cc163efc8ea3910e00a62e2aeb0b8119f1793a978088f8f6b04"
 
 [[package]]
 name = "diff"
@@ -4233,15 +4151,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "humansize"
-version = "2.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6cb51c9a029ddc91b07a787f1d86b53ccfa49b0e86688c946ebe8d3555685dd7"
-dependencies = [
- "libm",
-]
-
-[[package]]
 name = "humantime"
 version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5382,9 +5291,9 @@ checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
 
 [[package]]
 name = "minisign-verify"
-version = "0.2.5"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22f9645cb765ea72b8111f36c522475d2daa0d22c957a9826437e97534bc4e9e"
+checksum = "871285dc19d8d0ebe0eef3d0e99a205f2a71363b122632cbbfa4a6c370a960ce"
 
 [[package]]
 name = "miniz_oxide"
@@ -5450,17 +5359,19 @@ dependencies = [
 name = "moon_action_graph"
 version = "0.0.1"
 dependencies = [
- "daggy",
+ "codspeed-criterion-compat",
  "graph-cycles",
  "miette 7.6.0",
  "moon_action",
  "moon_action_context",
  "moon_affected",
  "moon_app_context",
+ "moon_bench_utils",
  "moon_common",
  "moon_config",
  "moon_exec_plan",
  "moon_graph_utils",
+ "moon_layout_graph",
  "moon_pdk_api",
  "moon_project",
  "moon_query",
@@ -5476,6 +5387,7 @@ dependencies = [
  "thiserror 2.0.21",
  "tokio",
  "tracing",
+ "warpgate_api",
 ]
 
 [[package]]
@@ -5496,6 +5408,7 @@ dependencies = [
  "moon_config",
  "moon_console",
  "moon_daemon_client",
+ "moon_layout_graph",
  "moon_notifier",
  "moon_process",
  "moon_project",
@@ -5541,6 +5454,7 @@ dependencies = [
  "moon_env_var",
  "moon_feature_flags",
  "moon_hash",
+ "moon_layout_graph",
  "moon_pdk_api",
  "moon_plugin",
  "moon_process",
@@ -5576,12 +5490,14 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_env_var",
+ "moon_graph_utils",
  "moon_project",
  "moon_target",
  "moon_task",
  "moon_test_utils",
  "moon_workspace_graph",
  "rustc-hash",
+ "scc",
  "serde",
  "starbase_sandbox",
  "starbase_utils",
@@ -5650,6 +5566,7 @@ dependencies = [
  "moon_extension_plugin",
  "moon_feature_flags",
  "moon_file_watcher",
+ "moon_layout_graph",
  "moon_mcp",
  "moon_pdk_api",
  "moon_plugin",
@@ -5682,7 +5599,7 @@ dependencies = [
  "starbase_shell",
  "starbase_styles",
  "starbase_utils",
- "tera 1.20.1",
+ "tera",
  "thiserror 2.0.21",
  "tiny_http",
  "tokio",
@@ -5750,11 +5667,12 @@ dependencies = [
 name = "moon_cache"
 version = "0.0.1"
 dependencies = [
- "blake3",
  "codspeed-criterion-compat",
  "miette 7.6.0",
+ "moon_async_utils",
  "moon_bench_utils",
  "moon_cache_item",
+ "moon_cache_local",
  "moon_cache_storage",
  "moon_cas",
  "moon_common",
@@ -5763,7 +5681,7 @@ dependencies = [
  "moon_hash",
  "moon_target",
  "moon_time",
- "moon_vcs",
+ "scc",
  "serde",
  "starbase_sandbox",
  "starbase_utils",
@@ -5791,13 +5709,16 @@ dependencies = [
  "async-trait",
  "miette 7.6.0",
  "moon_blob",
+ "moon_cache_item",
  "moon_cache_storage",
  "moon_cas",
  "moon_common",
  "moon_config",
+ "moon_env_var",
  "moon_hash",
  "rustc-hash",
  "serde_json",
+ "serial_test",
  "starbase_sandbox",
  "tokio",
  "tracing",
@@ -5909,7 +5830,6 @@ dependencies = [
  "rustc-hash",
  "serial_test",
  "starbase",
- "starbase_archive",
  "starbase_sandbox",
  "starbase_styles",
  "starbase_utils",
@@ -5939,7 +5859,8 @@ dependencies = [
  "starbase_archive",
  "starbase_sandbox",
  "starbase_utils",
- "tera 1.20.1",
+ "tera",
+ "tera-contrib",
  "thiserror 2.0.21",
  "tokio",
  "tracing",
@@ -5979,8 +5900,6 @@ dependencies = [
 name = "moon_config"
 version = "2.2.2"
 dependencies = [
- "deserialize_untagged_verbose_error",
- "deserialize_untagged_verbose_error_macro",
  "httpmock",
  "indexmap",
  "miette 7.6.0",
@@ -5990,11 +5909,13 @@ dependencies = [
  "proto_core",
  "regex",
  "rustc-hash",
+ "scc",
  "schematic",
  "serde",
  "serde_json",
  "serial_test",
  "starbase_sandbox",
+ "starbase_utils",
  "version_spec",
  "warpgate_api",
 ]
@@ -6151,7 +6072,7 @@ dependencies = [
  "moon_target",
  "starbase_sandbox",
  "starbase_utils",
- "tera 1.20.1",
+ "tera",
  "tracing",
 ]
 
@@ -6188,6 +6109,7 @@ dependencies = [
  "moon_target",
  "moon_vcs",
  "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -6223,6 +6145,7 @@ dependencies = [
  "moon_config",
  "moon_feature_flags",
  "serde",
+ "serde_json",
  "starbase_sandbox",
  "starbase_utils",
  "thiserror 2.0.21",
@@ -6243,12 +6166,15 @@ name = "moon_graph_utils"
 version = "0.0.1"
 dependencies = [
  "miette 7.6.0",
+ "moon_async_utils",
  "moon_common",
  "moon_config",
  "petgraph 0.8.3",
  "rustc-hash",
  "serde",
  "starbase_utils",
+ "thiserror 2.0.21",
+ "tracing",
 ]
 
 [[package]]
@@ -6264,6 +6190,36 @@ dependencies = [
  "starbase_utils",
  "thiserror 2.0.21",
  "tracing",
+]
+
+[[package]]
+name = "moon_layout_graph"
+version = "0.0.1"
+dependencies = [
+ "codspeed-criterion-compat",
+ "futures",
+ "indexmap",
+ "miette 7.6.0",
+ "moon_app_context",
+ "moon_bench_utils",
+ "moon_common",
+ "moon_config",
+ "moon_graph_utils",
+ "moon_pdk_api",
+ "moon_project",
+ "moon_test_utils",
+ "moon_toolchain",
+ "moon_toolchain_plugin",
+ "moon_workspace_graph",
+ "petgraph 0.8.3",
+ "rustc-hash",
+ "serde",
+ "serde_json",
+ "starbase_sandbox",
+ "starbase_utils",
+ "tokio",
+ "tracing",
+ "warpgate_api",
 ]
 
 [[package]]
@@ -6449,6 +6405,7 @@ dependencies = [
  "moon_file_group",
  "moon_task",
  "serde",
+ "serde_json",
  "thiserror 2.0.21",
 ]
 
@@ -6504,7 +6461,6 @@ dependencies = [
 name = "moon_project_graph"
 version = "0.0.1"
 dependencies = [
- "daggy",
  "miette 7.6.0",
  "moon_cache",
  "moon_common",
@@ -6564,7 +6520,9 @@ dependencies = [
  "moon_feature_flags",
  "moon_target",
  "rustc-hash",
+ "scc",
  "serde",
+ "serde_json",
  "starbase_sandbox",
  "starbase_utils",
 ]
@@ -6586,6 +6544,7 @@ dependencies = [
  "moon_toolchain",
  "moon_toolchain_plugin",
  "rustc-hash",
+ "scc",
  "starbase_args",
  "starbase_sandbox",
  "system_env",
@@ -6624,7 +6583,6 @@ dependencies = [
 name = "moon_task_graph"
 version = "0.0.1"
 dependencies = [
- "daggy",
  "miette 7.6.0",
  "moon_common",
  "moon_config",
@@ -6655,11 +6613,13 @@ dependencies = [
  "moon_env_var",
  "moon_feature_flags",
  "moon_hash",
+ "moon_layout_graph",
  "moon_pdk_api",
  "moon_process",
  "moon_project",
  "moon_task",
  "moon_test_utils",
+ "moon_toolchain",
  "moon_toolchain_plugin",
  "moon_vcs",
  "rustc-hash",
@@ -6692,6 +6652,7 @@ dependencies = [
  "moon_daemon_utils",
  "moon_env_var",
  "moon_hash",
+ "moon_layout_graph",
  "moon_manifest",
  "moon_process",
  "moon_process_augment",
@@ -6702,7 +6663,6 @@ dependencies = [
  "moon_time",
  "rustc-hash",
  "serde",
- "starbase_archive",
  "starbase_sandbox",
  "starbase_utils",
  "thiserror 2.0.21",
@@ -6769,7 +6729,7 @@ dependencies = [
  "serde",
  "serde_json",
  "starbase_sandbox",
- "tera 2.4.0",
+ "tera",
 ]
 
 [[package]]
@@ -6807,6 +6767,7 @@ dependencies = [
  "proto_pdk_api",
  "rustc-hash",
  "scc",
+ "serde_json",
  "starbase_sandbox",
  "starbase_utils",
  "tokio",
@@ -6864,10 +6825,10 @@ name = "moon_workspace"
 version = "0.0.1"
 dependencies = [
  "codspeed-criterion-compat",
- "daggy",
  "miette 7.6.0",
  "moon_async_utils",
  "moon_bench_utils",
+ "moon_blob",
  "moon_cache",
  "moon_common",
  "moon_config",
@@ -7529,15 +7490,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
 
 [[package]]
-name = "ordered-float"
-version = "2.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "68f19d67e5a2795c94e73e0bb1cc1a7edeb2e28efd39e2e1c9b7a40c1108b11c"
-dependencies = [
- "num-traits",
-]
-
-[[package]]
 name = "ordered-stream"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7633,15 +7585,6 @@ dependencies = [
  "redox_syscall",
  "smallvec",
  "windows-link",
-]
-
-[[package]]
-name = "parse-zoneinfo"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f2a05b18d44e2957b88f96ba460715e295bc1d7510468a2f3d3b44535d26c24"
-dependencies = [
- "regex",
 ]
 
 [[package]]
@@ -7856,44 +7799,6 @@ dependencies = [
  "twofish",
  "x25519-dalek",
  "zeroize",
-]
-
-[[package]]
-name = "phf"
-version = "0.11.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1fd6780a80ae0c52cc120a26a1a42c1ae51b247a253e4e06113d23d2c2edd078"
-dependencies = [
- "phf_shared",
-]
-
-[[package]]
-name = "phf_codegen"
-version = "0.11.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aef8048c789fa5e851558d709946d6d79a8ff88c0440c587967f8e94bfb1216a"
-dependencies = [
- "phf_generator",
- "phf_shared",
-]
-
-[[package]]
-name = "phf_generator"
-version = "0.11.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3c80231409c20246a13fddb31776fb942c38553c51e871f8cbd687a4cfb5843d"
-dependencies = [
- "phf_shared",
- "rand 0.8.8",
-]
-
-[[package]]
-name = "phf_shared"
-version = "0.11.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67eabc2ef2a60eb7faa00097bd1ffdb5bd28e62bf39990626a582201b7a754e5"
-dependencies = [
- "siphasher",
 ]
 
 [[package]]
@@ -8138,30 +8043,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "proc-macro-error"
-version = "1.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da25490ff9892aab3fcf7c36f08cfb902dd3e71ca0f9f9517bea02a73a5ce38c"
-dependencies = [
- "proc-macro-error-attr",
- "proc-macro2",
- "quote",
- "syn 1.0.109",
- "version_check",
-]
-
-[[package]]
-name = "proc-macro-error-attr"
-version = "1.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1be40180e52ecc98ad80b184934baf3d0d29f979574e439af5a55274b35f869"
-dependencies = [
- "proc-macro2",
- "quote",
- "version_check",
-]
-
-[[package]]
 name = "proc-macro-utils"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8245,11 +8126,12 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.62.2"
+version = "0.63.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "561c9315fc02dda04371990575c13a70cfffcc1afa92c662f2638707ba5bc5ab"
+checksum = "f0057194eaa909f69496821efd7dab103b989549a144c260ae0296a8bb4d75b3"
 dependencies = [
  "ai_env",
+ "ci_env",
  "convert_case 0.12.0",
  "docker_credential",
  "dotenv-ng",
@@ -8288,9 +8170,9 @@ dependencies = [
 
 [[package]]
 name = "proto_pdk_api"
-version = "0.34.5"
+version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70176cacf3b0e5490f7f93f8999845a8c3d219b80ed0f62f42a055f215d11242"
+checksum = "2039e1514fd2087dc12c2067c4505bc268c97d36d663333eaf529a8c5399b4a2"
 dependencies = [
  "derive_setters",
  "rustc-hash",
@@ -8305,9 +8187,9 @@ dependencies = [
 
 [[package]]
 name = "proto_pdk_test_utils"
-version = "0.50.2"
+version = "0.51.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d2031c30deb247d79f41c4c6e8e23787d015909dd7e1e8ca78c46434d81772f"
+checksum = "6a2f513353c05786590c3e5c363e9ce205387ccae736d796fb2ca70354371ff4"
 dependencies = [
  "extism",
  "proto_core",
@@ -8320,11 +8202,11 @@ dependencies = [
 
 [[package]]
 name = "proto_shim"
-version = "0.8.5"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61c51e5253906b21be9afdc659a62e47dd589fd64955388924f24af6deb7324a"
+checksum = "7dcd97056b8b1b7beb3ae3b8dd65894b46c5a08d00425b274e46f15a34eb9d62"
 dependencies = [
- "dirs 6.0.0",
+ "dirs 7.0.0",
  "windows-sys 0.61.2",
 ]
 
@@ -9339,16 +9221,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde-value"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3a1a3341211875ef120e117ea7fd5228530ae7e7036a779fdc9117be6b3282c"
-dependencies = [
- "ordered-float",
- "serde",
-]
-
-[[package]]
 name = "serde_core"
 version = "1.0.229"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9686,12 +9558,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbbb5d9659141646ae647b42fe094daf6c6192d1620870b449d9557f748b2daa"
 
 [[package]]
-name = "siphasher"
-version = "1.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33f4fe9184a62d842c9ef383018f3306d8ba224fd9d836f56d7288308847c256"
-
-[[package]]
 name = "sized-chunks"
 version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9714,16 +9580,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bdd58c3c93c3d278ca835519292445cb4b0d4dc59ccfdf7ceadaab3f8aeb4038"
 dependencies = [
  "version_check",
-]
-
-[[package]]
-name = "slug"
-version = "0.1.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "882a80f72ee45de3cc9a5afeb2da0331d58df69e4e7d8eeb5d3c7784ae67e724"
-dependencies = [
- "deunicode",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -9982,9 +9838,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.14.6"
+version = "0.14.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "65258aca9c5ab7cd71fe7243140791d1f5dbe2ffa4c794486f9636aa4a7e603e"
+checksum = "28aa6a0f941225b2d5eca77f3253ad2ef9531675890f6e0644d3b1ad0cfff845"
 dependencies = [
  "async-trait",
  "base64 0.23.1",
@@ -10104,16 +9960,6 @@ name = "supports-unicode"
 version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b7401a30af6cb5818bb64852270bb722533397edcfc7344954a38f420819ece2"
-
-[[package]]
-name = "syn"
-version = "1.0.109"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72b64191b275b66ffe2469e8af2c1cfe3bafa67b529ead792a6d0160888b4237"
-dependencies = [
- "proc-macro2",
- "unicode-ident",
-]
 
 [[package]]
 name = "syn"
@@ -10261,36 +10107,25 @@ dependencies = [
 
 [[package]]
 name = "tera"
-version = "1.20.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8004bca281f2d32df3bacd59bc67b312cb4c70cea46cbd79dbe8ac5ed206722"
-dependencies = [
- "chrono",
- "chrono-tz",
- "globwalk",
- "humansize",
- "lazy_static",
- "percent-encoding",
- "pest",
- "pest_derive",
- "rand 0.8.8",
- "regex",
- "serde",
- "serde_json",
- "slug",
- "unicode-segmentation",
-]
-
-[[package]]
-name = "tera"
 version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "61e0cadeeb54426080b4c5395d59769ce8293f542cc25511c167c742b2175809"
 dependencies = [
  "ahash",
+ "indexmap",
  "itoa",
  "pulldown-cmark-escape",
  "serde",
+]
+
+[[package]]
+name = "tera-contrib"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e6c07f9f25dce5c40e92d0dcaa33508c451a07395dfcdd9040320ed6bb4a52a9"
+dependencies = [
+ "serde_json",
+ "tera",
 ]
 
 [[package]]
@@ -11133,9 +10968,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.36.4"
+version = "0.37.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "511bb457afafbe0c7a4ac0c754e6d3a56108719489fd101983e7bc9c422766ce"
+checksum = "9ef41e4611f3a29962f0b7fa1352b9065a87394c5529521bf79da33cb17fc49c"
 dependencies = [
  "async-trait",
  "compact_str 0.10.0",
@@ -11170,9 +11005,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate_api"
-version = "0.19.4"
+version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "01dc5cd1f1ad22caf261e2aea996a0868d2e4702aac3bf468cc7f183693f0eda"
+checksum = "29478d6ebfe1024e677b4a6e86df4a3dc9c2a490b4c126afac453cef3ad43439"
 dependencies = [
  "anyhow",
  "derive_setters",
@@ -11187,9 +11022,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate_pdk"
-version = "0.18.4"
+version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9b8a835fd5b7db5031a105ce5c069eebcec7e71f138db7315f84e8c310a4848"
+checksum = "0c6a0fb469d17fe4ec917175e9361115201a8f2cdfbd632f7e768bd656ff900b"
 dependencies = [
  "extism-pdk",
  "serde",

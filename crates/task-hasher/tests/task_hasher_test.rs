@@ -152,6 +152,25 @@ mod task_hasher {
         }
     }
 
+    #[tokio::test(flavor = "multi_thread")]
+    async fn matches_ignore_patterns_with_parent_traversal() {
+        let sandbox = create_sandbox("ignore-patterns");
+        sandbox.enable_git();
+
+        let (wg, app) = mock_workspace(sandbox.path()).await;
+        let project = wg.get_project("root").unwrap();
+        let task = wg.get_task_from_project("root", "testPatterns").unwrap();
+
+        let hasher_config = HasherConfig {
+            ignore_patterns: vec![GlobPath::parse("nested/.../package.json").unwrap()],
+            ..HasherConfig::default()
+        };
+
+        let result = generate_hash(&project, &task, &wg, &app, &hasher_config).await;
+
+        assert_eq!(get_input_files(result.inputs), [".gitignore"]);
+    }
+
     mod input_aggregation {
         use super::*;
 
@@ -176,6 +195,53 @@ mod task_hasher {
             let result = generate_hash(&project, &task, &wg, &app, &glob_config).await;
 
             assert_eq!(get_input_files(result.inputs), expected);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn excludes_affected_only_inputs() {
+            let sandbox = create_sandbox("inputs");
+            sandbox.enable_git();
+
+            let (wg, app) = mock_workspace(sandbox.path()).await;
+            let (vcs_config, glob_config) = create_hasher_configs();
+            let project = wg.get_project("root").unwrap();
+            let task = wg.get_task_from_project("root", "affectedOnly").unwrap();
+
+            let expected = ["1.txt", "2.txt", "3.txt"];
+
+            // VCS
+            let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
+
+            assert_eq!(get_input_files(result.inputs), expected);
+
+            // Glob
+            let result = generate_hash(&project, &task, &wg, &app, &glob_config).await;
+
+            assert_eq!(get_input_files(result.inputs), expected);
+        }
+
+        // Without other inputs, changed files are still filtered by them
+        #[tokio::test(flavor = "multi_thread")]
+        async fn excludes_changed_affected_only_inputs() {
+            let sandbox = create_sandbox("inputs");
+            sandbox.enable_git();
+            sandbox.create_file("2.txt", "changed");
+            sandbox.create_file("dir/new.txt", "created");
+
+            let (wg, app) = mock_workspace(sandbox.path()).await;
+            let (vcs_config, glob_config) = create_hasher_configs();
+            let project = wg.get_project("root").unwrap();
+            let task = wg.get_task_from_project("root", "affectedOnlyAll").unwrap();
+
+            // VCS
+            let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
+
+            assert_eq!(get_input_files(result.inputs), Vec::<&str>::new());
+
+            // Glob
+            let result = generate_hash(&project, &task, &wg, &app, &glob_config).await;
+
+            assert_eq!(get_input_files(result.inputs), Vec::<&str>::new());
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -508,6 +574,35 @@ mod task_hasher {
             let result = generate_hash(&project, &task, &wg, &app, &hasher_config).await;
 
             assert_eq!(get_input_files(result.inputs), Vec::<&str>::new());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn includes_parent_traversal_globs() {
+            let sandbox = create_sandbox("projects");
+            sandbox.create_file("package.json", "{}");
+            sandbox.create_file("inputs/package.json", "{}");
+            sandbox.create_file("inputs/nested/package.json", "{}");
+            sandbox.create_file("external/package.json", "{}");
+            sandbox.enable_git();
+
+            let (wg, app) = mock_workspace(sandbox.path()).await;
+            let (vcs_config, glob_config) = create_hasher_configs();
+            let project = wg.get_project("inputs").unwrap();
+            let task = wg
+                .get_task_from_project("inputs", "parentTraversal")
+                .unwrap();
+
+            let expected = ["inputs/package.json", "package.json"];
+
+            // VCS
+            let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
+
+            assert_eq!(get_input_files(result.inputs), expected);
+
+            // Glob
+            let result = generate_hash(&project, &task, &wg, &app, &glob_config).await;
+
+            assert_eq!(get_input_files(result.inputs), expected);
         }
 
         #[tokio::test(flavor = "multi_thread")]

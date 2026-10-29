@@ -307,6 +307,55 @@ mod registry_loader {
         assert!(Arc::ptr_eq(&one.unwrap(), &two.unwrap()));
     }
 
+    #[tokio::test(flavor = "multi_thread")]
+    async fn concurrent_loads_only_load_once() {
+        let sandbox = create_sandbox("wasm");
+        let registry = create_registry(sandbox.path(), TestConfig::new(&["a"], sandbox.path()));
+
+        let handles = (0..8)
+            .map(|_| {
+                let registry = registry.clone();
+
+                tokio::spawn(async move { registry.load("a").await.unwrap() })
+            })
+            .collect::<Vec<_>>();
+
+        let mut plugins = vec![];
+
+        for handle in handles {
+            plugins.push(handle.await.unwrap());
+        }
+
+        assert!(
+            plugins
+                .iter()
+                .all(|plugin| Arc::ptr_eq(plugin, &plugins[0]))
+        );
+        assert_eq!(registry.config_data.configured.lock().unwrap().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn retries_a_load_that_failed() {
+        let fixture = create_sandbox("wasm");
+        let sandbox = create_empty_sandbox();
+        let registry = create_registry(sandbox.path(), TestConfig::new(&["a"], sandbox.path()));
+
+        // The WASM file doesn't exist yet
+        assert!(registry.load("a").await.is_err());
+        assert!(!registry.is_registered(&Id::raw("a")).await);
+
+        fs::copy(
+            fixture.path().join("test.wasm"),
+            sandbox.path().join("test.wasm"),
+        )
+        .unwrap();
+
+        let plugin = registry.load("a").await.unwrap();
+
+        assert_eq!(plugin.get_id(), &Id::raw("a"));
+        assert!(registry.is_registered(&Id::raw("a")).await);
+    }
+
     #[tokio::test]
     async fn loads_many_plugins() {
         let sandbox = create_sandbox("wasm");

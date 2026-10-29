@@ -305,6 +305,11 @@
       "description": "A file group input.",
       "type": "object",
       "properties": {
+        "affectedOnly": {
+          "title": "affectedOnly",
+          "description": "Only use the files and globs of the group to determine affected status, and exclude them from the task's hash and affected files.",
+          "type": "boolean"
+        },
         "as": {
           "title": "as",
           "description": "Format to resolve the file group into.",
@@ -346,6 +351,11 @@
       "description": "A file path input.",
       "type": "object",
       "properties": {
+        "affectedOnly": {
+          "title": "affectedOnly",
+          "description": "Only use the file to determine affected status, and exclude it from the task's hash and affected files.",
+          "type": "boolean"
+        },
         "content": {
           "title": "content",
           "description": "Regex pattern to match the file's contents against when determining affected status.",
@@ -433,6 +443,11 @@
       "description": "A glob pattern input.",
       "type": "object",
       "properties": {
+        "affectedOnly": {
+          "title": "affectedOnly",
+          "description": "Only use the glob to determine affected status, and exclude its files from the task's hash and affected files.",
+          "type": "boolean"
+        },
         "cache": {
           "title": "cache",
           "description": "Cache the glob walking result for increased performance.",
@@ -780,6 +795,11 @@
       "description": "An external project input.",
       "type": "object",
       "properties": {
+        "affectedOnly": {
+          "title": "affectedOnly",
+          "description": "Only use the project's files to determine affected status, and exclude them from the task's hash and affected files.",
+          "type": "boolean"
+        },
         "fileGroup": {
           "title": "fileGroup",
           "description": "A file group identifier within the project in which to determine affected status.",
@@ -1124,6 +1144,28 @@
       },
       "additionalProperties": false
     },
+    "TaskCheckFingerprint": {
+      "description": "The fingerprinting strategy for hashing a task check.",
+      "default": true,
+      "anyOf": [
+        {
+          "description": "Only hash the exit code.",
+          "const": "exit-code"
+        },
+        {
+          "description": "Only hash stderr.",
+          "const": "stderr"
+        },
+        {
+          "description": "Only hash stdout.",
+          "const": "stdout"
+        },
+        {
+          "description": "Whether to hash all script output.",
+          "type": "boolean"
+        }
+      ]
+    },
     "TaskCheckFingerprintConfig": {
       "description": "Task check configuration for fingerprinting.",
       "type": "object",
@@ -1135,13 +1177,10 @@
         "hash": {
           "title": "hash",
           "description": "The content hashing strategy.",
-          "anyOf": [
+          "default": true,
+          "allOf": [
             {
-              "type": "boolean"
-            },
-            {
-              "type": "string",
-              "enum": ["exit-code", "stderr", "stdout"]
+              "$ref": "#/definitions/TaskCheckFingerprint"
             }
           ]
         },
@@ -1556,13 +1595,10 @@
         "pass": {
           "title": "pass",
           "description": "The pattern in which affected files will be passed to the affected task.",
-          "anyOf": [
+          "default": true,
+          "allOf": [
             {
-              "type": "boolean"
-            },
-            {
-              "type": "string",
-              "enum": ["args", "env"]
+              "$ref": "#/definitions/TaskOptionAffectedFilesPattern"
             }
           ]
         },
@@ -1596,32 +1632,85 @@
       "additionalProperties": false
     },
     "TaskOptionAffectedFilesEntry": {
+      "default": true,
       "anyOf": [
         {
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "string",
-              "enum": ["args", "env"]
-            }
-          ]
+          "$ref": "#/definitions/TaskOptionAffectedFilesPattern"
         },
         {
           "$ref": "#/definitions/TaskOptionAffectedFilesConfig"
         }
       ]
     },
-    "TaskOptionEnvFile": {
+    "TaskOptionAffectedFilesPattern": {
+      "description": "The pattern in which affected files will be passed to the affected task.",
+      "default": true,
       "anyOf": [
         {
+          "description": "Passed as command line arguments.",
+          "const": "args"
+        },
+        {
+          "description": "Passed as environment variables.",
+          "const": "env"
+        },
+        {
+          "description": "Passed as command line arguments and environment variables.",
+          "type": "boolean"
+        }
+      ]
+    },
+    "TaskOptionCache": {
+      "description": "The environment in which to apply task caching.",
+      "default": true,
+      "anyOf": [
+        {
+          "description": "Only cache locally.",
+          "const": "local"
+        },
+        {
+          "description": "Only cache remotely.",
+          "const": "remote"
+        },
+        {
+          "description": "Cache both locally and remotely.",
+          "type": "boolean"
+        }
+      ]
+    },
+    "TaskOptionEnvFile": {
+      "description": "The pattern in which a task is dependent on a .env file.",
+      "anyOf": [
+        {
+          "description": "Uses an .env file in the project root.",
+          "type": "boolean",
+          "markdownDescription": "Uses an `.env` file in the project root."
+        },
+        {
+          "description": "An explicit path to an .env file.",
+          "type": "string",
+          "markdownDescription": "An explicit path to an `.env` file."
+        },
+        {
+          "description": "A list of explicit .env file paths.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "markdownDescription": "A list of explicit `.env` file paths."
+        }
+      ],
+      "markdownDescription": "The pattern in which a task is dependent on a `.env` file."
+    },
+    "TaskOptionEnvOverride": {
+      "description": "Which task environment variables override system environment variables.",
+      "anyOf": [
+        {
+          "description": "All variables, or none.",
           "type": "boolean"
         },
         {
-          "type": "string"
-        },
-        {
+          "description": "Only the listed variables.",
           "type": "array",
           "items": {
             "type": "string"
@@ -1629,16 +1718,34 @@
         }
       ]
     },
-    "TaskOptionEnvOverride": {
+    "TaskOptionOnFailure": {
+      "description": "How a failure of the task affects the action pipeline.",
+      "type": "string",
+      "enum": ["allow", "expect"]
+    },
+    "TaskOptionRunInCI": {
+      "description": "The pattern in which to run the task automatically in CI.",
+      "default": true,
       "anyOf": [
         {
-          "type": "boolean"
+          "description": "Always run, regardless of affected status.",
+          "const": "always"
         },
         {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "description": "Only run if affected by changed files.",
+          "const": "affected"
+        },
+        {
+          "description": "Only run in CI and not locally if affected by changed files.",
+          "const": "only"
+        },
+        {
+          "description": "Skip running in CI but run locally and allow task relationships to be valid.",
+          "const": "skip"
+        },
+        {
+          "description": "Either affected, or don't run at all.",
+          "type": "boolean"
         }
       ]
     },
@@ -1649,6 +1756,7 @@
         "affectedFiles": {
           "title": "affectedFiles",
           "description": "The pattern in which affected files will be passed to the task.",
+          "default": true,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskOptionAffectedFilesEntry"
@@ -1658,32 +1766,13 @@
             }
           ]
         },
-        "allowFailure": {
-          "title": "allowFailure",
-          "description": "Allow the task to fail without failing the entire action pipeline. @since 1.13.0",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
         "cache": {
           "title": "cache",
           "description": "Cache the outputs of the task for incremental builds. Defaults to true if outputs are configured for the task.",
+          "default": true,
           "anyOf": [
             {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string",
-                  "enum": ["local", "remote"]
-                }
-              ]
+              "$ref": "#/definitions/TaskOptionCache"
             },
             {
               "type": "null"
@@ -1740,19 +1829,6 @@
             }
           ],
           "markdownDescription": "Override system environment variables with the task's `env`, instead of only setting them when missing. When a list of variable names, only those variables will be overridden. @since 2.6.0"
-        },
-        "expectFailure": {
-          "title": "expectFailure",
-          "description": "Expect the task to fail, and fail the entire action pipeline if it passes. Useful for checks that are known to be broken, which should be re-enabled once fixed. The task is never cached. @since 2.6.0",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Expect the task to fail, and fail the entire action pipeline if it passes. Useful for checks that are known to be broken, which should be re-enabled once fixed. The task is never cached. @since 2.6.0"
         },
         "inferInputs": {
           "title": "inferInputs",
@@ -1929,6 +2005,19 @@
             }
           ]
         },
+        "onFailure": {
+          "title": "onFailure",
+          "description": "How a failure of the task affects the action pipeline. When allow, the task can fail without failing the pipeline. When expect, the task must fail, and fails the pipeline if it passes, which is useful for checks that are known to be broken, and should be re-enabled once fixed. An expected failure is never cached. @since 3.0.0",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskOptionOnFailure"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "How a failure of the task affects the action pipeline. When `allow`, the task can fail without failing the pipeline. When `expect`, the task must fail, and fails the pipeline if it passes, which is useful for checks that are known to be broken, and should be re-enabled once fixed. An expected failure is never cached. @since 3.0.0"
+        },
         "os": {
           "title": "os",
           "description": "The operating system in which to only run this task on.",
@@ -2030,17 +2119,10 @@
         "runInCI": {
           "title": "runInCI",
           "description": "Whether to run the task in CI or not, when executing moon ci, moon check, or moon run.",
+          "default": true,
           "anyOf": [
             {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string",
-                  "enum": ["always", "affected", "only", "skip"]
-                }
-              ]
+              "$ref": "#/definitions/TaskOptionRunInCI"
             },
             {
               "type": "null"

@@ -17,26 +17,20 @@ macro_rules! config_enum {
 }
 
 #[macro_export]
-macro_rules! config_untagged_enum {
+macro_rules! config_unit_enum {
     ($impl:item) => {
-        #[derive(
-            Clone,
-            Debug,
-            Eq,
-            PartialEq,
-            deserialize_untagged_verbose_error::DeserializeUntaggedVerboseError,
-            serde::Serialize,
-        )]
-        #[serde(untagged)]
-        $impl
+        $crate::config_enum!(
+            #[derive(Copy)]
+            $impl
+        );
     };
 }
 
 #[macro_export]
-macro_rules! config_unit_enum {
+macro_rules! config_untagged_enum {
     ($impl:item) => {
         $crate::config_enum!(
-            #[derive(Copy, Default)]
+            #[serde(untagged)]
             $impl
         );
     };
@@ -44,7 +38,7 @@ macro_rules! config_unit_enum {
 
 #[macro_export]
 macro_rules! generate_switch {
-    ($name:ident, [ $($value:literal),* ]) => {
+    ($name:ident) => {
         impl $name {
             pub fn is_enabled(&self) -> bool {
                 !matches!(self, Self::Enabled(false))
@@ -54,22 +48,6 @@ macro_rules! generate_switch {
         impl From<bool> for $name {
             fn from(value: bool) -> Self {
                 Self::Enabled(value)
-            }
-        }
-
-        impl Schematic for $name {
-            fn build_schema(mut schema: SchemaBuilder) -> Schema {
-                schema.union(UnionType::new_any([
-                    schema.infer::<bool>(),
-                    schema.nest().string(StringType {
-                        enum_values: Some(Vec::from_iter([
-                            $(
-                                $value.into()
-                            ),*
-                        ])),
-                        ..Default::default()
-                    }),
-                ]))
             }
         }
     };

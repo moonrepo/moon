@@ -1,0 +1,122 @@
+---
+title: Layout graph
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="3.0.0" header />
+
+The layout graph is a representation of where each [project](../concepts/project) lives for each of
+its [toolchains](../concepts/toolchain): the _dependencies root_ that a toolchain locates for the
+project, like a package manager's workspace, a Cargo workspace, or a standalone package, the
+project's role in that root, and the version and settings that apply.
+
+moon builds it while building the [action graph](./action-graph), for the toolchains of the tasks
+being ran, and uses it to setup environments, install dependencies, hash tasks, and prune Docker
+images. Each root is located once per project, instead of once for every action and task that needs
+it, and toolchains that support it locate the roots of many projects in a single call.
+
+## Dependencies roots
+
+A toolchain locates a dependencies root by starting from a project's directory, typically by
+traversing upwards to find a lockfile. A root is one of the following:
+
+- **Workspace** - A root with member globs, like `workspaces` in `package.json`, or `members` in
+  `Cargo.toml`. Projects matched by the globs are its members, and a project located at the root
+  itself (if there is one) is its workspace root. A workspace can contain packages that aren't moon
+  projects, which are still installed.
+- **Package** - A single package that isn't a workspace, whose root is a project's own root, like an
+  application with its own lockfile.
+
+A project that uses a toolchain, but isn't in a root, has no dependencies installed for it, and only
+has the toolchain setup. This happens when the project isn't a member of the workspace that it
+located, when the toolchain doesn't locate roots (or doesn't find one), or when installing
+dependencies has been [disabled](../config/workspace#installdependencies).
+
+Multiple toolchains can locate the same directory, and they're still separate roots. For example, a
+repository with both a `package.json` workspace and a Cargo workspace at its root has a JavaScript
+root and a Rust root.
+
+## Actions and versions
+
+The [setup environment and install dependencies](./action-graph#install-dependencies) actions are
+scoped to a root, so every project in a root shares them. A project can
+[override a toolchain's version](../config/project#overriding-versions), which applies as follows:
+
+### Workspace
+
+A workspace's actions run with the version and settings of its root project (the project at the
+workspace's root, if there is one), otherwise with the workspace's configured ones. A project that
+overrides the version only needs it to run its own tasks, so its tasks also setup their own version,
+while the workspace's actions don't wait on it.
+
+For example, a Cargo workspace that uses Rust 1.90, where the crate `a` overrides it with 1.99,
+results in the following actions:
+
+- `InstallDependencies(rust)` and `SetupEnvironment(rust)` for the workspace, which depend on
+  `SetupToolchain(rust:1.90)`.
+- `SetupToolchain(rust:1.99)`, which only `a`'s tasks depend on, in addition to the workspace's
+  install.
+
+This is the same whichever projects are in the run, so even when only `a`'s tasks are ran, the
+workspace's version is setup for its install.
+
+If the root project overrides the version instead, the workspace's actions run with the root
+project's version, and the members that don't override it setup the workspace's version for their
+tasks.
+
+The same applies to toolchains that a root's toolchain requires, like Node.js and a package manager
+for the JavaScript toolchain. The workspace's actions use the root project's (or the workspace's)
+versions, while a project
+that overrides them sets up its own for its tasks.
+
+### Package
+
+As the root is the project's own root, its actions run with the project's version and settings,
+including its overrides.
+
+### No root
+
+Only the toolchain is setup, with the project's version, which is the workspace's unless it's
+overridden.
+
+## Diagnostics
+
+While placing projects, moon reports placements that may be unexpected. They're displayed by
+[`moon layout-graph --info`](../commands/layout-graph), and included in its JSON output.
+
+- **Outside** (info) - The project located a root, but isn't a member of it, so the root's install
+  doesn't install the project's dependencies. If the project should belong to the workspace, add it
+  to the workspace's members.
+- **Shadowed** (warning) - The project is in a root of its own (like a nested workspace), while an
+  enclosing root of the same toolchain also matches it with its member globs, so the enclosing
+  root's install may also install the project's dependencies. Exclude the project from the enclosing
+  workspace's members, or remove its own lockfile so that it belongs to the enclosing workspace.
+- **Divergent** (info) - The project overrides the version of a workspace's toolchain, so its tasks
+  run with another version than the workspace's dependencies were installed with. This is often
+  intentional, but dependencies that are compiled for a specific version (like native Node.js
+  addons) may not work.
+
+Diagnostics are only complete when every project has been placed, as an enclosing root is only
+known once a project in it has located it.
+
+## Viewing the graph
+
+The [`moon layout-graph`](../commands/layout-graph) command serves an interactive graph of every
+root, with each project linking to the root that it belongs to, labeled with its role, and a root
+at the workspace root linking to the workspace. Pass `--info` to print each root's kind, version,
+files, and projects, and the diagnostics, or a project ID to only place that project, like a run
+would.
+
+```shell
+$ moon layout-graph --info
+```
+
+## What is the graph used for?
+
+- The [action graph](./action-graph) creates the setup environment and install dependencies actions
+  of each root, and links them to the tasks of the projects in it.
+- [Task hashes](../concepts/cache#hashing) include the dependencies locked in the lockfile of a
+  task's root.
+- [`moon docker prune`](../commands/docker/prune) prunes the roots of the projects that were focused
+  while scaffolding.

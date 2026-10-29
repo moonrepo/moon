@@ -27,7 +27,7 @@ pub async fn setup_server(host: String, port: u16) -> miette::Result<(Arc<Server
 
 pub fn respond_to_request(
     req: Request,
-    tera: &mut Tera,
+    tera: &Tera,
     graph_data: &str,
     page_title: &str,
 ) -> miette::Result<()> {
@@ -49,7 +49,8 @@ pub fn respond_to_request(
             let info = tera
                 .render_str(
                     INDEX_HTML,
-                    &Context::from_serialize(context).into_diagnostic()?,
+                    &Context::from_serialize(&context).into_diagnostic()?,
+                    false,
                 )
                 .into_diagnostic()?;
 
@@ -82,7 +83,7 @@ pub async fn run_server(
     host: String,
     port: u16,
 ) -> miette::Result<()> {
-    let (server, mut tera) = setup_server(host, port).await?;
+    let (server, tera) = setup_server(host, port).await?;
     let url = format!("http://{}", server.server_addr());
     let _ = open::that(&url);
 
@@ -102,7 +103,7 @@ pub async fn run_server(
     let title = title.to_owned();
     let handle2: JoinHandle<miette::Result<()>> = spawn(async move {
         for req in server.incoming_requests() {
-            respond_to_request(req, &mut tera, &graph_data, &title)?;
+            respond_to_request(req, &tera, &graph_data, &title)?;
         }
 
         Ok(())

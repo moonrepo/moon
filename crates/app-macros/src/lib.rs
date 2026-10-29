@@ -68,20 +68,18 @@ pub fn with_shared_exec_args(attr: TokenStream, item: TokenStream) -> TokenStrea
         quote! {
             #[arg(
                 long,
-                visible_alias = "dependents",
-                help = "Control the depth of downstream dependents",
+                help = "Also run dependents of the selected targets, up to this depth (none, direct, deep, or a number of hops)",
                 help_heading = super::HEADING_GRAPH,
             )]
-            pub downstream: Option<DownstreamScope>
+            pub dependents: Option<moon_affected::Depth>
         },
         quote! {
             #[arg(
                 long,
-                visible_alias = "dependencies",
-                help = "Control the depth of upstream dependencies",
+                help = "Do not run dependency tasks that were not selected themselves",
                 help_heading = super::HEADING_GRAPH,
             )]
-            pub upstream: Option<UpstreamScope>
+            pub no_dependencies: bool
         },
         // PARALLELISM
         quote! {
@@ -191,12 +189,12 @@ pub fn with_affected_args(attr: TokenStream, item: TokenStream) -> TokenStream {
             quote! {
                 #[arg(
                     long,
-                    short = 'g',
-                    env = "MOON_INCLUDE_RELATIONS",
-                    help = "Include graph relations for affected checks, instead of just changed files",
+                    short = 'd',
+                    env = "MOON_AFFECTED_DEPTH",
+                    help = "How far affected state propagates to dependent tasks (none, direct, deep, or a number of hops)",
                     help_heading = super::HEADING_AFFECTED,
                 )]
-                pub include_relations: bool
+                pub affected_depth: Option<moon_affected::Depth>
             },
             quote! {
                 #[arg(
@@ -248,13 +246,13 @@ pub fn with_affected_args(attr: TokenStream, item: TokenStream) -> TokenStream {
             quote! {
                 #[arg(
                     long,
-                    short = 'g',
-                    env = "MOON_INCLUDE_RELATIONS",
-                    help = "Include graph relations for affected checks, instead of just changed files",
+                    short = 'd',
+                    env = "MOON_AFFECTED_DEPTH",
+                    help = "How far affected state propagates to dependent tasks (none, direct, deep, or a number of hops)",
                     help_heading = super::HEADING_AFFECTED,
                     requires = "affected-args",
                 )]
-                pub include_relations: bool
+                pub affected_depth: Option<moon_affected::Depth>
             },
             quote! {
                 #[arg(

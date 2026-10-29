@@ -3,21 +3,24 @@ use miette::IntoDiagnostic;
 use moon_action::ActionNode;
 use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
+use moon_common::Id;
 use moon_config::{
     DependencyScope, HasherOptimization, ProjectConfig, TaskDependencyCacheStrategy,
     UnresolvedVersionSpec, VersionSpec,
 };
 use moon_hash::{ContentHasher, fingerprint};
+use moon_layout_graph::{LayoutGraph, Placement};
 use moon_pdk_api::{
-    HashTaskContentsInput, LocateDependenciesRootInput, LockDependency, ManifestDependency,
-    MatchesVersion, ParseLockInput, ParseLockOutput, ParseManifestInput, ParseManifestOutput,
+    HashTaskContentsInput, LockDependency, ManifestDependency, MatchesVersion, ParseLockInput,
+    ParseLockOutput, ParseManifestInput, ParseManifestOutput,
 };
 use moon_project::{Project, ProjectFragment};
 use moon_task::{Task, TaskFragment};
+use moon_toolchain::get_toolchain_spec;
 use moon_toolchain_plugin::ToolchainPlugin;
 use starbase_utils::json::JsonValue;
 use std::collections::BTreeMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::task::JoinSet;
 
@@ -56,8 +59,12 @@ pub async fn hash_common_task_contents(
                 continue;
             }
 
-            if let Some(entry) = action_context.target_states.get_sync(&dep.target)
-                && let Some(value) = dep_hash_input(dep.cache_strategy, entry.get())
+            if let Some(value) = action_context
+                .target_states
+                .read_sync(&dep.target, |_, state| {
+                    dep_hash_input(dep.cache_strategy, state)
+                })
+                .flatten()
             {
                 deps.insert(&dep.target, value);
             }
@@ -122,8 +129,11 @@ fingerprint!(
     }
 );
 
+/// Hash the toolchains of a task. The layout graph is where the action graph
+/// placed the task's toolchains, which provides their dependencies roots.
 pub async fn hash_toolchain_task_contents(
     app_context: &Arc<AppContext>,
+    layout_graph: &LayoutGraph,
     project: &Project,
     task: &Task,
     hasher: &mut ContentHasher,
@@ -140,6 +150,8 @@ pub async fn hash_toolchain_task_contents(
     let mut set = JoinSet::new();
 
     for toolchain in toolchains {
+        let deps_root =
+            get_dependencies_root(app_context, layout_graph, &project.id, &toolchain.id);
         let app_context = Arc::clone(app_context);
         let project_frag = project.to_fragment();
         let project_config = Arc::clone(&project_config);
@@ -149,6 +161,7 @@ pub async fn hash_toolchain_task_contents(
             apply_toolchain(
                 app_context,
                 toolchain,
+                deps_root,
                 project_frag,
                 project_config,
                 task_frag,
@@ -176,6 +189,7 @@ pub async fn hash_toolchain_task_contents(
 async fn apply_toolchain(
     app_context: Arc<AppContext>,
     toolchain: Arc<ToolchainPlugin>,
+    deps_root: Option<PathBuf>,
     project: ProjectFragment,
     project_config: Arc<ProjectConfig>,
     task: TaskFragment,
@@ -188,34 +202,28 @@ async fn apply_toolchain(
         version: None,
     };
 
-    // Has a version override
-    if let Some(version) = project_config
-        .toolchains
-        .get_plugin_config(toolchain.id.as_str())
-        .and_then(|config| config.get_version())
+    // Has a version override, or an inherited version
+    if let Some(version) = get_toolchain_spec(
+        &app_context.toolchains_config,
+        &toolchain.id,
+        Some(&*project_config),
+    )
+    .and_then(|spec| spec.req)
     {
-        fingerprint.version = Some(version.to_owned());
-        inject = true;
-    }
-    // Or an inherited version
-    else if let Some(version) = app_context
-        .toolchains_config
-        .get_plugin_config(toolchain.id.as_str())
-        .and_then(|config| config.version.as_ref())
-    {
-        fingerprint.version = Some(version.to_owned());
+        fingerprint.version = Some(version);
         inject = true;
     }
 
     // Hash dependencies from manifest
-    if apply_toolchain_dependencies(
-        &app_context,
-        &toolchain,
-        app_context.workspace_root.join(&project.source),
-        &project_config,
-        &mut fingerprint,
-    )
-    .await?
+    if let Some(deps_root) = deps_root
+        && apply_toolchain_dependencies(
+            &app_context,
+            &toolchain,
+            &deps_root,
+            &project,
+            &mut fingerprint,
+        )
+        .await?
     {
         inject = true;
     }
@@ -240,34 +248,44 @@ async fn apply_toolchain(
     Ok(if inject { Some(fingerprint) } else { None })
 }
 
+/// The dependencies root of a toolchain for a project, from where the action
+/// graph placed it: the root it's in, or the root that it located without being
+/// a member of it, which is still hashed.
+fn get_dependencies_root(
+    app_context: &AppContext,
+    layout_graph: &LayoutGraph,
+    project_id: &Id,
+    toolchain_id: &Id,
+) -> Option<PathBuf> {
+    let binding = layout_graph.binding(project_id, toolchain_id)?;
+
+    match &binding.placement {
+        Placement::Root { index, .. } => Some(
+            layout_graph
+                .root(*index)
+                .root
+                .to_logical_path(&app_context.workspace_root),
+        ),
+        Placement::Outside { root } => Some(root.to_logical_path(&app_context.workspace_root)),
+        Placement::None => None,
+    }
+}
+
 async fn apply_toolchain_dependencies(
     app_context: &AppContext,
     toolchain: &ToolchainPlugin,
-    project_root: PathBuf,
-    project_config: &ProjectConfig,
+    deps_root: &Path,
+    project: &ProjectFragment,
     fingerprint: &mut TaskToolchainFingerprint,
 ) -> miette::Result<bool> {
     let mut lock_files = vec![];
     let mut workspace_manifests = vec![];
     let mut project_manifests = vec![];
-
-    // Try and locate a dependency root
-    let Some(deps_workspace) = toolchain
-        .locate_dependencies_root(LocateDependenciesRootInput {
-            context: app_context.toolchain_registry.create_context(),
-            starting_dir: toolchain.to_virtual_path(&project_root),
-            toolchain_config: app_context
-                .toolchain_registry
-                .create_merged_config(&toolchain.id, project_config),
-        })
-        .await?
-    else {
-        return Ok(false);
-    };
+    let project_root = app_context.workspace_root.join(&project.source);
 
     // Parse and extract locked dependencies
     for lock_file_name in &toolchain.metadata.lock_file_names {
-        let lock_path = deps_workspace.root.join(lock_file_name);
+        let lock_path = deps_root.join(lock_file_name);
 
         if lock_path.exists()
             && app_context.workspace_config.hasher.optimization == HasherOptimization::Accuracy
@@ -277,7 +295,7 @@ async fn apply_toolchain_dependencies(
                     .parse_lock(ParseLockInput {
                         context: app_context.toolchain_registry.create_context(),
                         path: toolchain.to_virtual_path(lock_path),
-                        root: toolchain.to_virtual_path(&deps_workspace.root),
+                        root: toolchain.to_virtual_path(deps_root),
                     })
                     .await?,
             );
@@ -294,7 +312,7 @@ async fn apply_toolchain_dependencies(
                     .parse_manifest(ParseManifestInput {
                         context: app_context.toolchain_registry.create_context(),
                         path: toolchain.to_virtual_path(manifest_path),
-                        root: toolchain.to_virtual_path(&deps_workspace.root),
+                        root: toolchain.to_virtual_path(deps_root),
                     })
                     .await?,
             );
@@ -302,9 +320,9 @@ async fn apply_toolchain_dependencies(
     }
 
     // Parse and extract workspace manifest
-    if deps_workspace.root != project_root {
+    if deps_root != project_root {
         for manifest_file_name in &toolchain.metadata.manifest_file_names {
-            let manifest_path = deps_workspace.root.join(manifest_file_name);
+            let manifest_path = deps_root.join(manifest_file_name);
 
             if manifest_path.exists() {
                 workspace_manifests.push(
@@ -312,7 +330,7 @@ async fn apply_toolchain_dependencies(
                         .parse_manifest(ParseManifestInput {
                             context: app_context.toolchain_registry.create_context(),
                             path: toolchain.to_virtual_path(manifest_path),
-                            root: toolchain.to_virtual_path(&deps_workspace.root),
+                            root: toolchain.to_virtual_path(deps_root),
                         })
                         .await?,
                 );

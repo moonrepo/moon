@@ -87,7 +87,7 @@ impl TestDaemon {
     async fn manifest_exists(&self, digest: &Digest) -> bool {
         self.app_context
             .cache_engine
-            .storage
+            .actions_storage
             .load_task_manifest(digest)
             .await
             .unwrap()
@@ -95,7 +95,7 @@ impl TestDaemon {
     }
 
     async fn blob_exists(&self, digest: &Digest) -> bool {
-        let backend = self.app_context.cache_engine.storage.get_backends()[0].clone();
+        let backend = self.app_context.cache_engine.actions_storage.get_backends()[0].clone();
 
         backend
             .find_missing_blobs(vec![digest.clone()])
@@ -123,14 +123,14 @@ impl TestDaemon {
     async fn seed(&self, digest: &Digest, manifest: TaskManifest) {
         self.app_context
             .cache_engine
-            .storage
+            .actions_storage
             .archive_task_manifest(digest, manifest)
             .await
             .unwrap();
 
         self.app_context
             .cache_engine
-            .storage
+            .actions_storage
             .wait_for_background_tasks()
             .await
             .unwrap();
@@ -140,7 +140,7 @@ impl TestDaemon {
     async fn load_source_manifest(&self, digest: &Digest) -> TaskManifest {
         self.app_context
             .cache_engine
-            .storage
+            .actions_storage
             .load_task_manifest(digest)
             .await
             .unwrap()
@@ -341,7 +341,7 @@ mod archive {
         manifest.digest_source = Some(TaskManifestFile {
             bytes: Some(b"fingerprint".as_slice().into()),
             digest: Some(action_digest()),
-            path: ".moon/cache/hashes/abc.json".into(),
+            path: ".moon/cache/blobs/ab/c".into(),
             ..Default::default()
         });
 
@@ -362,7 +362,7 @@ mod archive {
         manifest.digest_source = Some(TaskManifestFile {
             bytes: Some(b"other-fingerprint".as_slice().into()),
             digest: Some(action.clone()),
-            path: ".moon/cache/hashes/def.json".into(),
+            path: ".moon/cache/blobs/de/f".into(),
             ..Default::default()
         });
 

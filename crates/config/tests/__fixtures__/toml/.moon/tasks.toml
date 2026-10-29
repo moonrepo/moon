@@ -18,7 +18,6 @@ sources = ["src/**/*"]
 tests = ["*.test.ts", "*.test.tsx"]
 
 [taskOptions]
-allowFailure = true
 cache = false
 envFile = ".env"
 interactive = false
@@ -28,6 +27,7 @@ mergeDeps = "prepend"
 mergeEnv = "replace"
 mergeInputs = "preserve"
 mutex = "lock"
+onFailure = "allow"
 os = ["linux", "macos"]
 outputStyle = "stream"
 persistent = true
@@ -41,6 +41,7 @@ unixShell = "zsh"
 windowsShell = "pwsh"
 
 [taskOptions.affectedFiles]
+filter = []
 pass = "args"
 passInputsWhenNoMatch = true
 

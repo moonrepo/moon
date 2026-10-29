@@ -3,6 +3,51 @@ use moon_pdk::get_plugin_id;
 use moon_pdk_api::*;
 use std::fs;
 
+/// When a test opts in via toolchain config (`testRecordInputs`), record the
+/// input of a function call, at `.moon/cache/tcInputs/<plugin>/<func>/<key>.json`
+/// in the workspace, so that tests can assert what moon passes to plugins.
+pub fn record_input(
+    context: &MoonContext,
+    toolchain_config: &json::Value,
+    func: &str,
+    key: &str,
+    input: json::Value,
+) -> FnResult<()> {
+    if !toolchain_config
+        .get("testRecordInputs")
+        .and_then(|value| value.as_bool())
+        .unwrap_or_default()
+    {
+        return Ok(());
+    }
+
+    let key = key
+        .chars()
+        .map(|ch| {
+            if ch.is_ascii_alphanumeric() || ch == '.' || ch == '-' {
+                ch
+            } else {
+                '_'
+            }
+        })
+        .collect::<String>();
+
+    let file = context
+        .workspace_root
+        .join(".moon/cache/tcInputs")
+        .join(get_plugin_id()?.as_str())
+        .join(func)
+        .join(format!("{key}.json"));
+
+    if let Some(parent) = file.parent() {
+        fs::create_dir_all(&parent)?;
+    }
+
+    fs::write(&file, json::to_string_pretty(&input)?)?;
+
+    Ok(())
+}
+
 #[plugin_fn]
 pub fn register_toolchain(
     Json(input): Json<RegisterToolchainInput>,
@@ -12,6 +57,8 @@ pub fn register_toolchain(
         manifest_file_names: vec!["tc.cfg".into(), "tc.root.cfg".into()],
         lock_file_names: vec!["tc.lock".into()],
         vendor_dir_name: Some("vendor".into()),
+        // Opt out, so that tests can verify toolchains that don't inject them
+        inject_task_inputs: input.id != "tc-tier2-setup-env",
         ..Default::default()
     }))
 }
@@ -134,6 +181,14 @@ pub fn scaffold_docker(
 #[plugin_fn]
 pub fn prune_docker(Json(input): Json<PruneDockerInput>) -> FnResult<Json<PruneDockerOutput>> {
     let mut output = PruneDockerOutput::default();
+
+    record_input(
+        &input.context,
+        &input.toolchain_config,
+        "prune_docker",
+        &input.root.to_string_lossy(),
+        json::to_value(&input)?,
+    )?;
 
     for project in ["dep", "scaffold", "prune"] {
         let vendor_dir = input.root.join(project).join("vendor");

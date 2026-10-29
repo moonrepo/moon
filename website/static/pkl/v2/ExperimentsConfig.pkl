@@ -2,24 +2,3 @@
 
 /// Configures experiments across the entire moon workspace.
 module ExperimentsConfig
-
-/// Track and determine affected projects and tasks asynchronously.
-@Since { version = "2.2.0" }
-asyncAffectedTracking: Boolean?
-
-/// Build the project and task graphs asynchronously.
-@Since { version = "2.2.0" }
-asyncGraphBuilding: Boolean?
-
-/// Store task outputs in a local CAS (content-addressable storage) cache.
-@Since { version = "2.3.0" }
-casOutputsCache: Boolean?
-
-/// Always use the task's `outputStyle` option, even when running
-/// the task as a primary target.
-@Since { version = "2.6.0" }
-explicitTaskOutputStyle: Boolean?
-
-/// Use native file hashing instead of using the VCS.
-@Since { version = "2.3.0" }
-nativeFileHashing: Boolean?

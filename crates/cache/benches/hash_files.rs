@@ -2,8 +2,6 @@ use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 use moon_bench_utils::handle_unwrap;
 use moon_cache::{CacheContext, CacheEngine};
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_vcs::Vcs;
-use moon_vcs::git::Git;
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
 use tokio::runtime::Runtime;
 
@@ -19,8 +17,18 @@ fn create_sandbox_with_files() -> Sandbox {
     let sandbox = create_empty_sandbox();
     sandbox.enable_git();
 
+    // Backdate the files so that their hashes can be memoized
+    let modified = std::time::SystemTime::now() - std::time::Duration::from_secs(60);
+
     for i in 0..=1000 {
-        std::fs::write(sandbox.path().join(format!("file{i}.txt")), i.to_string()).unwrap();
+        let path = sandbox.path().join(format!("file{i}.txt"));
+        std::fs::write(&path, i.to_string()).unwrap();
+        std::fs::File::options()
+            .write(true)
+            .open(path)
+            .unwrap()
+            .set_modified(modified)
+            .unwrap();
     }
 
     sandbox
@@ -56,35 +64,20 @@ fn cas(c: &mut Criterion) {
         })
     });
 
-    group.finish();
-}
+    let engine = create_engine(&sandbox);
 
-fn vcs_git(c: &mut Criterion) {
-    let mut group = c.benchmark_group("VcsGit");
-    let sandbox = create_sandbox_with_files();
-
-    group.bench_function(id(100, "get_file_hashes"), |b| {
+    group.bench_function(id(1000, "hash_files_memoized"), |b| {
         b.to_async(Runtime::new().unwrap()).iter(async || {
-            let git = Git::load(sandbox.path(), "master", &["origin".to_string()]).unwrap();
-
-            git.get_file_hashes(&get_relative_file_paths(100), true)
-                .await
-                .unwrap();
-        })
-    });
-
-    group.bench_function(id(1000, "get_file_hashes"), |b| {
-        b.to_async(Runtime::new().unwrap()).iter(async || {
-            let git = Git::load(sandbox.path(), "master", &["origin".to_string()]).unwrap();
-
-            git.get_file_hashes(&get_relative_file_paths(1000), true)
-                .await
-                .unwrap();
+            handle_unwrap(
+                engine
+                    .hash_files(sandbox.path(), &get_relative_file_paths(1000))
+                    .await,
+            );
         })
     });
 
     group.finish();
 }
 
-criterion_group!(benches, cas, vcs_git);
+criterion_group!(benches, cas);
 criterion_main!(benches);

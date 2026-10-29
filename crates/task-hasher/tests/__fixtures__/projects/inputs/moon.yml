@@ -19,3 +19,8 @@ tasks:
   none:
     command: noop
     inputs: []
+
+  parentTraversal:
+    command: noop
+    inputs:
+      - '.../package.json'

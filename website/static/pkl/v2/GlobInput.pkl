@@ -3,6 +3,10 @@
 /// A glob pattern input.
 module GlobInput
 
+/// Only use the glob to determine affected status, and exclude
+/// its files from the task's hash and affected files.
+affectedOnly: Boolean
+
 /// Cache the glob walking result for increased performance.
 cache: Boolean = true
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where the file groups docs stated that a project-level file group overrides an
+  inherited file group of the same name. Since v2, they are merged together, with project-level
+  inputs appended last, and since v2.5, `workspace.mergeStrategies.fileGroups` can be used to
+  replace instead.
+
 ## 2.6.4
 
 #### 🚀 Updates

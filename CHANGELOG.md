@@ -60,6 +60,9 @@
     fail validation. A task's `onFailure` overrides an inherited value, instead of conflicting with
     it. The task options in `moon task --json` and the `@moonrepo/types` types have been updated to
     match.
+  - Renamed the `generator` setting in `.moon/workspace.*` to `codegen`. Use `codegen.templates`
+    instead of `generator.templates`. The old setting has been removed, and fails validation. The
+    `GeneratorConfig` types in `@moonrepo/types` have been renamed to `CodegenConfig`.
 - **Execution plans**
   - Replaced the `affected.includeRelations` field with `affected.depth`, the `graph.downstream`
     field with `graph.dependents`, and the `graph.upstream` field with the new

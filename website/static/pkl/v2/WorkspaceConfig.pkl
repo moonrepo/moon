@@ -5,11 +5,11 @@
 module WorkspaceConfig
 
 import "CacheConfig.pkl"
+import "CodegenConfig.pkl"
 import "CodeownersConfig.pkl"
 import "ConstraintsConfig.pkl"
 import "DockerConfig.pkl"
 import "ExperimentsConfig.pkl"
-import "GeneratorConfig.pkl"
 import "HasherConfig.pkl"
 import "NotifierConfig.pkl"
 import "PipelineConfig.pkl"
@@ -22,6 +22,9 @@ $schema: String?
 /// Configures aspects of the caching engine and layer.
 @Since { version = "2.3.0" }
 cache: CacheConfig?
+
+/// Configures the code generator for scaffolding from templates.
+codegen: CodegenConfig?
 
 /// Configures code ownership rules for generating a `CODEOWNERS` file.
 @Since { version = "1.8.0" }
@@ -52,9 +55,6 @@ experiments: ExperimentsConfig?
 /// Supports a relative file path or a secure URL.
 @Since { version = "1.12.0" }
 `extends`: ExtendsFrom?
-
-/// Configures the generator for scaffolding from templates.
-generator: GeneratorConfig?
 
 /// Configures aspects of the content hashing engine.
 hasher: HasherConfig?

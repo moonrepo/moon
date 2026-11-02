@@ -124,6 +124,10 @@ config_struct!(
         #[setting(nested)]
         pub cache: CacheConfig,
 
+        /// Configures the code generator for scaffolding from templates.
+        #[setting(nested)]
+        pub codegen: CodegenConfig,
+
         /// Configures code ownership rules for generating a `CODEOWNERS` file.
         /// @since 1.8.0
         #[setting(nested)]
@@ -161,10 +165,6 @@ config_struct!(
         #[setting(extend, validate = validate::extends_from)]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub extends: Option<schematic::ExtendsFrom>,
-
-        /// Configures the generator for scaffolding from templates.
-        #[setting(nested)]
-        pub generator: GeneratorConfig,
 
         /// Configures aspects of the content hashing engine.
         #[setting(nested)]

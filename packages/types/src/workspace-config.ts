@@ -17,7 +17,7 @@ export interface CacheCasConfig {
 	maxSize?: string | null;
 	/**
 	 * Verify hash on every read. When enabled, reads are slower
-	 * but detect on-disk corruption.
+	 * but they detect on-disk corruption.
 	 *
 	 * @env MOON_CACHE_CAS_VERIFY_INTEGRITY
 	 * @since 2.3.0
@@ -45,6 +45,15 @@ export interface CacheConfig {
 	 * @since 2.5.0
 	 */
 	sharedWorktreeCache: boolean;
+}
+
+/** Configures the code generator for scaffolding from templates. */
+export interface CodegenConfig {
+	/**
+	 * The list of file paths, relative from the workspace root,
+	 * in which to locate templates.
+	 */
+	templates?: string[];
 }
 
 /** How to order ownership rules within the generated file. */
@@ -198,22 +207,13 @@ export interface DockerConfig {
 /** Configures experiments across the entire moon workspace. */
 export interface ExperimentsConfig {}
 
-/** Configures the generator for scaffolding from templates. */
-export interface GeneratorConfig {
-	/**
-	 * The list of file paths, relative from the workspace root,
-	 * in which to locate templates.
-	 */
-	templates?: string[];
-}
-
 /** The optimization to use when hashing. */
 export type HasherOptimization = 'accuracy' | 'performance';
 
 /** The strategy to use when walking the file system. */
 export type HasherWalkStrategy = 'glob' | 'vcs';
 
-/** Configures aspects of the content hashing engine. */
+/** Configures aspects of the task hashing engine. */
 export interface HasherConfig {
 	/**
 	 * When `warnOnMissingInputs` is enabled, filters missing file
@@ -636,6 +636,8 @@ export interface WorkspaceConfig {
 	 * @since 2.3.0
 	 */
 	cache: CacheConfig;
+	/** Configures the code generator for scaffolding from templates. */
+	codegen: CodegenConfig;
 	/**
 	 * Configures code ownership rules for generating a `CODEOWNERS` file.
 	 *
@@ -679,8 +681,6 @@ export interface WorkspaceConfig {
 	 * @since 1.12.0
 	 */
 	extends?: ExtendsFrom | null;
-	/** Configures the generator for scaffolding from templates. */
-	generator: GeneratorConfig;
 	/** Configures aspects of the content hashing engine. */
 	hasher: HasherConfig;
 	/** Configures how and where notifications are sent. */
@@ -724,7 +724,7 @@ export interface PartialCacheCasConfig {
 	maxSize?: string | null;
 	/**
 	 * Verify hash on every read. When enabled, reads are slower
-	 * but detect on-disk corruption.
+	 * but they detect on-disk corruption.
 	 *
 	 * @env MOON_CACHE_CAS_VERIFY_INTEGRITY
 	 * @since 2.3.0
@@ -752,6 +752,15 @@ export interface PartialCacheConfig {
 	 * @since 2.5.0
 	 */
 	sharedWorktreeCache?: boolean | null;
+}
+
+/** Configures the code generator for scaffolding from templates. */
+export interface PartialCodegenConfig {
+	/**
+	 * The list of file paths, relative from the workspace root,
+	 * in which to locate templates.
+	 */
+	templates?: string[] | null;
 }
 
 /** Configures code ownership rules for generating a `CODEOWNERS` file. */
@@ -901,16 +910,7 @@ export interface PartialDockerConfig {
 /** Configures experiments across the entire moon workspace. */
 export interface PartialExperimentsConfig {}
 
-/** Configures the generator for scaffolding from templates. */
-export interface PartialGeneratorConfig {
-	/**
-	 * The list of file paths, relative from the workspace root,
-	 * in which to locate templates.
-	 */
-	templates?: string[] | null;
-}
-
-/** Configures aspects of the content hashing engine. */
+/** Configures aspects of the task hashing engine. */
 export interface PartialHasherConfig {
 	/**
 	 * When `warnOnMissingInputs` is enabled, filters missing file
@@ -1290,6 +1290,8 @@ export interface PartialWorkspaceConfig {
 	 * @since 2.3.0
 	 */
 	cache?: PartialCacheConfig | null;
+	/** Configures the code generator for scaffolding from templates. */
+	codegen?: PartialCodegenConfig | null;
 	/**
 	 * Configures code ownership rules for generating a `CODEOWNERS` file.
 	 *
@@ -1333,8 +1335,6 @@ export interface PartialWorkspaceConfig {
 	 * @since 1.12.0
 	 */
 	extends?: ExtendsFrom | null;
-	/** Configures the generator for scaffolding from templates. */
-	generator?: PartialGeneratorConfig | null;
 	/** Configures aspects of the content hashing engine. */
 	hasher?: PartialHasherConfig | null;
 	/** Configures how and where notifications are sent. */

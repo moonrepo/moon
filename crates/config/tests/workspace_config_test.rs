@@ -431,17 +431,15 @@ constraints:
         }
     }
 
-    mod generator {
+    mod codegen {
         use super::*;
 
         #[test]
         fn loads_defaults() {
-            let config = test_load_config(FILENAME, "generator: {}", |path| {
-                load_config_from_root(path)
-            });
+            let config = test_load_config(FILENAME, "codegen: {}", load_config_from_root);
 
             assert_eq!(
-                config.generator.templates,
+                config.codegen.templates,
                 vec![TemplateLocator::File {
                     path: FilePath("./templates".into())
                 }]
@@ -453,7 +451,7 @@ constraints:
             let config = test_load_config(
                 FILENAME,
                 r"
-generator:
+codegen:
   templates:
     - custom/path
     - ./rel/path
@@ -463,7 +461,7 @@ generator:
             );
 
             assert_eq!(
-                config.generator.templates,
+                config.codegen.templates,
                 vec![
                     TemplateLocator::File {
                         path: FilePath("custom/path".into())
@@ -486,7 +484,7 @@ generator:
             let config = test_load_config(
                 FILENAME,
                 r"
-generator:
+codegen:
   templates:
     - https://download.com/some/file.zip
 ",
@@ -494,7 +492,7 @@ generator:
             );
 
             assert_eq!(
-                config.generator.templates,
+                config.codegen.templates,
                 vec![TemplateLocator::Archive {
                     url: "https://download.com/some/file.zip".into()
                 },]
@@ -506,7 +504,7 @@ generator:
             let config = test_load_config(
                 FILENAME,
                 r"
-generator:
+codegen:
   templates:
     - git://github.com/org/repo#master
     - git://gitlab.com/org/repo#main
@@ -516,7 +514,7 @@ generator:
             );
 
             assert_eq!(
-                config.generator.templates,
+                config.codegen.templates,
                 vec![
                     TemplateLocator::Git {
                         remote_url: "github.com/org/repo".into(),
@@ -539,7 +537,7 @@ generator:
             let config = test_load_config(
                 FILENAME,
                 r"
-generator:
+codegen:
   templates:
     - npm://package-name#1.2.3
     - npm://@scope/package#4.5.6
@@ -548,7 +546,7 @@ generator:
             );
 
             assert_eq!(
-                config.generator.templates,
+                config.codegen.templates,
                 vec![
                     TemplateLocator::Npm {
                         package: "package-name".into(),
@@ -567,7 +565,7 @@ generator:
             let config = test_load_config(
                 FILENAME,
                 r"
-generator:
+codegen:
   templates:
     - ./templates/*
     - glob://common/*/templates/*
@@ -576,7 +574,7 @@ generator:
             );
 
             assert_eq!(
-                config.generator.templates,
+                config.codegen.templates,
                 vec![
                     TemplateLocator::Glob {
                         glob: GlobPath("templates/*".into())
@@ -596,7 +594,7 @@ generator:
             test_load_config(
                 FILENAME,
                 r"
-generator:
+codegen:
   templates: ['https://download.com/some/file.png']
 ",
                 load_config_from_root,
@@ -611,7 +609,7 @@ generator:
             test_load_config(
                 FILENAME,
                 r"
-generator:
+codegen:
   templates: ['git://github.com/org/repo']
 ",
                 load_config_from_root,
@@ -626,7 +624,7 @@ generator:
             test_load_config(
                 FILENAME,
                 r"
-generator:
+codegen:
   templates: ['npm://@scope/package']
 ",
                 load_config_from_root,

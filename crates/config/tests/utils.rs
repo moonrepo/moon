@@ -591,8 +591,8 @@ pub fn load_workspace_config_in_format(format: &str) {
         }
     );
     assert_eq!(
-        config.generator,
-        GeneratorConfig {
+        config.codegen,
+        CodegenConfig {
             templates: vec![
                 TemplateLocator::from_str("/shared-templates").unwrap(),
                 TemplateLocator::from_str("./templates").unwrap()

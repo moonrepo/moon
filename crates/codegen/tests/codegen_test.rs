@@ -1,8 +1,6 @@
 use moon_codegen::CodeGenerator;
 use moon_common::Id;
-use moon_config::{
-    FilePath, GeneratorConfig, GlobPath, TemplateLocator, TemplateVariable, Version,
-};
+use moon_config::{CodegenConfig, FilePath, GlobPath, TemplateLocator, TemplateVariable, Version};
 use moon_env::MoonEnvironment;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use std::sync::Arc;
@@ -21,7 +19,7 @@ mod codegen {
 
             CodeGenerator::new(
                 sandbox.path(),
-                &GeneratorConfig::default(),
+                &CodegenConfig::default(),
                 MoonEnvironment::new_testing(sandbox.path()).into(),
             )
             .create_template("standard")
@@ -34,7 +32,7 @@ mod codegen {
 
             let template = CodeGenerator::new(
                 sandbox.path(),
-                &GeneratorConfig::default(),
+                &CodegenConfig::default(),
                 MoonEnvironment::new_testing(sandbox.path()).into(),
             )
             .create_template("new-template")
@@ -58,7 +56,7 @@ mod codegen {
 
             let template = CodeGenerator::new(
                 sandbox.path(),
-                &GeneratorConfig {
+                &CodegenConfig {
                     templates: vec![TemplateLocator::File {
                         path: FilePath("./scaffolding".into()),
                     }],
@@ -89,7 +87,7 @@ mod codegen {
 
             let template = CodeGenerator::new(
                 sandbox.path(),
-                &GeneratorConfig::default(),
+                &CodegenConfig::default(),
                 MoonEnvironment::new_testing(sandbox.path()).into(),
             )
             .create_template("so&me temPlatE- with Ran!dom-Valu^es 123_")
@@ -125,7 +123,7 @@ mod codegen {
         async fn clones_a_git_repo() {
             let sandbox = create_empty_sandbox();
             let env = Arc::new(MoonEnvironment::new_testing(sandbox.path()));
-            let config = GeneratorConfig {
+            let config = CodegenConfig {
                 templates: vec![TemplateLocator::Git {
                     remote_url: "github.com/moonrepo/moon-configs.git".into(),
                     revision: "master".into(),
@@ -150,7 +148,7 @@ mod codegen {
         async fn downloads_a_zip_archive() {
             let sandbox = create_empty_sandbox();
             let env = Arc::new(MoonEnvironment::new_testing(sandbox.path()));
-            let config = GeneratorConfig {
+            let config = CodegenConfig {
                 templates: vec![TemplateLocator::Archive {
                     url: "https://github.com/moonrepo/git-test/archive/refs/tags/test-tag.zip"
                         .into(),
@@ -174,7 +172,7 @@ mod codegen {
         async fn downloads_a_tar_archive() {
             let sandbox = create_empty_sandbox();
             let env = Arc::new(MoonEnvironment::new_testing(sandbox.path()));
-            let config = GeneratorConfig {
+            let config = CodegenConfig {
                 templates: vec![TemplateLocator::Archive {
                     url: "https://github.com/moonrepo/git-test/archive/refs/tags/test-tag.tar.gz"
                         .into(),
@@ -198,7 +196,7 @@ mod codegen {
         async fn downloads_an_npm_package() {
             let sandbox = create_empty_sandbox();
             let env = Arc::new(MoonEnvironment::new_testing(sandbox.path()));
-            let config = GeneratorConfig {
+            let config = CodegenConfig {
                 templates: vec![TemplateLocator::Npm {
                     package: "@moonrepo/cli".into(),
                     version: Version::new(1, 0, 0),
@@ -222,7 +220,7 @@ mod codegen {
         async fn walks_with_globs() {
             let sandbox = create_sandbox("include");
             let env = Arc::new(MoonEnvironment::new_testing(sandbox.path()));
-            let config = GeneratorConfig {
+            let config = CodegenConfig {
                 templates: vec![TemplateLocator::Glob {
                     glob: GlobPath::try_from("./templates/*").unwrap(),
                 }],
@@ -247,7 +245,7 @@ mod codegen {
         #[should_panic(expected = "Found multiple templates with the same name folder-name")]
         async fn errors_for_dupe_ids() {
             let sandbox = create_sandbox("dupes");
-            let config = GeneratorConfig::default();
+            let config = CodegenConfig::default();
 
             let mut codegen = CodeGenerator::new(
                 sandbox.path(),
@@ -265,7 +263,7 @@ mod codegen {
         #[tokio::test]
         async fn loads_by_name() {
             let sandbox = create_sandbox("generator");
-            let config = GeneratorConfig::default();
+            let config = CodegenConfig::default();
 
             let mut codegen = CodeGenerator::new(
                 sandbox.path(),
@@ -284,7 +282,7 @@ mod codegen {
         #[should_panic(expected = "No template with the name three could be found")]
         async fn errors_for_missing() {
             let sandbox = create_sandbox("generator");
-            let config = GeneratorConfig::default();
+            let config = CodegenConfig::default();
 
             let mut codegen = CodeGenerator::new(
                 sandbox.path(),
@@ -301,7 +299,7 @@ mod codegen {
             #[tokio::test]
             async fn loads_extended() {
                 let sandbox = create_sandbox("generator");
-                let config = GeneratorConfig::default();
+                let config = CodegenConfig::default();
 
                 let mut codegen = CodeGenerator::new(
                     sandbox.path(),
@@ -339,7 +337,7 @@ mod codegen {
             #[tokio::test]
             async fn inherits_extended_variables() {
                 let sandbox = create_sandbox("generator");
-                let config = GeneratorConfig::default();
+                let config = CodegenConfig::default();
 
                 let mut codegen = CodeGenerator::new(
                     sandbox.path(),
@@ -368,7 +366,7 @@ mod codegen {
             #[should_panic(expected = "No template with the name missing could be found")]
             async fn errors_for_missing_extends() {
                 let sandbox = create_sandbox("generator");
-                let config = GeneratorConfig::default();
+                let config = CodegenConfig::default();
 
                 let mut codegen = CodeGenerator::new(
                     sandbox.path(),

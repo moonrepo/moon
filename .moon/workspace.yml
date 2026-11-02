@@ -15,7 +15,7 @@ projects:
     # - 'scenarios/python'
     - 'website'
 
-generator:
+codegen:
   templates:
     # - './.moon/templates'
     - './tests/fixtures/generator/templates'

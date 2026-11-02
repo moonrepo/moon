@@ -283,6 +283,7 @@ pub async fn run_cli(args: Vec<OsString>) -> MainResult {
                 Commands::Mcp(args) => commands::mcp::mcp(session, args).await,
                 Commands::Migrate { command, .. } => match command {
                     MigrateCommands::V2(args) => commands::migrate::v2(session, args).await,
+                    MigrateCommands::V3(args) => commands::migrate::v3(session, args).await,
                 },
                 Commands::Project(args) => commands::project::project(session, args).await,
                 Commands::ProjectGraph(args) => {

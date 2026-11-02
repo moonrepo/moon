@@ -17,8 +17,8 @@ fn main() {
     #[cfg(feature = "api-docs")]
     {
         for lookup in [
-            "../moonrepo/website/web/content/api/moon",
-            "../website/web/content/api/moon",
+            "../moonrepo/website/web/content/moon/api",
+            "../website/web/content/moon/api",
             "temp/moon-api-docs",
         ] {
             let dir = cwd.join(lookup);

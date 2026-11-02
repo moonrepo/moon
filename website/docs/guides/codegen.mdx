@@ -18,7 +18,7 @@ files to a destination.
 
 To create a new template, run [`moon generate`][command] while passing the `--template` option. This
 will create a template directory and [`template.*`][config] file in the 1st file-based template
-location defined in [`generator.templates`][gen-templates].
+location defined in [`codegen.templates`][gen-templates].
 
 ```shell
 $ moon generate <name> --template
@@ -257,10 +257,10 @@ $ moon generate npm-package --to ./packages/example
 
 Templates can be located anywhere, especially when [being shared](#sharing-templates). Because of
 this, our generator will loop through all template paths configured in
-[`generator.templates`][gen-templates], in order, until a match is found.
+[`codegen.templates`][gen-templates], in order, until a match is found.
 
 ```yaml title=".moon/workspace.yml"
-generator:
+codegen:
   templates:
     - './templates'
     # Or
@@ -276,7 +276,7 @@ contain templates and will be downloaded and unpacked. The list of
 [available archive formats can be found here](https://github.com/moonrepo/starbase/blob/master/crates/archive/src/lib.rs#L76).
 
 ```yaml title=".moon/workspace.yml"
-generator:
+codegen:
   templates:
     - 'https://domain.com/some/path/to/archive.zip'
 ```
@@ -291,7 +291,7 @@ If you'd prefer more control over literal file paths (above), you can instead us
 patterns that end in `template.*`.
 
 ```yaml title=".moon/workspace.yml"
-generator:
+codegen:
   templates:
     - './templates/*'
     # Or
@@ -305,7 +305,7 @@ locator protocol. This locator requires the Git host, repository path, and revis
 commit, etc).
 
 ```yaml title=".moon/workspace.yml"
-generator:
+codegen:
   templates:
     - 'git://github.com/moonrepo/templates#master'
     - 'git://gitlab.com/org/repo#v1.2.3'
@@ -320,7 +320,7 @@ Additionally, template locations can also reference npm packages using the `npm:
 protocol. This locator requires a package name and published version.
 
 ```yaml title=".moon/workspace.yml"
-generator:
+codegen:
   templates:
     - 'npm://@moonrepo/templates#1.2.3'
     - 'npm://other-templates#4.5.6'
@@ -362,11 +362,11 @@ not try...
 - npm packages (using `npm://` protocol)
 - Another packaging system
 
-Regardless of the choice, simply configure [`generator.templates`][gen-templates] to point to these
+Regardless of the choice, simply configure [`codegen.templates`][gen-templates] to point to these
 locations:
 
 ```yaml title=".moon/workspace.yml"
-generator:
+codegen:
   templates:
     - './templates'
     - 'file://./templates'

@@ -14,7 +14,7 @@ config_struct!(
         pub max_size: Option<String>,
 
         /// Verify hash on every read. When enabled, reads are slower
-        /// but detect on-disk corruption.
+        /// but they detect on-disk corruption.
         /// @since 2.3.0
         #[setting(env = "MOON_CACHE_CAS_VERIFY_INTEGRITY", parse_env = env::parse_bool)]
         pub verify_integrity: bool,

@@ -1,0 +1,19 @@
+---
+source: crates/cli/tests/migrate_v3_test.rs
+expression: "read_file(&sandbox, \".moon/workspace.yml\")"
+---
+projects:
+- '*'
+daemon: false
+codegen:
+  templates:
+  - ./templates
+cache:
+  sharedWorktreeCache: true
+  cas:
+    verifyIntegrity: true
+remote:
+  host: grpcs://cache.example.com
+vcs:
+  provider: bitbucket
+  defaultBranch: main

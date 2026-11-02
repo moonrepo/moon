@@ -8,7 +8,7 @@ pub enum CodegenError {
     #[diagnostic(code(codegen::template::fs_only))]
     #[error(
         "Unable to create a new template, as the destination must be a local file system path.\nPlease add a file path to the {} setting.",
-        "generator.templates".style(Style::Property),
+        "codegen.templates".style(Style::Property),
     )]
     CreateFileSystemOnly,
 

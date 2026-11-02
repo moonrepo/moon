@@ -1,0 +1,24 @@
+---
+source: crates/cli/tests/migrate_v2_test.rs
+expression: "read_file(&sandbox, \".moon/toolchains.yml\")"
+---
+node:
+  version: 20.0.0
+  executeArgs:
+  - --inspect
+javascript:
+  packageManager: yarn
+  rootPackageDependenciesOnly: true
+  dependencyVersionFormat: workspace
+yarn:
+  version: 4.0.0
+bun:
+  version: 1.0.0
+unstable_python:
+  version: 3.12.0
+unstable_uv:
+  version: 0.5.0
+go:
+  version: 1.22.0
+rust:
+  version: 1.80.0

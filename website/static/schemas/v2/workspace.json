@@ -17,6 +17,15 @@
         }
       ]
     },
+    "codegen": {
+      "title": "codegen",
+      "description": "Configures the code generator for scaffolding from templates.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/CodegenConfig"
+        }
+      ]
+    },
     "codeowners": {
       "title": "codeowners",
       "description": "Configures code ownership rules for generating a CODEOWNERS file. @since 1.8.0",
@@ -84,18 +93,9 @@
         }
       ]
     },
-    "generator": {
-      "title": "generator",
-      "description": "Configures the generator for scaffolding from templates.",
-      "allOf": [
-        {
-          "$ref": "#/definitions/GeneratorConfig"
-        }
-      ]
-    },
     "hasher": {
       "title": "hasher",
-      "description": "Configures aspects of the content hashing engine.",
+      "description": "Configures aspects of the task hashing engine.",
       "allOf": [
         {
           "$ref": "#/definitions/HasherConfig"
@@ -196,9 +196,9 @@
         },
         "verifyIntegrity": {
           "title": "verifyIntegrity",
-          "description": "Verify hash on every read. When enabled, reads are slower but detect on-disk corruption. @since 2.3.0",
+          "description": "Verify hash on every read. When enabled, reads are slower but they detect on-disk corruption. @since 2.3.0",
           "type": "boolean",
-          "markdownDescription": "Verify hash on every read. When enabled, reads are slower but detect on-disk corruption. @since 2.3.0"
+          "markdownDescription": "Verify hash on every read. When enabled, reads are slower but they detect on-disk corruption. @since 2.3.0"
         }
       },
       "additionalProperties": false,
@@ -223,6 +223,21 @@
           "description": "Whether to use a shared worktree cache. When enabled, the cache is shared between all VCS worktrees on the same machine. When disabled, each worktree has its own cache.  Only blobs and manifests will be shared, as they are portable. Hashes, locks, states, and more will not be, as they are worktree-specific.  @since 2.5.0",
           "type": "boolean",
           "markdownDescription": "Whether to use a shared worktree cache. When enabled, the cache is shared between all VCS worktrees on the same machine. When disabled, each worktree has its own cache.  Only blobs and manifests will be shared, as they are portable. Hashes, locks, states, and more will not be, as they are worktree-specific.  @since 2.5.0"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CodegenConfig": {
+      "description": "Configures the code generator for scaffolding from templates.",
+      "type": "object",
+      "properties": {
+        "templates": {
+          "title": "templates",
+          "description": "The list of file paths, relative from the workspace root, in which to locate templates.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "additionalProperties": false
@@ -493,23 +508,8 @@
         }
       ]
     },
-    "GeneratorConfig": {
-      "description": "Configures the generator for scaffolding from templates.",
-      "type": "object",
-      "properties": {
-        "templates": {
-          "title": "templates",
-          "description": "The list of file paths, relative from the workspace root, in which to locate templates.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "additionalProperties": false
-    },
     "HasherConfig": {
-      "description": "Configures aspects of the content hashing engine.",
+      "description": "Configures aspects of the task hashing engine.",
       "type": "object",
       "properties": {
         "ignoreMissingPatterns": {

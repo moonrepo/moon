@@ -22,7 +22,7 @@ installToolchainDependencies = false
 [docker.scaffold]
 configsPhaseGlobs = ["*.js"]
 
-[generator]
+[codegen]
 templates = ["/shared-templates", "./templates"]
 
 [hasher]

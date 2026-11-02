@@ -145,7 +145,7 @@ impl MoonSession {
     pub fn build_code_generator(&self) -> CodeGenerator<'_> {
         CodeGenerator::new(
             &self.workspace_root,
-            &self.workspace_config.generator,
+            &self.workspace_config.codegen,
             Arc::clone(&self.moon_env),
         )
     }

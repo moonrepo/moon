@@ -1,0 +1,14 @@
+---
+source: crates/cli/tests/migrate_v3_test.rs
+expression: "read_file(&sandbox, \".moon/workspace.toml\")"
+---
+projects = ["*"]
+
+[codegen]
+templates = ["./templates"]
+
+[remote]
+host = "grpcs://cache.example.com"
+
+[cache.cas]
+verifyIntegrity = true

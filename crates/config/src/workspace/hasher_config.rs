@@ -34,7 +34,7 @@ fn default_ignore_missing_patterns<C>(_ctx: &C) -> DefaultValueResult<Vec<GlobPa
 }
 
 config_struct!(
-    /// Configures aspects of the content hashing engine.
+    /// Configures aspects of the task hashing engine.
     #[derive(Config)]
     pub struct HasherConfig {
         /// Filters file paths that match a configured glob pattern

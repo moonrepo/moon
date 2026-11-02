@@ -3,7 +3,7 @@ use crate::template::Template;
 use miette::IntoDiagnostic;
 use moon_common::Id;
 use moon_common::path::{PathExt, RelativePathBuf, locate_config_dir};
-use moon_config::{GeneratorConfig, PartialTemplateConfig, TemplateLocator};
+use moon_config::{CodegenConfig, PartialTemplateConfig, TemplateLocator};
 use moon_config_loader::ConfigLoader;
 use moon_env::MoonEnvironment;
 use moon_process::{Command, CommandExt, Output};
@@ -19,7 +19,7 @@ use url::Url;
 
 #[derive(Debug)]
 pub struct CodeGenerator<'app> {
-    pub config: &'app GeneratorConfig,
+    pub config: &'app CodegenConfig,
     pub templates: FxHashMap<Id, Template>,
     pub template_locations: Vec<PathBuf>,
 
@@ -30,7 +30,7 @@ pub struct CodeGenerator<'app> {
 impl<'app> CodeGenerator<'app> {
     pub fn new(
         workspace_root: &'app Path,
-        config: &'app GeneratorConfig,
+        config: &'app CodegenConfig,
         moon_env: Arc<MoonEnvironment>,
     ) -> CodeGenerator<'app> {
         debug!(

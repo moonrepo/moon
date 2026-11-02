@@ -60,6 +60,9 @@
     fail validation. A task's `onFailure` overrides an inherited value, instead of conflicting with
     it. The task options in `moon task --json` and the `@moonrepo/types` types have been updated to
     match.
+  - Renamed the `generator` setting in `.moon/workspace.*` to `codegen`. Use `codegen.templates`
+    instead of `generator.templates`. The old setting has been removed, and fails validation. The
+    `GeneratorConfig` types in `@moonrepo/types` have been renamed to `CodegenConfig`.
 - **Execution plans**
   - Replaced the `affected.includeRelations` field with `affected.depth`, the `graph.downstream`
     field with `graph.dependents`, and the `graph.upstream` field with the new
@@ -202,6 +205,10 @@
     isn't a member of the workspace that it located, a nested workspace that an enclosing
     workspace's members also match, and a member that overrides the workspace's version. Also
     supports `--dot` and `--json` output, and placing a single project, like a run would.
+  - Added a `moon migrate v3` command, that migrates the settings that have been renamed or removed
+    in v3, within `.moon/workspace.*`, `.moon/tasks/**/*`, and `moon.*` configuration files. Only
+    files that change are re-written, which strips their comments. Pkl files, execution plans, and
+    template files must be migrated manually.
 - **Configuration**
   - Added support for parent traversal globs, with a `...` path segment, like `.../package.json`.
     They match the path after `...` in the directory before it (the project root for project
@@ -373,6 +380,14 @@
   environment.
 - Fixed an issue where `moon docker file` could pick the default base image of a toolchain that the
   project disabled.
+- Fixed some issues with `moon migrate v2`:
+  - The `.moon/tasks.yml` file was moved to `.moon/tasks/all.yml` with an `inheritedBy` condition
+    for a `tasks` language, so its tasks were no longer inherited by any project.
+  - A task's `local: false` setting was migrated to `preset: server`, instead of being removed.
+  - A deprecated setting overwrote the setting that replaced it, when both were defined, like
+    `platform` and `toolchain.default` in `moon.yml`.
+  - Settings were re-ordered, and `moon.yml` files in nested `node_modules` were migrated.
+  - Files that didn't require a migration were still re-written, which stripped their comments.
 
 #### ⚙️ Internal
 

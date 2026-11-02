@@ -1,0 +1,18 @@
+---
+source: crates/cli/tests/migrate_v3_test.rs
+expression: "read_file(&sandbox, \"packages/app/moon.json\")"
+---
+{
+  "language": "typescript",
+  "taskOptions": {
+    "onFailure": "expect"
+  },
+  "tasks": {
+    "build": {
+      "command": "vite build",
+      "options": {
+        "onFailure": "allow"
+      }
+    }
+  }
+}

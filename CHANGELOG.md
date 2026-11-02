@@ -194,6 +194,10 @@
     isn't a member of the workspace that it located, a nested workspace that an enclosing
     workspace's members also match, and a member that overrides the workspace's version. Also
     supports `--dot` and `--json` output, and placing a single project, like a run would.
+  - Added a `moon migrate v3` command, that migrates the settings that have been renamed or removed
+    in v3, within `.moon/workspace.*`, `.moon/tasks/**/*`, and `moon.*` configuration files. Only
+    files that change are re-written, which strips their comments. Pkl files, execution plans, and
+    template files must be migrated manually.
 - **Configuration**
   - Stabilized the `cache.unstable_sharedWorktreeCache` setting in `.moon/workspace.config`. Use
     `cache.sharedWorktreeCache` instead.
@@ -349,6 +353,14 @@
   environment.
 - Fixed an issue where `moon docker file` could pick the default base image of a toolchain that the
   project disabled.
+- Fixed some issues with `moon migrate v2`:
+  - The `.moon/tasks.yml` file was moved to `.moon/tasks/all.yml` with an `inheritedBy` condition
+    for a `tasks` language, so its tasks were no longer inherited by any project.
+  - A task's `local: false` setting was migrated to `preset: server`, instead of being removed.
+  - A deprecated setting overwrote the setting that replaced it, when both were defined, like
+    `platform` and `toolchain.default` in `moon.yml`.
+  - Settings were re-ordered, and `moon.yml` files in nested `node_modules` were migrated.
+  - Files that didn't require a migration were still re-written, which stripped their comments.
 
 #### ⚙️ Internal
 

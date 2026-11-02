@@ -55,6 +55,11 @@ fingerprint!(
         // changes (in project or task crates) are not reflected until the cache
         // is invalidated, which puts the program in a weird state.
         version: String,
+
+        // Absolute workspace root. The graph stores absolute project and task
+        // paths, so a workspace that was moved or renamed cannot reuse a graph
+        // built at its previous location.
+        workspace_root: String,
     }
 );
 
@@ -71,6 +76,7 @@ impl Default for WorkspaceGraphFingerprint<'_> {
             version: GlobalEnvBag::instance()
                 .get("MOON_VERSION")
                 .unwrap_or_default(),
+            workspace_root: String::default(),
         }
     }
 }
@@ -94,6 +100,10 @@ impl<'graph> WorkspaceGraphFingerprint<'graph> {
 
     pub fn add_toolchain_versions(&mut self, versions: &'graph BTreeMap<Id, String>) {
         self.toolchains.extend(versions.iter());
+    }
+
+    pub fn set_workspace_root(&mut self, root: &Path) {
+        self.workspace_root = root.to_string_lossy().into_owned();
     }
 
     pub fn gather_env(&mut self) {
@@ -267,10 +277,39 @@ pub async fn generate_graph_cache_digest(
     fingerprint.add_extension_versions(&extension_versions);
     fingerprint.add_toolchain_versions(&toolchain_versions);
     fingerprint.gather_env();
+    fingerprint.set_workspace_root(&context.workspace_root);
 
     context
         .cache_engine
         .storage
         .store_hash_manifest("workspace-graph", &fingerprint)
         .await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use moon_hash::{ContentHasher, Digest};
+
+    fn digest_for_root(root: &str) -> String {
+        let mut fingerprint = WorkspaceGraphFingerprint::default();
+        fingerprint.set_workspace_root(Path::new(root));
+
+        let mut hasher = ContentHasher::new("workspace-graph");
+        hasher.hash_content(&fingerprint).unwrap();
+
+        Digest::from_hasher(&mut hasher).unwrap().hash.to_string()
+    }
+
+    #[test]
+    fn changing_the_workspace_root_changes_the_graph_digest() {
+        assert_eq!(
+            digest_for_root("/repo/workspace"),
+            digest_for_root("/repo/workspace")
+        );
+        assert_ne!(
+            digest_for_root("/repo/workspace"),
+            digest_for_root("/repo/moved-workspace")
+        );
+    }
 }

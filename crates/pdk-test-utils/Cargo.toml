@@ -8,6 +8,9 @@ homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 publish = true
 
+[package.metadata.docs.rs]
+all-features = true
+
 [dependencies]
 moon_pdk_api = { version = "2.3.0", path = "../pdk-api" }
 moon_target = { version = "3.1.0", path = "../target" }

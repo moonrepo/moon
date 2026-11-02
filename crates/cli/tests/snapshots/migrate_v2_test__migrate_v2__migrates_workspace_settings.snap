@@ -1,0 +1,27 @@
+---
+source: crates/cli/tests/migrate_v2_test.rs
+expression: "read_file(&sandbox, \".moon/workspace.yml\")"
+---
+projects:
+- '*'
+codeowners:
+  orderBy: project-id
+  sync: true
+constraints:
+  enforceLayerRelationships: true
+docker:
+  prune:
+    installToolchainDependencies: false
+  scaffold:
+    configsPhaseGlobs:
+    - '*.json'
+hasher:
+  optimization: performance
+pipeline:
+  logRunningCommand: true
+remote:
+  host: grpcs://cache.example.com
+vcs:
+  client: git
+  sync: true
+  defaultBranch: main

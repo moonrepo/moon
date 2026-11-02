@@ -1,6 +1,6 @@
 use moon_codegen::{CodeGenerator, Template, TemplateContext, TemplateFile};
 use moon_common::Id;
-use moon_config::{GeneratorConfig, TemplateFrontmatterConfig};
+use moon_config::{CodegenConfig, TemplateFrontmatterConfig};
 use moon_env::MoonEnvironment;
 use starbase_sandbox::{create_sandbox, locate_fixture};
 use std::path::PathBuf;
@@ -148,7 +148,7 @@ mod template {
         async fn inherits_extended_files() {
             let sandbox = create_sandbox("generator");
             let out = sandbox.path().join("out");
-            let config = GeneratorConfig::default();
+            let config = CodegenConfig::default();
 
             let mut codegen = CodeGenerator::new(
                 sandbox.path(),
@@ -395,7 +395,7 @@ mod template {
         async fn can_include_extended_files() {
             let sandbox = create_sandbox("include");
             let out = sandbox.path().join("out");
-            let config = GeneratorConfig::default();
+            let config = CodegenConfig::default();
 
             let mut codegen = CodeGenerator::new(
                 sandbox.path(),

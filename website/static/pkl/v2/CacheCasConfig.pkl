@@ -10,6 +10,6 @@ module CacheCasConfig
 maxSize: String?
 
 /// Verify hash on every read. When enabled, reads are slower
-/// but detect on-disk corruption.
+/// but they detect on-disk corruption.
 @Since { version = "2.3.0" }
 verifyIntegrity: Boolean?

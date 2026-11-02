@@ -22,7 +22,7 @@ async fn load_generator<'a>(
 ) -> Result<CodeGenerator<'a>, CallToolError> {
     let mut generator = CodeGenerator::new(
         &app_context.workspace_root,
-        &app_context.workspace_config.generator,
+        &app_context.workspace_config.codegen,
         Arc::clone(&app_context.moon_env),
     );
 

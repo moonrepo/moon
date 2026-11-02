@@ -1,0 +1,8 @@
+---
+source: crates/cli/tests/migrate_v3_test.rs
+expression: "read_file(&sandbox, \"packages/b/moon.yml\")"
+---
+tasks:
+  build:
+    options:
+      onFailure: allow

@@ -6,6 +6,7 @@ mod toolchain;
 pub use args::*;
 pub use extension::*;
 pub use funcs::*;
+pub use moon_pdk_api::*;
 pub use toolchain::*;
 pub use warpgate_pdk::*;
 

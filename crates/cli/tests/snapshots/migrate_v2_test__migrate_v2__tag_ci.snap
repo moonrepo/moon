@@ -1,0 +1,7 @@
+---
+source: crates/cli/tests/migrate_v2_test.rs
+expression: "read_file(&sandbox, \".moon/tasks/tag-ci.yml\")"
+---
+tasks: {}
+inheritedBy:
+  tag: ci

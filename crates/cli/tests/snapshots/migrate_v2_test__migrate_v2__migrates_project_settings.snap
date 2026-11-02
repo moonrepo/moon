@@ -1,0 +1,21 @@
+---
+source: crates/cli/tests/migrate_v2_test.rs
+expression: "read_file(&sandbox, \"packages/app/moon.yml\")"
+---
+layer: application
+language: typescript
+project:
+  title: App
+  description: An application
+  team: web
+docker:
+  scaffold:
+    sourcesPhaseGlobs:
+    - src/**/*
+toolchains:
+  typescript: {}
+  default: node
+tasks:
+  build:
+    command: vite build --base $projectTitle
+    toolchains: node

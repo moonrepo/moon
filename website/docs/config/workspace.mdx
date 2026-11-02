@@ -199,6 +199,35 @@ cache:
 
 Can also be enabled with the `MOON_CACHE_SHARED_WORKTREE_CACHE` environment variable.
 
+## `codegen`
+
+<HeadingApiLink to="/api/types/interface/WorkspaceConfig#codegen" />
+
+Configures aspects of the code generator.
+
+### `templates`
+
+<HeadingApiLink to="/api/types/interface/CodegenConfig#templates" />
+
+A list of paths in which templates can be located. Supports the following types of paths, and
+defaults to `./templates`.
+
+- File system paths, relative from the workspace root.
+- Git repositories and a revision, prefixed with `git://`. <VersionLabel inline version="1.23.0" />
+- npm packages and a version, prefixed with `npm://`. <VersionLabel inline version="1.23.0" />
+
+```yaml title=".moon/workspace.yml" {2-4}
+codegen:
+  templates:
+    - './templates'
+    - 'file://./other/templates'
+    - 'git://github.com/moonrepo/templates#master'
+    - 'npm://@moonrepo/templates#1.2.3'
+```
+
+> Learn more about this in the official
+> [code generation guide](../guides/codegen#configuring-template-locations)!
+
 ## `codeowners`<VersionLabel version="1.8.0" />
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#codeowners" />
@@ -431,35 +460,6 @@ experiments:
 ```
 
 Can also be enabled with the `MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE` environment variable.
-
-## `generator`
-
-<HeadingApiLink to="/api/types/interface/WorkspaceConfig#generator" />
-
-Configures aspects of the template generator.
-
-### `templates`
-
-<HeadingApiLink to="/api/types/interface/GeneratorConfig#templates" />
-
-A list of paths in which templates can be located. Supports the following types of paths, and
-defaults to `./templates`.
-
-- File system paths, relative from the workspace root.
-- Git repositories and a revision, prefixed with `git://`. <VersionLabel inline version="1.23.0" />
-- npm packages and a version, prefixed with `npm://`. <VersionLabel inline version="1.23.0" />
-
-```yaml title=".moon/workspace.yml" {2-4}
-generator:
-  templates:
-    - './templates'
-    - 'file://./other/templates'
-    - 'git://github.com/moonrepo/templates#master'
-    - 'npm://@moonrepo/templates#1.2.3'
-```
-
-> Learn more about this in the official
-> [code generation guide](../guides/codegen#configuring-template-locations)!
 
 ## `hasher`
 

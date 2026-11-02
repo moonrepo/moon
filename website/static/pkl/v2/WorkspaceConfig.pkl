@@ -56,7 +56,7 @@ experiments: ExperimentsConfig?
 @Since { version = "1.12.0" }
 `extends`: ExtendsFrom?
 
-/// Configures aspects of the content hashing engine.
+/// Configures aspects of the task hashing engine.
 hasher: HasherConfig?
 
 /// Configures how and where notifications are sent.

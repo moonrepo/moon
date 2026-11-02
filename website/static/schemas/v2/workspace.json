@@ -95,7 +95,7 @@
     },
     "hasher": {
       "title": "hasher",
-      "description": "Configures aspects of the content hashing engine.",
+      "description": "Configures aspects of the task hashing engine.",
       "allOf": [
         {
           "$ref": "#/definitions/HasherConfig"

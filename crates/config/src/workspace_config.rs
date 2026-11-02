@@ -166,7 +166,7 @@ config_struct!(
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub extends: Option<schematic::ExtendsFrom>,
 
-        /// Configures aspects of the content hashing engine.
+        /// Configures aspects of the task hashing engine.
         #[setting(nested)]
         pub hasher: HasherConfig,
 

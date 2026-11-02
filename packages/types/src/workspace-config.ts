@@ -681,7 +681,7 @@ export interface WorkspaceConfig {
 	 * @since 1.12.0
 	 */
 	extends?: ExtendsFrom | null;
-	/** Configures aspects of the content hashing engine. */
+	/** Configures aspects of the task hashing engine. */
 	hasher: HasherConfig;
 	/** Configures how and where notifications are sent. */
 	notifier: NotifierConfig;
@@ -1335,7 +1335,7 @@ export interface PartialWorkspaceConfig {
 	 * @since 1.12.0
 	 */
 	extends?: ExtendsFrom | null;
-	/** Configures aspects of the content hashing engine. */
+	/** Configures aspects of the task hashing engine. */
 	hasher?: PartialHasherConfig | null;
 	/** Configures how and where notifications are sent. */
 	notifier?: PartialNotifierConfig | null;

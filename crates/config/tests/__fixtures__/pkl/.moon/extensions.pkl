@@ -1,4 +1,4 @@
-extends "../../../../../../website/static/pkl/v2/ExtensionsConfig.pkl"
+extends "../../../../../../website/static/pkl/v3/ExtensionsConfig.pkl"
 
 custom {
 	plugin = "file://node.wasm"

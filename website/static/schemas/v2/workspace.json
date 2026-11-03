@@ -17,15 +17,6 @@
         }
       ]
     },
-    "codegen": {
-      "title": "codegen",
-      "description": "Configures the code generator for scaffolding from templates.",
-      "allOf": [
-        {
-          "$ref": "#/definitions/CodegenConfig"
-        }
-      ]
-    },
     "codeowners": {
       "title": "codeowners",
       "description": "Configures code ownership rules for generating a CODEOWNERS file. @since 1.8.0",
@@ -44,12 +35,6 @@
           "$ref": "#/definitions/ConstraintsConfig"
         }
       ]
-    },
-    "daemon": {
-      "title": "daemon",
-      "description": "Enables a daemon that will process heavy tasks in the background, greatly increasing performance of the main thread/executable. @since 2.2.0",
-      "default": true,
-      "type": "boolean"
     },
     "defaultProject": {
       "title": "defaultProject",
@@ -93,9 +78,18 @@
         }
       ]
     },
+    "generator": {
+      "title": "generator",
+      "description": "Configures the generator for scaffolding from templates.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/GeneratorConfig"
+        }
+      ]
+    },
     "hasher": {
       "title": "hasher",
-      "description": "Configures aspects of the task hashing engine.",
+      "description": "Configures aspects of the content hashing engine.",
       "allOf": [
         {
           "$ref": "#/definitions/HasherConfig"
@@ -153,6 +147,11 @@
       "default": true,
       "type": "boolean"
     },
+    "unstable_daemon": {
+      "title": "unstable_daemon",
+      "description": "Enables a daemon that will process heavy tasks in the background, greatly increasing performance of the main thread/executable. @since 2.2.0",
+      "type": "boolean"
+    },
     "vcs": {
       "title": "vcs",
       "description": "Configures the version control system (VCS). Also known as source code management (SCM).",
@@ -196,9 +195,9 @@
         },
         "verifyIntegrity": {
           "title": "verifyIntegrity",
-          "description": "Verify hash on every read. When enabled, reads are slower but they detect on-disk corruption. @since 2.3.0",
+          "description": "Verify hash on every read. When enabled, reads are slower but detect on-disk corruption. @since 2.3.0",
           "type": "boolean",
-          "markdownDescription": "Verify hash on every read. When enabled, reads are slower but they detect on-disk corruption. @since 2.3.0"
+          "markdownDescription": "Verify hash on every read. When enabled, reads are slower but detect on-disk corruption. @since 2.3.0"
         }
       },
       "additionalProperties": false,
@@ -218,26 +217,11 @@
           ],
           "markdownDescription": "Configures aspects of the content-addressable storage (CAS) cache. @since 2.3.0"
         },
-        "sharedWorktreeCache": {
-          "title": "sharedWorktreeCache",
+        "unstable_sharedWorktreeCache": {
+          "title": "unstable_sharedWorktreeCache",
           "description": "Whether to use a shared worktree cache. When enabled, the cache is shared between all VCS worktrees on the same machine. When disabled, each worktree has its own cache.  Only blobs and manifests will be shared, as they are portable. Hashes, locks, states, and more will not be, as they are worktree-specific.  @since 2.5.0",
           "type": "boolean",
           "markdownDescription": "Whether to use a shared worktree cache. When enabled, the cache is shared between all VCS worktrees on the same machine. When disabled, each worktree has its own cache.  Only blobs and manifests will be shared, as they are portable. Hashes, locks, states, and more will not be, as they are worktree-specific.  @since 2.5.0"
-        }
-      },
-      "additionalProperties": false
-    },
-    "CodegenConfig": {
-      "description": "Configures the code generator for scaffolding from templates.",
-      "type": "object",
-      "properties": {
-        "templates": {
-          "title": "templates",
-          "description": "The list of file paths, relative from the workspace root, in which to locate templates.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         }
       },
       "additionalProperties": false
@@ -492,7 +476,38 @@
     "ExperimentsConfig": {
       "description": "Configures experiments across the entire moon workspace.",
       "type": "object",
-      "properties": {},
+      "properties": {
+        "asyncAffectedTracking": {
+          "title": "asyncAffectedTracking",
+          "description": "Track and determine affected projects and tasks asynchronously. @since 2.2.0",
+          "default": true,
+          "type": "boolean"
+        },
+        "asyncGraphBuilding": {
+          "title": "asyncGraphBuilding",
+          "description": "Build the project and task graphs asynchronously. @since 2.2.0",
+          "default": true,
+          "type": "boolean"
+        },
+        "casOutputsCache": {
+          "title": "casOutputsCache",
+          "description": "Store task outputs in a local CAS (content-addressable storage) cache. @since 2.3.0",
+          "type": "boolean",
+          "markdownDescription": "Store task outputs in a local CAS (content-addressable storage) cache. @since 2.3.0"
+        },
+        "explicitTaskOutputStyle": {
+          "title": "explicitTaskOutputStyle",
+          "description": "Always use the task's outputStyle option, even when running the task as a primary target. @since 2.6.0",
+          "type": "boolean",
+          "markdownDescription": "Always use the task's `outputStyle` option, even when running the task as a primary target. @since 2.6.0"
+        },
+        "nativeFileHashing": {
+          "title": "nativeFileHashing",
+          "description": "Use native file hashing instead of using the VCS. @since 2.3.0",
+          "default": true,
+          "type": "boolean"
+        }
+      },
       "additionalProperties": false
     },
     "ExtendsFrom": {
@@ -508,8 +523,23 @@
         }
       ]
     },
+    "GeneratorConfig": {
+      "description": "Configures the generator for scaffolding from templates.",
+      "type": "object",
+      "properties": {
+        "templates": {
+          "title": "templates",
+          "description": "The list of file paths, relative from the workspace root, in which to locate templates.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
     "HasherConfig": {
-      "description": "Configures aspects of the task hashing engine.",
+      "description": "Configures aspects of the content hashing engine.",
       "type": "object",
       "properties": {
         "ignoreMissingPatterns": {
@@ -769,6 +799,11 @@
           "description": "The maximum number of times to retry a request that failed with a transient error (connection failure, timeout, 5xx, 429, etc), using exponential backoff. Only applies to HTTP APIs. @since 2.6.0",
           "default": 3,
           "type": "number"
+        },
+        "verifyIntegrity": {
+          "title": "verifyIntegrity",
+          "description": "When downloading blobs, verify the digests/hashes in the response match the associated blob contents. This will reduce performance but ensure partial or corrupted blobs won't cause failures. @since 1.36.0",
+          "type": "boolean"
         }
       },
       "additionalProperties": false,
@@ -1008,7 +1043,7 @@
     "VcsProvider": {
       "description": "The upstream version control provider, where the repository source code is stored.",
       "type": "string",
-      "enum": ["bitbucket", "github", "gitlab", "other"]
+      "enum": ["bitbucket", "bitbucket-legacy", "github", "gitlab", "other"]
     },
     "WorkspaceProjectGlobFormat": {
       "description": "The project identifier format for glob located projects.",

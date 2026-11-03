@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Configures all extensions.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "title": "$schema",
+      "default": "./cache/schemas/extensions.json",
+      "type": "string"
+    },
+    "extends": {
+      "title": "extends",
+      "description": "Extends one or many extensions configuration files. Supports a relative file path or a secure URL. @since 2.0.0",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ExtendsFrom"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "additionalProperties": {
+    "$ref": "#/definitions/ExtensionPluginConfig"
+  },
+  "definitions": {
+    "ExtendsFrom": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "ExtensionPluginConfig": {
+      "description": "Configures an individual extension.",
+      "type": "object",
+      "properties": {
+        "plugin": {
+          "title": "plugin",
+          "description": "Location of the WASM plugin to use.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PluginLocator"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": {
+        "type": ["boolean", "object", "array", "number", "string", "integer"]
+      }
+    },
+    "Id": {
+      "type": "string"
+    },
+    "PluginLocator": {
+      "description": "Strategies and protocols for locating plugins.",
+      "type": "string"
+    }
+  }
+}

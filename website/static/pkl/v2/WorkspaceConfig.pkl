@@ -5,11 +5,11 @@
 module WorkspaceConfig
 
 import "CacheConfig.pkl"
-import "CodegenConfig.pkl"
 import "CodeownersConfig.pkl"
 import "ConstraintsConfig.pkl"
 import "DockerConfig.pkl"
 import "ExperimentsConfig.pkl"
+import "GeneratorConfig.pkl"
 import "HasherConfig.pkl"
 import "NotifierConfig.pkl"
 import "PipelineConfig.pkl"
@@ -23,20 +23,12 @@ $schema: String?
 @Since { version = "2.3.0" }
 cache: CacheConfig?
 
-/// Configures the code generator for scaffolding from templates.
-codegen: CodegenConfig?
-
 /// Configures code ownership rules for generating a `CODEOWNERS` file.
 @Since { version = "1.8.0" }
 codeowners: CodeownersConfig?
 
 /// Configures boundaries and constraints between projects.
 constraints: ConstraintsConfig?
-
-/// Enables a daemon that will process heavy tasks in the background,
-/// greatly increasing performance of the main thread/executable.
-@Since { version = "2.2.0" }
-daemon: Boolean?
 
 /// The default/main project within the workspace. When a task is
 /// ran without a project, the default will be used.
@@ -56,7 +48,10 @@ experiments: ExperimentsConfig?
 @Since { version = "1.12.0" }
 `extends`: ExtendsFrom?
 
-/// Configures aspects of the task hashing engine.
+/// Configures the generator for scaffolding from templates.
+generator: GeneratorConfig?
+
+/// Configures aspects of the content hashing engine.
 hasher: HasherConfig?
 
 /// Configures how and where notifications are sent.
@@ -75,6 +70,11 @@ remote: RemoteConfig?
 
 /// Collects anonymous usage information, and checks for new moon versions.
 telemetry: Boolean?
+
+/// Enables a daemon that will process heavy tasks in the background,
+/// greatly increasing performance of the main thread/executable.
+@Since { version = "2.2.0" }
+unstable_daemon: Boolean?
 
 /// Configures the version control system (VCS). Also known as
 /// source code management (SCM).

@@ -1,6 +1,6 @@
-amends "../../../../../website/static/pkl/v2/TaskConfig.pkl"
+amends "../../../../../website/static/pkl/v3/TaskConfig.pkl"
 
-import "../../../../../website/static/pkl/v2/TaskDependencyConfig.pkl"
+import "../../../../../website/static/pkl/v3/TaskDependencyConfig.pkl"
 
 description = "I do something"
 

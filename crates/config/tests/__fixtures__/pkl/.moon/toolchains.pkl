@@ -1,4 +1,4 @@
-extends "../../../../../../website/static/pkl/v2/ToolchainsConfig.pkl"
+extends "../../../../../../website/static/pkl/v3/ToolchainsConfig.pkl"
 
 typescript {
 	createMissingConfig = false

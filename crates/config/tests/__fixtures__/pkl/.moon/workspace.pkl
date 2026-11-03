@@ -1,6 +1,6 @@
-amends "../../../../../../website/static/pkl/v2/WorkspaceConfig.pkl"
+amends "../../../../../../website/static/pkl/v3/WorkspaceConfig.pkl"
 
-import "../../../../../../website/static/pkl/v2/WorkspaceProjectsConfig.pkl"
+import "../../../../../../website/static/pkl/v3/WorkspaceProjectsConfig.pkl"
 
 codeowners {
 	globalPaths = new Mapping {

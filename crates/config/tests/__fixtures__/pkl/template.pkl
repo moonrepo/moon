@@ -1,10 +1,10 @@
-amends "../../../../../website/static/pkl/v2/TemplateConfig.pkl"
+amends "../../../../../website/static/pkl/v3/TemplateConfig.pkl"
 
-import "../../../../../website/static/pkl/v2/TemplateVariableBoolSetting.pkl"
-import "../../../../../website/static/pkl/v2/TemplateVariableEnumSetting.pkl"
-import "../../../../../website/static/pkl/v2/TemplateVariableEnumValueConfig.pkl"
-import "../../../../../website/static/pkl/v2/TemplateVariableNumberSetting.pkl"
-import "../../../../../website/static/pkl/v2/TemplateVariableStringSetting.pkl"
+import "../../../../../website/static/pkl/v3/TemplateVariableBoolSetting.pkl"
+import "../../../../../website/static/pkl/v3/TemplateVariableEnumSetting.pkl"
+import "../../../../../website/static/pkl/v3/TemplateVariableEnumValueConfig.pkl"
+import "../../../../../website/static/pkl/v3/TemplateVariableNumberSetting.pkl"
+import "../../../../../website/static/pkl/v3/TemplateVariableStringSetting.pkl"
 
 title = "Title"
 description = "Description"

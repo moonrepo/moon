@@ -40,6 +40,8 @@ execution commands write the same report format to `.moon/cache/runReport.json`.
 These reports live in `.moon/cache`, so they may be overwritten or deleted between runs. Copy the
 report elsewhere if you need to persist it, like uploading it as a CI artifact.
 
+To inspect the resolved graph before execution, use [`moon query pre-exec`](./query/pre-exec).
+
 ### Arguments
 
 - `...[target]` - [Task targets](../concepts/target) to run.

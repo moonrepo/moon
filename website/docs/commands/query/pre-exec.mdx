@@ -1,0 +1,22 @@
+---
+title: query pre-exec
+sidebar_label: pre-exec
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="3.0.0" header />
+
+Use `moon query pre-exec` to write the action graph that `moon ci` would execute as JSON on stdout.
+It applies the same target, affected, dependency, and job partition settings as a normal CI run,
+but stops before running actions or writing a CI report.
+
+```shell
+$ moon query pre-exec --base main > action-graph.json
+```
+
+The JSON object has `schemaVersion` (currently `1`), sorted `requestedTargets` and
+`primaryTargets`, `actions`, and `edges`. Each action has a graph-local ID, kind, and label; task
+actions also have a target. An edge's `from` action depends on its `to` action, and its `type`
+describes the dependency. The graph omits action environment variables and command arguments. An
+affected run with no selected tasks returns empty `primaryTargets`, `actions`, and `edges` arrays.

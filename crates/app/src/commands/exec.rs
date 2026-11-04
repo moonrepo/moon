@@ -7,9 +7,11 @@ use crate::session::{MoonSession, SessionResult};
 use ci_env::CiOutput;
 use clap::{Args, ValueEnum};
 use iocraft::prelude::element;
-use moon_action::Action;
+use moon_action::{Action, ActionNode};
 use moon_action_context::ActionContext;
-use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, BuildOutput, RunRequirements};
+use moon_action_graph::{
+    ActionGraph, ActionGraphBuilderOptions, ActionGraphType, BuildOutput, RunRequirements,
+};
 use moon_affected::Depth;
 use moon_app_macros::{with_affected_args, with_shared_exec_args};
 use moon_cache::CacheMode;
@@ -19,8 +21,9 @@ use moon_console::{Console, Level};
 use moon_exec_plan::{ExecutionPlan, TargetsBlock};
 use moon_task::{Target, TargetLocator};
 use moon_vcs::ChangedStatus;
-use petgraph::graph::NodeIndex;
+use petgraph::{Direction, graph::NodeIndex, visit::EdgeRef};
 use rustc_hash::{FxHashMap, FxHashSet};
+use serde::Serialize;
 use starbase_utils::json;
 use std::fmt;
 use tracing::{debug, instrument, warn};
@@ -87,6 +90,38 @@ pub struct ExecArgs {
     // and were determined by the command instead (like `moon ci` and `moon check`)
     #[arg(skip)]
     pub skip_persistent: bool,
+
+    // Enabled internally by `moon query pre-exec` to reuse CI resolution.
+    #[arg(skip)]
+    pub emit_action_graph: bool,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ResolvedActionGraph {
+    schema_version: u8,
+    requested_targets: Vec<String>,
+    primary_targets: Vec<String>,
+    actions: Vec<ResolvedAction>,
+    edges: Vec<ResolvedEdge>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ResolvedAction {
+    id: String,
+    kind: &'static str,
+    label: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    target: Option<String>,
+}
+
+#[derive(Serialize)]
+struct ResolvedEdge {
+    from: String,
+    to: String,
+    #[serde(rename = "type")]
+    kind: moon_config::TaskDependencyType,
 }
 
 #[instrument(skip(session))]
@@ -118,7 +153,7 @@ pub async fn exec(session: MoonSession, args: ExecArgs) -> SessionResult {
     }
 
     // Otherwise prompt for a list of targets
-    if plan.targets.is_empty() {
+    if plan.targets.is_empty() && !args.emit_action_graph {
         let workspace_graph = session.get_workspace_graph().await?;
 
         let targets = select_targets(&session.console, &[], || {
@@ -228,6 +263,23 @@ impl ExecWorkflow {
 
         // Step 2
         let (action_context, action_graph) = self.build_action_graph(changed_files).await?;
+
+        // CI graph export stops before the action pipeline creates a report or
+        // runs any action. An affected run with no targets has an empty graph
+        // even if the builder inserted setup nodes.
+        if self.args.emit_action_graph {
+            self.emit_action_graph(if self.targets.is_empty() {
+                None
+            } else {
+                Some(&action_graph)
+            })?;
+
+            return Ok(if self.targets.is_empty() && !self.affected {
+                Some(1)
+            } else {
+                None
+            });
+        }
 
         if self.targets.is_empty() {
             let status = self.get_status();
@@ -624,7 +676,8 @@ impl ExecWorkflow {
     }
 
     fn should_print(&self) -> bool {
-        !self.test_env
+        !self.args.emit_action_graph
+            && !self.test_env
             && !self.console.out.is_quiet()
             && self.summary.is_some_and(|level| level.is(Level::Three))
     }
@@ -755,5 +808,271 @@ impl ExecWorkflow {
             TargetsBlock::Filtered { include } => Vec::from_iter(include),
             TargetsBlock::Included(targets) => Vec::from_iter(targets),
         }
+    }
+
+    fn emit_action_graph(&self, action_graph: Option<&ActionGraph>) -> miette::Result<()> {
+        let mut requested_targets = self
+            .get_targets()
+            .into_iter()
+            .map(|target| target.as_str().to_owned())
+            .collect::<Vec<_>>();
+        requested_targets.sort();
+        requested_targets.dedup();
+
+        let mut primary_targets = self
+            .targets
+            .values()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>();
+        primary_targets.sort();
+        primary_targets.dedup();
+
+        let mut report = ResolvedActionGraph {
+            schema_version: 1,
+            requested_targets,
+            primary_targets,
+            actions: vec![],
+            edges: vec![],
+        };
+
+        if let Some(action_graph) = action_graph {
+            // The pipeline performs this validation too, before dispatch.
+            action_graph.sort_topological()?;
+
+            let graph = action_graph.get_inner_graph();
+            let mut nodes = graph
+                .node_indices()
+                .map(|index| (index, &graph[index]))
+                .collect::<Vec<_>>();
+
+            // Use the structure around actions with the same public identity
+            // to assign repeatable graph-local IDs. Different task instances
+            // can share a target but have different arguments or environment.
+            // Neither is used to sort or exposed in the JSON.
+            let ranks = Self::rank_action_nodes(graph);
+            nodes.sort_by_cached_key(|(index, _)| ranks[index]);
+
+            let mut ids = FxHashMap::default();
+
+            for (position, (index, node)) in nodes.into_iter().enumerate() {
+                let id = format!("action-{:04}", position + 1);
+                ids.insert(index, id.clone());
+
+                let (kind, target) = match node {
+                    ActionNode::None => ("none", None),
+                    ActionNode::InstallDependencies(_) => ("install-dependencies", None),
+                    ActionNode::RunTask(inner) => ("run-task", Some(inner.target.to_string())),
+                    ActionNode::SetupEnvironment(_) => ("setup-environment", None),
+                    ActionNode::SetupProto(_) => ("setup-proto", None),
+                    ActionNode::SetupToolchain(_) => ("setup-toolchain", None),
+                    ActionNode::SyncProject(_) => ("sync-project", None),
+                    ActionNode::SyncWorkspace => ("sync-workspace", None),
+                };
+
+                report.actions.push(ResolvedAction {
+                    id,
+                    kind,
+                    label: node.label(),
+                    target,
+                });
+            }
+
+            for edge in graph.edge_references() {
+                report.edges.push(ResolvedEdge {
+                    from: ids[&edge.source()].clone(),
+                    to: ids[&edge.target()].clone(),
+                    kind: *edge.weight(),
+                });
+            }
+
+            report.edges.sort_by_cached_key(|edge| {
+                (
+                    edge.from.clone(),
+                    edge.to.clone(),
+                    format!("{:?}", edge.kind),
+                )
+            });
+        }
+
+        self.console.out.write_line(json::format(&report, true)?)?;
+
+        Ok(())
+    }
+
+    fn action_identity(node: &ActionNode) -> String {
+        match node {
+            ActionNode::None => String::new(),
+            ActionNode::InstallDependencies(inner) => {
+                let mut members = inner.members.clone().unwrap_or_default();
+                members.sort();
+
+                format!(
+                    "{:?}",
+                    (
+                        &inner.toolchain_id,
+                        &inner.root,
+                        &inner.owner_project_id,
+                        &inner.project_id,
+                        members,
+                    )
+                )
+            }
+            ActionNode::RunTask(inner) => format!(
+                "{:?}",
+                (
+                    &inner.target,
+                    inner.persistent,
+                    inner.interactive,
+                    inner.priority,
+                )
+            ),
+            ActionNode::SetupEnvironment(inner) => format!(
+                "{:?}",
+                (
+                    &inner.toolchain_id,
+                    &inner.root,
+                    &inner.owner_project_id,
+                    &inner.project_id,
+                )
+            ),
+            ActionNode::SetupProto(inner) => inner.version.to_string(),
+            ActionNode::SetupToolchain(inner) => inner.toolchain.target(),
+            ActionNode::SyncProject(inner) => inner.project_id.to_string(),
+            ActionNode::SyncWorkspace => String::new(),
+        }
+    }
+
+    fn rank_action_nodes(graph: &ActionGraphType) -> FxHashMap<NodeIndex, usize> {
+        let base_keys = graph
+            .node_indices()
+            .map(|index| {
+                (
+                    index,
+                    (graph[index].label(), Self::action_identity(&graph[index])),
+                )
+            })
+            .collect::<Vec<_>>();
+        let mut unique_keys = base_keys
+            .iter()
+            .map(|(_, key)| key.clone())
+            .collect::<Vec<_>>();
+        unique_keys.sort();
+        unique_keys.dedup();
+
+        let mut ranks = FxHashMap::default();
+        for (index, key) in base_keys {
+            ranks.insert(index, unique_keys.binary_search(&key).unwrap());
+        }
+
+        if unique_keys.len() == graph.node_count() {
+            return ranks;
+        }
+
+        // Each round splits equal-rank groups according to both their
+        // dependencies and dependents. The old rank leads the sort key, so
+        // groups only split, and convergence takes at most node_count rounds.
+        for _ in 0..graph.node_count() {
+            let signatures = graph
+                .node_indices()
+                .map(|index| {
+                    let mut dependencies = graph
+                        .edges_directed(index, Direction::Outgoing)
+                        .map(|edge| (Self::edge_identity(edge.weight()), ranks[&edge.target()]))
+                        .collect::<Vec<_>>();
+                    dependencies.sort();
+
+                    let mut dependents = graph
+                        .edges_directed(index, Direction::Incoming)
+                        .map(|edge| (Self::edge_identity(edge.weight()), ranks[&edge.source()]))
+                        .collect::<Vec<_>>();
+                    dependents.sort();
+
+                    (index, (ranks[&index], dependencies, dependents))
+                })
+                .collect::<Vec<_>>();
+            let mut unique_signatures = signatures
+                .iter()
+                .map(|(_, signature)| signature.clone())
+                .collect::<Vec<_>>();
+            unique_signatures.sort();
+            unique_signatures.dedup();
+
+            let mut next = FxHashMap::default();
+            for (index, signature) in signatures {
+                next.insert(index, unique_signatures.binary_search(&signature).unwrap());
+            }
+
+            if next == ranks {
+                break;
+            }
+            ranks = next;
+        }
+
+        ranks
+    }
+
+    fn edge_identity(weight: &moon_config::TaskDependencyType) -> u8 {
+        match weight {
+            moon_config::TaskDependencyType::Cleanup => 0,
+            moon_config::TaskDependencyType::Required => 1,
+            moon_config::TaskDependencyType::Wait => 2,
+            moon_config::TaskDependencyType::Optional => 3,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use moon_action::RunTaskNode;
+    use moon_config::TaskDependencyType;
+
+    fn graph_with_duplicate_target(
+        reverse_insertion: bool,
+    ) -> (ActionGraphType, NodeIndex, NodeIndex) {
+        let shared = Target::parse("proj:shared").unwrap();
+        let plain = ActionNode::run_task(RunTaskNode::new(shared.clone()));
+        let mut configured = RunTaskNode::new(shared);
+        configured.args.push("--force".into());
+        configured.env.insert("TOKEN".into(), Some("secret".into()));
+        let configured = ActionNode::run_task(configured);
+        let parent = ActionNode::run_task(RunTaskNode::new(Target::parse("proj:parent").unwrap()));
+        let prep = ActionNode::run_task(RunTaskNode::new(Target::parse("proj:prep").unwrap()));
+
+        let mut graph = ActionGraphType::new();
+        let (plain_index, configured_index, parent_index, prep_index) = if reverse_insertion {
+            let prep_index = graph.add_node(prep);
+            let configured_index = graph.add_node(configured);
+            let plain_index = graph.add_node(plain);
+            let parent_index = graph.add_node(parent);
+            (plain_index, configured_index, parent_index, prep_index)
+        } else {
+            let parent_index = graph.add_node(parent);
+            let plain_index = graph.add_node(plain);
+            let configured_index = graph.add_node(configured);
+            let prep_index = graph.add_node(prep);
+            (plain_index, configured_index, parent_index, prep_index)
+        };
+
+        graph.add_edge(plain_index, prep_index, TaskDependencyType::Required);
+        graph.add_edge(configured_index, prep_index, TaskDependencyType::Required);
+        graph.add_edge(parent_index, configured_index, TaskDependencyType::Required);
+
+        (graph, plain_index, configured_index)
+    }
+
+    #[test]
+    fn ranks_duplicate_task_targets_by_graph_structure() {
+        let (first, first_plain, first_configured) = graph_with_duplicate_target(false);
+        let first_ranks = ExecWorkflow::rank_action_nodes(&first);
+        let (second, second_plain, second_configured) = graph_with_duplicate_target(true);
+        let second_ranks = ExecWorkflow::rank_action_nodes(&second);
+
+        assert_ne!(first_ranks[&first_plain], first_ranks[&first_configured]);
+        assert_eq!(first_ranks[&first_plain], second_ranks[&second_plain]);
+        assert_eq!(
+            first_ranks[&first_configured],
+            second_ranks[&second_configured]
+        );
     }
 }

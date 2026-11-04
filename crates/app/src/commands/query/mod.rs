@@ -29,6 +29,12 @@ pub enum QueryCommands {
     Projects(projects::QueryProjectsArgs),
 
     #[command(
+        name = "pre-exec",
+        about = "Query the resolved CI action graph before execution."
+    )]
+    PreExec(super::ci::QueryPreExecArgs),
+
+    #[command(
         name = "tasks",
         about = "Query for tasks within the task graph, grouped by project."
     )]

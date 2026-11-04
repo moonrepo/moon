@@ -170,6 +170,7 @@ const sidebars: SidebarsConfig = {
 					items: [
 						'commands/query/affected',
 						'commands/query/changed-files',
+						'commands/query/pre-exec',
 						'commands/query/projects',
 						'commands/query/tasks',
 					],

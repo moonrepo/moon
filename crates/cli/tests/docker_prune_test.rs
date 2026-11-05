@@ -57,7 +57,8 @@ mod docker_prune {
 
 // The `docker-layout` fixture is a dependencies workspace at the root (with
 // `packages/*` members, where `a` depends on `b`), a `standalone` package root
-// that overrides the version and a setting, and `tools`, which isn't a member.
+// that overrides the version and a setting, `tools`, which isn't a member, and
+// a dependencies workspace at `shared` that isn't a project, with member `x`.
 // The `tc-tier2` test plugin records the inputs of every prune and install.
 mod docker_prune_layout {
     use super::*;
@@ -186,6 +187,23 @@ mod docker_prune_layout {
         assert_eq!(install["root"], "/workspace/standalone");
         assert_eq!(install["project"]["id"], "standalone");
         assert_eq!(install["toolchain_config"]["customKey"], "standalone");
+    }
+
+    // A dependencies workspace that isn't a project is located in the
+    // skeleton too, as scaffolding copies its manifests and lockfiles
+    #[test]
+    fn prunes_a_workspace_that_isnt_a_project() {
+        let sandbox = create_moon_sandbox("docker-layout");
+        let workdir = scaffold_and_prune(&sandbox, &["x"]);
+
+        let prune = get_single_input(&workdir, "prune_docker");
+        let install = get_single_input(&workdir, "install_dependencies");
+
+        assert_eq!(prune["root"], "/workspace/shared");
+        assert_eq!(get_ids(&prune["projects"]), ["x"]);
+
+        assert_eq!(install["root"], "/workspace/shared");
+        assert!(install["project"].is_null());
     }
 
     #[test]

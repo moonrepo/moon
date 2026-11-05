@@ -233,6 +233,12 @@
   - When the only focused project is the root project of a dependencies workspace, the production
     install now receives no project, like the workspace's other actions, while its toolchain config
     is still that project's merged config.
+  - `moon docker scaffold` now copies the manifests and lockfiles of dependencies roots that aren't
+    a project, like a package manager workspace whose members are projects, into the configs
+    skeleton, and calls the `scaffold_docker` plugin function for them, without a project, like the
+    workspace root. Previously, only the roots of projects and the workspace were scaffolded, so
+    installs within Docker could not locate these roots. The sources skeleton includes the roots of
+    the focused projects and their dependencies.
 - **Hasher**
   - Improved the performance of file hashing.
     - File hashes are now memoized for the lifetime of the process, and reused while the file's size

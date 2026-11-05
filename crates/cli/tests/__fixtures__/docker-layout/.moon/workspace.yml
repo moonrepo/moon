@@ -5,3 +5,4 @@ projects:
   off: 'packages/off'
   standalone: 'standalone'
   tools: 'tools'
+  x: 'shared/x'

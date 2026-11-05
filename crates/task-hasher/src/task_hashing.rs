@@ -391,8 +391,9 @@ fn apply_toolchain_dependencies_by_manifest(
             // Inherited versions are defined once for the workspace, whichever
             // scope inherits them (like Cargo's `[workspace.dependencies]`),
             // which plugins return as production dependencies of the workspace
-            // manifest. The same scope is only a fallback, as for a root that's
-            // also a package, it's that package's own dependencies.
+            // manifest. The same scope is only a fallback for a name that isn't
+            // there, as for a root that's also a package, it's that package's
+            // own dependencies.
             let inheritable_deps = [DependencyScope::Production, scope]
                 .iter()
                 .filter_map(|scope| workspace_deps.get(scope))
@@ -453,13 +454,16 @@ fn apply_toolchain_dependencies_by_scope(
         // A plugin may resolve an inherited version itself, from the workspace's
         // own definitions, which is preferred, as the workspace manifest's
         // dependencies may also include a root package's own. Otherwise the
-        // first workspace dependency with a version, as a workspace root that's
-        // also a package may inherit its own workspace dependency
+        // version of the first workspace dependency with that name, if any.
+        // A workspace root that's also a package may inherit its own workspace
+        // dependency, which has no version, but a later scope only has that
+        // package's own dependencies, which aren't inherited
         let req = dep.get_version().or_else(|| {
             if inherited {
                 inheritable_deps
                     .iter()
-                    .find_map(|deps| deps.get(name).and_then(|ws_dep| ws_dep.get_version()))
+                    .find_map(|deps| deps.get(name))
+                    .and_then(|ws_dep| ws_dep.get_version())
             } else {
                 None
             }
@@ -879,6 +883,32 @@ mod tests {
             assert_eq!(
                 get(&recorded, DependencyScope::Development, "serde"),
                 Some("^1.0".into())
+            );
+        }
+
+        // The root package inherits its own workspace dependency, so the
+        // production entry has no version, and its own dev dependency of the
+        // same name isn't what a member inherits
+        #[test]
+        fn doesnt_inherit_a_root_package_dependency_of_the_same_scope() {
+            let root = ParseManifestOutput {
+                dependencies: deps([("serde", ManifestDependency::inherited())]),
+                dev_dependencies: deps([("serde", version("=0.9.0"))]),
+                ..Default::default()
+            };
+
+            let (_, recorded) = record(
+                &[member()],
+                &[root],
+                &[lock([
+                    ("serde", "0.9.0", "sha-old"),
+                    ("serde", "1.0.200", "sha-new"),
+                ])],
+            );
+
+            assert_eq!(
+                get(&recorded, DependencyScope::Development, "serde"),
+                Some("sha-new,sha-old".into())
             );
         }
 

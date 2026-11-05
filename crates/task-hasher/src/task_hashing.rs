@@ -450,15 +450,20 @@ fn apply_toolchain_dependencies_by_scope(
     for (name, dep) in project_deps {
         let inherited = dep.is_inherited();
 
-        // The first workspace dependency with a version, as a workspace root
-        // that's also a package may inherit its own workspace dependency
-        let req = if inherited {
-            inheritable_deps
-                .iter()
-                .find_map(|deps| deps.get(name).and_then(|ws_dep| ws_dep.get_version()))
-        } else {
-            dep.get_version()
-        };
+        // A plugin may resolve an inherited version itself, from the workspace's
+        // own definitions, which is preferred, as the workspace manifest's
+        // dependencies may also include a root package's own. Otherwise the
+        // first workspace dependency with a version, as a workspace root that's
+        // also a package may inherit its own workspace dependency
+        let req = dep.get_version().or_else(|| {
+            if inherited {
+                inheritable_deps
+                    .iter()
+                    .find_map(|deps| deps.get(name).and_then(|ws_dep| ws_dep.get_version()))
+            } else {
+                None
+            }
+        });
 
         let Some(req) = req else {
             // An inherited version that the workspace manifest doesn't resolve
@@ -711,6 +716,7 @@ mod tests {
     // dependencies of the workspace manifest
     mod apply_toolchain_dependencies_by_manifest {
         use super::*;
+        use moon_pdk_api::ManifestDependencyConfig;
         use std::path::PathBuf;
 
         type Recorded = BTreeMap<DependencyScope, BTreeMap<String, String>>;
@@ -825,6 +831,35 @@ mod tests {
             root.dev_dependencies = deps([("serde", version("^0.9"))]);
 
             let (_, recorded) = record(&[member()], &[root], &[]);
+
+            assert_eq!(
+                get(&recorded, DependencyScope::Development, "serde"),
+                Some("^1.0".into())
+            );
+        }
+
+        // The workspace manifest's production dependencies also include a root
+        // package's own, which may differ from the workspace's definition
+        #[test]
+        fn prefers_an_inherited_version_that_the_plugin_resolved() {
+            let project = [ParseManifestOutput {
+                dev_dependencies: deps([(
+                    "serde",
+                    ManifestDependency::Config(ManifestDependencyConfig {
+                        inherited: true,
+                        version: Some(UnresolvedVersionSpec::parse("^1.0").unwrap()),
+                        ..Default::default()
+                    }),
+                )]),
+                ..Default::default()
+            }];
+
+            let root = ParseManifestOutput {
+                dependencies: deps([("serde", version("^0.9"))]),
+                ..Default::default()
+            };
+
+            let (_, recorded) = record(&project, &[root], &[]);
 
             assert_eq!(
                 get(&recorded, DependencyScope::Development, "serde"),

@@ -970,7 +970,7 @@ impl<'proj> TasksBuilder<'proj> {
         let registry = &self.context.toolchain_registry;
 
         let toolchains = registry
-            .expand_requirements(toolchains.into_iter().collect(), |toolchain| {
+            .expand_requirements(toolchains.into_iter().collect(), vec![], |toolchain| {
                 DefineRequirementsInput {
                     context: registry.create_context(),
                     toolchain_config: match self.project_config {

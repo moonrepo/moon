@@ -221,10 +221,19 @@ impl<'app> ProjectBuilder<'app> {
         );
 
         // 4 - Required by the toolchains above, or requiring them, before the
-        // project config below, so that a project can disable either
+        // project config below, so that a project can disable either. Disabled
+        // toolchains don't bring in their requirements or dependents
+        let disabled = config
+            .toolchains
+            .plugins
+            .iter()
+            .filter(|(_, override_config)| !override_config.is_enabled())
+            .map(|(plugin_id, _)| plugin_id.to_owned())
+            .collect();
+
         let mut toolchains = IndexSet::<Id>::from_iter(
             registry
-                .expand_requirements(Vec::from_iter(toolchains), |toolchain| {
+                .expand_requirements(Vec::from_iter(toolchains), disabled, |toolchain| {
                     DefineRequirementsInput {
                         context: registry.create_context(),
                         toolchain_config: registry.create_merged_config(&toolchain.id, config),

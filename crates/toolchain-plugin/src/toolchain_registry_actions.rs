@@ -14,7 +14,7 @@ use moon_plugin::{CallOptions, CallResult};
 use moon_toolchain::DependenciesWorkspace;
 use proto_core::UnresolvedVersionSpec;
 use proto_pdk_api::ActivateEnvironmentOutput;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::path::{Path, PathBuf};
 
 // These implementations aggregate the call results from all toolchains
@@ -209,17 +209,28 @@ impl ToolchainRegistry {
     /// as-is. Identifiers are resolved to how the toolchains were configured
     /// (stable or unstable), and toolchains that aren't configured are kept, so
     /// that the consumer can filter them.
+    ///
+    /// Excluded toolchains (like those a project disables) are never added, nor
+    /// expanded from, so their requirements and dependents are only added when
+    /// another toolchain leads to them.
     pub async fn expand_requirements<InFn>(
         &self,
         ids: Vec<Id>,
+        excluded: Vec<Id>,
         input_factory: InFn,
     ) -> miette::Result<Vec<Id>>
     where
         InFn: Fn(&ToolchainPlugin) -> DefineRequirementsInput,
     {
+        let excluded = excluded
+            .into_iter()
+            .map(|id| self.resolve_toolchain_id(id))
+            .collect::<FxHashSet<_>>();
+
         let mut expanded = ids
             .into_iter()
             .map(|id| self.resolve_toolchain_id(id))
+            .filter(|id| !excluded.contains(id))
             .collect::<IndexSet<_>>();
 
         // The provided toolchains and their dependents
@@ -229,8 +240,14 @@ impl ToolchainRegistry {
         // while toolchains that aren't configured can't define requirements
         let mut requirements = vec![];
 
+        let candidate_ids = self
+            .get_plugin_ids()
+            .into_iter()
+            .filter(|id| !excluded.contains(*id))
+            .collect();
+
         for result in self
-            .define_requirements_many(self.get_plugin_ids(), &input_factory)
+            .define_requirements_many(candidate_ids, &input_factory)
             .await?
         {
             let mut required = vec![];
@@ -239,7 +256,11 @@ impl ToolchainRegistry {
                 // An invalid identifier can't be a configured toolchain, and is
                 // reported, naming this toolchain, when the action graph sets it up
                 if let Ok(require_id) = Id::new(requirement.id) {
-                    required.push(self.resolve_toolchain_id(require_id));
+                    let require_id = self.resolve_toolchain_id(require_id);
+
+                    if !excluded.contains(&require_id) {
+                        required.push(require_id);
+                    }
                 }
             }
 

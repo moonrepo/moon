@@ -672,6 +672,63 @@ impl<'app> GraphAssembler<'app> {
         Ok(Some(index))
     }
 
+    /// Return the setup actions of the toolchains that a toolchain requires to
+    /// be setup after its own actions, in the root, and of the toolchains that
+    /// those require to be setup after theirs, and so on. Toolchains required
+    /// to be setup before are already dependencies of these actions.
+    async fn get_required_after_edges(
+        &mut self,
+        spec: &ToolchainSpec,
+        root: &WorkspaceRelativePathBuf,
+        project: Option<&Project>,
+        owner_only: bool,
+    ) -> miette::Result<Vec<Option<NodeIndex>>> {
+        let mut edges = vec![];
+        let mut visited = FxHashSet::from_iter([spec.id.clone()]);
+        let mut queue = vec![spec.to_owned()];
+
+        while let Some(current) = queue.pop() {
+            let mut required_after = vec![];
+
+            for (phase, require_spec) in self
+                .get_required_specs(&current, project, |req| req.setup_toolchain)
+                .await?
+            {
+                if phase == RequirementPhase::After {
+                    edges.push(self.setup_toolchain(&require_spec, project).await?);
+                    required_after.push(require_spec);
+                }
+            }
+
+            for (phase, require_spec) in self
+                .get_required_specs(&current, project, |req| req.setup_environment)
+                .await?
+            {
+                if phase == RequirementPhase::After {
+                    edges.push(
+                        Box::pin(self.internal_setup_environment(
+                            &require_spec,
+                            root,
+                            project,
+                            owner_only,
+                            FxHashSet::from_iter([current.id.clone()]),
+                        ))
+                        .await?,
+                    );
+                    required_after.push(require_spec);
+                }
+            }
+
+            for require_spec in required_after {
+                if visited.insert(require_spec.id.clone()) {
+                    queue.push(require_spec);
+                }
+            }
+        }
+
+        Ok(edges)
+    }
+
     /// Return the toolchains that a toolchain requires for an action, with
     /// the phase they run in, relative to the toolchain's own action. Errors
     /// when a required toolchain is not configured.
@@ -870,6 +927,15 @@ impl<'app> GraphAssembler<'app> {
                 index,
                 vec![setup_env_index, setup_toolchain_index, sync_workspace_index],
             )?;
+
+            // Toolchains that are setup after this one (like Node.js and its
+            // package manager after JavaScript) aren't dependencies of the actions
+            // above, but installing dependencies uses them, so must wait for them
+            let after_edges = self
+                .get_required_after_edges(&root_spec, &root.root, chain_project, owner_only)
+                .await?;
+
+            self.link_available_edges(index, after_edges)?;
 
             Some(index)
         }

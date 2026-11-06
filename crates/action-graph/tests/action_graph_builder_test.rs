@@ -809,6 +809,63 @@ mod action_graph_builder {
                 ]
             );
         }
+
+        // Like Node.js and its package manager being setup after JavaScript,
+        // while installing JavaScript dependencies runs the package manager
+        #[tokio::test(flavor = "multi_thread")]
+        async fn waits_for_toolchains_required_after() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer::new(sandbox.path())
+                // Plugin matches based on cwd, so the project owns the root package
+                .set_working_dir(sandbox.path().join("bar"));
+
+            container.mocker = container.mocker.update_toolchains_config(|cfg| {
+                cfg.plugins
+                    .entry(Id::raw("tc-tier3-setup-env"))
+                    .or_default();
+                cfg.plugins
+                    .entry(Id::raw("tc-tier2-setup-env"))
+                    .or_default()
+                    .config
+                    .insert(
+                        "testRequires".into(),
+                        serde_json::json!([{
+                            "id": "tc-tier3-setup-env",
+                            "setup_toolchain": "after",
+                            "setup_environment": "after"
+                        }]),
+                    );
+            });
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let spec = create_tier_spec_with_name("tc-tier2-setup-env");
+
+            let project = wg.get_project("bar").unwrap();
+            builder.install_dependencies(&spec, project.clone());
+
+            let graph = builder.build().await.unwrap().graph;
+
+            let mut deps =
+                graph.dependencies_of(&ActionNode::install_dependencies(InstallDependenciesNode {
+                    members: None,
+                    owner_project_id: None,
+                    project_id: Some(Id::raw("bar")),
+                    root: WorkspaceRelativePathBuf::from("bar"),
+                    toolchain_id: spec.id,
+                }));
+            deps.sort();
+
+            assert_eq!(
+                deps,
+                vec![
+                    "SetupEnvironment(tc-tier2-setup-env, bar)",
+                    "SetupEnvironment(tc-tier3-setup-env, bar)",
+                    "SetupToolchain(tc-tier3-setup-env:1.2.3)",
+                ]
+            );
+        }
     }
 
     mod install_deps_root {

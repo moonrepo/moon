@@ -23,15 +23,24 @@ pub fn define_requirements(
     };
 
     // Only require other toolchains when a test opts in via toolchain config,
-    // otherwise unrelated tests would gain unexpected actions and edges
-    if let Some(requires) = get_ids("testEnvRequirements") {
-        output.requires = requires;
-        output.for_setup_environment = true;
+    // otherwise unrelated tests would gain unexpected actions and edges.
+    // Requirements whose environments are setup before this toolchain's, like
+    // a parent toolchain (JavaScript) that locates the dependencies root for its
+    // children, or whose toolchains are setup before it when they don't setup
+    // an environment
+    if let Some(ids) = get_ids("testEnvRequirements").or_else(|| get_ids("testRequirements")) {
+        output.requires = ids
+            .into_iter()
+            .map(|id| ToolchainRequirement {
+                id,
+                setup_toolchain: None,
+                setup_environment: Some(RequirementPhase::Before),
+            })
+            .collect();
     }
-    // Requirements that don't apply to any action, like a parent toolchain
-    // (JavaScript) that locates the dependencies root for its children
-    else if let Some(requires) = get_ids("testRequirements") {
-        output.requires = requires;
+    // Requirements with any phases
+    else if let Some(requires) = input.toolchain_config.get("testRequires") {
+        output.requires = json::from_value(requires.to_owned())?;
     }
 
     Ok(Json(output))

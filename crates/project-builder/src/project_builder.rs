@@ -211,12 +211,20 @@ impl<'app> ProjectBuilder<'app> {
             );
         }
 
-        // 2 - Detected from plugins
+        // 3 - Detected from plugins
         let registry = &self.context.toolchain_registry;
 
         toolchains.extend(
             registry
-                .detect_project_toolchain_from_usage(&self.root, |toolchain| {
+                .detect_project_toolchain_from_usage(&self.root)
+                .await?,
+        );
+
+        // 4 - Required by the toolchains above, or requiring them, before the
+        // project config below, so that a project can disable either
+        let mut toolchains = IndexSet::<Id>::from_iter(
+            registry
+                .expand_requirements(Vec::from_iter(toolchains), |toolchain| {
                     DefineRequirementsInput {
                         context: registry.create_context(),
                         toolchain_config: registry.create_merged_config(&toolchain.id, config),
@@ -225,12 +233,15 @@ impl<'app> ProjectBuilder<'app> {
                 .await?,
         );
 
-        // Filter down the toolchains list based on the project config
+        // Filter down the toolchains list based on the project config,
+        // whose identifiers may be stable or unstable, like the above
         for (plugin_id, override_config) in &config.toolchains.plugins {
+            let plugin_id = registry.resolve_toolchain_id(plugin_id.to_owned());
+
             if override_config.is_enabled() {
-                toolchains.insert(plugin_id.to_owned());
+                toolchains.insert(plugin_id);
             } else {
-                toolchains.shift_remove(plugin_id);
+                toolchains.shift_remove(&plugin_id);
             }
         }
 

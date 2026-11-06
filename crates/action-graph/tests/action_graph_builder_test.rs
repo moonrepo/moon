@@ -6686,6 +6686,21 @@ mod action_graph_builder {
             container
         }
 
+        fn require_with_phases(
+            mut container: ActionGraphContainer,
+            id: &str,
+            requires: serde_json::Value,
+        ) -> ActionGraphContainer {
+            container.mocker = container.mocker.update_toolchains_config(|cfg| {
+                cfg.plugins
+                    .entry(Id::raw(id))
+                    .or_default()
+                    .config
+                    .insert("testRequires".into(), requires.clone());
+            });
+            container
+        }
+
         fn add_toolchain(mut container: ActionGraphContainer, id: &str) -> ActionGraphContainer {
             container.mocker = container.mocker.update_toolchains_config(|cfg| {
                 cfg.plugins.entry(Id::raw(id)).or_default();
@@ -6744,8 +6759,50 @@ mod action_graph_builder {
             );
         }
 
+        // Like Node.js's environment after npm's, as Node.js is the runtime
         #[tokio::test(flavor = "multi_thread")]
-        async fn sets_up_required_toolchain_environments_with_requirements_for_environment() {
+        async fn sets_up_required_toolchain_environments_after() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            container = add_toolchain(container, "tc-tier3-setup-env");
+            container = require_with_phases(
+                container,
+                "tc-tier2-setup-env",
+                serde_json::json!([
+                    { "id": "tc-tier3-setup-env", "setup_toolchain": null, "setup_environment": "after" }
+                ]),
+            );
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let spec = create_tier_spec_with_name("tc-tier2-setup-env");
+
+            let project = wg.get_project("bar").unwrap();
+            builder.setup_environment(&spec, &project.source, project.clone());
+
+            let graph = builder.build().await.unwrap().graph;
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                sorted_dependencies_of(&graph, &create_bar_env_node("tc-tier2-setup-env")),
+                vec!["SyncWorkspace"]
+            );
+            assert_eq!(
+                sorted_dependencies_of(&graph, &create_bar_env_node("tc-tier3-setup-env")),
+                vec![
+                    "SetupEnvironment(tc-tier2-setup-env, bar)",
+                    "SetupToolchain(tc-tier3-setup-env:1.2.3)",
+                    "SyncWorkspace"
+                ]
+            );
+        }
+
+        // When the required toolchain's environment is already setup before
+        // this one, it's setup through it, instead of directly
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_link_required_toolchains_with_an_environment() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer::new(sandbox.path());
 
@@ -6767,14 +6824,9 @@ mod action_graph_builder {
 
             let graph = builder.build().await.unwrap().graph;
 
-            assert_snapshot!(graph.to_dot());
             assert_eq!(
                 sorted_dependencies_of(&graph, &create_bar_env_node("tc-tier2-setup-env")),
-                vec![
-                    "SetupEnvironment(tc-tier3-setup-env, bar)",
-                    "SetupToolchain(tc-tier3-setup-env:1.2.3)",
-                    "SyncWorkspace"
-                ]
+                vec!["SetupEnvironment(tc-tier3-setup-env, bar)", "SyncWorkspace"]
             );
         }
 
@@ -6875,11 +6927,12 @@ mod action_graph_builder {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer::new(sandbox.path());
 
-            container = require_toolchains(
+            container = require_with_phases(
                 container,
                 "tc-tier2-setup-env",
-                "testRequirements",
-                &["tc-unknown"],
+                serde_json::json!([
+                    { "id": "tc-unknown", "setup_toolchain": null, "setup_environment": null }
+                ]),
             );
 
             let wg = container.create_workspace_graph().await;
@@ -7426,6 +7479,136 @@ mod action_graph_builder {
                         )
                     }),
                     ActionNode::setup_toolchain(SetupToolchainNode { toolchain: node }),
+                ]
+            );
+        }
+
+        fn require_with_phases(
+            mut container: ActionGraphContainer,
+            id: &str,
+            requires: serde_json::Value,
+        ) -> ActionGraphContainer {
+            container.mocker = container.mocker.update_toolchains_config(|cfg| {
+                cfg.plugins
+                    .entry(Id::raw(id))
+                    .or_default()
+                    .config
+                    .insert("testRequires".into(), requires.clone());
+            });
+            container
+        }
+
+        // Like Node.js being setup after JavaScript
+        #[tokio::test(flavor = "multi_thread")]
+        async fn can_require_other_toolchains_after() {
+            let sandbox = create_sandbox("projects");
+            let mut container = require_with_phases(
+                ActionGraphContainer::new(sandbox.path()),
+                "tc-tier3-setup-env",
+                serde_json::json!([{ "id": "tc-tier3", "setup_toolchain": "after" }]),
+            );
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            builder.setup_toolchain(&create_tier_spec_with_name("tc-tier3-setup-env"), None);
+
+            let graph = builder.build().await.unwrap().graph;
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_proto(create_proto_version()),
+                    ActionNode::setup_toolchain(SetupToolchainNode {
+                        toolchain: create_tier_spec_with_name("tc-tier3-setup-env"),
+                    }),
+                    ActionNode::setup_toolchain(SetupToolchainNode {
+                        toolchain: create_tier_spec_with_name("tc-tier3"),
+                    }),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_require_other_toolchains_when_null() {
+            let sandbox = create_sandbox("projects");
+            let mut container = require_with_phases(
+                ActionGraphContainer::new(sandbox.path()),
+                "tc-tier3-setup-env",
+                serde_json::json!([{ "id": "tc-unknown", "setup_toolchain": null }]),
+            );
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            builder.setup_toolchain(&create_tier_spec_with_name("tc-tier3-setup-env"), None);
+
+            let graph = builder.build().await.unwrap().graph;
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_proto(create_proto_version()),
+                    ActionNode::setup_toolchain(SetupToolchainNode {
+                        toolchain: create_tier_spec_with_name("tc-tier3-setup-env"),
+                    }),
+                ]
+            );
+        }
+
+        // Without its own setup, there's nothing to setup other toolchains after
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_graph_if_only_required_after_and_no_setup_toolchain_itself() {
+            let sandbox = create_sandbox("projects");
+            let mut container = require_with_phases(
+                ActionGraphContainer::new(sandbox.path()),
+                "tc-tier2-setup-env",
+                serde_json::json!([{ "id": "tc-tier3", "setup_toolchain": "after" }]),
+            );
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            builder.setup_toolchain(&create_tier_spec_with_name("tc-tier2-setup-env"), None);
+
+            let graph = builder.build().await.unwrap().graph;
+
+            assert_eq!(topo(graph), vec![]);
+        }
+
+        // The required toolchain is configured with its stable identifier,
+        // so it's the same action as setting it up directly
+        #[tokio::test(flavor = "multi_thread")]
+        async fn resolves_unstable_identifiers_of_required_toolchains() {
+            let sandbox = create_sandbox("projects");
+            let mut container = require_with_phases(
+                ActionGraphContainer::new(sandbox.path()),
+                "tc-tier3-setup-env",
+                serde_json::json!([{ "id": "unstable_tc-tier3" }]),
+            );
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            builder.setup_toolchain(&create_tier_spec_with_name("tc-tier3"), None);
+            builder.setup_toolchain(&create_tier_spec_with_name("tc-tier3-setup-env"), None);
+
+            let graph = builder.build().await.unwrap().graph;
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_proto(create_proto_version()),
+                    ActionNode::setup_toolchain(SetupToolchainNode {
+                        toolchain: create_tier_spec_with_name("tc-tier3"),
+                    }),
+                    ActionNode::setup_toolchain(SetupToolchainNode {
+                        toolchain: create_tier_spec_with_name("tc-tier3-setup-env"),
+                    }),
                 ]
             );
         }

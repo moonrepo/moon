@@ -214,9 +214,9 @@
     workspace's members also match, and a member that overrides the workspace's version. Also
     supports `--dot` and `--json` output, and placing a single project, like a run would.
   - `moon project` now lists the dependencies roots that the project is a member of, for its
-    toolchains and its tasks' toolchains, with its role in each (like `node @ . (workspace member)`),
-    derived from the layout graph. With `--json`, they're included in a new `dependenciesRoots`
-    field, each with a `toolchain`, `root`, and `role`.
+    toolchains and its tasks' toolchains, with its role in each (like
+    `node @ . (workspace member)`), derived from the layout graph. With `--json`, they're included
+    in a new `dependenciesRoots` field, each with a `toolchain`, `root`, and `role`.
   - Added a `moon migrate v3` command, that migrates the settings that have been renamed or removed
     in v3, within `.moon/workspace.*`, `.moon/tasks/**/*`, and `moon.*` configuration files. Only
     files that change are re-written, which strips their comments. Pkl files, execution plans, and
@@ -290,14 +290,14 @@
   - A project's toolchains now also include the toolchains required by those configured in
     `toolchains.default`, and inferred from its language, instead of only those detected from its
     files, and the toolchains that those require, and so on. Like a task's, they also include the
-    configured toolchains that require one of them, like `javascript` and its package manager for
-    a project that uses `node`. A project can still disable any of these toolchains in its
+    configured toolchains that require one of them, like `javascript` and its package manager for a
+    project that uses `node`. A project can still disable any of these toolchains in its
     `toolchains` settings, with either its stable or `unstable_` identifier.
-  - A task's toolchains now include the toolchains that are required by its required toolchains,
-    and so on, and are resolved with the project's toolchain settings, instead of only the
-    workspace's. Toolchains that require one of the task's toolchains are still added, but no
-    longer the toolchains that only require one of the toolchains it requires. Tasks whose
-    toolchains change get a new hash.
+  - A task's toolchains now include the toolchains that are required by its required toolchains, and
+    so on, and are resolved with the project's toolchain settings, instead of only the workspace's.
+    Toolchains that require one of the task's toolchains are still added, but no longer the
+    toolchains that only require one of the toolchains it requires. Tasks whose toolchains change
+    get a new hash.
   - Required toolchains are now resolved to the identifier they were configured with, so a
     requirement on `unstable_example`, when `example` is configured (or the reverse), sets up the
     configured toolchain, instead of a separate one.

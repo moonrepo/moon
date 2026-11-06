@@ -33,7 +33,6 @@ api_unit_enum!(
 );
 
 api_struct!(
-    no_default,
     /// A toolchain that another toolchain requires.
     #[serde(default)]
     pub struct ToolchainRequirement {
@@ -42,38 +41,25 @@ api_struct!(
         /// stable, both identifiers will continue to work.
         pub id: String,
 
-        /// When the required toolchain is setup, relative to this toolchain.
-        /// Defaults to before, like Node.js being installed before npm, as npm
-        /// requires Node.js to run. When `None` (`null`), the setup toolchain
-        /// actions are not linked.
+        /// When the setup toolchain action is run for the parent toolchain,
+        /// should this requirement also have its setup toolchain action run,
+        /// and whether it should run before or after the parent toolchain's action.
         pub setup_toolchain: Option<RequirementPhase>,
 
-        /// When the required toolchain's environment is setup, relative to this
-        /// toolchain's environment. The required environment is setup in this
-        /// toolchain's dependencies root, as it typically doesn't locate a root of
-        /// its own. Defaults to after, like npm's environment being setup after
-        /// Node.js's. When `None` (`null`), the setup environment actions are not
-        /// linked.
+        /// When the setup environment action is run for the parent toolchain,
+        /// should this requirement also have its setup environment action run,
+        /// and whether it should run before or after the parent toolchain's action.
         pub setup_environment: Option<RequirementPhase>,
     }
 );
 
 impl ToolchainRequirement {
-    /// Create a requirement for the provided toolchain, with the default phases.
+    /// Create a requirement for the provided toolchain, with no actions.
     pub fn new(id: impl AsRef<str>) -> Self {
         Self {
             id: id.as_ref().to_owned(),
-            ..Default::default()
-        }
-    }
-}
-
-impl Default for ToolchainRequirement {
-    fn default() -> Self {
-        Self {
-            id: String::new(),
-            setup_toolchain: Some(RequirementPhase::Before),
-            setup_environment: Some(RequirementPhase::After),
+            setup_toolchain: None,
+            setup_environment: None,
         }
     }
 }

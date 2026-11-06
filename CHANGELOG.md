@@ -132,7 +132,9 @@
     (from `define_requirements`, with a `setup_environment` phase) are now also setup, in the same
     dependencies root, before or after it. For example, the Node.js package manager and Deno
     toolchains implement `setup_environment` (like importing Yarn plugins), which never ran before,
-    as they don't locate a dependencies root (the JavaScript toolchain does).
+    as they don't locate a dependencies root (the JavaScript toolchain does). Installing
+    dependencies in the root waits for these, including the toolchains and environments that are
+    setup after the root's toolchain, like Node.js and its package manager after JavaScript.
   - Rewrote the action graph builder, which now builds the graph in stages, instead of inserting one
     action at a time. Building the graph is 13% to 47% faster in our benchmarks, and the graphs are
     the same, except:

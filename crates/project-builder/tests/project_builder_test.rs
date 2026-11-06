@@ -528,19 +528,22 @@ mod project_builder {
         async fn detects_js() {
             let project = build_lang_project("js").await;
 
+            // npm is configured and requires Node.js
             assert_eq!(project.language, LanguageType::JavaScript);
             assert_eq!(
                 project.toolchains,
-                vec![Id::raw("javascript"), Id::raw("node")]
+                vec![Id::raw("javascript"), Id::raw("node"), Id::raw("npm")]
             );
 
             let project = build_lang_project("js-config").await;
 
+            // Bun and Deno both detect `package.json`
             assert_eq!(project.language, LanguageType::JavaScript);
             assert_eq!(
                 project.toolchains,
                 vec![
                     Id::raw("bun"),
+                    Id::raw("deno"),
                     Id::raw("javascript"),
                     Id::raw("node"),
                     Id::raw("npm"),
@@ -574,13 +577,20 @@ mod project_builder {
         async fn detects_python() {
             let project = build_lang_project("python").await;
 
+            // pip is configured and requires Python
             assert_eq!(project.language, LanguageType::Python);
-            assert_eq!(project.toolchains, vec![Id::raw("unstable_python")]);
+            assert_eq!(
+                project.toolchains,
+                vec![Id::raw("unstable_pip"), Id::raw("unstable_python")]
+            );
 
             let project = build_lang_project("python-config").await;
 
             assert_eq!(project.language, LanguageType::Python);
-            assert_eq!(project.toolchains, vec![Id::raw("unstable_python")]);
+            assert_eq!(
+                project.toolchains,
+                vec![Id::raw("unstable_pip"), Id::raw("unstable_python")]
+            );
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -642,10 +652,12 @@ mod project_builder {
             let sandbox = create_sandbox("builder");
             let project = build_project_without_inherited("baz", sandbox.path()).await;
 
+            // Bun and Deno both detect `package.json`
             assert_eq!(
                 project.toolchains,
                 vec![
                     Id::raw("bun"),
+                    Id::raw("deno"),
                     Id::raw("javascript"),
                     Id::raw("node"),
                     Id::raw("npm"),
@@ -666,15 +678,115 @@ mod project_builder {
             let sandbox = create_sandbox("builder");
             let project = build_project_without_inherited("foo", sandbox.path()).await;
 
+            // Bun and Deno both detect `package.json`
             assert_eq!(
                 project.toolchains,
                 vec![
                     Id::raw("bun"),
+                    Id::raw("deno"),
                     Id::raw("javascript"),
                     Id::raw("node"),
                     Id::raw("npm"),
                 ]
             );
+        }
+
+        async fn build_test_toolchains_project(config: &str) -> Project {
+            let sandbox = create_sandbox("builder");
+            sandbox.create_file("reqs/moon.yml", config);
+
+            WorkspaceMocker::new(sandbox.path())
+                .with_test_toolchains()
+                .build_project("reqs")
+                .await
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn adds_requirements_of_configured_toolchains() {
+            let project =
+                build_test_toolchains_project("toolchains:\n  default: ['tc-tier2-reqs']\n").await;
+
+            assert_eq!(
+                project.toolchains,
+                vec![Id::raw("tc-tier2-reqs"), Id::raw("tc-tier3")]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn adds_requirements_transitively_with_the_project_config() {
+            let project = build_test_toolchains_project(
+                "toolchains:\n  default: ['tc-tier2-setup-env']\n  tc-tier2-setup-env:\n    testRequires: [{ id: 'tc-tier2-reqs' }]\n",
+            )
+            .await;
+
+            // Sorted when the project is built
+            assert_eq!(
+                project.toolchains,
+                vec![
+                    Id::raw("tc-tier2-reqs"),
+                    Id::raw("tc-tier2-setup-env"),
+                    Id::raw("tc-tier3")
+                ]
+            );
+        }
+
+        // Like a Node.js project also using JavaScript, which requires it
+        #[tokio::test(flavor = "multi_thread")]
+        async fn adds_toolchains_that_require_configured_toolchains() {
+            let project =
+                build_test_toolchains_project("toolchains:\n  default: ['tc-tier3']\n").await;
+
+            assert_eq!(
+                project.toolchains,
+                vec![
+                    Id::raw("tc-tier2-reqs"),
+                    Id::raw("tc-tier3"),
+                    Id::raw("tc-tier3-reqs")
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn can_disable_toolchains_that_require_configured_toolchains() {
+            let project = build_test_toolchains_project(
+                "toolchains:\n  default: ['tc-tier3']\n  tc-tier3-reqs: false\n",
+            )
+            .await;
+
+            assert_eq!(
+                project.toolchains,
+                vec![Id::raw("tc-tier2-reqs"), Id::raw("tc-tier3")]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_add_toolchains_that_require_disabled_toolchains() {
+            let project = build_test_toolchains_project(
+                "toolchains:\n  default: ['tc-tier3']\n  tc-tier3: false\n",
+            )
+            .await;
+
+            assert_eq!(project.toolchains, vec![Id::raw("system")]);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn can_disable_required_toolchains() {
+            let project = build_test_toolchains_project(
+                "toolchains:\n  default: ['tc-tier2-reqs']\n  tc-tier3: false\n",
+            )
+            .await;
+
+            assert_eq!(project.toolchains, vec![Id::raw("tc-tier2-reqs")]);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn can_disable_toolchains_with_their_unstable_identifier() {
+            let project = build_test_toolchains_project(
+                "toolchains:\n  default: ['tc-tier2-reqs']\n  unstable_tc-tier3: false\n",
+            )
+            .await;
+
+            assert_eq!(project.toolchains, vec![Id::raw("tc-tier2-reqs")]);
         }
     }
 

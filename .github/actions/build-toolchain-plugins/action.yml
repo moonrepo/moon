@@ -1,0 +1,41 @@
+name: Build toolchain plugins
+description:
+  Builds the built-in toolchain plugins from the `moon-v3` branch of moonrepo/plugins, against this
+  checkout's plugin crates, into `target/wasm32-wasip1/release`. Debug and test builds of moon load
+  plugins from there before downloading the pinned versions, which were built with the v2 plugin
+  API. Remove once the v3 plugins are released and pinned.
+runs:
+  using: composite
+  steps:
+    - name: Clone moonrepo/plugins (moon-v3)
+      shell: bash
+      run: |
+        # The plugins depend on `../../moon/crates/pdk*`, so they're cloned next to
+        # this checkout, like `<dir>/moon` and `<dir>/moonrepo/plugins` locally
+        git clone --depth 1 --branch moon-v3 https://github.com/moonrepo/plugins.git ../moonrepo/plugins
+
+        if [ ! -d ../moonrepo/plugins/../../moon/crates/pdk-api ]; then
+          echo "::error::The plugins can't locate the plugin crates, as this checkout isn't in a moon directory"
+          exit 1
+        fi
+
+        echo "Building moonrepo/plugins@$(git -C ../moonrepo/plugins rev-parse --short HEAD) (moon-v3)"
+    - name: Build toolchain plugins
+      shell: bash
+      run: |
+        rustup target add wasm32-wasip1
+        cargo build --manifest-path ../moonrepo/plugins/Cargo.toml --target wasm32-wasip1 --release \
+          --target-dir "$GITHUB_WORKSPACE/target" \
+          -p bun_toolchain \
+          -p deno_toolchain \
+          -p go_toolchain \
+          -p javascript_toolchain \
+          -p node_depman_toolchain \
+          -p node_toolchain \
+          -p python_pip_toolchain \
+          -p python_poetry_toolchain \
+          -p python_toolchain \
+          -p python_uv_toolchain \
+          -p ruby_toolchain \
+          -p rust_toolchain \
+          -p typescript_toolchain

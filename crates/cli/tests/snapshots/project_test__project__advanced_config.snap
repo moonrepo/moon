@@ -6,7 +6,6 @@ About ────────────────────────�
 
   Project: advanced
   Source: advanced
-  Toolchain: system
   Language: typescript
   Stack: frontend
   Layer: application

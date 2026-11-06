@@ -7,6 +7,7 @@
 # Rust
 /target
 !/target/debug/moon
+!/target/wasm32-wasip1/release/*_toolchain.wasm
 
 # Node.js
 node_modules

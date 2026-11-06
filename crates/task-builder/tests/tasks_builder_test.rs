@@ -963,6 +963,54 @@ tasks:
             assert_eq!(task.toolchains, vec![Id::raw("rust")]);
         }
 
+        // The project's config changes the requirements, which are expanded
+        // transitively, while toolchains that only require the requirements
+        // (siblings, like `tc-tier3-reqs`) are not added
+        #[tokio::test(flavor = "multi_thread")]
+        async fn expands_requirements_with_the_project_config() {
+            let sandbox = create_sandbox("builder");
+            sandbox.create_file(
+                "reqs/moon.yml",
+                "toolchains:\n  tc-tier2-setup-env:\n    testRequires: [{ id: 'tc-tier2-reqs' }]\ntasks:\n  build:\n    command: 'build'\n    toolchains: ['tc-tier2-setup-env']\n",
+            );
+
+            let container = TasksBuilderContainer::new(sandbox.path()).with_test_toolchains();
+            let tasks = container.build_tasks("reqs").await;
+            let task = tasks.get("build").unwrap();
+
+            assert_eq!(
+                task.toolchains,
+                vec![
+                    Id::raw("tc-tier2-setup-env"),
+                    Id::raw("tc-tier2-reqs"),
+                    Id::raw("tc-tier3")
+                ]
+            );
+        }
+
+        // Like a Node.js task also using JavaScript, which requires it
+        #[tokio::test(flavor = "multi_thread")]
+        async fn adds_toolchains_that_require_the_task_toolchains() {
+            let sandbox = create_sandbox("builder");
+            sandbox.create_file(
+                "reqs/moon.yml",
+                "tasks:\n  build:\n    command: 'build'\n    toolchains: ['tc-tier3']\n",
+            );
+
+            let container = TasksBuilderContainer::new(sandbox.path()).with_test_toolchains();
+            let tasks = container.build_tasks("reqs").await;
+            let mut toolchains = tasks.get("build").unwrap().toolchains.clone();
+
+            assert_eq!(toolchains.remove(0), Id::raw("tc-tier3"));
+
+            toolchains.sort();
+
+            assert_eq!(
+                toolchains,
+                vec![Id::raw("tc-tier2-reqs"), Id::raw("tc-tier3-reqs")]
+            );
+        }
+
         #[tokio::test(flavor = "multi_thread")]
         async fn applies_to_global_inherited() {
             let sandbox = create_sandbox("builder");

@@ -29,7 +29,7 @@ use moon_common::{Id, color};
 use moon_config::{TaskDependencyConfig, TaskDependencyType};
 use moon_graph_utils::{CycleSpace, add_acyclic_edge, add_acyclic_edges};
 use moon_layout_graph::{LayoutGraph, Placement, RootKind, ToolchainDependenciesRoot};
-use moon_pdk_api::DefineRequirementsInput;
+use moon_pdk_api::{DefineRequirementsInput, RequirementPhase, ToolchainRequirement};
 use moon_project::Project;
 use moon_task::Target;
 use moon_toolchain::ToolchainSpec;
@@ -64,15 +64,23 @@ enum NodeKey {
 }
 
 /// Parse the ID of a toolchain that a toolchain's plugin requires, naming
-/// the toolchain when it's invalid.
-fn parse_requirement_id(spec: &ToolchainSpec, require_id: String) -> miette::Result<Id> {
-    Id::new(&require_id).map_err(|error| {
-        ActionGraphError::InvalidToolchainRequirement {
+/// the toolchain when it's invalid, and resolve it to how the toolchain was
+/// configured (stable or unstable).
+fn parse_requirement_id(
+    app_context: &AppContext,
+    spec: &ToolchainSpec,
+    require_id: String,
+) -> miette::Result<Id> {
+    let id =
+        Id::new(&require_id).map_err(|error| ActionGraphError::InvalidToolchainRequirement {
             id: spec.id.to_string(),
             dep_id: require_id,
             error: Box::new(error),
-        }
-        .into()
+        })?;
+
+    Ok(match app_context.toolchains_config.get_plugin_id(&id) {
+        Some(configured_id) => configured_id.to_owned(),
+        None => id,
     })
 }
 
@@ -463,48 +471,40 @@ impl<'app> GraphAssembler<'app> {
         let app_context = self.app_context;
         let toolchain_registry = &app_context.toolchain_registry;
         let toolchain = toolchain_registry.load(&spec.id).await?;
-        let mut requirement_edges = vec![];
+        let mut required_before_edges = vec![];
+        let mut required_after = vec![];
 
         cycle.insert(spec.id.clone());
 
         // Toolchain may depend on others
-        let output = toolchain
-            .define_requirements(DefineRequirementsInput {
-                context: toolchain_registry.create_context(),
-                toolchain_config: match project {
-                    Some(project) => {
-                        toolchain_registry.create_merged_config(&toolchain.id, &project.config)
-                    }
-                    None => toolchain_registry.create_config(&toolchain.id),
-                },
-            })
-            .await?;
-
-        if !output.requires.is_empty() && output.for_setup_toolchain {
-            for require_id in output.requires {
-                let require_id = parse_requirement_id(spec, require_id)?;
-
-                if require_id == spec.id || cycle.contains(&require_id) {
-                    continue;
-                }
-
-                let Some(require_spec) = get_spec(app_context, &require_id, project) else {
-                    return Err(ActionGraphError::MissingToolchainRequirement {
-                        id: spec.id.to_string(),
-                        dep_id: require_id.to_string(),
-                    }
-                    .into());
-                };
-
-                requirement_edges.push(
-                    Box::pin(self.internal_setup_toolchain(&require_spec, project, cycle.clone()))
-                        .await?,
-                );
+        for (phase, require_spec) in self
+            .get_required_specs(spec, project, |req| req.setup_toolchain)
+            .await?
+        {
+            if require_spec.id == spec.id || cycle.contains(&require_spec.id) {
+                continue;
             }
+
+            match phase {
+                RequirementPhase::Before => {
+                    required_before_edges.extend(
+                        Box::pin(self.internal_setup_toolchain(
+                            &require_spec,
+                            project,
+                            cycle.clone(),
+                        ))
+                        .await?,
+                    );
+                }
+                RequirementPhase::After => {
+                    required_after.push(require_spec);
+                }
+            };
         }
 
-        // Toolchain does not support tier 3 and does not require other toolchains
-        if !toolchain.supports_tier_3().await && requirement_edges.is_empty() {
+        // Toolchain does not support tier 3, and no toolchains are required to be
+        // setup before it, so there's nothing to setup, nor to setup others after
+        if !toolchain.supports_tier_3().await && required_before_edges.is_empty() {
             return Ok(None);
         }
 
@@ -522,8 +522,19 @@ impl<'app> GraphAssembler<'app> {
 
         // Toolchains may require each other, so a requirement that would close
         // a cycle (when the other toolchain was reached first) is skipped
-        self.try_link_edges(index, requirement_edges.into_iter().flatten());
+        self.try_link_edges(index, required_before_edges);
         self.link_available_edges(index, edges)?;
+
+        // Required toolchains that are setup after this one, like Node.js
+        // after JavaScript, so a requirement that would close a cycle is skipped
+        for require_spec in required_after {
+            if let Some(require_index) =
+                Box::pin(self.internal_setup_toolchain(&require_spec, project, cycle.clone()))
+                    .await?
+            {
+                self.try_link_edge(require_index, index);
+            }
+        }
 
         Ok(Some(index))
     }
@@ -551,72 +562,65 @@ impl<'app> GraphAssembler<'app> {
         let app_context = self.app_context;
         let toolchain_registry = &app_context.toolchain_registry;
         let toolchain = toolchain_registry.load(&spec.id).await?;
-        let mut edges = vec![];
-        let mut env_edges = vec![];
+        let mut required_env_edges = vec![];
+        let mut required_toolchain_edges = vec![];
+        let mut required_after = vec![];
 
         cycle.insert(spec.id.clone());
 
-        // Toolchain may depend on others
-        let output = toolchain
-            .define_requirements(DefineRequirementsInput {
-                context: toolchain_registry.create_context(),
-                toolchain_config: match project {
-                    Some(project) => {
-                        toolchain_registry.create_merged_config(&toolchain.id, &project.config)
-                    }
-                    None => toolchain_registry.create_config(&toolchain.id),
-                },
-            })
-            .await?;
-
-        for require_id in output.requires {
-            let require_id = parse_requirement_id(spec, require_id)?;
-
-            // Skip if itself or already in cycle
-            if require_id == spec.id || cycle.contains(&require_id) {
-                continue;
-            }
-
-            let Some(require_spec) = get_spec(app_context, &require_id, project) else {
-                if output.for_setup_environment {
-                    return Err(ActionGraphError::MissingToolchainRequirement {
-                        id: spec.id.to_string(),
-                        dep_id: require_id.to_string(),
-                    }
-                    .into());
-                }
-
-                continue;
-            };
-
-            // Requires the toolchain to be setup, not the environment!
-            if output.for_setup_environment {
-                edges.push(self.setup_toolchain(&require_spec, project).await?);
-            }
-
-            // Required toolchains (like Node.js for JavaScript) typically don't
-            // locate a dependencies root, as this toolchain does, so their
-            // environment must be setup in this toolchain's root, before its own
-            if let Some(env_index) = Box::pin(self.internal_setup_environment(
-                &require_spec,
-                root,
-                project,
-                owner_only,
-                cycle.clone(),
-            ))
+        // Toolchain may depend on others. Required toolchains (like a package
+        // manager for JavaScript) typically don't locate a dependencies root, as
+        // this toolchain does, so their environment is setup in this toolchain's root
+        for (phase, require_spec) in self
+            .get_required_specs(spec, project, |req| req.setup_environment)
             .await?
-            {
-                env_edges.push(env_index);
+        {
+            // Skip if itself or already in cycle
+            if require_spec.id == spec.id || cycle.contains(&require_spec.id) {
+                continue;
             }
+
+            match phase {
+                RequirementPhase::Before => {
+                    match Box::pin(self.internal_setup_environment(
+                        &require_spec,
+                        root,
+                        project,
+                        owner_only,
+                        cycle.clone(),
+                    ))
+                    .await?
+                    {
+                        Some(env_index) => {
+                            required_env_edges.push(env_index);
+                        }
+                        // Doesn't setup an environment, so the toolchain itself
+                        // must be setup beforehand (like uv for Python)
+                        None => {
+                            required_toolchain_edges
+                                .extend(self.setup_toolchain(&require_spec, project).await?);
+                        }
+                    };
+                }
+                RequirementPhase::After => {
+                    required_after.push(require_spec);
+                }
+            };
         }
 
-        // Toolchain does not support it
+        // Toolchain does not support it, and no toolchains or environments are required
+        // to be setup before it, so there's nothing to setup, nor to setup others after
         if !toolchain.has_func("setup_environment").await
-            && edges.is_empty()
-            && env_edges.is_empty()
+            && required_env_edges.is_empty()
+            && required_toolchain_edges.is_empty()
         {
             return Ok(None);
         }
+
+        let mut edges = required_toolchain_edges
+            .into_iter()
+            .map(Some)
+            .collect::<Vec<_>>();
 
         edges.push(self.sync_workspace());
         edges.push(self.setup_toolchain(spec, project).await?);
@@ -642,11 +646,134 @@ impl<'app> GraphAssembler<'app> {
 
         self.link_available_edges(index, edges)?;
 
-        // Toolchains may require each other (like Python and uv), so a required
-        // environment that already depends on this one is skipped
-        self.try_link_edges(index, env_edges);
+        // Required environments that are setup before this one, which may
+        // require this toolchain in turn (like Python and uv), when this
+        // environment was already setup, so a requirement that would close
+        // a cycle is skipped
+        self.try_link_edges(index, required_env_edges);
+
+        // Required environments that are setup after this one, in this root,
+        // like Node.js's after npm's, so a requirement that would close a cycle
+        // is skipped
+        for require_spec in required_after {
+            if let Some(env_index) = Box::pin(self.internal_setup_environment(
+                &require_spec,
+                root,
+                project,
+                owner_only,
+                cycle.clone(),
+            ))
+            .await?
+            {
+                self.try_link_edge(env_index, index);
+            }
+        }
 
         Ok(Some(index))
+    }
+
+    /// Return the setup actions of the toolchains that a toolchain requires to
+    /// be setup after its own actions, in the root, and of the toolchains that
+    /// those require to be setup after theirs, and so on. Toolchains required
+    /// to be setup before are already dependencies of these actions.
+    async fn get_required_after_edges(
+        &mut self,
+        spec: &ToolchainSpec,
+        root: &WorkspaceRelativePathBuf,
+        project: Option<&Project>,
+        owner_only: bool,
+    ) -> miette::Result<Vec<Option<NodeIndex>>> {
+        let mut edges = vec![];
+        let mut visited = FxHashSet::from_iter([spec.id.clone()]);
+        let mut queue = vec![spec.to_owned()];
+
+        while let Some(current) = queue.pop() {
+            let mut required_after = vec![];
+
+            for (phase, require_spec) in self
+                .get_required_specs(&current, project, |req| req.setup_toolchain)
+                .await?
+            {
+                if phase == RequirementPhase::After {
+                    edges.push(self.setup_toolchain(&require_spec, project).await?);
+                    required_after.push(require_spec);
+                }
+            }
+
+            for (phase, require_spec) in self
+                .get_required_specs(&current, project, |req| req.setup_environment)
+                .await?
+            {
+                if phase == RequirementPhase::After {
+                    edges.push(
+                        Box::pin(self.internal_setup_environment(
+                            &require_spec,
+                            root,
+                            project,
+                            owner_only,
+                            FxHashSet::from_iter([current.id.clone()]),
+                        ))
+                        .await?,
+                    );
+                    required_after.push(require_spec);
+                }
+            }
+
+            for require_spec in required_after {
+                if visited.insert(require_spec.id.clone()) {
+                    queue.push(require_spec);
+                }
+            }
+        }
+
+        Ok(edges)
+    }
+
+    /// Return the toolchains that a toolchain requires for an action, with
+    /// the phase they run in, relative to the toolchain's own action. Errors
+    /// when a required toolchain is not configured.
+    async fn get_required_specs(
+        &self,
+        spec: &ToolchainSpec,
+        project: Option<&Project>,
+        get_phase: impl Fn(&ToolchainRequirement) -> Option<RequirementPhase>,
+    ) -> miette::Result<Vec<(RequirementPhase, ToolchainSpec)>> {
+        let app_context = self.app_context;
+        let toolchain_registry = &app_context.toolchain_registry;
+        let toolchain = toolchain_registry.load(&spec.id).await?;
+        let mut specs = vec![];
+
+        let output = toolchain
+            .define_requirements(DefineRequirementsInput {
+                context: toolchain_registry.create_context(),
+                toolchain_config: match project {
+                    Some(project) => {
+                        toolchain_registry.create_merged_config(&toolchain.id, &project.config)
+                    }
+                    None => toolchain_registry.create_config(&toolchain.id),
+                },
+            })
+            .await?;
+
+        for requirement in output.requires {
+            let Some(phase) = get_phase(&requirement) else {
+                continue;
+            };
+
+            let require_id = parse_requirement_id(app_context, spec, requirement.id)?;
+
+            let Some(require_spec) = get_spec(app_context, &require_id, project) else {
+                return Err(ActionGraphError::MissingToolchainRequirement {
+                    id: spec.id.to_string(),
+                    dep_id: require_id.to_string(),
+                }
+                .into());
+            };
+
+            specs.push((phase, require_spec));
+        }
+
+        Ok(specs)
     }
 
     /// Setup the environment in the workspace root, without an associated
@@ -800,6 +927,15 @@ impl<'app> GraphAssembler<'app> {
                 index,
                 vec![setup_env_index, setup_toolchain_index, sync_workspace_index],
             )?;
+
+            // Toolchains that are setup after this one (like Node.js and its
+            // package manager after JavaScript) aren't dependencies of the actions
+            // above, but installing dependencies uses them, so must wait for them
+            let after_edges = self
+                .get_required_after_edges(&root_spec, &root.root, chain_project, owner_only)
+                .await?;
+
+            self.link_available_edges(index, after_edges)?;
 
             Some(index)
         }

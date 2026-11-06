@@ -9,8 +9,10 @@ pub fn define_requirements(
 ) -> FnResult<Json<DefineRequirementsOutput>> {
     Ok(Json(DefineRequirementsOutput {
         // Must be tier 3+
-        requires: vec!["tc-tier3".into()],
-        for_setup_toolchain: true,
-        ..Default::default()
+        requires: vec![ToolchainRequirement {
+            id: "tc-tier3".into(),
+            setup_toolchain: Some(RequirementPhase::Before),
+            setup_environment: None,
+        }],
     }))
 }

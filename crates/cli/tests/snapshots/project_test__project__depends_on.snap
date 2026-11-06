@@ -6,7 +6,6 @@ About ────────────────────────�
 
   Project: dep-foo
   Source: dep-foo
-  Toolchain: system
   Language: javascript
   Stack: unknown
   Layer: application

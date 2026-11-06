@@ -33,7 +33,7 @@ moon runs, and can be referenced from within your commands, scripts, and `.env` 
 | `MOON_PROJECT_ID`       | ID of the [project](./concepts/project) the running task belongs to.                                                              |
 | `MOON_PROJECT_ROOT`     | Absolute path to the project's root directory.                                                                                    |
 | `MOON_PROJECT_SOURCE`   | The project's source path, relative from the workspace root.                                                                      |
-| `MOON_PROJECT_SNAPSHOT` | Absolute path to a JSON snapshot of the project (the same data as `moon project <id> --json`), regenerated for each run.          |
+| `MOON_PROJECT_SNAPSHOT` | Absolute path to a JSON snapshot of the project (`moon project <id> --json`, minus `dependenciesRoots`), regenerated each run.    |
 | `MOON_TARGET`           | Fully-qualified [target](./concepts/target) of the running task, e.g. `app:build`.                                                |
 | `MOON_TASK_ID`          | ID of the running task.                                                                                                           |
 | `MOON_TASK_HASH`        | The unique hash generated for the running task.                                                                                   |

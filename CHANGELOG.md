@@ -213,6 +213,10 @@
     isn't a member of the workspace that it located, a nested workspace that an enclosing
     workspace's members also match, and a member that overrides the workspace's version. Also
     supports `--dot` and `--json` output, and placing a single project, like a run would.
+  - `moon project` now lists the dependencies roots that the project is a member of, for its
+    toolchains and its tasks' toolchains, with its role in each (like `node @ . (workspace member)`),
+    derived from the layout graph. With `--json`, they're included in a new `dependenciesRoots`
+    field, each with a `toolchain`, `root`, and `role`.
   - Added a `moon migrate v3` command, that migrates the settings that have been renamed or removed
     in v3, within `.moon/workspace.*`, `.moon/tasks/**/*`, and `moon.*` configuration files. Only
     files that change are re-written, which strips their comments. Pkl files, execution plans, and

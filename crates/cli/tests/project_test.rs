@@ -1,7 +1,9 @@
 mod utils;
 
+use moon_test_utils::create_moon_sandbox;
 use moon_test_utils::predicates::prelude::*;
 use starbase_sandbox::assert_snapshot;
+use starbase_utils::json::serde_json;
 use utils::create_projects_sandbox;
 
 mod project {
@@ -133,5 +135,78 @@ mod project {
             })
             .success()
             .stdout(predicate::str::starts_with("{"));
+    }
+}
+
+mod project_dependencies_roots {
+    use super::*;
+
+    #[test]
+    fn lists_the_workspace_root_of_a_member() {
+        let sandbox = create_moon_sandbox("layout");
+
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("project").arg("b");
+        });
+
+        assert_snapshot!(assert.output());
+    }
+
+    #[test]
+    fn lists_a_package_root() {
+        let sandbox = create_moon_sandbox("layout");
+
+        sandbox
+            .run_bin(|cmd| {
+                cmd.arg("project").arg("standalone");
+            })
+            .success()
+            .stdout(predicate::str::contains(
+                "Toolchain:\n    - tc-tier2 @ standalone (package root)",
+            ));
+    }
+
+    #[test]
+    fn doesnt_list_roots_that_its_not_a_member_of() {
+        let sandbox = create_moon_sandbox("layout");
+
+        sandbox
+            .run_bin(|cmd| {
+                cmd.arg("project").arg("tools");
+            })
+            .success()
+            .stdout(predicate::str::contains("Toolchains").not());
+    }
+
+    #[test]
+    fn includes_roots_in_json() {
+        let sandbox = create_moon_sandbox("layout");
+
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("project").arg("b").arg("--json");
+        });
+
+        let json: serde_json::Value = serde_json::from_str(assert.stdout().trim()).unwrap();
+
+        assert_eq!(json["id"], "b");
+        assert_eq!(
+            json["dependenciesRoots"],
+            serde_json::json!([
+                { "toolchain": "tc-tier2", "root": "", "role": "workspaceMember" }
+            ])
+        );
+    }
+
+    #[test]
+    fn includes_no_roots_in_json_when_not_a_member() {
+        let sandbox = create_moon_sandbox("layout");
+
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("project").arg("tools").arg("--json");
+        });
+
+        let json: serde_json::Value = serde_json::from_str(assert.stdout().trim()).unwrap();
+
+        assert_eq!(json["dependenciesRoots"], serde_json::json!([]));
     }
 }

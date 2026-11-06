@@ -124,7 +124,7 @@ fn format_paths<T: AsRef<str>>(paths: &[T]) -> String {
         .join(", ")
 }
 
-fn format_placement(graph: &LayoutGraph, binding: &Binding) -> String {
+pub(crate) fn format_placement(graph: &LayoutGraph, binding: &Binding) -> String {
     match &binding.placement {
         Placement::Root { index, role } => format!(
             "{} <mutedlight>({})</mutedlight>",

@@ -6,7 +6,7 @@ use moon_project::ProjectFragment;
 use moon_task::TaskFragment;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
-use warpgate_api::{VirtualPath, api_enum, api_struct};
+use warpgate_api::{VirtualPath, api_enum, api_struct, api_unit_enum};
 
 api_struct!(
     /// Input passed to the `define_requirements` function.
@@ -20,29 +20,74 @@ api_struct!(
     }
 );
 
+api_unit_enum!(
+    /// When an action of a required toolchain runs, relative to the same
+    /// action of the toolchain that requires it.
+    pub enum RequirementPhase {
+        /// The required toolchain's action runs before this toolchain's.
+        #[default]
+        Before,
+        /// The required toolchain's action runs after this toolchain's.
+        After,
+    }
+);
+
+api_struct!(
+    no_default,
+    /// A toolchain that another toolchain requires.
+    #[serde(default)]
+    pub struct ToolchainRequirement {
+        /// Identifier of the required toolchain. If targeting an unstable toolchain,
+        /// the identifier must be prefixed with "unstable_". When the toolchain is
+        /// stable, both identifiers will continue to work.
+        pub id: String,
+
+        /// When the required toolchain is setup, relative to this toolchain.
+        /// Defaults to before, like Node.js being installed before npm, as npm
+        /// requires Node.js to run. When `None` (`null`), the setup toolchain
+        /// actions are not linked.
+        pub setup_toolchain: Option<RequirementPhase>,
+
+        /// When the required toolchain's environment is setup, relative to this
+        /// toolchain's environment. The required environment is setup in this
+        /// toolchain's dependencies root, as it typically doesn't locate a root of
+        /// its own. Defaults to after, like npm's environment being setup after
+        /// Node.js's. When `None` (`null`), the setup environment actions are not
+        /// linked.
+        pub setup_environment: Option<RequirementPhase>,
+    }
+);
+
+impl ToolchainRequirement {
+    /// Create a requirement for the provided toolchain, with the default phases.
+    pub fn new(id: impl AsRef<str>) -> Self {
+        Self {
+            id: id.as_ref().to_owned(),
+            ..Default::default()
+        }
+    }
+}
+
+impl Default for ToolchainRequirement {
+    fn default() -> Self {
+        Self {
+            id: String::new(),
+            setup_toolchain: Some(RequirementPhase::Before),
+            setup_environment: Some(RequirementPhase::After),
+        }
+    }
+}
+
 api_struct!(
     /// Output returned from the `define_requirements` function.
     #[serde(default)]
     pub struct DefineRequirementsOutput {
-        /// Other toolchains that this toolchain requires and must be setup before hand.
-        /// If targeting an unstable toolchain, the identifier must be prefixed with "unstable_".
-        /// When the toolchain is stable, both identifiers will continue to work.
-        ///
-        /// When this toolchain's environment is setup, the environments of these
-        /// toolchains are also setup beforehand, in this toolchain's dependencies root,
-        /// as they typically don't locate a root of their own.
+        /// Other toolchains that this toolchain requires. They're added to the
+        /// projects and tasks that use this toolchain, and their setup toolchain
+        /// and setup environment actions are ordered against this toolchain's,
+        /// based on each requirement's phases.
         #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub requires: Vec<String>,
-
-        /// Apply requirements to the setup environment action. This will ensure that the
-        /// required toolchains are setup and installed before this toolchain's environment
-        /// is setup (after toolchain setup).
-        pub for_setup_environment: bool,
-
-        /// Apply requirements to the setup toolchain action. This will ensure that the
-        /// required toolchains are setup and installed before this toolchain is setup
-        /// (before environment setup).
-        pub for_setup_toolchain: bool,
+        pub requires: Vec<ToolchainRequirement>,
     }
 );
 

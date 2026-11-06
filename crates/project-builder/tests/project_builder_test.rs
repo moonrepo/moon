@@ -754,6 +754,16 @@ mod project_builder {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_add_toolchains_that_require_disabled_toolchains() {
+            let project = build_test_toolchains_project(
+                "toolchains:\n  default: ['tc-tier3']\n  tc-tier3: false\n",
+            )
+            .await;
+
+            assert_eq!(project.toolchains, vec![Id::raw("system")]);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn can_disable_required_toolchains() {
             let project = build_test_toolchains_project(
                 "toolchains:\n  default: ['tc-tier2-reqs']\n  tc-tier3: false\n",

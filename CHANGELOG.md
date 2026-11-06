@@ -292,7 +292,8 @@
     files, and the toolchains that those require, and so on. Like a task's, they also include the
     configured toolchains that require one of them, like `javascript` and its package manager for a
     project that uses `node`. A project can still disable any of these toolchains in its
-    `toolchains` settings, with either its stable or `unstable_` identifier.
+    `toolchains` settings, with either its stable or `unstable_` identifier, and a disabled
+    toolchain doesn't add the toolchains that it requires, or that require it.
   - A task's toolchains now include the toolchains that are required by its required toolchains, and
     so on, and are resolved with the project's toolchain settings, instead of only the workspace's.
     Toolchains that require one of the task's toolchains are still added, but no longer the

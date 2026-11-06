@@ -537,11 +537,13 @@ mod project_builder {
 
             let project = build_lang_project("js-config").await;
 
+            // Bun and Deno both detect `package.json`
             assert_eq!(project.language, LanguageType::JavaScript);
             assert_eq!(
                 project.toolchains,
                 vec![
                     Id::raw("bun"),
+                    Id::raw("deno"),
                     Id::raw("javascript"),
                     Id::raw("node"),
                     Id::raw("npm"),
@@ -650,10 +652,12 @@ mod project_builder {
             let sandbox = create_sandbox("builder");
             let project = build_project_without_inherited("baz", sandbox.path()).await;
 
+            // Bun and Deno both detect `package.json`
             assert_eq!(
                 project.toolchains,
                 vec![
                     Id::raw("bun"),
+                    Id::raw("deno"),
                     Id::raw("javascript"),
                     Id::raw("node"),
                     Id::raw("npm"),
@@ -674,10 +678,12 @@ mod project_builder {
             let sandbox = create_sandbox("builder");
             let project = build_project_without_inherited("foo", sandbox.path()).await;
 
+            // Bun and Deno both detect `package.json`
             assert_eq!(
                 project.toolchains,
                 vec![
                     Id::raw("bun"),
+                    Id::raw("deno"),
                     Id::raw("javascript"),
                     Id::raw("node"),
                     Id::raw("npm"),

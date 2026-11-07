@@ -113,6 +113,13 @@
     same action of the toolchain that requires it. They default to `before` and `after`, while
     `null` doesn't order that action. The `for_setup_environment` and `for_setup_toolchain` fields
     have been removed, and plugins built with a previous version of the plugin API must be updated.
+  - Added an `inheritable_dependencies` field to `ParseManifestOutput` in the toolchain plugin API,
+    for the dependencies that packages in a workspace can inherit, like Cargo's
+    `[workspace.dependencies]`, which aren't dependencies of the root package itself. Inherited
+    dependencies are now only resolved from this field, of the dependencies root's manifest (or the
+    project's own manifest when it's the root), in any scope, instead of from the same scope of the
+    root manifest's dependencies. Plugins that return inherited dependencies must return the
+    versions they inherit in this field.
 
 #### 🚀 Updates
 
@@ -362,9 +369,8 @@
   included in task hashes, as their version was only looked up in the workspace's dependencies of
   the same scope. Inherited versions are now resolved from the workspace's dependencies (like
   `[workspace.dependencies]`) whichever scope inherits them, including for a project at the root of
-  the workspace. When an inherited version can't be resolved, its locked versions are hashed
-  instead. Tasks of affected projects will have a new hash, so they will not be cached on their
-  first run after upgrading.
+  the workspace. Tasks of affected projects will have a new hash, so they will not be cached on
+  their first run after upgrading.
 - Fixed an issue where `--upstream none` would also remove the ordering edges between selected tasks
   that depend on each other, allowing them to run concurrently or in the wrong order. Use
   `--no-dependencies` instead, which keeps them ordered.
@@ -377,6 +383,11 @@
   ID and an alias) with different scopes.
 - Fixed an issue where task input globs configured with `cache: false` were read back as cached when
   deserialized from JSON, like when WASM plugins load tasks.
+- Fixed an issue where dependencies that inherit their version from the workspace (like Cargo's
+  `workspace = true`) were hashed with the wrong version, or not at all, when the workspace root is
+  also a package that declares or inherits a dependency of the same name. Their versions are now
+  hashed with `hasher.optimization: performance` too, and installing dependencies runs again when
+  an inheritable version changes.
 - Fixed an issue where the workspace graph's cache could be left in an inconsistent state if moon
   was interrupted while saving it, which would load an outdated graph, or fail every command until
   the cache was removed. The graph is now written atomically, and saved before the state that marks

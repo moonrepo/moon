@@ -269,6 +269,12 @@ api_struct!(
         #[serde(skip_serializing_if = "BTreeMap::is_empty")]
         pub dependencies: BTreeMap<String, ManifestDependency>,
 
+        /// Dependencies that packages in the workspace can inherit by name.
+        /// These aren't dependencies of this package, and are used to
+        /// resolve inherited dependencies.
+        #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+        pub inheritable_dependencies: BTreeMap<String, ManifestDependency>,
+
         /// Peer dependencies.
         #[serde(skip_serializing_if = "BTreeMap::is_empty")]
         pub peer_dependencies: BTreeMap<String, ManifestDependency>,

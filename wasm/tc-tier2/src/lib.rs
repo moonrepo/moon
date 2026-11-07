@@ -124,9 +124,10 @@ pub fn parse_lock(Json(input): Json<ParseLockInput>) -> FnResult<Json<ParseLockO
     Ok(Json(output))
 }
 
-// Test manifests have a `dep <name> <version>` per line, so that tests can
-// hash dependencies. Other lines (like the member globs of `tc.root.cfg`)
-// are ignored.
+// Test manifests have a `<kind> <name> <version>` per line, so that tests can
+// hash dependencies, where the kind is `dep`, `dev-dep`, `build-dep`, or
+// `inheritable-dep`, and the version may be `inherited`. Other lines (like
+// the member globs of `tc.root.cfg`) are ignored.
 #[plugin_fn]
 pub fn parse_manifest(
     Json(input): Json<ParseManifestInput>,
@@ -134,12 +135,26 @@ pub fn parse_manifest(
     let mut output = ParseManifestOutput::default();
 
     for line in fs::read_to_string(&input.path)?.lines() {
-        if let ["dep", name, version] = line.split_whitespace().collect::<Vec<_>>().as_slice() {
-            output.dependencies.insert(
-                (*name).into(),
-                ManifestDependency::new(UnresolvedVersionSpec::parse(version)?),
-            );
-        }
+        let [kind, name, version] = line.split_whitespace().collect::<Vec<_>>()[..] else {
+            continue;
+        };
+
+        let deps = match kind {
+            "dep" => &mut output.dependencies,
+            "dev-dep" => &mut output.dev_dependencies,
+            "build-dep" => &mut output.build_dependencies,
+            "inheritable-dep" => &mut output.inheritable_dependencies,
+            _ => continue,
+        };
+
+        deps.insert(
+            name.into(),
+            if version == "inherited" {
+                ManifestDependency::inherited()
+            } else {
+                ManifestDependency::new(UnresolvedVersionSpec::parse(version)?)
+            },
+        );
     }
 
     Ok(Json(output))

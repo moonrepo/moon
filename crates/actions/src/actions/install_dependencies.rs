@@ -410,6 +410,9 @@ async fn hash_manifest_contents<'action>(
         inject_deps(output.dev_dependencies);
         inject_deps(output.build_dependencies);
         inject_deps(output.peer_dependencies);
+
+        // Changing an inherited version should also install again
+        inject_deps(output.inheritable_dependencies);
     }
 
     Ok(())

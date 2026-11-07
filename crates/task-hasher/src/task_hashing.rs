@@ -319,7 +319,9 @@ async fn apply_toolchain_dependencies(
         }
     }
 
-    // Parse and extract workspace manifest
+    // Parse and extract workspace manifest, for the dependencies that the
+    // project can inherit. A project at the root (like a workspace's root
+    // package) inherits them from its own manifest, which is parsed above
     if deps_root != project_root {
         for manifest_file_name in &toolchain.metadata.manifest_file_names {
             let manifest_path = deps_root.join(manifest_file_name);
@@ -340,9 +342,9 @@ async fn apply_toolchain_dependencies(
 
     // Now extract and hash the dependencies
     let inject = apply_toolchain_dependencies_by_manifest(
-        project_manifests,
-        workspace_manifests,
-        lock_files,
+        &project_manifests,
+        &workspace_manifests,
+        &lock_files,
         fingerprint,
     );
 
@@ -350,9 +352,9 @@ async fn apply_toolchain_dependencies(
 }
 
 fn apply_toolchain_dependencies_by_manifest(
-    project_manifests: Vec<ParseManifestOutput>,
-    workspace_manifests: Vec<ParseManifestOutput>,
-    locks: Vec<ParseLockOutput>,
+    project_manifests: &[ParseManifestOutput],
+    workspace_manifests: &[ParseManifestOutput],
+    locks: &[ParseLockOutput],
     fingerprint: &mut TaskToolchainFingerprint,
 ) -> bool {
     // Flatten locked deps
@@ -361,32 +363,19 @@ fn apply_toolchain_dependencies_by_manifest(
         map
     });
 
-    // Flatten workspace deps by scope
-    let workspace_deps = workspace_manifests.iter().fold(
-        BTreeMap::<DependencyScope, BTreeMap<&String, &ManifestDependency>>::default(),
+    // Flatten the dependencies that can be inherited, which are defined once
+    // for the workspace, whichever scope inherits them (like Cargo's
+    // `[workspace.dependencies]`). A project at the root has them in its own
+    // manifest, otherwise they're in the workspace manifest, which wins
+    let inheritable_deps = project_manifests.iter().chain(workspace_manifests).fold(
+        BTreeMap::default(),
         |mut map, manifest| {
-            map.entry(DependencyScope::Peer)
-                .or_default()
-                .extend(&manifest.peer_dependencies);
-
-            map.entry(DependencyScope::Build)
-                .or_default()
-                .extend(&manifest.build_dependencies);
-
-            map.entry(DependencyScope::Development)
-                .or_default()
-                .extend(&manifest.dev_dependencies);
-
-            map.entry(DependencyScope::Production)
-                .or_default()
-                .extend(&manifest.dependencies);
-
+            map.extend(&manifest.inheritable_dependencies);
             map
         },
     );
 
     let mut inject = false;
-    let empty_deps = BTreeMap::new();
 
     for manifest in project_manifests {
         for (scope, project_deps) in [
@@ -402,7 +391,7 @@ fn apply_toolchain_dependencies_by_manifest(
             if apply_toolchain_dependencies_by_scope(
                 scope,
                 project_deps,
-                workspace_deps.get(&scope).unwrap_or(&empty_deps),
+                &inheritable_deps,
                 &locked_deps,
                 fingerprint,
             ) {
@@ -433,22 +422,27 @@ fn satisfies_locked_version(req: &UnresolvedVersionSpec, resolved: &VersionSpec)
 fn apply_toolchain_dependencies_by_scope(
     scope: DependencyScope,
     project_deps: &BTreeMap<String, ManifestDependency>,
-    workspace_deps: &BTreeMap<&String, &ManifestDependency>,
+    inheritable_deps: &BTreeMap<&String, &ManifestDependency>,
     locked_deps: &BTreeMap<&String, &Vec<LockDependency>>,
     fingerprint: &mut TaskToolchainFingerprint,
 ) -> bool {
     let mut inject = false;
 
     for (name, dep) in project_deps {
-        let req = if dep.is_inherited() {
-            workspace_deps
-                .get(name)
-                .and_then(|ws_dep| ws_dep.get_version())
-        } else {
-            dep.get_version()
-        };
+        // A plugin may resolve an inherited version itself, which is preferred,
+        // otherwise it's the version of the inheritable dependency
+        let req = dep.get_version().or_else(|| {
+            if dep.is_inherited() {
+                inheritable_deps
+                    .get(name)
+                    .and_then(|ws_dep| ws_dep.get_version())
+            } else {
+                None
+            }
+        });
 
-        // If no version requirement, just skip
+        // If no version requirement (like an inherited dependency that
+        // the workspace doesn't define), just skip
         let Some(req) = req else {
             continue;
         };
@@ -671,6 +665,252 @@ mod tests {
                 recorded("2.16.9", vec![lock_entry("2.16.9", "sha512-exact")]),
                 Some("sha512-exact".into())
             );
+        }
+    }
+
+    // Versions inherited from the workspace, like Cargo's `workspace = true`,
+    // which are resolved from the inheritable dependencies, like Cargo's
+    // `[workspace.dependencies]`
+    mod apply_toolchain_dependencies_by_manifest {
+        use super::*;
+        use moon_pdk_api::ManifestDependencyConfig;
+
+        type Recorded = BTreeMap<DependencyScope, BTreeMap<String, String>>;
+
+        fn version(value: &str) -> ManifestDependency {
+            ManifestDependency::new(UnresolvedVersionSpec::parse(value).unwrap())
+        }
+
+        fn deps<const N: usize>(
+            entries: [(&str, ManifestDependency); N],
+        ) -> BTreeMap<String, ManifestDependency> {
+            entries
+                .into_iter()
+                .map(|(name, dep)| (name.to_owned(), dep))
+                .collect()
+        }
+
+        fn lock<const N: usize>(entries: [(&str, &str, &str); N]) -> ParseLockOutput {
+            let mut output = ParseLockOutput::default();
+
+            for (name, version, hash) in entries {
+                output
+                    .dependencies
+                    .entry(name.to_owned())
+                    .or_default()
+                    .push(LockDependency {
+                        hash: Some(hash.into()),
+                        version: Some(VersionSpec::parse(version).unwrap()),
+                        ..Default::default()
+                    });
+            }
+
+            output
+        }
+
+        fn workspace() -> ParseManifestOutput {
+            ParseManifestOutput {
+                inheritable_dependencies: deps([
+                    ("serde", version("^1.0")),
+                    ("cc", version("^1.2")),
+                ]),
+                ..Default::default()
+            }
+        }
+
+        fn member() -> ParseManifestOutput {
+            ParseManifestOutput {
+                dev_dependencies: deps([("serde", ManifestDependency::inherited())]),
+                build_dependencies: deps([("cc", ManifestDependency::inherited())]),
+                ..Default::default()
+            }
+        }
+
+        fn record(
+            project: &[ParseManifestOutput],
+            workspace: &[ParseManifestOutput],
+            locks: &[ParseLockOutput],
+        ) -> (bool, Recorded) {
+            let mut fingerprint = TaskToolchainFingerprint {
+                toolchain: "test".into(),
+                version: None,
+                contents: vec![],
+                dependencies: BTreeMap::new(),
+            };
+
+            let inject = apply_toolchain_dependencies_by_manifest(
+                project,
+                workspace,
+                locks,
+                &mut fingerprint,
+            );
+
+            (inject, fingerprint.dependencies)
+        }
+
+        fn get(recorded: &Recorded, scope: DependencyScope, name: &str) -> Option<String> {
+            recorded
+                .get(&scope)
+                .and_then(|deps| deps.get(name))
+                .cloned()
+        }
+
+        #[test]
+        fn resolves_inherited_dev_and_build_dependencies() {
+            let (inject, recorded) = record(&[member()], &[workspace()], &[]);
+
+            assert!(inject);
+            assert_eq!(
+                get(&recorded, DependencyScope::Development, "serde"),
+                Some("^1.0".into())
+            );
+            assert_eq!(
+                get(&recorded, DependencyScope::Build, "cc"),
+                Some("^1.2".into())
+            );
+        }
+
+        #[test]
+        fn records_the_locked_hash_of_an_inherited_dependency() {
+            let (_, recorded) = record(
+                &[member()],
+                &[workspace()],
+                &[lock([
+                    ("serde", "0.9.0", "sha-old"),
+                    ("serde", "1.0.200", "sha-new"),
+                ])],
+            );
+
+            assert_eq!(
+                get(&recorded, DependencyScope::Development, "serde"),
+                Some("sha-new".into())
+            );
+        }
+
+        // A root package's own dependencies aren't what a member inherits,
+        // even when they have the same name
+        #[test]
+        fn doesnt_inherit_a_root_package_dependency() {
+            let mut root = workspace();
+            root.dependencies = deps([("serde", version("^0.5"))]);
+            root.dev_dependencies = deps([("serde", version("=0.9.0"))]);
+
+            let (_, recorded) = record(&[member()], &[root], &[]);
+
+            assert_eq!(
+                get(&recorded, DependencyScope::Development, "serde"),
+                Some("^1.0".into())
+            );
+        }
+
+        // A workspace root that's also a package may inherit the same
+        // dependency that its members inherit
+        #[test]
+        fn inherits_a_dependency_that_the_root_package_also_inherits() {
+            let mut root = workspace();
+            root.dependencies = deps([("serde", ManifestDependency::inherited())]);
+
+            let (_, recorded) = record(&[member()], &[root], &[]);
+
+            assert_eq!(
+                get(&recorded, DependencyScope::Development, "serde"),
+                Some("^1.0".into())
+            );
+        }
+
+        // The root package's manifest is also the workspace manifest, which
+        // isn't parsed twice
+        #[test]
+        fn resolves_inherited_dependencies_of_a_root_package() {
+            let mut root = workspace();
+            root.dependencies = deps([("serde", ManifestDependency::inherited())]);
+            root.dev_dependencies = deps([("cc", ManifestDependency::inherited())]);
+
+            let (_, recorded) = record(&[root], &[], &[]);
+
+            assert_eq!(
+                get(&recorded, DependencyScope::Production, "serde"),
+                Some("^1.0".into())
+            );
+            assert_eq!(
+                get(&recorded, DependencyScope::Development, "cc"),
+                Some("^1.2".into())
+            );
+        }
+
+        #[test]
+        fn doesnt_record_inheritable_dependencies_that_arent_inherited() {
+            let mut root = workspace();
+            root.dependencies = deps([("serde", ManifestDependency::inherited())]);
+
+            let (_, recorded) = record(&[root], &[], &[]);
+
+            assert_eq!(
+                recorded,
+                BTreeMap::from_iter([(
+                    DependencyScope::Production,
+                    BTreeMap::from_iter([("serde".into(), "^1.0".into())])
+                )])
+            );
+        }
+
+        #[test]
+        fn prefers_an_inherited_version_that_the_plugin_resolved() {
+            let project = [ParseManifestOutput {
+                dev_dependencies: deps([(
+                    "serde",
+                    ManifestDependency::Config(ManifestDependencyConfig {
+                        inherited: true,
+                        version: Some(UnresolvedVersionSpec::parse("^1.1").unwrap()),
+                        ..Default::default()
+                    }),
+                )]),
+                ..Default::default()
+            }];
+
+            let (_, recorded) = record(&project, &[workspace()], &[]);
+
+            assert_eq!(
+                get(&recorded, DependencyScope::Development, "serde"),
+                Some("^1.1".into())
+            );
+        }
+
+        #[test]
+        fn skips_an_inherited_dependency_that_the_workspace_doesnt_define() {
+            let project = [ParseManifestOutput {
+                dependencies: deps([("other", ManifestDependency::inherited())]),
+                ..Default::default()
+            }];
+
+            let (inject, recorded) = record(
+                &project,
+                &[workspace()],
+                &[lock([("other", "1.0.0", "sha-other")])],
+            );
+
+            assert!(!inject);
+            assert!(recorded.is_empty());
+        }
+
+        #[test]
+        fn skips_a_locked_dependency_without_a_version() {
+            let project = [ParseManifestOutput {
+                dev_dependencies: deps([(
+                    "local",
+                    ManifestDependency::path(PathBuf::from("../local")),
+                )]),
+                ..Default::default()
+            }];
+
+            let (inject, recorded) = record(
+                &project,
+                &[workspace()],
+                &[lock([("local", "0.1.0", "sha-local")])],
+            );
+
+            assert!(!inject);
+            assert!(recorded.is_empty());
         }
     }
 

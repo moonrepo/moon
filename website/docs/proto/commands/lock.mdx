@@ -1,0 +1,117 @@
+---
+title: lock
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="0.64.0" header />
+
+The `proto lock [tool] [spec]` command will resolve the version of one or many tools, and record the
+checksum of their pre-built in the [lockfile](../lockfile), _without_ installing them. Each
+pre-built is downloaded to a temporary directory, verified, and then removed.
+
+```
+$ proto lock
+
+╭────────────────────────────────────────────────────────╮
+│ Tool     Version    Platform        Status             │
+│────────────────────────────────────────────────────────│
+│ bun      1.3.14     arm64-macos     Locked             │
+│ node     24.11.0    arm64-macos     Locked             │
+│ node     24.11.0    x64-linux-gnu   Already locked     │
+╰────────────────────────────────────────────────────────╯
+```
+
+### Locking all tools
+
+The `proto lock` command (without arguments) will lock _all_ tools with a configured version, using
+the same [version detection](../detection) as [`proto install`](./install). Tools whose
+configuration file has not enabled a lockfile (with the
+[`unstable-lockfile`](../config#unstable-lockfile) setting) are skipped.
+
+```shell
+$ proto lock
+```
+
+### Locking one tool
+
+The `proto lock <tool> [spec]` command will lock a single tool. When a version specification is not
+provided, it's detected from the environment, otherwise "latest" is used.
+
+```shell
+$ proto lock node
+$ proto lock node 24
+```
+
+The version is resolved from an existing lockfile record first, and then remotely, like an install,
+and every platform is locked to that same version. To re-resolve a version that has already been
+locked, run [`proto install --update-lockfile`](./install#options) or
+[`proto outdated --update`](./outdated) instead.
+
+### Locking other platforms
+
+By default, a tool is locked for the current platform, _and_ every platform that already has a
+record for the tool. This makes it easy to fill in checksums that were removed when a record was
+migrated to a new version (for example, by [`proto outdated --update`](./outdated)), without having
+to run an install on each machine.
+
+To lock other platforms instead, pass a comma-separated list of platforms to `--platform`. A
+platform is in the format of `<arch>-<os>[-<libc>]` (for example, `arm64-linux-musl`), or
+`<os>-<arch>[-<libc>]` (for example, `linux-arm64-musl`). On Linux, the libc defaults to `gnu`.
+
+```shell
+$ proto lock --platform x64-linux,arm64-linux,arm64-macos,x64-windows
+```
+
+The tool's plugin receives the platform as its [host environment](../../guides/wasm-plugins#host-environment),
+and downloads that platform's pre-built, so a lockfile created on a single machine can verify
+installs on CI and every other machine, including with
+[`--immutable-lockfile`](../lockfile#immutable-lockfiles).
+
+:::caution
+
+If a plugin executes a command while locking another platform, a warning is logged, as the output of
+the command reflects the current machine, not the platform being locked.
+
+:::
+
+### Already locked platforms
+
+Platforms that have already been locked for the resolved version are not downloaded again. To
+download them anyway, and verify that the lockfile's checksums still match what's published
+upstream, pass `--force`.
+
+```shell
+$ proto lock --force
+```
+
+### Skipped tools
+
+Some tools can only be verified by installing them, so they are skipped, and labeled with the
+reason:
+
+- Tools that are built from source.
+- Tools that install natively (like most [backends](../tool-spec#backends)), for example, by running
+  an install script or package manager.
+- Tools whose plugin doesn't support downloading a pre-built, or has opted out of lockfile records.
+- Tools whose configuration file has not enabled a lockfile.
+
+> If _no_ tools have a lockfile enabled, the command will fail. It will also fail when the
+> `PROTO_IMMUTABLE_LOCKFILE` environment variable is set, as the lockfile is read-only.
+
+Once locking has completed, [orphaned records](../lockfile#orphaned-records) are pruned from the
+lockfiles that were loaded, like an install. If any tool failed to lock, the command exits with a
+non-zero code.
+
+### Arguments
+
+- `[tool]` - Single tool to lock.
+- `[spec]` - When locking one tool, the version specification to lock.
+
+### Options
+
+- `--force` - Download and verify platforms that have already been locked.
+- `--json` - Print the locked tools in JSON format.
+- `--platform` - Platforms to lock, instead of the current platform and those already locked.
+  Accepts a comma-separated list.
+- `--quiet` - Hide lock output excluding errors.

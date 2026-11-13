@@ -1,0 +1,396 @@
+---
+slug: proto-v0.64
+title: proto v0.64 - Locking without installing, tool requirements, and custom version sources
+authors: [milesj]
+tags:
+  [
+    lock,
+    lockfile,
+    platform,
+    variants,
+    requires,
+    versions,
+    mirror,
+    revisions,
+    detection,
+    shims,
+    wasm,
+    plugins,
+  ]
+# image: ./img/proto/v0.64.png
+---
+
+Lockfiles can now be filled in for every platform without installing a single tool, tools can
+declare what they depend on, and versions can be loaded from wherever your company keeps them.
+Elsewhere, version requirements learn to say no, shims go on a diet, and nearly every built-in
+plugin got some love.
+
+<!--truncate-->
+
+## Locking without installing
+
+[Immutable lockfiles](/docs/proto/lockfile#immutable-lockfiles) are fantastic in CI. Every install
+is verified against a checksum that was recorded ahead of time, and nothing drifts. There's just one
+catch: the checksum has to be recorded _somewhere_ first, and up until now, that meant installing the
+tool on every platform you support. Got macOS laptops, Linux CI runners, and that one teammate on
+Windows? Enjoy installing everything three times, and committing lockfile changes from three
+machines.
+
+Say hello to [`proto lock`](/docs/proto/commands/lock). It resolves versions, and records the
+checksum of each tool's pre-built in the lockfile, _without_ installing anything. Each pre-built is
+downloaded to a temporary directory, verified, and thrown away.
+
+```shell
+$ proto lock
+```
+
+The real magic is `--platform`. Pass a list of platforms, and proto will lock each one, from the
+comfort of your current machine.
+
+```shell
+$ proto lock --platform x64-linux,arm64-linux,arm64-macos,x64-windows
+```
+
+Under the hood, each tool's plugin receives the requested platform as its
+[host environment](/docs/guides/wasm-plugins#foreign-platforms), so it downloads that platform's
+pre-built, exactly as if it were running there. A lockfile created on a MacBook can now verify
+installs on a fleet of Linux runners, `--immutable-lockfile` and all.
+
+Without `--platform`, the current platform _and_ every platform that already has a record for the
+tool are locked. This pairs nicely with
+[`proto outdated --update`](/docs/proto/commands/outdated), which removes the checksums of records it
+migrates to a new version. Run `proto lock` afterwards, and every platform is filled back in.
+
+A few more niceties:
+
+- Platforms that have already been locked aren't downloaded again, unless you pass `--force`, which
+  downloads them anyway and verifies the lockfile's checksums still match what's published upstream.
+- Tools that can only be verified by installing them, like those built from source, or installed
+  natively by a [backend](/docs/proto/tool-spec#backends), are skipped (and labeled as such).
+- Orphaned records are pruned afterwards, just like an install.
+
+### One platform, many builds
+
+While building this, we ran face first into another problem. Some tools publish more than one
+pre-built for the _same_ platform. Bun has `baseline` builds for x64 CPUs without AVX2. Swift
+publishes a toolchain for each Linux distribution. Each build has its own checksum, so two machines
+with the "same" platform could still fail each other's verification. Not great!
+
+Lockfile records now support a [`variant`](/docs/proto/lockfile#build-variants), naming the build
+that was downloaded. Each build gets its own record, while the default build has no variant at all.
+
+```toml title=".protolock"
+[[tools.bun]]
+os = "linux"
+arch = "x64"
+libc = "gnu"
+variant = "baseline"
+spec = "1.3"
+version = "1.3.14"
+checksum = "sha256:..."
+```
+
+When a machine downloads a build that hasn't been locked yet, it adds a record for its variant,
+instead of failing verification, while still inheriting the version that everyone else resolved.
+With `--immutable-lockfile`, it fails with an error that names the missing build, so you know
+exactly what to lock.
+
+## Tool requirements
+
+Some tools need other tools. Elixir needs Erlang. Plenty of CLIs on npm need Node.js. Built-in
+plugins already declare these relationships, but plugins that _don't_ know about a dependency, like
+those from [asdf](/docs/proto/tool-spec#asdf) or the community, left you to sort it out yourself.
+
+The new [`requires`](/docs/proto/config#requires) setting lets you declare them in
+[`.prototools`](/docs/proto/config).
+
+```toml title=".prototools"
+"asdf:erlang" = "28"
+"asdf:elixir" = "1.19"
+
+[tools."asdf:elixir"]
+requires = ["asdf:erlang"]
+```
+
+With this in place, [`proto install`](/docs/proto/commands/install) installs Erlang _before_
+Elixir, and running Elixir (including through shims) adds Erlang to the environment. Each required
+tool must have a configured version, and requirements that form a cycle are an error, because
+chicken-and-egg problems are best left to philosophers. If anything's off,
+[`proto diagnose`](/docs/proto/commands/diagnose) will tell you about it.
+
+> Since this changes which tools are executed, it's a
+> [security-sensitive setting](/docs/proto/config#security-sensitive-settings), and is only applied
+> once the configuration has been [trusted](/docs/proto/config#trust).
+
+## Bring your own version source
+
+Every plugin knows where to find its tool's versions. Node.js has an index on nodejs.org, Go has its
+Git tags on GitHub, and so on. But what about when you can't reach those? Corporate firewalls,
+air-gapped networks, GitHub rate limits, internal mirrors... we've heard it all.
+
+Previously, your options were forking the plugin, or giving up. Now, there's the
+[`[tools.*.versions-source]`](/docs/proto/config#toolsversions-source) setting, which replaces where
+a tool's versions are loaded from, without touching the plugin.
+
+```toml title=".prototools"
+# An internal mirror of the Node.js index
+[tools.node.versions-source]
+index-url = "https://mirror.corp.com/nodejs/dist/index.json"
+
+# An internal Git server
+[tools.go.versions-source]
+git-url = "https://git.corp.com/mirrors/go.git"
+```
+
+A source can be a Git remote (`git-url`) or a JSON index (`index-url`), and can even be a different
+type than the plugin's own, for example, an index that replaces a plugin's Git repository. Versions
+can be filtered with `version-pattern` (or `git-tag-pattern`), and objects in an index can be read
+with `index-version-key`.
+
+This works for every plugin that loads versions through proto's new
+[`load_tool_versions`](/docs/proto/wasm-plugin#from-a-json-index) host function, which includes
+most of the built-in plugins, and every [schema plugin](/docs/proto/non-wasm-plugin). Pair it with
+[`url-rewrites`](/docs/proto/config#url-rewrites) to also redirect where tools are downloaded from.
+
+## Versions that say no
+
+Ever wanted "any 11.x, just not _that_ one"? Version requirements now support the
+[`!=` operator](/docs/proto/tool-spec#excluding-versions), which excludes a single version (or
+partial version), and is typically combined with other requirements.
+
+```toml title=".prototools"
+npm = ">=11.6, <12, !=11.6.3"
+```
+
+A partial version excludes everything with those parts, so `!=1.2` skips both `1.2.0` and `1.2.9`.
+The uv and Poetry plugins put this to work right away, translating `!=` in `required-version` and
+`requires-poetry` into proto requirements.
+
+### And have a 4th number
+
+Semantic versions now support a [revision](/docs/proto/tool-spec#revisions), a 4th number like Java's
+`18.0.2.1`, in versions, requirements, and ranges. We tried to make this as unsurprising as possible:
+a requirement without a revision matches any revision, so `~18.0.2` resolves to the latest
+`18.0.2.x`, and `1.2.3` and `1.2.3.0` remain as written.
+
+```toml title=".prototools"
+java = "~18.0.2"
+```
+
+The Java plugin previously encoded revisions into the pre-release (`18.0.2-v1`), which was about as
+pleasant as it sounds. It now uses real revisions, and existing pins with the old encoding still
+resolve. Schema plugins gained a `revision` capture group for
+[version patterns](/docs/proto/non-wasm-plugin#version-patterns), and asdf versions with a 4th
+number are no longer skipped.
+
+## Smarter version detection
+
+Here's one that tripped up more people than we'd like to admit. Version files like `.nvmrc` are
+supposed to contain the version and nothing else, but humans like to leave notes.
+
+```text title=".nvmrc"
+# Keep in sync with the Dockerfile!
+24 # LTS
+```
+
+[Detection](/docs/proto/detection) now uses the first line with content, skipping blank lines and
+comments, and files without a version are skipped instead of failing. This applies to every plugin
+that doesn't parse its own files, and the built-in plugins were updated to match, from `.nvmrc` to
+`.python-version` to `.zig-version`.
+
+Plugins can now also [stop detection](/docs/proto/wasm-plugin#stopping-detection) in a directory,
+for tools where one file takes precedence over another, even without a version. For example, uv
+ignores `[tool.uv]` in `pyproject.toml` when a `uv.toml` exists, so now proto does too.
+
+While we were at it, a few tools picked up new sources:
+
+- **Go** - The `toolchain` line in `go.mod` and `go.work` takes precedence over the `go` line, as Go
+  would otherwise download that toolchain itself.
+- **Bun** - `packageManager` in `package.json` takes precedence over `engines.bun`, as an exact
+  version should win over a range.
+- **Deno** - `engines.deno` in `package.json` is used as a fallback.
+- **Python** - uv's `.python-versions` file is detected after `.python-version`.
+
+## Lighter shims
+
+Every shim in `~/.proto/shims` used to be its own copy of the `proto-shim` executable. Install a
+handful of tools with a few executables each, and those copies add up fast. Shims are now
+[hard links](/docs/proto/workflows#shims) to a single `proto-shim` executable, so a hundred shims use
+the disk space of one.
+
+Windows users get some love too. Executables in `~/.proto/bin` are now
+[symlinks](/docs/proto/workflows#binary-linking) to the installed tool, matching every other
+platform, instead of copies. Symlinks on Windows require Developer Mode (or administrator
+privileges), so without them, executables are copied as before, and
+[`proto diagnose`](/docs/proto/commands/diagnose) will let you know.
+
+## Self-upgrades, through proto
+
+Run `bun upgrade` through proto, and the upgrade would quietly fight with proto's inventory, so it's
+always been blocked with an error. Accurate, but not exactly helpful.
+
+In an interactive terminal, proto now [offers to upgrade](/docs/proto/commands/run#self-upgrading)
+the tool itself, installing the latest version and pinning it to the configuration that the current
+version came from. Non-interactive runs, like CI, still error.
+
+```
+$ bun upgrade
+
+? Upgrade Bun with proto instead? (Y/n)
+```
+
+And speaking of upgrades, `moon upgrade` is no longer blocked at all, as moon v2.2.2+ detects that
+proto installed it, and upgrades through proto by itself.
+
+## Plugin highlights
+
+Nearly every built-in plugin was updated in this release, so here are the highlights. Check out each
+[plugin's changelog](https://github.com/moonrepo/plugins/tree/master/tools) for the full story.
+
+- **Bun** - The baseline build is chosen from the CPU level that proto detects, instead of running
+  `grep` or `sysctl`, and is now used on Windows and FreeBSD too. FreeBSD (x64 and arm64) is
+  supported.
+- **Go** - Now sets `GOROOT` to the installed Go, as an inherited `GOROOT` (from goenv, for
+  example) caused mismatched tool versions. Added Linux riscv64, ppc64le, and loong64, and FreeBSD
+  arm64.
+- **Node.js** - Added Linux ARMv6 (like the Raspberry Pi Zero), riscv64, and loong64 support, using
+  unofficial builds. Windows arm64 uses x64 builds through emulation for versions before v20.
+- **npm, pnpm, Yarn** - Yarn's `latest` now follows `@yarnpkg/cli-dist`, instead of being fixed to
+  v4, and Yarn v6 supports Windows x64. Added more platforms for pnpm v12.4+, and a `nubr`
+  executable for Nub.
+- **Swift** - The Linux distribution is detected from `/etc/os-release`, like swiftly, instead of
+  always installing an Ubuntu 24.04 toolchain, and distributions other than Ubuntu 24.04 are locked
+  as their own [variant](#one-platform-many-builds). Added Debian 13, Red Hat UBI 10, and Ubuntu
+  26.04.
+- **uv** - Added Windows arm64 and x86, and Linux x86, arm, ppc64le, s390x, and riscv64 support.
+- **Rust** - Warns when a toolchain file uses a partial version like `1.80`, which rustup installs as
+  a separate toolchain from proto's.
+
+## WASM API changes
+
+Plugin authors, this section's for you.
+
+### Host details and foreign platforms
+
+[`HostEnvironment`](/docs/guides/wasm-plugins#host-details) has a new `details` field, with details
+that distinguish a machine from others with the same platform: the x86-64 microarchitecture level
+(`x64_level`), the 32-bit ARM version (`arm_version`), and the Linux distribution (`distro`, with
+its `id`, `id_like`, and `version_id`). Plugins can use these to choose a build without executing
+commands.
+
+```rust
+let env = get_host_environment()?;
+
+let baseline = env.arch == HostArch::X64
+    && env
+        .details
+        .as_ref()
+        .and_then(|details| details.x64_level)
+        .is_some_and(|level| level < 3);
+```
+
+There's also a new `foreign` field, which is true when the plugin targets a platform other than the
+machine it's running on, like with `proto lock --platform`. In that case, `details` is `None`, and
+executed commands and environment variables still reflect the machine, so don't use them to inspect
+the platform.
+
+Speaking of which, plugins now receive the platform proto has already detected, instead of
+detecting it again for every plugin. On Linux, that's one less `ldd --version` each time a plugin
+loads.
+
+### Build variants
+
+When a tool distributes more than one build for the same platform, return the chosen build's name in
+the new [`DownloadPrebuiltOutput.variant`](/docs/proto/wasm-plugin#build-variants) field, and it
+will be recorded in the lockfile. The default build should not have a variant.
+
+```rust
+Ok(Json(DownloadPrebuiltOutput {
+    download_url: format!("https://example.com/v{version}/tool-{arch}{suffix}.zip"),
+    variant: baseline.then(|| "baseline".into()),
+    ..DownloadPrebuiltOutput::default()
+}))
+```
+
+### Loading versions
+
+The new [`load_tool_versions`](/docs/proto/wasm-plugin#from-a-json-index) host function loads
+versions from Git tags or a JSON index on the host, and is what powers
+[user configured sources](/docs/proto/wasm-plugin#user-configured-sources). The existing
+`load_git_tags` function uses it too. Indexes support a JSON path for selecting versions, request
+headers (for private registries), and returning the response body for other data, like aliases.
+
+```rust
+let response = load_tool_versions(LoadToolVersionsInput::index(
+    "https://nodejs.org/dist/index.json",
+    Some("*.version".into()),
+))?;
+```
+
+Keep in mind that headers and the body are only used for the plugin's own URL, not a user
+configured one, so plugins that derive data from the body must handle it being `None`.
+
+### Everything else
+
+- Added an [`ExecCommandInput.error_on_nonzero`](/docs/guides/wasm-plugins#executing-commands)
+  field, which returns an error (with the exit code and stderr) when a command fails, instead of the
+  output.
+- Added a [`SendRequestInput.error_on_failure`](/docs/guides/wasm-plugins#sending-requests) field,
+  which defaults to true. Set it to false to receive non-2xx responses from `fetch`, instead of an
+  error.
+- Added [`get_env_vars` and `set_env_vars`](/docs/guides/wasm-plugins#environment-variables) host
+  functions (and `get_host_env_vars` and `set_host_env_vars` PDK functions), for reading and writing
+  multiple environment variables with a single call.
+- Added a `temp_dir` field to the `download_prebuilt`, `native_install`, and `build_instructions`
+  inputs, a temporary directory unique to the install, which is removed once it finishes.
+- Added a [`ParseVersionFileOutput.stop`](/docs/proto/wasm-plugin#stopping-detection) field, and
+  `extract_version_from_file` and `extract_version_from_text` functions, which extract a version
+  from a plain version file using the same rules as proto.
+- Added `Version.revision` and `Requirement.revision` fields, a `normalize_version` function for
+  converting versions like `3.15.0rc2` into a parseable `3.15.0-rc.2`, and a
+  `FormatOptions.attach_prerelease` field to convert them back.
+- Added a `MatchesRange` trait, for checking whether 2 ranges share at least one version.
+- Updated `HostPlatform` to also parse the operating system first, like `linux-x64-musl`.
+- Deprecated `ParseVersionFileInput.content` in favor of `path`.
+- Panics in plugins now report their message, instead of an `unreachable` WASM trap error.
+
+## Breaking changes
+
+These are mostly changes to built-in plugins, that bring them closer to how each tool's own
+ecosystem behaves.
+
+- **Java** - The default distribution is now `temurin`, instead of `openjdk`, for versions without
+  a vendor, like `21`. jdk.java.net's `openjdk` builds stop receiving updates 6 months after a
+  release, so `21` was resolving to a build from January 2024. Use `openjdk-21` to keep the
+  previous behavior.
+- **Java** - Removed the `debian`, `graalvm-ce20`, and `zulu-prime` distributions, which foojay no
+  longer provides.
+- **Zig, ZLS** - `minimum_zig_version` in `build.zig.zon` now resolves within its minor version
+  (`~0.14.0`), instead of any newer version, as Zig changes APIs between minor versions.
+- **Swift** - `swift-tools-version` in `Package.swift` is now a minimum requirement (`>=5.9`),
+  instead of a caret range. Pin a version in `.swift-version` to stay on a major version.
+- **uv, Poetry** - `~=X.Y` now allows any `X.*` from `X.Y`, as PEP 440 defines it, and short exact
+  versions like `==0.5` resolve to `0.5.0`, instead of the latest patch.
+- **Deno** - Installing on musl Linux (like Alpine) now errors, as Deno only publishes glibc builds.
+- **moon** - The `canary` version now errors, as moon stopped publishing canary builds in v2.
+- **Schema plugins** - An `index-url` of objects now fails when an object doesn't have the version
+  key, instead of skipping it.
+- **WASM API** - `load_git_tags` moved from `warpgate_pdk` to `proto_pdk`, and now calls the new
+  `load_tool_versions` host function, so plugins that use either function require proto v0.64 or
+  later. Set [`minimum_proto_version`](/docs/proto/wasm-plugin#registering-the-tool) accordingly.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.64.0) for a full list
+of changes.
+
+- [`proto install --force`](/docs/proto/commands/install#re-installing) now downloads the pre-built
+  and its checksum as they currently exist upstream, instead of using copies from the HTTP request
+  cache.
+- [`proto plugin info`](/docs/proto/commands/plugin/info) supports tools with a backend (like
+  `asdf:golang`), and shows required tools.
+- [`proto plugin info`](/docs/proto/commands/plugin/info) and
+  [`proto diagnose`](/docs/proto/commands/diagnose) show plugin overrides that were ignored because
+  their configuration isn't trusted, and a warning names the tool and the ignored plugin.
+- Updated wasmtime to v49 (from 43).
+- Updated Rust to v1.100.0.

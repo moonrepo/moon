@@ -1,6 +1,6 @@
 use crate::storage_backend::{BoxedStorageBackend, StorageBackend};
 use miette::IntoDiagnostic;
-use moon_blob::{BlobCleanStats, BlobContent, BlobInput};
+use moon_blob::{BlobCleanStats, BlobContent, BlobInput, BlobOutput};
 use moon_common::{Id, format_error_chain, is_daemon_env};
 use moon_config::{CacheConfig, RemoteConfig};
 use moon_hash::Digest;
@@ -525,6 +525,73 @@ impl ActionsStorage {
                 timeout_secs = BACKGROUND_FLUSH_TIMEOUT.as_secs(),
                 dropped, "Timed out flushing background storage tasks; {dropped} were dropped",
             );
+        }
+
+        Ok(())
+    }
+
+    pub async fn retrieve_blob(&self, digest: Digest) -> miette::Result<Option<BlobOutput>> {
+        let mut results = self.retrieve_blobs(vec![digest]).await?;
+
+        if !results.is_empty() {
+            return Ok(Some(results.remove(0)));
+        }
+
+        Ok(None)
+    }
+
+    pub async fn retrieve_blobs(&self, digests: Vec<Digest>) -> miette::Result<Vec<BlobOutput>> {
+        self.wait_for_connection().await;
+
+        for backend in self.get_backends() {
+            if !backend.is_readable() {
+                continue;
+            }
+
+            let result = Arc::clone(backend)
+                .retrieve_blobs_batched(Digest::default(), digests.clone())
+                .await?;
+
+            if !result.blobs.is_empty() {
+                return Ok(result.blobs);
+            }
+        }
+
+        Ok(vec![])
+    }
+
+    /// Mark blobs as recently used in every writable backend, so that garbage
+    /// collection keeps blobs that no task manifest references (like the cached
+    /// workspace graph) while they're still in use. This is best-effort, so a
+    /// failure is logged instead of returned.
+    pub async fn touch_blobs(&self, digests: Vec<Digest>) {
+        for backend in self.get_backends() {
+            if !backend.is_writable() {
+                continue;
+            }
+
+            if let Err(error) = backend.touch_blobs(digests.clone()).await {
+                warn!(
+                    storage = backend.get_id().as_str(),
+                    error = format_error_chain(&error),
+                    "Failed to mark blobs as recently used"
+                );
+            }
+        }
+    }
+
+    /// Store blobs in every writable backend, even when they already exist.
+    /// Unlike storing, which skips digests that already exist, this replaces
+    /// them, so a blob that couldn't be read back is repaired.
+    pub async fn replace_blobs(&self, blobs: Vec<BlobInput>) -> miette::Result<()> {
+        self.wait_for_connection().await;
+
+        for backend in self.get_backends() {
+            if backend.is_writable() {
+                Arc::clone(backend)
+                    .replace_blobs_batched(Digest::default(), blobs.clone())
+                    .await?;
+            }
         }
 
         Ok(())

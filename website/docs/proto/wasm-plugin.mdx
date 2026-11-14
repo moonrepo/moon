@@ -194,6 +194,12 @@ The following fields are available:
   has been installed.
 - `post_script_args` - A list of arguments to pass to the post-install script when executing it.
   <VersionLabel version="0.58.0" />
+- `variant` - The name of the build that was chosen, when the tool distributes more than one build
+  for the same platform. [Learn more](#build-variants). <VersionLabel version="0.64.0" />
+
+The input also provides a `temp_dir` field, which is a virtual path to a temporary directory unique
+to this download, which the pre-built is also downloaded to, and is removed once the install (or
+[lock](./commands/lock)) finishes. <VersionLabel version="0.64.0" />
 
 ```rust
 #[plugin_fn]
@@ -285,6 +291,47 @@ pub fn unpack_archive(Json(input): Json<UnpackArchiveInput>) -> FnResult<()> {
 }
 ```
 
+##### Build variants<VersionLabel version="0.64.0" />
+
+Some tools distribute more than one pre-built for the same platform, like a "baseline" build for
+older CPUs, or a build for each Linux distribution. Since each build has its own checksum, the
+chosen build must be named with the `variant` field, so that it's recorded as its own
+[lockfile record](./lockfile#build-variants), and machines that download different builds don't
+fail each other's checksum verification. The default build should _not_ have a variant.
+
+To choose a build without executing commands, use the `details` of the
+[host environment](../guides/wasm-plugins#host-details), like the x86-64 microarchitecture
+level, or the Linux distribution.
+
+```rust
+let env = get_host_environment()?;
+
+// x64 CPUs without AVX2 (level 3) require the baseline build
+let baseline = env.arch == HostArch::X64
+    && env
+        .details
+        .as_ref()
+        .and_then(|details| details.x64_level)
+        .is_some_and(|level| level < 3);
+
+Ok(Json(DownloadPrebuiltOutput {
+    download_url: format!(
+        "https://example.com/v{version}/tool-{arch}{}.zip",
+        if baseline { "-baseline" } else { "" }
+    ),
+    variant: baseline.then(|| "baseline".into()),
+    ..DownloadPrebuiltOutput::default()
+}))
+```
+
+:::caution
+
+The `details` field is not available when the plugin is targeting another platform (when the
+`foreign` field is true), for example, with [`proto lock --platform`](./commands/lock), or with
+older versions of proto, so plugins must always fall back to the default build.
+
+:::
+
 #### Build from source
 
 Coming soon!
@@ -297,7 +344,8 @@ function.
 
 This function allows you to execute host commands, make HTTP requests, and more, to install the
 tool. All that's required to return whether the installation was successful or not, and an optional
-error message.
+error message. The input provides a `temp_dir` field, which is a virtual path to a temporary
+directory unique to this install, which is removed once it finishes. <VersionLabel version="0.64.0" inline />
 
 ```rust
 #[plugin_fn]
@@ -406,6 +454,10 @@ pub fn load_versions(Json(_): Json<LoadVersionsInput>) -> FnResult<Json<LoadVers
 
 Many tools publish their versions as Git tags, so we provide a `load_git_tags` function that runs
 `git ls-remote --tags` on the host for the provided repository URL, and returns a list of tag names.
+Since v0.64, this function is provided by `proto_pdk` (instead of `warpgate_pdk`), and is powered
+by the [`load_tool_versions`](#from-a-json-index) host function, so users can
+[replace the repository](#user-configured-sources). Plugins that use it require proto v0.64 or
+later.
 
 ```rust
 #[plugin_fn]
@@ -430,6 +482,57 @@ let tags = load_git_tags("https://github.com/org/repo").unwrap_or_default();
 
 > Before v0.63, an empty list was returned on failure, which resulted in a misleading "Failed to
 > resolve version" error.
+
+#### From a JSON index<VersionLabel version="0.64.0" />
+
+For tools that publish their versions in a JSON index, use the `load_tool_versions` function, which
+requests the index on the host with proto's HTTP client, and returns the versions at the provided
+JSON path. This is preferred over [`fetch_json`](../guides/wasm-plugins#sending-requests), as users
+can [replace the index](#user-configured-sources).
+
+```rust
+#[plugin_fn]
+pub fn load_versions(Json(_): Json<LoadVersionsInput>) -> FnResult<Json<LoadVersionsOutput>> {
+    let response = load_tool_versions(LoadToolVersionsInput::index(
+        "https://nodejs.org/dist/index.json",
+        Some("*.version".into()),
+    ))?;
+
+    Ok(Json(LoadVersionsOutput::from(response.versions)?))
+}
+```
+
+The `LoadToolVersionsInput::Index` variant supports the following fields:
+
+- `url` (required) - The URL of the JSON index.
+- `version_key` - A JSON path to the versions in the index. Supports object keys (`key`, `.key`),
+  array indexes (`[0]`), and wildcards (`*`, `[*]`), which select every item of an array, or every
+  value of an object, for example, `releases[*].version`. A final wildcard followed by `~` (`*~`)
+  selects the keys of every object instead, for an index that is keyed by version. Defaults to
+  `*.version`.
+- `headers` - A map of HTTP headers to send with the request, for example, to authenticate with a
+  private registry.
+- `include_body` - Return the response body in the `body` field of the output, for data other than
+  versions, like aliases.
+
+Versions can also be loaded from Git tags with the `LoadToolVersionsInput::Git` variant, which
+supports `url` and `tag_pattern` (a regex that tags must match) fields.
+
+#### User configured sources<VersionLabel version="0.64.0" />
+
+Versions that are loaded with `load_tool_versions` (and `load_git_tags`) can be replaced by users
+with the [`[tools.*.versions-source]`](./config#toolsversions-source) setting, for example, to load
+versions from an internal mirror. When configured, the host requests the user's source instead, and
+returns its versions in the same output, so plugins don't need to handle it. However, there are a
+few caveats to be aware of:
+
+- A user configured source may be of a different type, for example, an index URL that replaces the
+  plugin's Git repository.
+- Request `headers` are only sent to the plugin's own URL, and the `body` is only returned for the
+  plugin's own URL, as a configured URL is another host, with another index format. Plugins that
+  derive data from the body, like aliases, must handle it being `None`.
+- The versions are filtered with the user's pattern (if configured), but are otherwise returned
+  as-is, so the plugin is still responsible for parsing them.
 
 ### Resolving versions
 
@@ -485,11 +588,15 @@ pub fn detect_version_files(input: Json<DetectVersionInput>) -> FnResult<Json<De
 ```
 
 By default our plugin layer will assume the version file's contents contain the literal version, and
-nothing else, like "1.2.3". If any of the files in the `detect_version_files` list require custom
-parsing (for example, `package.json` above), you can define the `parse_version_file` function.
+nothing else, like "1.2.3". Since v0.64, the first line with content is used, while blank lines and
+comments (everything after a `#` or `//`) are skipped, and files without a version are skipped
+during detection. If any of the files in the `detect_version_files` list require custom parsing
+(for example, `package.json` above), you can define the `parse_version_file` function.
 
-This function receives the file name and contents as input, and must return the parsed version (if
-applicable).
+This function receives the file name and a virtual path to the file as input, and must return the
+parsed version (if applicable). For plain version files, the `extract_version_from_file` and
+`extract_version_from_text` functions <VersionLabel version="0.64.0" inline /> extract the version
+using the same rules as proto.
 
 ```rust
 #[plugin_fn]
@@ -497,19 +604,37 @@ pub fn parse_version_file(Json(input): Json<ParseVersionFileInput>) -> FnResult<
     let mut version = None;
 
     if input.file == "package.json" {
-        let json: PackageJson = serde_json::from_str(&input.content)?;
+        let json: PackageJson = serde_json::from_str(&fs::read_to_string(&input.path)?)?;
 
         if let Some(engines) = json.engines {
             if let Some(constraint) = engines.get("node") {
                 version = Some(UnresolvedVersionSpec::parse(constraint)?);
             }
         }
-    } else {
-        version = Some(UnresolvedVersionSpec::parse(input.content.trim())?);
+    } else if let Some(value) = extract_version_from_file(&input.path)? {
+        version = Some(UnresolvedVersionSpec::parse(value)?);
     }
 
-    Ok(Json(ParseVersionFileOutput { version }))
+    Ok(Json(ParseVersionFileOutput { version, ..Default::default() }))
 }
+```
+
+> Since v0.64, the `content` field of the input is deprecated, in favor of `path`, which plugins can
+> use to read the file contents.
+
+#### Stopping detection<VersionLabel version="0.64.0" />
+
+Some tools define a precedence between their files, where one file takes precedence over another,
+even when it doesn't define a version. For example, uv ignores `[tool.uv]` in `pyproject.toml` when
+a `uv.toml` exists in the same directory. To support this, return `stop` as true with no `version`,
+and the plugin's remaining files in the current directory will be skipped. Parent directories are
+still checked.
+
+```rust
+Ok(Json(ParseVersionFileOutput {
+    stop: version.is_none() && input.file == "uv.toml",
+    version,
+}))
 ```
 
 ## Implementing backend functions

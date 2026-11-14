@@ -364,6 +364,13 @@
 
 #### 🐞 Fixes
 
+- Fixed an issue where development and build dependencies that inherit their version from the
+  workspace, like `serde = { workspace = true }` under `[dev-dependencies]` in Cargo, were not
+  included in task hashes, as their version was only looked up in the workspace's dependencies of
+  the same scope. Inherited versions are now resolved from the workspace's dependencies (like
+  `[workspace.dependencies]`) whichever scope inherits them, including for a project at the root of
+  the workspace. Tasks of affected projects will have a new hash, so they will not be cached on
+  their first run after upgrading.
 - Fixed an issue where `--upstream none` would also remove the ordering edges between selected tasks
   that depend on each other, allowing them to run concurrently or in the wrong order. Use
   `--no-dependencies` instead, which keeps them ordered.
@@ -507,8 +514,6 @@
   the hash matched the task's last run.
 - Fixed an issue where outputs partially restored by a failed cache hydration could be reused as a
   cache hit on the next run.
-
-## 2.6.2
 
 ## 2.6.2
 

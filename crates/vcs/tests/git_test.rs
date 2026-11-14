@@ -637,6 +637,313 @@ mod git {
         }
     }
 
+    // https://github.com/moonrepo/moon/issues/2791
+    mod no_commits {
+        use super::*;
+
+        fn create_no_commits_sandbox() -> (Sandbox, Git) {
+            let sandbox = create_sandbox("vcs");
+
+            sandbox.run_git(|cmd| {
+                cmd.args(["init", "--initial-branch", "master"]);
+            });
+
+            let git = Git::load(sandbox.path(), "master", &["origin".into()]).unwrap();
+
+            (sandbox, git)
+        }
+
+        #[tokio::test]
+        async fn returns_branch_and_empty_revision() {
+            let (_sandbox, git) = create_no_commits_sandbox();
+
+            assert!(git.is_enabled());
+            assert_eq!(git.get_local_branch().await.unwrap(), "master");
+            assert_eq!(git.get_local_branch_revision().await.unwrap(), "");
+        }
+
+        #[tokio::test]
+        async fn returns_untracked_changed_files() {
+            let (_sandbox, git) = create_no_commits_sandbox();
+
+            let changed_files = git.get_changed_files().await.unwrap();
+
+            assert_eq!(
+                changed_files
+                    .files
+                    .get(&WorkspaceRelativePathBuf::from("foo/file1.txt")),
+                Some(&vec![ChangedStatus::Untracked])
+            );
+        }
+
+        #[tokio::test]
+        async fn returns_no_changes_against_previous_revision() {
+            let (_sandbox, git) = create_no_commits_sandbox();
+
+            assert_eq!(
+                git.get_changed_files_against_previous_revision("master")
+                    .await
+                    .unwrap(),
+                ChangedFiles::default()
+            );
+        }
+
+        #[tokio::test]
+        async fn returns_no_changes_between_revisions() {
+            let (_sandbox, git) = create_no_commits_sandbox();
+
+            assert_eq!(
+                git.get_changed_files_between_revisions("master", "")
+                    .await
+                    .unwrap(),
+                ChangedFiles::default()
+            );
+
+            assert_eq!(
+                git.get_changed_files_between_revisions("master", "HEAD")
+                    .await
+                    .unwrap(),
+                ChangedFiles::default()
+            );
+        }
+
+        #[tokio::test]
+        async fn errors_between_revisions_for_an_explicit_head() {
+            let (_sandbox, git) = create_no_commits_sandbox();
+
+            assert!(
+                git.get_changed_files_between_revisions("master", "feature")
+                    .await
+                    .is_err()
+            );
+        }
+
+        #[tokio::test]
+        async fn errors_for_revision_if_not_a_repository() {
+            let sandbox = create_sandbox("vcs");
+
+            let git = Git::load(sandbox.path(), "master", &["origin".into()]).unwrap();
+
+            assert!(git.get_local_branch_revision().await.is_err());
+        }
+    }
+
+    mod file_hashing {
+        use super::*;
+
+        #[tokio::test]
+        async fn hashes_a_list_of_files() {
+            let (_sandbox, git) = create_git_sandbox("vcs");
+
+            assert_eq!(
+                git.get_file_hashes(&["foo/file2.txt".into(), "baz/file5.txt".into()], false)
+                    .await
+                    .unwrap(),
+                BTreeMap::from([
+                    (
+                        WorkspaceRelativePathBuf::from("baz/file5.txt"),
+                        "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                    ),
+                    (
+                        WorkspaceRelativePathBuf::from("foo/file2.txt"),
+                        "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                    )
+                ])
+            );
+        }
+
+        #[tokio::test]
+        async fn ignores_files_when_hashing() {
+            let (_sandbox, git) = create_git_sandbox_with_ignored("vcs");
+
+            assert_eq!(
+                git.get_file_hashes(
+                    &[
+                        "foo/file1.txt".into(),
+                        "foo/file2.txt".into(),
+                        "baz/file5.txt".into()
+                    ],
+                    false,
+                )
+                .await
+                .unwrap(),
+                BTreeMap::from([(
+                    WorkspaceRelativePathBuf::from("baz/file5.txt"),
+                    "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                )])
+            );
+        }
+
+        #[tokio::test]
+        async fn can_allow_ignored_files_when_hashing() {
+            let (_sandbox, git) = create_git_sandbox_with_ignored("vcs");
+
+            assert_eq!(
+                git.get_file_hashes(
+                    &[
+                        "foo/file1.txt".into(),
+                        "foo/file2.txt".into(),
+                        "baz/file5.txt".into()
+                    ],
+                    true,
+                )
+                .await
+                .unwrap(),
+                BTreeMap::from([
+                    (
+                        WorkspaceRelativePathBuf::from("baz/file5.txt"),
+                        "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                    ),
+                    (
+                        WorkspaceRelativePathBuf::from("foo/file1.txt"),
+                        "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                    ),
+                    (
+                        WorkspaceRelativePathBuf::from("foo/file2.txt"),
+                        "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                    )
+                ])
+            );
+        }
+
+        #[tokio::test]
+        async fn hashes_an_entire_folder() {
+            let (_sandbox, git) = create_git_sandbox("vcs");
+
+            let tree = git
+                .get_file_tree(RelativePath::new("."))
+                .await
+                .unwrap()
+                .into_iter()
+                .collect::<Vec<_>>();
+
+            let hashes = git.get_file_hashes(&tree, false).await.unwrap();
+
+            assert_eq!(
+                hashes,
+                BTreeMap::from([
+                    (
+                        WorkspaceRelativePathBuf::from(".gitignore"),
+                        "2c085d1d2fb7e1d865a5c1161f0fbbcb682af240".to_owned()
+                    ),
+                    (
+                        WorkspaceRelativePathBuf::from("bar/sub/dir/file4.txt"),
+                        "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                    ),
+                    (
+                        WorkspaceRelativePathBuf::from("baz/dir/file6.txt"),
+                        "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                    ),
+                    (
+                        WorkspaceRelativePathBuf::from("baz/file5.txt"),
+                        "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                    ),
+                    (
+                        WorkspaceRelativePathBuf::from("foo/file1.txt"),
+                        "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                    ),
+                    (
+                        WorkspaceRelativePathBuf::from("foo/file2.txt"),
+                        "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                    ),
+                    (
+                        WorkspaceRelativePathBuf::from("foo/file3.txt"),
+                        "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                    ),
+                ])
+            );
+        }
+
+        #[tokio::test]
+        async fn hashes_and_ignores_an_entire_folder() {
+            let (_sandbox, git) = create_git_sandbox_with_ignored("vcs");
+
+            let tree = git
+                .get_file_tree(RelativePath::new("."))
+                .await
+                .unwrap()
+                .into_iter()
+                .collect::<Vec<_>>();
+
+            let hashes = git.get_file_hashes(&tree, false).await.unwrap();
+
+            assert_eq!(
+                hashes,
+                BTreeMap::from([
+                    (
+                        WorkspaceRelativePathBuf::from(".gitignore"),
+                        "666918819a0845b940d6022bd47a8adf85a094aa".to_owned()
+                    ),
+                    (
+                        WorkspaceRelativePathBuf::from("bar/sub/dir/file4.txt"),
+                        "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                    ),
+                    (
+                        WorkspaceRelativePathBuf::from("baz/dir/file6.txt"),
+                        "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                    ),
+                    (
+                        WorkspaceRelativePathBuf::from("baz/file5.txt"),
+                        "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                    ),
+                ])
+            );
+        }
+
+        #[tokio::test]
+        async fn hashes_a_massive_number_of_files() {
+            let (sandbox, git) = create_git_sandbox("vcs");
+
+            for i in 0..10000 {
+                fs::write(sandbox.path().join(format!("file{i}")), i.to_string()).unwrap();
+            }
+
+            let tree = git
+                .get_file_tree(RelativePath::new("."))
+                .await
+                .unwrap()
+                .into_iter()
+                .collect::<Vec<_>>();
+
+            let hashes = git.get_file_hashes(&tree, false).await.unwrap();
+
+            assert!(hashes.len() >= 10000);
+        }
+
+        #[tokio::test]
+        async fn cannot_hash_dirs() {
+            let (_sandbox, git) = create_git_sandbox("vcs");
+
+            assert_eq!(
+                git.get_file_hashes(&["foo".into()], false).await.unwrap(),
+                BTreeMap::new()
+            );
+        }
+
+        #[tokio::test]
+        async fn removes_nested_workspace_prefix() {
+            let (_sandbox, git) = create_nested_git_sandbox();
+
+            assert_eq!(
+                git.get_file_hashes(
+                    &[
+                        // valid
+                        "file.js".into(),
+                        // invalid
+                        "frontend/file.js".into()
+                    ],
+                    false,
+                )
+                .await
+                .unwrap(),
+                BTreeMap::from([(
+                    WorkspaceRelativePathBuf::from("file.js"),
+                    "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".into()
+                )])
+            );
+        }
+    }
+
     mod file_tree {
         use super::*;
 

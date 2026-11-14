@@ -5441,6 +5441,7 @@ dependencies = [
  "miette 7.6.0",
  "moon_action",
  "moon_action_context",
+ "moon_affected",
  "moon_app_context",
  "moon_cache",
  "moon_cache_item",
@@ -5804,7 +5805,7 @@ dependencies = [
 
 [[package]]
 name = "moon_cli"
-version = "2.6.4"
+version = "2.6.5"
 dependencies = [
  "clap",
  "extism",
@@ -6032,6 +6033,7 @@ dependencies = [
  "moon_process",
  "moon_target",
  "moon_test_utils",
+ "moon_vcs",
  "moon_workspace_graph",
  "notify-debouncer-full",
  "rustc-hash",

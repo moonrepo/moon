@@ -37,6 +37,10 @@ Versions defined in [environment specific configurations](../config#environment-
 [sibling lockfiles](../lockfile#environment-scopes). Previously these versions were skipped with a
 warning. <VersionLabel version="0.61.0" />
 
+When records are migrated to a new version, their checksums are removed, and re-populated on the
+next install. To re-populate them for every platform without installing, run
+[`proto lock`](./lock) afterwards. <VersionLabel version="0.64.0" />
+
 ### Options
 
 - `--json` - Print the list in JSON format.

@@ -16,11 +16,13 @@ impl FileEvent {
         self.kind.is_modify() || self.kind.is_create() || self.kind.is_remove()
     }
 
+    /// Renames are included, as backends don't report whether a renamed
+    /// path is a directory, and only some pair the old and new paths.
     pub fn is_mutated_directory(&self) -> bool {
         matches!(
             self.kind,
             EventKind::Create(CreateKind::Folder)
-                | EventKind::Modify(ModifyKind::Name(RenameMode::Both))
+                | EventKind::Modify(ModifyKind::Name(_))
                 | EventKind::Remove(RemoveKind::Folder)
         )
     }

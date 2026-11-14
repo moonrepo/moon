@@ -38,6 +38,15 @@ detected while running in an interactive terminal, a warning is reported, as _ev
 is trusted in CI, including those in cloned repositories. This usually means the `CI` environment
 variable has leaked into your shell profile. <VersionLabel version="0.63.0" />
 
+The following are also reported as warnings: <VersionLabel version="0.64.0" />
+
+- Plugin overrides that are being ignored, because the configuration they're defined in has not
+  been trusted, in which case the built-in or community plugin is used instead.
+- [Tool requirements](../config#requires) without a configured version, tools that require
+  themselves, and requirements that form a cycle.
+- On Windows, when symlinks can't be created in `~/.proto/bin`, as executables will be
+  [copied instead](../workflows#binary-linking), which uses more disk space.
+
 ### Options
 
 - `--shell` - The shell to diagnose (will detect automatically).

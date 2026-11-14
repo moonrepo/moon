@@ -606,6 +606,17 @@ fileGroups:
 In v1, the final `sources` file group would only include `docs/**`, as the second config would
 replace the first. In v2, the final `sources` file group includes both `src/**` and `docs/**`.
 
+This also applies to file groups defined at the project-level in [`moon.*`](../config/project),
+which are now merged with (appended to) inherited file groups of the same name, instead of replacing
+them. As of v2.5, the previous replace behavior can be restored per project with the
+[`workspace.mergeStrategies.fileGroups`](../config/project#mergestrategies) setting.
+
+```yaml title="moon.yml"
+workspace:
+  mergeStrategies:
+    fileGroups: 'replace'
+```
+
 ## VCS
 
 ### New hooks system

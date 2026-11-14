@@ -88,6 +88,11 @@ The following directories are always ignored by the watcher:
 - `.git`, `.svn`, `node_modules`
 - `.moon/cache`, `.moon/docker`
 
+On Linux, where every watched directory requires its own watch (counted against the
+`fs.inotify.max_user_watches` limit), directories ignored by your VCS (the root `.gitignore`) are
+also not watched, and symlinks are not followed. On macOS and Windows, the workspace is watched with
+a single recursive watch.
+
 Changes to the following files and directories trigger an asynchronous graph rebuild:
 
 - [`.prototools`](../proto/config) — reloads toolchain configuration

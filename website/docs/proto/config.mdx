@@ -287,10 +287,15 @@ the rest of the file is applied. To make sure this never happens silently, proto
   security-sensitive settings, and labels it as untrusted.
 
 If a tool's plugin is configured in an untrusted configuration, proto refuses to load that tool,
-instead of falling back to a different plugin (like a built-in or community plugin) with the same
-identifier. Commands that load all configured tools, like [`proto install`](./commands/install)
-(without arguments), [`proto activate`](./commands/activate), and
-[`proto status`](./commands/status), will skip that tool instead.
+instead of falling back to a different plugin (like a community plugin) with the same identifier.
+Commands that load all configured tools, like [`proto install`](./commands/install) (without
+arguments), [`proto activate`](./commands/activate), and [`proto status`](./commands/status), will
+skip that tool instead.
+
+The exception is a tool with a [built-in plugin](./tools#official-built-in), which still runs with
+the built-in plugin when its override is ignored. A warning names the tool and the ignored plugin,
+and [`proto plugin info`](./commands/plugin/info) and [`proto diagnose`](./commands/diagnose) show
+it as an untrusted override. <VersionLabel version="0.64.0" inline />
 
 ```
 Unable to proceed, the plugin for my-tool is configured in /path/to/.prototools, which has not been trusted, so it was not loaded.
@@ -810,6 +815,32 @@ settings to be defined side-by-side.
 plugin = "https://raw.githubusercontent.com/my/tool/master/proto-plugin.toml"
 ```
 
+#### `requires`<VersionLabel version="0.64.0" />
+
+A list of other tools that this tool depends on, in addition to those required by the tool's plugin
+(for example, the npm plugin requires Node.js). Tools are referenced by their identifier, and can
+include a backend prefix. This is useful for tools whose plugin doesn't know about a dependency, like
+[`asdf`](./tool-spec#asdf) plugins and community tools.
+
+```toml title=".prototools"
+"asdf:erlang" = "28"
+"asdf:elixir" = "1.19"
+
+[tools."asdf:elixir"]
+requires = ["asdf:erlang"]
+```
+
+- When installing, each required tool must have a configured version, and will be installed
+  _before_ the tool that requires it.
+- When running the tool (including through shims), the required tools are added to the environment.
+- Requirements that form a cycle (for example, `a` requires `b`, and `b` requires `a`), or a tool
+  that requires itself, are an error.
+- [`proto diagnose`](./commands/diagnose) warns about requirements without a configured version, and
+  cycles.
+
+> This setting is [security-sensitive](#security-sensitive-settings), so it's only applied once the
+> configuration file has been [trusted](#trust).
+
 ### `[tools.*.aliases]`
 
 Aliases are custom and unique labels that map to a specific version, and can be configured manually
@@ -841,6 +872,53 @@ file, that will be loaded into the environment variables mapping for this specif
 [tools.node.env]
 file = "frontend/.env"
 ```
+
+### `[tools.*.versions-source]`<VersionLabel version="0.64.0" />
+
+Replaces where a tool's available versions are loaded from, without having to fork its plugin.
+This is useful for loading versions from an internal mirror, a private registry, or a Git server
+that is reachable from behind a firewall.
+
+The source applies when the tool's plugin loads its versions from Git tags, or a JSON index,
+through proto's [`load_tool_versions`](./wasm-plugin#user-configured-sources) host function. Most
+built-in plugins (like Bun, Deno, Go, Node.js, Python, Rust, and Zig) and all
+[schema plugins](./non-wasm-plugin) use it, while plugins that load versions from an API (like
+Java, and the `cargo` and `npm` backends) do not. The following settings are supported:
+
+- `git-url` - The URL of a Git remote to load tags from, with `git ls-remote --tags`.
+- `git-tag-pattern` - A [Rust regex](https://docs.rs/regex/latest/regex/) that tags must match to
+  be included. Takes precedence over `version-pattern`, and the plugin's own tag pattern.
+- `index-url` - The URL of a JSON index to load versions from.
+- `index-version-key` - When the index is an array of objects, the key of each object that contains
+  the version. Defaults to the plugin's key, or `version`.
+- `version-pattern` - A [Rust regex](https://docs.rs/regex/latest/regex/) that versions must match
+  to be included. Applies to both Git tags and index versions.
+
+```toml title=".prototools"
+# Load versions from an internal mirror of the Node.js index
+[tools.node.versions-source]
+index-url = "https://mirror.corp.com/nodejs/dist/index.json"
+
+# Load versions from an internal Git server
+[tools.go.versions-source]
+git-url = "https://git.corp.com/mirrors/go.git"
+```
+
+Some things worth knowing:
+
+- Only one of `git-url` or `index-url` can be configured. Either can replace a source of the other
+  type, for example, an `index-url` for a plugin that loads Git tags.
+- The configured source must return versions in the same format as the plugin's own source, as the
+  plugin still parses each version (for example, a `v` prefix for Node.js).
+- Request headers and response bodies are only used for the plugin's own source, and not for a
+  configured `index-url`, as it's another host. This means data other than versions, like the
+  aliases that the Node.js plugin derives from its index (`lts`, `stable`, etc), are not available
+  when an `index-url` is configured.
+- This setting only replaces where versions are loaded from. To replace where tools are downloaded
+  from, use [`url-rewrites`](#url-rewrites).
+
+> This setting is [security-sensitive](#security-sensitive-settings), so it's only applied once the
+> configuration file has been [trusted](#trust).
 
 ## GitHub Action
 

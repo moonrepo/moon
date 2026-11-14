@@ -27,6 +27,12 @@ $ which node
 ~/.proto/shims/node
 ```
 
+Each shim is a hard link to the `proto-shim` executable, so no matter how many shims exist, they
+only use the disk space of a single executable. If a hard link can't be created (for example, when
+`proto-shim` is on a different drive), the executable is copied instead. <VersionLabel version="0.64.0" />
+
+> Before v0.64, each shim was a copy of the `proto-shim` executable.
+
 ### Setup
 
 To make use of shims, prepend the `~/.proto/shims` directory to `PATH` in your shell profile. This
@@ -70,6 +76,12 @@ $ node-22 --version
 $ which node-22
 ~/.proto/bin/node-22 -> ~/.proto/tools/node/22.5.1/bin/node
 ```
+
+On Windows, these are also symlinks, which require Developer Mode to be enabled in the Windows
+settings, or proto to be run as an administrator. Without either, the executables are copied
+instead, which uses more disk space, and [`proto diagnose`](./commands/diagnose) will warn. <VersionLabel version="0.64.0" />
+
+> Before v0.64, executables were always copied on Windows.
 
 :::info
 

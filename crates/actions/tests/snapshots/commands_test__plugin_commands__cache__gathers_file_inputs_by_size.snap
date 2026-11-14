@@ -9,6 +9,7 @@ expression: "json::format(&data, true).unwrap()"
       "args": [
         "cache"
       ],
+      "error_on_nonzero": false,
       "set_executable": false,
       "shell": null,
       "stream": false

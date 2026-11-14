@@ -175,6 +175,7 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
             self.host_data.clone(),
             HostData {
                 cache_dir: self.host_data.moon_env.cache_dir.clone(),
+                foreign_platform: None,
                 http_client: self.loader.get_http_client()?.clone(),
                 virtual_paths: self.virtual_paths.clone(),
                 working_dir: self.host_data.moon_env.working_dir.clone(),

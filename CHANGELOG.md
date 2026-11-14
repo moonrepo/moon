@@ -215,7 +215,9 @@
     (even when `cache.unstable_sharedWorktreeCache` is enabled), and `moon clean` removes those
     older than the cache lifetime.
   - The cached workspace graph has moved from `.moon/cache/states` into the local
-    content-addressable store, `.moon/cache/blobs`, alongside task outputs.
+    content-addressable store, `.moon/cache/blobs`, alongside task outputs. Like task outputs, a
+    cache hit marks it as used, so `moon clean` only removes graphs that haven't been used within
+    the cache lifetime.
 - **CLI**
   - Added a `moon layout-graph` (`moon lg`) command, that serves an interactive graph of the
     dependencies roots (like a package manager workspace) that toolchains locate, and the projects

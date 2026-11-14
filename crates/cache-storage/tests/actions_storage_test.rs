@@ -24,11 +24,16 @@ struct MemoryBackend {
     capabilities: CacheCapabilities,
     blobs: Arc<Mutex<FxHashMap<Digest, Bytes>>>,
     manifests: Arc<Mutex<FxHashMap<Digest, TaskManifest>>>,
+    touched: Arc<Mutex<Vec<Digest>>>,
+    // Whether each `store_blobs` call was streamed, as a blob over the batch
+    // size is stored on its own, as a stream.
+    streams: Arc<Mutex<Vec<bool>>>,
 
     // Failure injection for the abort/degrade paths.
     fail_find_missing: bool,
     fail_store_blobs: bool,
     fail_retrieve_blobs: bool,
+    fail_touch_blobs: bool,
 
     // A read-only tier (e.g. a shared cache the user can't write) must never
     // be a warm target.
@@ -46,9 +51,12 @@ impl MemoryBackend {
             capabilities: CacheCapabilities::default(),
             blobs: Arc::new(Mutex::new(FxHashMap::default())),
             manifests: Arc::new(Mutex::new(FxHashMap::default())),
+            touched: Arc::new(Mutex::new(vec![])),
+            streams: Arc::new(Mutex::new(vec![])),
             fail_find_missing: false,
             fail_store_blobs: false,
             fail_retrieve_blobs: false,
+            fail_touch_blobs: false,
             read_only: false,
             connect_gate: None,
             connected: Arc::new(AtomicBool::new(true)),
@@ -73,6 +81,11 @@ impl MemoryBackend {
 
     fn failing_retrieve_blobs(mut self) -> Self {
         self.fail_retrieve_blobs = true;
+        self
+    }
+
+    fn failing_touch_blobs(mut self) -> Self {
+        self.fail_touch_blobs = true;
         self
     }
 
@@ -160,11 +173,13 @@ impl StorageBackend for MemoryBackend {
     async fn store_blobs(
         &self,
         blob_sources: Vec<BlobInput>,
-        _stream: bool,
+        stream: bool,
     ) -> miette::Result<Vec<Digest>> {
         if self.fail_store_blobs {
             return Err(miette::miette!("simulated store_blobs failure"));
         }
+
+        self.streams.lock().unwrap().push(stream);
 
         let mut blobs = self.blobs.lock().unwrap();
         let mut stored = vec![];
@@ -199,6 +214,16 @@ impl StorageBackend for MemoryBackend {
                 })
             })
             .collect())
+    }
+
+    async fn touch_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<()> {
+        if self.fail_touch_blobs {
+            return Err(miette::miette!("simulated touch_blobs failure"));
+        }
+
+        self.touched.lock().unwrap().extend(blob_digests);
+
+        Ok(())
     }
 }
 
@@ -735,5 +760,98 @@ mod storage {
             local_blobs.lock().unwrap().is_empty(),
             "warming must honor include_local = false"
         );
+    }
+
+    #[tokio::test]
+    async fn touches_blobs_in_writable_backends_only() {
+        let local = MemoryBackend::new("local");
+        let remote = MemoryBackend::new("remote").read_only();
+        let local_touched = Arc::clone(&local.touched);
+        let remote_touched = Arc::clone(&remote.touched);
+
+        let mut storage = create_storage();
+        storage.add_local_backend(local);
+        storage.add_remote_backend(remote);
+
+        let blob = Digest::from_bytes(b"graph").unwrap();
+
+        storage.touch_blobs(vec![blob.clone()]).await;
+
+        assert_eq!(*local_touched.lock().unwrap(), [blob]);
+        assert!(
+            remote_touched.lock().unwrap().is_empty(),
+            "a read-only backend must not be touched"
+        );
+    }
+
+    #[tokio::test]
+    async fn touch_failure_continues_to_other_backends() {
+        // Touching is best-effort, so a failing backend is skipped rather than
+        // erroring, and the remaining backends are still touched.
+        let local = MemoryBackend::new("local").failing_touch_blobs();
+        let remote = MemoryBackend::new("remote");
+        let remote_touched = Arc::clone(&remote.touched);
+
+        let mut storage = create_storage();
+        storage.add_local_backend(local);
+        storage.add_remote_backend(remote);
+
+        let blob = Digest::from_bytes(b"graph").unwrap();
+
+        storage.touch_blobs(vec![blob.clone()]).await;
+
+        assert_eq!(*remote_touched.lock().unwrap(), [blob]);
+    }
+
+    #[tokio::test]
+    async fn replace_blobs_overwrites_existing_blobs() {
+        // A blob that can't be read back keeps its digest, so replacing must
+        // store it again, instead of skipping it as already existing
+        let backend = MemoryBackend::new("local");
+        let blobs = Arc::clone(&backend.blobs);
+        let blob = Digest::from_bytes(b"graph").unwrap();
+
+        blobs
+            .lock()
+            .unwrap()
+            .insert(blob.clone(), Bytes::from_static(b"{\"proj"));
+
+        let mut storage = create_storage();
+        storage.add_local_backend(backend);
+
+        storage
+            .replace_blobs(vec![BlobInput {
+                content: BlobContent::Inline(Bytes::from_static(b"graph")),
+                digest: blob.clone(),
+            }])
+            .await
+            .unwrap();
+
+        assert_eq!(blobs.lock().unwrap().get(&blob).unwrap().as_ref(), b"graph");
+    }
+
+    #[tokio::test]
+    async fn replace_blobs_streams_blobs_over_the_batch_size() {
+        let mut backend = MemoryBackend::new("remote");
+        backend.capabilities.max_batch_total_size_bytes = 1000;
+
+        let blobs = Arc::clone(&backend.blobs);
+        let streams = Arc::clone(&backend.streams);
+        let bytes = Bytes::from(vec![b'a'; 5000]);
+        let blob = Digest::from_bytes(&bytes).unwrap();
+
+        let mut storage = create_storage();
+        storage.add_remote_backend(backend);
+
+        storage
+            .replace_blobs(vec![BlobInput {
+                content: BlobContent::Inline(bytes),
+                digest: blob.clone(),
+            }])
+            .await
+            .unwrap();
+
+        assert!(blobs.lock().unwrap().contains_key(&blob));
+        assert_eq!(*streams.lock().unwrap(), [true]);
     }
 }

@@ -560,13 +560,36 @@ impl ActionsStorage {
         Ok(vec![])
     }
 
+    /// Mark blobs as recently used in every writable backend, so that garbage
+    /// collection keeps blobs that no task manifest references (like the cached
+    /// workspace graph) while they're still in use. This is best-effort, so a
+    /// failure is logged instead of returned.
+    pub async fn touch_blobs(&self, digests: Vec<Digest>) {
+        for backend in self.get_backends() {
+            if !backend.is_writable() {
+                continue;
+            }
+
+            if let Err(error) = backend.touch_blobs(digests.clone()).await {
+                warn!(
+                    storage = backend.get_id().as_str(),
+                    error = format_error_chain(&error),
+                    "Failed to mark blobs as recently used"
+                );
+            }
+        }
+    }
+
+    /// Store blobs in every writable backend, even when they already exist.
+    /// Unlike storing, which skips digests that already exist, this replaces
+    /// them, so a blob that couldn't be read back is repaired.
     pub async fn replace_blobs(&self, blobs: Vec<BlobInput>) -> miette::Result<()> {
         self.wait_for_connection().await;
 
         for backend in self.get_backends() {
             if backend.is_writable() {
                 Arc::clone(backend)
-                    .store_blobs_batched(Digest::default(), blobs.clone())
+                    .replace_blobs_batched(Digest::default(), blobs.clone())
                     .await?;
             }
         }

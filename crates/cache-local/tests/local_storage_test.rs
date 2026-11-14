@@ -346,6 +346,82 @@ mod local_storage {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn gc_keeps_recently_touched_unreferenced_blobs() {
+        let sandbox = create_empty_sandbox();
+        let backend = create_backend(&sandbox);
+
+        let orphan = inline_source(b"still in use");
+        let orphan_digest = orphan.digest.clone();
+
+        Arc::clone(&backend)
+            .store_blobs_batched(action_digest(), vec![orphan])
+            .await
+            .unwrap();
+
+        // Age the blob past the lifetime, then touch it: touching refreshes
+        // the mtime, so the next GC must treat it as recently used and keep it.
+        backdate(
+            &blob_path(&sandbox, &orphan_digest),
+            Duration::from_secs(172800),
+        );
+
+        backend
+            .touch_blobs(vec![orphan_digest.clone()])
+            .await
+            .unwrap();
+
+        let stats = backend.gc(Duration::from_secs(86400)).await.unwrap();
+
+        assert_eq!(stats.blobs_removed, 0);
+        assert!(
+            backend
+                .find_missing_blobs(vec![orphan_digest])
+                .await
+                .unwrap()
+                .is_empty(),
+            "a touched blob should be kept",
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn touching_skips_missing_blobs() {
+        let sandbox = create_empty_sandbox();
+        let backend = create_backend(&sandbox);
+
+        let stored = inline_source(b"stored");
+        let stored_digest = stored.digest.clone();
+        let missing_digest = Digest::from_bytes(b"missing").unwrap();
+
+        Arc::clone(&backend)
+            .store_blobs_batched(action_digest(), vec![stored])
+            .await
+            .unwrap();
+
+        backdate(
+            &blob_path(&sandbox, &stored_digest),
+            Duration::from_secs(7200),
+        );
+
+        // A missing blob doesn't fail, or stop the others from being touched
+        backend
+            .touch_blobs(vec![missing_digest.clone(), stored_digest.clone()])
+            .await
+            .unwrap();
+
+        let age = SystemTime::now()
+            .duration_since(
+                std::fs::metadata(blob_path(&sandbox, &stored_digest))
+                    .unwrap()
+                    .modified()
+                    .unwrap(),
+            )
+            .unwrap_or_default();
+
+        assert!(age < Duration::from_secs(3600));
+        assert!(!blob_path(&sandbox, &missing_digest).exists());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn gc_evicts_stale_manifests_and_their_blobs() {
         let sandbox = create_empty_sandbox();
         let backend = create_backend(&sandbox);

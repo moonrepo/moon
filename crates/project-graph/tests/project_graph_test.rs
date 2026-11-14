@@ -19,6 +19,7 @@ use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::{Duration, SystemTime};
 
 pub fn append_file<P: AsRef<Path>>(path: P, data: &str) {
     let mut file = OpenOptions::new().append(true).open(path.as_ref()).unwrap();
@@ -41,13 +42,26 @@ fn store_path(root: &Path, dir: &str, digest: &Digest) -> PathBuf {
 }
 
 /// The workspace graph's cache state, stored under its key in the objects store.
+/// It's only written when the graph is rebuilt, not on a cache hit.
+fn graph_state_path(root: &Path) -> PathBuf {
+    store_path(root, OBJECTS_DIR, &Digest::from_bytes(STATE_KEY).unwrap())
+}
+
 fn load_graph_state(root: &Path) -> WorkspaceGraphCacheState {
-    json::read_file(store_path(
-        root,
-        OBJECTS_DIR,
-        &Digest::from_bytes(STATE_KEY).unwrap(),
-    ))
-    .unwrap()
+    json::read_file(graph_state_path(root)).unwrap()
+}
+
+fn modified_at(path: &Path) -> SystemTime {
+    std::fs::metadata(path).unwrap().modified().unwrap()
+}
+
+fn backdate(path: &Path, age: Duration) {
+    OpenOptions::new()
+        .write(true)
+        .open(path)
+        .unwrap()
+        .set_modified(SystemTime::now() - age)
+        .unwrap();
 }
 
 /// The cached workspace graph, stored as a blob in the actions store by the
@@ -685,6 +699,35 @@ tasks:
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn marks_cached_graph_as_used_on_hit() {
+            let (sandbox, _graph) = build_cached_graph(|sandbox| {
+                sandbox.enable_git();
+            })
+            .await;
+
+            // No task manifest references the graph, so cleaning removes it
+            // once it's older than the lifetime, unless a hit refreshes it
+            let cache_path = cache_path(&sandbox);
+            let state_path = graph_state_path(sandbox.path());
+            let state_modified = modified_at(&state_path);
+
+            backdate(&cache_path, Duration::from_secs(172800));
+
+            do_generate(sandbox.path()).await;
+
+            // The graph was a hit (the state wasn't saved again), and the same
+            // graph was refreshed, instead of being written again
+            assert_eq!(modified_at(&state_path), state_modified);
+            assert_eq!(graph_cache_path(sandbox.path()), cache_path);
+            assert!(
+                SystemTime::now()
+                    .duration_since(modified_at(&cache_path))
+                    .unwrap_or_default()
+                    < Duration::from_secs(3600)
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn creates_states_and_fingerprints() {
             let (sandbox, _graph) = build_cached_graph(|sandbox| {
                 sandbox.enable_git();
@@ -1054,14 +1097,11 @@ tasks:
             assert_vcs_context(&build_cached_graph(&sandbox).await);
 
             // The cache isn't written again on a hit
-            let cache_path = graph_cache_path(sandbox.path());
-            let modified = std::fs::metadata(&cache_path).unwrap().modified().unwrap();
+            let state_path = graph_state_path(sandbox.path());
+            let modified = modified_at(&state_path);
 
             assert_vcs_context(&build_cached_graph(&sandbox).await);
-            assert_eq!(
-                std::fs::metadata(&cache_path).unwrap().modified().unwrap(),
-                modified
-            );
+            assert_eq!(modified_at(&state_path), modified);
         }
 
         #[tokio::test(flavor = "multi_thread")]

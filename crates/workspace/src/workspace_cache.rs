@@ -272,6 +272,14 @@ pub async fn read_cache_blob<T: DeserializeOwned>(
         return Ok(None);
     };
 
+    // No task manifest references the graph, so mark it as used,
+    // otherwise it would be cleaned once older than the lifetime,
+    // even while it's still the current graph
+    cache_engine
+        .actions_storage
+        .touch_blobs(vec![digest.to_owned()])
+        .await;
+
     let data = blob.content.read_bytes()?;
 
     serde_json::from_slice(&data).map(Some).into_diagnostic()

@@ -19,7 +19,7 @@ cache_item!(
     pub struct WorkspaceGraphCacheState {
         pub last_hash: ContentHash,
 
-        /// The digest of the graph cached for `last_hash` in the objects
+        /// The digest of the graph cached for `last_hash` in the actions
         /// storage, which is content-addressed by the serialized graph.
         pub graph_digest: Option<Digest>,
 
@@ -256,31 +256,31 @@ pub async fn create_graph_cache_hasher(
     Ok(hasher)
 }
 
-/// Read the cached graph with the given digest from the objects storage, if
-/// it exists. The object is written by moon, and never contains comments, so
+/// Read the cached graph with the given digest from the actions storage, if
+/// it exists. The blob is written by moon, and never contains comments, so
 /// it's parsed directly from bytes, without stripping comments, or converting
 /// to a string.
-pub async fn read_cache_object<T: DeserializeOwned>(
+pub async fn read_cache_blob<T: DeserializeOwned>(
     cache_engine: &CacheEngine,
     digest: &Digest,
 ) -> miette::Result<Option<T>> {
-    let Some(object) = cache_engine
-        .objects_storage
-        .retrieve_object(digest.to_owned())
+    let Some(blob) = cache_engine
+        .actions_storage
+        .retrieve_blob(digest.to_owned())
         .await?
     else {
         return Ok(None);
     };
 
-    let data = object.content.read_bytes()?;
+    let data = blob.content.read_bytes()?;
 
     serde_json::from_slice(&data).map(Some).into_diagnostic()
 }
 
-/// Write the cached graph to the objects storage, serialized directly into
-/// bytes instead of a string, and return its digest. Objects are written
+/// Write the cached graph to the actions storage, serialized directly into
+/// bytes instead of a string, and return its digest. Blobs are written
 /// atomically, so a partially written graph is never read.
-pub async fn write_cache_object<T: Serialize>(
+pub async fn write_cache_blob<T: Serialize>(
     cache_engine: &CacheEngine,
     data: &T,
 ) -> miette::Result<Digest> {
@@ -290,8 +290,8 @@ pub async fn write_cache_object<T: Serialize>(
     // Replace rather than store, so that a graph that couldn't be read back,
     // and was rebuilt with the same content (and digest), is repaired
     cache_engine
-        .objects_storage
-        .replace_objects(vec![blob.into_input()])
+        .actions_storage
+        .replace_blobs(vec![blob.into_input()])
         .await?;
 
     Ok(digest)

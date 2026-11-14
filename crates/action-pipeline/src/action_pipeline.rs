@@ -3,6 +3,7 @@ use crate::event_emitter::{Event, EventEmitter};
 use crate::job::Job;
 use crate::job_context::{CompletedJob, JobContext};
 use crate::job_dispatcher::JobDispatcher;
+use crate::priority_semaphore::PrioritySemaphore;
 use crate::subscribers::cleanup_subscriber::CleanupSubscriber;
 use crate::subscribers::console_subscriber::ConsoleSubscriber;
 use crate::subscribers::metrics_subscriber::MetricsSubscriber;
@@ -26,7 +27,7 @@ use std::mem;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::broadcast::error::RecvError;
-use tokio::sync::{RwLock, Semaphore, mpsc, oneshot};
+use tokio::sync::{RwLock, mpsc, oneshot};
 use tokio::task::{JoinHandle, JoinSet};
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, instrument, warn};
@@ -208,7 +209,7 @@ impl ActionPipeline {
             daemon_client: self.daemon_client.clone(),
             emitter: Arc::clone(&self.emitter),
             result_sender: sender,
-            semaphore: Arc::new(Semaphore::new(self.concurrency)),
+            semaphore: Arc::new(PrioritySemaphore::new(self.concurrency)),
             running_jobs: Arc::new(RwLock::new(FxHashMap::default())),
             workspace_graph: self.workspace_graph.clone(),
         };
@@ -766,12 +767,13 @@ async fn dispatch_job_with_permit(
             .await;
     }
 
+    // Acquire in priority order, so that `priority` also orders execution,
+    // and not just dispatch
     let permit = job_context
         .semaphore
         .clone()
-        .acquire_owned()
-        .await
-        .expect("Failed to dispatch job!");
+        .acquire(node.get_priority())
+        .await;
 
     dispatch_job(
         node,

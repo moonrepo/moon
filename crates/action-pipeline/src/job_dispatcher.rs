@@ -685,6 +685,7 @@ mod tests {
     use super::*;
     use crate::abort_state::AbortState;
     use crate::event_emitter::EventEmitter;
+    use crate::priority_semaphore::PrioritySemaphore;
     use moon_action::{Action, ActionNode, RunTaskNode, SyncProjectNode};
     use moon_action_graph::{ActionGraph, ActionGraphType};
     use moon_common::Id;
@@ -694,7 +695,7 @@ mod tests {
     use rustc_hash::FxHashMap;
     use std::sync::Arc;
     use std::time::{Duration, Instant};
-    use tokio::sync::{RwLock, Semaphore, mpsc};
+    use tokio::sync::{RwLock, mpsc};
     use tokio_util::sync::CancellationToken;
 
     async fn create_job_context() -> (JobContext, UnboundedReceiver<CompletedJob>) {
@@ -711,7 +712,7 @@ mod tests {
             emitter: Arc::new(EventEmitter::default()),
             result_sender: sender,
             running_jobs: Arc::new(RwLock::new(FxHashMap::default())),
-            semaphore: Arc::new(Semaphore::new(1)),
+            semaphore: Arc::new(PrioritySemaphore::new(1)),
             workspace_graph: Arc::new(WorkspaceGraph::default()),
         };
 

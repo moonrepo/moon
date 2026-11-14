@@ -43,6 +43,8 @@ impl PrioritySemaphore {
             if state.permits > 0 {
                 state.permits -= 1;
 
+                drop(state);
+
                 return Permit { semaphore: self };
             }
 

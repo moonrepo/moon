@@ -1,5 +1,6 @@
 use moon_app_context::AppContext;
 use moon_common::Id;
+use moon_config::{HasherOptimization, WorkspaceConfig};
 use moon_hash::ContentHasher;
 use moon_layout_graph::{LayoutGraph, LayoutGraphBuilder};
 use moon_task_hasher::hash_toolchain_task_contents;
@@ -13,8 +14,16 @@ use std::sync::Arc;
 // (locking `dep-c`), and `tools`, which isn't a member of the workspace that
 // it locates, but depends on `dep-b`
 async fn create_graphs(sandbox: &Sandbox) -> (Arc<AppContext>, Arc<WorkspaceGraph>) {
+    create_graphs_with(sandbox, |_| {}).await
+}
+
+async fn create_graphs_with(
+    sandbox: &Sandbox,
+    op: impl FnMut(&mut WorkspaceConfig),
+) -> (Arc<AppContext>, Arc<WorkspaceGraph>) {
     let mocker = WorkspaceMocker::new(sandbox.path())
         .load_default_configs()
+        .update_workspace_config(op)
         .with_test_toolchains()
         .update_toolchains_config(|config| {
             // Locate roots from each project, instead of the working dir
@@ -70,15 +79,39 @@ async fn hash_toolchains(
     hasher.serialize().unwrap().to_owned()
 }
 
-// The production dependencies hashed for `tc-tier2`, as the other test
+// The dependencies (of every scope) hashed for `tc-tier2`, as the other test
 // toolchains locate the workspace root regardless of the project
-fn get_dependencies(hash: &str) -> Value {
+fn get_all_dependencies(hash: &str) -> Value {
     serde_json::from_str::<Vec<Value>>(hash)
         .unwrap()
         .into_iter()
         .find(|content| content["toolchain"] == "tc-tier2")
-        .map(|content| content["dependencies"]["production"].clone())
+        .map(|content| content["dependencies"].clone())
         .unwrap_or_default()
+}
+
+// The production dependencies hashed for `tc-tier2`
+fn get_dependencies(hash: &str) -> Value {
+    get_all_dependencies(hash)["production"].clone()
+}
+
+// Like Cargo's `[workspace.dependencies]`, the root manifest defines the
+// versions that packages inherit. The root is also a package, which inherits
+// `dep-a` itself, and has its own `dep-b`, which members don't inherit
+fn create_inherited_dependencies(sandbox: &Sandbox, dep_a_version: &str) {
+    sandbox.create_file(
+        "tc.cfg",
+        format!(
+            "inheritable-dep dep-a {dep_a_version}\n\
+             inheritable-dep dep-b ^2.0.0\n\
+             dep dep-a inherited\n\
+             dep dep-b ^0.5.0\n"
+        ),
+    );
+    sandbox.create_file(
+        "packages/a/tc.cfg",
+        "dep dep-a inherited\ndev-dep dep-b inherited\n",
+    );
 }
 
 mod toolchain_hashing {
@@ -144,5 +177,91 @@ mod toolchain_hashing {
             hash_toolchains(&app_context, &workspace_graph, &LayoutGraph::default(), "a").await;
 
         assert_eq!(get_dependencies(&hash), Value::Null);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn hashes_inherited_dependencies() {
+        let sandbox = create_sandbox("layout-hash");
+
+        create_inherited_dependencies(&sandbox, "^1.0.0");
+
+        let (app_context, workspace_graph) = create_graphs(&sandbox).await;
+
+        // The root package's own dependencies aren't inherited, and the
+        // dependencies it can inherit are only hashed when inherited
+        for (project_id, deps) in [
+            (
+                "a",
+                serde_json::json!({
+                    "development": { "dep-b": "2.0.0" },
+                    "production": { "dep-a": "1.0.0" },
+                }),
+            ),
+            (
+                "root",
+                serde_json::json!({
+                    "production": { "dep-a": "1.0.0", "dep-b": "^0.5.0" },
+                }),
+            ),
+        ] {
+            let layout = place_project(&app_context, &workspace_graph, project_id).await;
+            let hash = hash_toolchains(&app_context, &workspace_graph, &layout, project_id).await;
+
+            assert_eq!(get_all_dependencies(&hash), deps, "project {project_id}");
+        }
+    }
+
+    // Both versions are locked, so only the inherited requirement selects
+    // which one is hashed
+    #[tokio::test(flavor = "multi_thread")]
+    async fn hashes_a_changed_inherited_version() {
+        let sandbox = create_sandbox("layout-hash");
+
+        sandbox.create_file("tc.lock", "dep-a@1.0.0\ndep-a@2.0.0\ndep-b@2.0.0\n");
+
+        let mut hashes = vec![];
+
+        for version in ["^1.0.0", "^2.0.0"] {
+            create_inherited_dependencies(&sandbox, version);
+
+            // Plugin calls are cached per process, so new graphs are needed
+            let (app_context, workspace_graph) = create_graphs(&sandbox).await;
+            let layout = place_project(&app_context, &workspace_graph, "a").await;
+
+            hashes.push(get_dependencies(
+                &hash_toolchains(&app_context, &workspace_graph, &layout, "a").await,
+            ));
+        }
+
+        assert_eq!(
+            hashes,
+            [
+                serde_json::json!({ "dep-a": "1.0.0" }),
+                serde_json::json!({ "dep-a": "2.0.0" }),
+            ]
+        );
+    }
+
+    // Lockfiles aren't parsed, so the inherited requirements are hashed
+    #[tokio::test(flavor = "multi_thread")]
+    async fn hashes_inherited_requirements_when_optimizing_for_performance() {
+        let sandbox = create_sandbox("layout-hash");
+
+        create_inherited_dependencies(&sandbox, "^1.0.0");
+
+        let (app_context, workspace_graph) = create_graphs_with(&sandbox, |config| {
+            config.hasher.optimization = HasherOptimization::Performance;
+        })
+        .await;
+        let layout = place_project(&app_context, &workspace_graph, "a").await;
+        let hash = hash_toolchains(&app_context, &workspace_graph, &layout, "a").await;
+
+        assert_eq!(
+            get_all_dependencies(&hash),
+            serde_json::json!({
+                "development": { "dep-b": "^2.0.0" },
+                "production": { "dep-a": "^1.0.0" },
+            })
+        );
     }
 }

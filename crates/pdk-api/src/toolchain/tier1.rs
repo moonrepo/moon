@@ -169,7 +169,9 @@ api_struct!(
         /// The current scaffolding phase.
         pub phase: ScaffoldDockerPhase,
 
-        /// The project being scaffolding.
+        /// The project being scaffolding. Not provided when scaffolding the
+        /// workspace root, or a dependencies root that isn't a project (like
+        /// a workspace whose members are projects).
         pub project: Option<ProjectFragment>,
 
         /// Workspace and project merged toolchain configuration,

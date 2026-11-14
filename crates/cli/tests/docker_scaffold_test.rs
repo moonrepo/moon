@@ -160,4 +160,67 @@ mod docker_scaffold {
             assert!(!docker.join("prune/vendor").exists());
         }
     }
+
+    // The `docker-layout` fixture has a dependencies workspace at `shared`
+    // (with `*` members), which isn't a project, while its member `x` is
+    mod dependencies_roots {
+        use super::*;
+
+        #[test]
+        fn copies_configs_of_roots_that_arent_projects() {
+            let sandbox = create_moon_sandbox("docker-layout");
+
+            sandbox
+                .run_bin(|cmd| {
+                    cmd.arg("docker").arg("scaffold").arg("a");
+                })
+                .success();
+
+            let docker = sandbox.path().join(".moon/docker/configs");
+
+            assert!(docker.join("shared/tc.lock").exists());
+            assert!(docker.join("shared/tc.root.cfg").exists());
+            assert!(docker.join("shared/from-configs-phase").exists());
+            assert!(!docker.join("shared/README.md").exists());
+
+            assert!(docker.join("shared/x/moon.yml").exists());
+            assert!(!docker.join("shared/x/file.txt").exists());
+        }
+
+        #[test]
+        fn copies_configs_of_roots_for_focused_projects() {
+            let sandbox = create_moon_sandbox("docker-layout");
+
+            sandbox
+                .run_bin(|cmd| {
+                    cmd.arg("docker").arg("scaffold").arg("x");
+                })
+                .success();
+
+            let docker = sandbox.path().join(".moon/docker/sources");
+
+            assert!(docker.join("shared/tc.lock").exists());
+            assert!(docker.join("shared/tc.root.cfg").exists());
+            assert!(docker.join("shared/from-sources-phase").exists());
+            assert!(docker.join("shared/x/file.txt").exists());
+
+            // Not all sources, as it encloses other projects
+            assert!(!docker.join("shared/README.md").exists());
+        }
+
+        #[test]
+        fn doesnt_copy_roots_of_unfocused_projects() {
+            let sandbox = create_moon_sandbox("docker-layout");
+
+            sandbox
+                .run_bin(|cmd| {
+                    cmd.arg("docker").arg("scaffold").arg("a");
+                })
+                .success();
+
+            let docker = sandbox.path().join(".moon/docker/sources");
+
+            assert!(!docker.join("shared").exists());
+        }
+    }
 }

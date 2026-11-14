@@ -96,6 +96,7 @@ pub struct TasksBuilder<'proj> {
     project_env: FxHashMap<&'proj str, Option<&'proj str>>,
     project_source: &'proj WorkspaceRelativePath,
     project_toolchains: &'proj [Id],
+    project_config: Option<&'proj ProjectConfig>,
 
     // Global settings for tasks to inherit
     implicit_deps: Vec<&'proj TaskDependency>,
@@ -124,6 +125,7 @@ impl<'proj> TasksBuilder<'proj> {
             project_env: FxHashMap::default(),
             project_source,
             project_toolchains,
+            project_config: None,
             implicit_deps: vec![],
             implicit_inputs: vec![],
             task_ids: FxHashSet::default(),
@@ -240,6 +242,8 @@ impl<'proj> TasksBuilder<'proj> {
 
     #[instrument(skip_all)]
     pub fn load_local_tasks(&mut self, local_config: &'proj ProjectConfig) -> &mut Self {
+        self.project_config = Some(local_config);
+
         for (key, value) in &local_config.env {
             self.project_env.insert(key, value.as_deref());
         }
@@ -961,14 +965,18 @@ impl<'proj> TasksBuilder<'proj> {
             toolchains.extend(self.project_toolchains.to_owned());
         }
 
-        // Expand the toolchains list with required/dependency relationships
+        // Expand the toolchains list with the toolchains they require, and
+        // the toolchains that require them, with the project's config
         let registry = &self.context.toolchain_registry;
 
         let toolchains = registry
-            .expand_task_usage(toolchains.into_iter().collect(), |toolchain| {
+            .expand_requirements(toolchains.into_iter().collect(), vec![], |toolchain| {
                 DefineRequirementsInput {
                     context: registry.create_context(),
-                    toolchain_config: registry.create_config(&toolchain.id),
+                    toolchain_config: match self.project_config {
+                        Some(config) => registry.create_merged_config(&toolchain.id, config),
+                        None => registry.create_config(&toolchain.id),
+                    },
                 }
             })
             .await?;

@@ -6,6 +6,10 @@ The `moon project [id]` (or `moon p`) command will display all available informa
 that has been configured and exists within the graph. If a project does not exist, the program will
 return with a 1 exit code.
 
+This includes the [dependencies roots](../how-it-works/layout-graph#dependencies-roots) that the
+project is a member of, for its toolchains and its tasks' toolchains, and its role in each, like
+`node @ . (workspace member)`.
+
 ```shell
 $ moon project web
 ```

@@ -7,6 +7,7 @@ on:
   pull_request:
     paths:
       - .cargo/config.toml
+      - .github/actions/build-toolchain-plugins/**
       - .github/workflows/rust.yml
       - crates/**
       - legacy/**
@@ -147,6 +148,7 @@ jobs:
       # - run: bash ./scripts/ci/warmPluginsCache.sh
       - name: Build plugins
         run: just build-wasm
+      - uses: ./.github/actions/build-toolchain-plugins
       - name: Run tests
         if: ${{ env.COVERAGE == 'false' }}
         run: just test-ci

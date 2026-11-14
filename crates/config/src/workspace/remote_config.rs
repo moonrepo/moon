@@ -1,5 +1,5 @@
 use crate::shapes::FilePath;
-use crate::{config_struct, config_unit_enum, is_false};
+use crate::{config_struct, config_unit_enum};
 use rustc_hash::FxHashMap;
 use schematic::{Config, ConfigEnum, ValidateError, ValidateResult, env};
 
@@ -19,7 +19,7 @@ fn path_is_required<D, C>(
 config_unit_enum!(
     /// The API format of the remote service.
     /// @since 1.32.0
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum RemoteApi {
         /// gRPC(S) endpoints.
         #[default]
@@ -35,7 +35,6 @@ config_struct!(
     #[derive(Config)]
     pub struct RemoteAuthConfig {
         /// A map of HTTP headers to inject into every request.
-        #[serde(default, skip_serializing_if = "FxHashMap::is_empty")]
         pub headers: FxHashMap<String, String>,
 
         /// The name of an environment variable to use as a bearer token.
@@ -48,7 +47,7 @@ config_struct!(
 config_unit_enum!(
     /// Supported blob compression levels for gRPC APIs.
     /// @since 1.31.0
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum RemoteCompression {
         /// No compression.
         #[default]
@@ -82,7 +81,6 @@ config_struct!(
         /// blobs. Blobs will only be uploaded in CI environments.
         /// @since 1.40.0
         #[setting(parse_env = env::parse_bool)]
-        #[serde(default, skip_serializing_if = "is_false")]
         pub local_read_only: bool,
 
         /// The maximum number of times to retry a request that failed with
@@ -91,14 +89,6 @@ config_struct!(
         /// @since 2.6.0
         #[setting(default = 3)]
         pub retry_count: u8,
-
-        /// When downloading blobs, verify the digests/hashes in the response
-        /// match the associated blob contents. This will reduce performance
-        /// but ensure partial or corrupted blobs won't cause failures.
-        /// @since 1.36.0
-        #[setting(parse_env = env::parse_bool)]
-        #[serde(default, skip_serializing_if = "is_false")]
-        pub verify_integrity: bool,
     }
 );
 
@@ -111,7 +101,6 @@ config_struct!(
         /// If true, assume that the server supports HTTP/2,
         /// even if it doesn't provide protocol negotiation via ALPN.
         #[setting(env = "MOON_REMOTE_TLS_HTTP2", parse_env = env::parse_bool)]
-        #[serde(default, skip_serializing_if = "is_false")]
         pub assume_http2: bool,
 
         /// A file path, relative from the workspace root, to the
@@ -134,7 +123,6 @@ config_struct!(
         /// If true, assume that the server supports HTTP/2,
         /// even if it doesn't provide protocol negotiation via ALPN.
         #[setting(env = "MOON_REMOTE_MTLS_HTTP", parse_env = env::parse_bool)]
-        #[serde(default, skip_serializing_if = "is_false")]
         pub assume_http2: bool,
 
         /// A file path, relative from the workspace root, to the

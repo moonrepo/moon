@@ -142,6 +142,7 @@ tasks:
     command: bash ./affectedFiles.sh
     options:
       affectedFiles:
+        filter: []
         pass: true
         passInputsWhenNoMatch: true
 

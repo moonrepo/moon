@@ -1,12 +1,12 @@
 use super::portable_path::{FilePath, GlobPath, PortablePath, is_glob_like};
 use super::*;
 use crate::{config_struct, generate_io_file_methods, generate_io_glob_methods, patterns};
-use deserialize_untagged_verbose_error::DeserializeUntaggedVerboseError;
 use moon_common::path::{
     RelativeFrom, WorkspaceRelativePathBuf, expand_to_workspace_relative, standardize_separators,
 };
 use schematic::{Config, ParseError, Schema, SchemaBuilder, Schematic, schema::UnionType};
 use serde::{Deserialize, Serialize, Serializer};
+use starbase_utils::glob::has_parent_traversal;
 use std::str::FromStr;
 
 config_struct!(
@@ -14,6 +14,7 @@ config_struct!(
     #[derive(Config)]
     pub struct FileOutput {
         /// The literal file path.
+        #[setting(required)]
         pub file: FilePath,
 
         /// Mark the file as optional instead of failing with
@@ -52,6 +53,7 @@ config_struct!(
     #[derive(Config)]
     pub struct GlobOutput {
         /// The glob pattern.
+        #[setting(required)]
         pub glob: GlobPath,
 
         /// Mark the file as optional instead of failing with
@@ -70,6 +72,8 @@ impl GlobOutput {
             optional: None,
         };
 
+        output.validate_glob()?;
+
         for (key, value) in uri.query {
             match key.as_str() {
                 "optional" => {
@@ -83,11 +87,22 @@ impl GlobOutput {
 
         Ok(output)
     }
+
+    // Outputs are created by the task, so can't be found in parent directories
+    fn validate_glob(&self) -> Result<(), ParseError> {
+        if has_parent_traversal(self.glob.as_str()) {
+            return Err(ParseError::new(
+                "parent traversal globs (...) are not supported for outputs",
+            ));
+        }
+
+        Ok(())
+    }
 }
 
 /// The different patterns a task output can be defined as.
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
-#[serde(try_from = "OutputShape")]
+#[serde(try_from = "PartialOutputShape")]
 pub enum Output {
     File(FileOutput),
     Glob(GlobOutput),
@@ -103,7 +118,7 @@ impl Output {
 
         // Convert literal paths to a URI
         if !value.contains("://") {
-            if is_glob_like(&value) {
+            if is_glob_like(&value) || has_parent_traversal(&value) {
                 value = format!("glob://{}", value.replace("?", "__QM__"));
             } else {
                 value = format!("file://{value}");
@@ -202,22 +217,32 @@ impl Serialize for Output {
     }
 }
 
-#[derive(DeserializeUntaggedVerboseError)]
+// Only the partial is used, which schematic deserializes by attempting
+// each variant in order, and reports every error when none match
+#[allow(dead_code)]
+#[derive(Config)]
+#[serde(untagged)]
 enum OutputShape {
     String(String),
-    // From most complex to least
+    #[setting(nested)]
     File(FileOutput),
+    #[setting(nested)]
     Glob(GlobOutput),
 }
 
-impl TryFrom<OutputShape> for Output {
+impl TryFrom<PartialOutputShape> for Output {
     type Error = ParseError;
 
-    fn try_from(base: OutputShape) -> Result<Self, Self::Error> {
-        match base {
-            OutputShape::String(output) => Self::parse(output),
-            OutputShape::File(output) => Ok(Self::File(output)),
-            OutputShape::Glob(output) => Ok(Self::Glob(output)),
-        }
+    fn try_from(base: PartialOutputShape) -> Result<Self, Self::Error> {
+        Ok(match base {
+            PartialOutputShape::String(output) => Self::parse(output)?,
+            PartialOutputShape::File(output) => Self::File(finalize_partial(output)?),
+            PartialOutputShape::Glob(output) => {
+                let output: GlobOutput = finalize_partial(output)?;
+                output.validate_glob()?;
+
+                Self::Glob(output)
+            }
+        })
     }
 }

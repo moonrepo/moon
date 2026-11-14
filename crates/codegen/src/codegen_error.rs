@@ -8,7 +8,7 @@ pub enum CodegenError {
     #[diagnostic(code(codegen::template::fs_only))]
     #[error(
         "Unable to create a new template, as the destination must be a local file system path.\nPlease add a file path to the {} setting.",
-        "generator.templates".style(Style::Property),
+        "codegen.templates".style(Style::Property),
     )]
     CreateFileSystemOnly,
 
@@ -49,10 +49,10 @@ pub enum CodegenError {
 
     #[diagnostic(code(codegen::template_file::load_failed))]
     #[error(
-        "Failed to load template file {}.",
+        "Failed to load template files from {}.",
         .path.style(Style::Path),
     )]
-    LoadTemplateFileFailed {
+    LoadTemplateFilesFailed {
         path: PathBuf,
         #[source]
         error: Box<tera::Error>,

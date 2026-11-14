@@ -1061,6 +1061,259 @@ mod task_manager {
         );
     }
 
+    mod from_sources {
+        use super::*;
+        use starbase_sandbox::pretty_assertions::assert_eq;
+
+        #[test]
+        fn recreates_the_matched_config() {
+            let sandbox = create_sandbox("inheritance/files");
+            let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
+
+            let matched = manager
+                .get_inherited_config(create_inherit_for(
+                    &[Id::raw("node"), Id::raw("javascript")],
+                    &StackType::Backend,
+                    &LayerType::Application,
+                    &[],
+                ))
+                .unwrap();
+            let sources = matched.configs.keys().cloned().collect::<Vec<_>>();
+            let recreated = manager.get_inherited_config_from_sources(&sources).unwrap();
+
+            assert_eq!(
+                recreated.configs.keys().collect::<Vec<_>>(),
+                matched.configs.keys().collect::<Vec<_>>()
+            );
+            assert_eq!(recreated.configs, matched.configs);
+            assert_eq!(recreated.layers, matched.layers);
+        }
+
+        #[test]
+        fn ignores_unknown_sources() {
+            let sandbox = create_sandbox("inheritance/files");
+            let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
+
+            let recreated = manager
+                .get_inherited_config_from_sources(&[
+                    "tasks/all.yml".into(),
+                    "tasks/unknown.yml".into(),
+                    "tasks/node.yml".into(),
+                ])
+                .unwrap();
+
+            assert_eq!(
+                recreated.configs.keys().collect::<Vec<_>>(),
+                ["tasks/all.yml", "tasks/node.yml"]
+            );
+        }
+    }
+
+    mod caching {
+        use super::*;
+        use starbase_sandbox::pretty_assertions::assert_eq;
+        use std::sync::Arc;
+
+        fn get_node_config(manager: &InheritedTasksManager) -> Arc<InheritedTasks> {
+            manager
+                .get_inherited_config(create_inherit_for(
+                    &[Id::raw("node"), Id::raw("javascript")],
+                    &StackType::Backend,
+                    &LayerType::Application,
+                    &[],
+                ))
+                .unwrap()
+        }
+
+        #[test]
+        fn shares_the_same_matched_set() {
+            let sandbox = create_sandbox("inheritance/files");
+            let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
+
+            let a = get_node_config(&manager);
+            let b = get_node_config(&manager);
+
+            assert!(Arc::ptr_eq(&a, &b));
+        }
+
+        #[test]
+        fn shares_across_inputs_that_match_the_same_set() {
+            let sandbox = create_sandbox("inheritance/files");
+            let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
+
+            // Different stack and layer, but neither changes what is matched
+            let a = manager
+                .get_inherited_config(create_inherit_for(
+                    &[Id::raw("python")],
+                    &StackType::Frontend,
+                    &LayerType::Library,
+                    &[],
+                ))
+                .unwrap();
+            let b = manager
+                .get_inherited_config(create_inherit_for(
+                    &[Id::raw("python")],
+                    &StackType::Backend,
+                    &LayerType::Tool,
+                    &[],
+                ))
+                .unwrap();
+
+            assert_eq!(
+                a.configs.keys().collect::<Vec<_>>(),
+                ["tasks/all.yml", "tasks/python.yml"]
+            );
+            assert!(Arc::ptr_eq(&a, &b));
+        }
+
+        #[test]
+        fn doesnt_share_different_matched_sets() {
+            let sandbox = create_sandbox("inheritance/files");
+            let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
+
+            let node = get_node_config(&manager);
+            let rust = manager
+                .get_inherited_config(create_inherit_for(
+                    &[Id::raw("rust")],
+                    &StackType::Frontend,
+                    &LayerType::Library,
+                    &[],
+                ))
+                .unwrap();
+            let tagged = manager
+                .get_inherited_config(create_inherit_for(
+                    &[Id::raw("rust")],
+                    &StackType::Frontend,
+                    &LayerType::Library,
+                    &[Id::raw("normal")],
+                ))
+                .unwrap();
+
+            assert!(!Arc::ptr_eq(&node, &rust));
+            assert!(!Arc::ptr_eq(&rust, &tagged));
+            assert_ne!(
+                rust.configs.keys().collect::<Vec<_>>(),
+                tagged.configs.keys().collect::<Vec<_>>()
+            );
+            assert_eq!(
+                tagged.configs.keys().collect::<Vec<_>>(),
+                ["tasks/all.yml", "tasks/rust.yml", "tasks/tag-normal.yml"]
+            );
+        }
+
+        #[test]
+        fn shares_between_matched_and_sources() {
+            let sandbox = create_sandbox("inheritance/files");
+            let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
+
+            let matched = get_node_config(&manager);
+            let sources = matched.configs.keys().cloned().collect::<Vec<_>>();
+            let recreated = manager.get_inherited_config_from_sources(&sources).unwrap();
+
+            assert!(Arc::ptr_eq(&matched, &recreated));
+
+            // In the reverse order too
+            let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
+            let recreated = manager.get_inherited_config_from_sources(&sources).unwrap();
+            let matched = get_node_config(&manager);
+
+            assert!(Arc::ptr_eq(&matched, &recreated));
+        }
+
+        #[test]
+        fn source_order_is_part_of_the_key() {
+            let sandbox = create_sandbox("inheritance/files");
+            let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
+
+            let a = manager
+                .get_inherited_config_from_sources(&[
+                    "tasks/all.yml".into(),
+                    "tasks/node.yml".into(),
+                ])
+                .unwrap();
+            let b = manager
+                .get_inherited_config_from_sources(&[
+                    "tasks/node.yml".into(),
+                    "tasks/all.yml".into(),
+                ])
+                .unwrap();
+
+            assert!(!Arc::ptr_eq(&a, &b));
+            assert_eq!(
+                b.configs.keys().collect::<Vec<_>>(),
+                ["tasks/node.yml", "tasks/all.yml"]
+            );
+        }
+
+        #[test]
+        fn cached_content_equals_a_fresh_derivation() {
+            let sandbox = create_sandbox("inheritance/files");
+            let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
+
+            for _ in 0..3 {
+                get_node_config(&manager);
+            }
+
+            let cached = get_node_config(&manager);
+            let fresh =
+                get_node_config(&load_manager_from_root(sandbox.path(), sandbox.path()).unwrap());
+
+            assert!(!Arc::ptr_eq(&cached, &fresh));
+            assert_eq!(cached.configs, fresh.configs);
+            assert_eq!(cached.layers, fresh.layers);
+
+            for (source, config) in &cached.configs {
+                let expected = Input::parse(format!("/{source}")).unwrap();
+
+                for task in config.tasks.values() {
+                    assert_eq!(task.global_inputs, std::slice::from_ref(&expected));
+                }
+            }
+        }
+
+        #[test]
+        fn clones_with_an_empty_cache() {
+            let sandbox = create_sandbox("inheritance/files");
+            let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
+
+            let a = get_node_config(&manager);
+            let b = get_node_config(&manager.clone());
+
+            assert!(!Arc::ptr_eq(&a, &b));
+            assert_eq!(a.configs, b.configs);
+        }
+
+        #[test]
+        fn resets_when_adding_a_config() {
+            let sandbox = create_sandbox("inheritance/files");
+            let mut manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
+
+            let a = get_node_config(&manager);
+
+            manager
+                .add_config(
+                    sandbox.path(),
+                    &sandbox.path().join("tasks/extra.yml"),
+                    InheritedTasksConfig::default(),
+                )
+                .unwrap();
+
+            let b = get_node_config(&manager);
+
+            assert!(!Arc::ptr_eq(&a, &b));
+            assert_eq!(
+                b.configs.keys().collect::<Vec<_>>(),
+                [
+                    "tasks/all.yml",
+                    "tasks/extra.yml",
+                    "tasks/javascript.yml",
+                    "tasks/node.yml",
+                    "tasks/node-application.yml",
+                ]
+            );
+        }
+    }
+
     mod config_order {
         use super::*;
         use starbase_sandbox::pretty_assertions::assert_eq;

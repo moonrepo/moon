@@ -19,6 +19,8 @@ static INSTANCE: OnceLock<Arc<Launchpad>> = OnceLock::new();
 
 const ALERT_PAUSE_DURATION: Duration = Duration::from_secs(43200); // 12 hours
 
+const STATE_KEY: &str = "MoonVersionCheck";
+
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
 pub struct CurrentVersion {
@@ -114,11 +116,12 @@ impl Launchpad {
         }
 
         let mut state = cache_engine
-            .state
-            .load_state::<CurrentVersionCacheState>("moonVersionCheck.json")?;
+            .objects_storage
+            .load_state::<CurrentVersionCacheState>(STATE_KEY)
+            .await?;
         let now = now_millis();
 
-        if let Some(last_check) = state.data.last_check_time
+        if let Some(last_check) = state.last_check_time
             && (last_check + ALERT_PAUSE_DURATION.as_millis()) > now
             && !bypass_cache
         {
@@ -126,10 +129,14 @@ impl Launchpad {
         }
 
         if let Some(result) = self.check_version_without_cache(manifest_url).await? {
-            state.data.last_check_time = Some(now);
-            state.data.local_version = Some(result.local_version.clone());
-            state.data.remote_version = Some(result.remote_version.clone());
-            state.save()?;
+            state.last_check_time = Some(now);
+            state.local_version = Some(result.local_version.clone());
+            state.remote_version = Some(result.remote_version.clone());
+
+            cache_engine
+                .objects_storage
+                .save_state(STATE_KEY, &state)
+                .await?;
 
             return Ok(Some(result));
         }

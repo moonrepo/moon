@@ -1,0 +1,23 @@
+---
+source: crates/cli/tests/migrate_v3_test.rs
+expression: "read_file(&sandbox, \".moon/tasks/node.yml\")"
+---
+inheritedBy:
+  toolchain: node
+taskOptions:
+  cache: false
+  onFailure: allow
+  runInCI: false
+tasks:
+  lint:
+    command: eslint
+    options:
+      onFailure: expect
+  test:
+    command: jest
+    options:
+      onFailure: expect
+  format:
+    command: prettier
+    options:
+      onFailure: expect

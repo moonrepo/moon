@@ -7,8 +7,8 @@ pub use moon_config::{
     TaskCheckFingerprintConfig, TaskCheckRequirementConfig, TaskCheckType, TaskConfig,
     TaskOperatingSystem, TaskOptionAffectedFilesConfig, TaskOptionAffectedFilesEntry,
     TaskOptionAffectedFilesPattern, TaskOptionCache, TaskOptionEnvFile, TaskOptionEnvOverride,
-    TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle, TaskPriority, TaskType, TaskUnixShell,
-    TaskWindowsShell,
+    TaskOptionOnFailure, TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle, TaskPriority,
+    TaskType, TaskUnixShell, TaskWindowsShell,
 };
 pub use moon_target::*;
 pub use task::*;

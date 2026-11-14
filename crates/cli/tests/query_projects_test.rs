@@ -106,7 +106,7 @@ mod query_projects {
             cmd.arg("query")
                 .arg("projects")
                 .arg("--affected")
-                .arg("--downstream")
+                .arg("--dependents")
                 .arg("deep");
         });
 
@@ -115,6 +115,63 @@ mod query_projects {
 
         assert_eq!(ids, ["advanced", "basic", "metadata", "no-config", "root"]);
         assert!(json.options.affected.is_some());
+    }
+
+    #[test]
+    fn doesnt_include_dependencies_for_affected_by_default() {
+        let sandbox = create_query_sandbox();
+
+        change_files(&sandbox, ["dep-foo/file.txt"]);
+
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("query").arg("projects").arg("--affected");
+        });
+
+        let json: QueryProjectsResult = serde_json::from_str(assert.stdout().trim()).unwrap();
+        let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
+
+        assert_eq!(ids, ["dep-foo", "root"]);
+        assert!(json.options.include.is_empty());
+    }
+
+    #[test]
+    fn can_include_dependencies_for_affected() {
+        let sandbox = create_query_sandbox();
+
+        change_files(&sandbox, ["dep-foo/file.txt"]);
+
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("query")
+                .arg("projects")
+                .arg("--affected")
+                .arg("--dependencies")
+                .arg("direct");
+        });
+
+        let json: QueryProjectsResult = serde_json::from_str(assert.stdout().trim()).unwrap();
+        let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
+
+        assert_eq!(ids, ["dep-bar", "dep-baz", "dep-foo", "root"]);
+
+        let affected = json.options.affected.unwrap();
+
+        // Dependencies are included, but are not affected
+        assert!(!affected.projects.contains_key("dep-bar"));
+        assert!(!affected.projects.contains_key("dep-baz"));
+    }
+
+    #[test]
+    fn dependencies_require_affected() {
+        let sandbox = create_query_sandbox();
+
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("query")
+                .arg("projects")
+                .arg("--dependencies")
+                .arg("direct");
+        });
+
+        assert.failure();
     }
 
     #[test]

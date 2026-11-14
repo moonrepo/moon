@@ -3,13 +3,15 @@ use moon_common::{Id, IdExt, color, path::WorkspaceRelativePath};
 use moon_config::{
     DependencySource, EnvMap, InheritFor, InheritedTasks, InheritedTasksManager, Input,
     LanguageType, MergeStrategy, ProjectConfig, ProjectDependencyConfig, ProjectDependsOn,
-    TaskConfig, ToolchainsConfig, merge_index_map, merge_vec,
+    TaskConfig, ToolchainsConfig, merge,
 };
 use moon_config_loader::ConfigLoader;
 use moon_file_group::FileGroup;
 use moon_project::{Project, ProjectAlias};
 use moon_task::Task;
-use moon_task_builder::{TasksBuilder, TasksBuilderContext, create_project_dep_from_task_dep};
+use moon_task_builder::{
+    CommandLineCache, TasksBuilder, TasksBuilderContext, create_project_dep_from_task_dep,
+};
 use moon_toolchain::filter_and_resolve_toolchain_ids;
 use moon_toolchain_plugin::{ToolchainRegistry, api::DefineRequirementsInput};
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -20,6 +22,7 @@ use std::sync::Arc;
 use tracing::{debug, instrument, trace};
 
 pub struct ProjectBuilderContext<'app> {
+    pub command_line_cache: Arc<CommandLineCache>,
     pub config_loader: &'app ConfigLoader,
     pub enabled_toolchains: &'app [Id],
     pub monorepo: bool,
@@ -33,7 +36,7 @@ pub struct ProjectBuilder<'app> {
     context: ProjectBuilderContext<'app>,
 
     // Configs to derive information from
-    global_configs: Option<InheritedTasks>,
+    global_configs: Option<Arc<InheritedTasks>>,
     local_config: Option<ProjectConfig>,
 
     // Values to be continually built
@@ -157,7 +160,7 @@ impl<'app> ProjectBuilder<'app> {
         let mut env = EnvMap::default();
 
         for (index, next_env) in chain.into_iter().enumerate() {
-            env = merge_index_map(env, next_env, strategy, index);
+            env = merge(env, next_env, strategy, index, true);
         }
 
         local.env = env;
@@ -321,7 +324,10 @@ impl<'app> ProjectBuilder<'app> {
             ..Project::default()
         };
 
-        project.inherited = self.global_configs.take();
+        // Only store the source paths, as the configs can be derived from them
+        if let Some(global_configs) = self.global_configs.take() {
+            project.inherited_from = global_configs.configs.keys().cloned().collect();
+        }
 
         let config = self.local_config.take().unwrap_or_default();
 
@@ -431,7 +437,7 @@ impl<'app> ProjectBuilder<'app> {
             let mut inputs = vec![];
 
             for (index, next_inputs) in chain.into_iter().enumerate() {
-                inputs = merge_vec(inputs, next_inputs, strategy, index, false);
+                inputs = merge(inputs, next_inputs, strategy, index, false);
             }
 
             let mut group = FileGroup::new(&id)?;
@@ -456,6 +462,7 @@ impl<'app> ProjectBuilder<'app> {
             self.source,
             &self.toolchains,
             TasksBuilderContext {
+                command_line_cache: Arc::clone(&self.context.command_line_cache),
                 config_loader: self.context.config_loader,
                 enabled_toolchains: &self.enabled_toolchains,
                 monorepo: self.context.monorepo,

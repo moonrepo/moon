@@ -899,9 +899,9 @@ Cleanup dependencies:
 - Still run when a failure aborts the pipeline (like with [`moon run`](../commands/run)), but only
   when there's something to clean up. They start once the processes that were running have been
   terminated, after [`pipeline.killProcessThreshold`](./workspace#killprocessthreshold).
-- Still run when the dependencies of this task are not, like with `--upstream none`.
+- Still run when the dependencies of this task are not, like with `--no-dependencies`.
 - Fail the pipeline when they fail, like any other task, unless they
-  [allow failure](#allowfailure).
+  [allow failure](#onfailure).
 - Run their own dependencies like any other task, as soon as possible, and not after this task. When
   a failure aborts the pipeline before they have completed, the cleanup is not able to run, so
   cleanups should be self-contained.
@@ -1001,6 +1001,14 @@ Inputs support the following source types:
 - Files, folders, and globs
 - [Token functions and variables](../concepts/token)
 
+:::info
+
+The manifests and lockfiles of the task's toolchains <VersionLabel inline version="3.0.0" />, in
+the project root or any parent directory, are automatically inherited as an `affectedOnly` input,
+so that changes to them [affect the task](../concepts/affected#files).
+
+:::
+
 ```yaml title="moon.yml" {4-12}
 tasks:
   lint:
@@ -1051,6 +1059,9 @@ following parameters are supported as a URI query or as object fields:
 - `optional` (`boolean`) - When hashing and set to `true` and the file is missing, will not log a
   warning. When set to `false` and the file is missing, will fail with an error. Defaults to logging
   a warning.
+- `affectedOnly` (`boolean`) <VersionLabel inline version="3.0.0" /> - Only use the file to
+  determine affected state, and exclude it from the task's hash and
+  [affected files](#affectedfiles). Defaults to `false`.
 
 ```yaml title="moon.yml"
 tasks:
@@ -1067,7 +1078,11 @@ tasks:
         optional: true
       - file: '/workspace/relative/file.js'
         content: 'a|b|c'
+      - file: '/workspace/relative/file.lock'
+        affectedOnly: true
 ```
+
+When a file is also hashed by another input, like a glob, it's still hashed.
 
 #### File groups<VersionLabel version="1.41.0" />
 
@@ -1077,6 +1092,9 @@ Additionally, the following parameters are supported as a URI query or as object
 
 - `format`, `as` (`string`) - The format in which to gather the file group results. Supported values
   are `static` (default), `files`, `dirs`, `globs`, `envs`, and `root`.
+- `affectedOnly` (`boolean`) <VersionLabel inline version="3.0.0" /> - Only use the group's files
+  and globs to determine affected state, and exclude them from the task's hash and
+  [affected files](#affectedfiles). Environment variables are still hashed. Defaults to `false`.
 
 ```yaml title="moon.yml"
 fileGroups:
@@ -1089,9 +1107,12 @@ tasks:
     inputs:
       # Using group protocol
       - 'group://sources?format=dirs'
+      - 'group://sources?affectedOnly'
       # Using an object
       - group: 'sources'
         format: 'dirs'
+      - group: 'sources'
+        affectedOnly: true
 ```
 
 #### Glob patterns
@@ -1104,6 +1125,9 @@ following parameters are supported as a URI query or as object fields:
 
 - `cache` (`boolean`) - When gathering inputs for hashing, defines whether the glob results should
   be cached for the duration of the moon process. Defaults to `true`.
+- `affectedOnly` (`boolean`) <VersionLabel inline version="3.0.0" /> - Only use the glob to
+  determine affected state, and exclude its files from the task's hash and
+  [affected files](#affectedfiles). Defaults to `false`.
 
 ```yaml title="moon.yml"
 tasks:
@@ -1115,10 +1139,13 @@ tasks:
       # Using glob protocol
       - 'glob://project/relative/file.*?cache=false'
       - 'glob:///workspace/relative/**/*?cache'
+      - 'glob://project/relative/**/*.md?affectedOnly'
       # Using an object
       - glob: 'project/relative/file.*'
         cache: false
       - glob: '/workspace/relative/**/*'
+      - glob: 'project/relative/**/*.md'
+        affectedOnly: true
 ```
 
 Globs can also be negated by prefixing the path with `!`, which will exclude all files that match
@@ -1131,6 +1158,24 @@ tasks:
       - '!**/*.md'
       - 'glob://!/workspace/relative/**/*'
       - glob: '!/workspace/relative/**/*'
+```
+
+Globs can also match files in parent directories with a
+[parent traversal](../concepts/file-pattern#parent-traversal) segment, `...`
+
+<VersionLabel inline version="3.0.0" />, which matches the path after it in the project root, or in
+any parent directory up to the workspace root, but never in sibling or nested directories. This
+pairs well with `affectedOnly`, for files that tools look up from the project, like manifests and
+lockfiles.
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    inputs:
+      # Matches package.json in the project root, or any parent directory
+      - '.../package.json'
+      - glob: '.../*.lock'
+        affectedOnly: true
 ```
 
 :::warning
@@ -1162,6 +1207,9 @@ following parameters are supported as a URI query or as object fields:
 - `filter` (`string[]`) - A list of
   [project relative glob patterns](../concepts/file-pattern#project-relative) that will be used for
   matching.
+- `affectedOnly` (`boolean`) <VersionLabel inline version="3.0.0" /> - Only use the external
+  project's files to determine affected state, and exclude them from the task's hash and
+  [affected files](#affectedfiles). Defaults to `false`.
 
 If neither `group` nor `filter` are defined, all files within the external project are considered a
 match (`**/*`).
@@ -1174,12 +1222,15 @@ tasks:
       - 'project://foo'
       - 'project://bar?group=sources'
       - 'project://baz?filter=src/**/*'
+      - 'project://qux?affectedOnly'
       # Using an object
       - project: 'foo'
       - project: 'bar'
         group: 'sources'
       - project: 'baz'
         filter: ['src/**/*']
+      - project: 'qux'
+        affectedOnly: true
 ```
 
 ### `outputs`
@@ -1426,31 +1477,6 @@ The following additional parameters are supported:
 - `passInputsWhenNoMatch` (`boolean`) - When no affected files are found, will pass all configured
   [`inputs`](#inputs) as relative file paths instead. Defaults to `false`.
 
-#### `allowFailure`<VersionLabel version="1.13.0" />
-
-<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#allowFailure" />
-
-Allows a task to fail without failing the entire pipeline. When enabled, the following changes
-occur:
-
-- Other tasks _cannot_ depend on this task, as we can't ensure it's side-effect free, unless it's a
-  [`cleanup`](#type) dependency, which runs after them.
-- For [`moon run`](../commands/run), the process will not bail early and will run to completion.
-- For [`moon ci`](../commands/ci), the process will not exit with a non-zero exit code, if the only
-  failing tasks are allowed to fail.
-
-```yaml title="moon.yml" {5}
-tasks:
-  lint:
-    command: 'eslint'
-    options:
-      allowFailure: true
-```
-
-> If the task is known to be broken and should be fixed, like during a migration, use
-> [`expectFailure`](#expectfailure) instead, which fails the pipeline once the task passes, so that
-> the setting can be removed.
-
 #### `cache`
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#cache" />
@@ -1605,40 +1631,6 @@ To still prefer the system value for a specific variable, fallback to it with su
 
 :::
 
-#### `expectFailure`<VersionLabel version="2.6.0" />
-
-<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#expectFailure" />
-
-Expects the task to fail, and fails the entire pipeline if it passes instead. This is useful for
-checks that are known to be broken, for example, after enabling a stricter compiler or lint rule
-during a migration. Once the failure has been fixed, the task fails with an error asking to remove
-this setting, so that future regressions are caught. When enabled, the following changes occur:
-
-- The task only satisfies the expectation when its command exits with a non-zero exit code, except
-  for `126` (command not executable), `127` (command not found), and `129`-`192` (killed by a
-  signal). A task that times out, or is killed by a signal, also fails as normal.
-- When the task fails as expected, it's treated as successful, so other tasks _can_ depend on it.
-- When the task passes, it's not retried with [`retryCount`](#retrycount), nor when it fails as
-  expected.
-- The task is never cached, and always runs its command, so that a fix is never hidden by a cached
-  result.
-
-```yaml title="moon.yml" {5}
-tasks:
-  typecheck:
-    command: 'tsc --build'
-    options:
-      expectFailure: true
-```
-
-:::info
-
-This setting cannot be combined with [`allowFailure`](#allowfailure), as a task that unexpectedly
-passes would be allowed to fail, nor with [`persistent`](#persistent), as a persistent task never
-exits.
-
-:::
-
 #### `inferInputs`<VersionLabel version="1.31.0" />
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#inferInputs" />
@@ -1778,6 +1770,62 @@ tasks:
     options:
       mutex: 'virtual_resource_name'
 ```
+
+#### `onFailure`<VersionLabel version="3.0.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#onFailure" />
+
+Controls how a failure of the task affects the entire pipeline. When not defined, a failing task
+fails the pipeline. Supports the following values:
+
+- `allow` - Allows the task to fail without failing the pipeline.
+- `expect` - Expects the task to fail, and fails the pipeline if it passes instead.
+
+When `allow`, the following changes occur:
+
+- Other tasks _cannot_ depend on this task, as we can't ensure it's side-effect free, unless it's a
+  [`cleanup`](#type) dependency, which runs after them.
+- For [`moon run`](../commands/run), the process will not bail early and will run to completion.
+- For [`moon ci`](../commands/ci), the process will not exit with a non-zero exit code, if the only
+  failing tasks are allowed to fail.
+
+```yaml title="moon.yml" {5}
+tasks:
+  lint:
+    command: 'eslint'
+    options:
+      onFailure: 'allow'
+```
+
+If the task is known to be broken and should be fixed, like during a migration, use `expect`
+instead, which fails the pipeline once the task passes, so that the setting can be removed. This is
+useful for checks that are known to be broken, for example, after enabling a stricter compiler or
+lint rule. Once the failure has been fixed, the task fails with an error asking to remove this
+setting, so that future regressions are caught. When `expect`, the following changes occur:
+
+- The task only satisfies the expectation when its command exits with a non-zero exit code, except
+  for `126` (command not executable), `127` (command not found), and `129`-`192` (killed by a
+  signal). A task that times out, or is killed by a signal, also fails as normal.
+- When the task fails as expected, it's treated as successful, so other tasks _can_ depend on it.
+- When the task passes, it's not retried with [`retryCount`](#retrycount), nor when it fails as
+  expected.
+- The task is never cached, and always runs its command, so that a fix is never hidden by a cached
+  result.
+
+```yaml title="moon.yml" {5}
+tasks:
+  typecheck:
+    command: 'tsc --build'
+    options:
+      onFailure: 'expect'
+```
+
+:::info
+
+An expected failure cannot be combined with [`persistent`](#persistent), as a persistent task never
+exits.
+
+:::
 
 #### `os`<VersionLabel version="1.28.0" />
 
@@ -2138,6 +2186,24 @@ or `null`, which will prevent the toolchain from being auto-detected and used wi
 toolchains:
   typescript: false
 ```
+
+#### Overriding versions<VersionLabel version="3.0.0" />
+
+The `version` setting can also be overridden, to run the project's tasks with another version of the
+toolchain.
+
+```yaml title="moon.yml" {2,3}
+toolchains:
+  rust:
+    version: '1.99.0'
+```
+
+How the override applies depends on the [dependencies root](../how-it-works/layout-graph) that the
+project belongs to. When the project is a member of a workspace (like a Cargo or `package.json`
+workspace), the workspace's dependencies are still installed with the workspace's version, and the
+overridden version is only setup for running the project's tasks. When the project is its own
+package (with its own lockfile), or the root project of a workspace (located at the workspace's
+root), its dependencies (or the workspace's) are installed with the overridden version.
 
 ## `workspace`
 

@@ -1,7 +1,5 @@
-{% import "macros.txt" as macros %} # extended
-
 {% include "partials/part.txt" %} # partials
 {% include "full.txt" %} # extended
 {% include "local.txt" %} # base
 
-{{ macros::input(label="Name", type="text") }}
+{{ <input label="Name" type="text" /> }} # extended

@@ -1,0 +1,5 @@
+toolchains:
+  default: 'tc-tier2'
+tasks:
+  build:
+    command: 'build'

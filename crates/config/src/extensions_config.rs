@@ -1,5 +1,5 @@
 use crate::config_struct;
-use crate::patterns::{merge_iter, merge_plugin_partials};
+use crate::merging::{merge_iter, merge_partials};
 use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{Config, validate};
@@ -36,7 +36,8 @@ config_struct!(
     #[derive(Config)]
     #[config(allow_unknown_fields)]
     pub struct ExtensionsConfig {
-        #[setting(default = "./cache/schemas/extensions.json", rename = "$schema")]
+        #[setting(default = "./cache/schemas/extensions.json")]
+        #[serde(rename = "$schema")]
         pub schema: String,
 
         /// Extends one or many extensions configuration files.
@@ -48,7 +49,7 @@ config_struct!(
 
         /// Configures and integrates extensions into the system using
         /// a unique identifier.
-        #[setting(flatten, nested, merge = merge_plugin_partials)]
+        #[setting(flatten, nested, merge = merge_partials)]
         pub plugins: FxHashMap<Id, ExtensionPluginConfig>,
     }
 );

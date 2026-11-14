@@ -65,6 +65,7 @@ mod action_graph {
             cmd.arg("action-graph")
                 .arg("--dot")
                 .arg("--dependents")
+                .arg("deep")
                 .arg("basic:build");
         });
 

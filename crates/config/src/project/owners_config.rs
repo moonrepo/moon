@@ -1,13 +1,13 @@
 use crate::shapes::GlobPath;
-use crate::{config_enum, config_struct, is_false};
+use crate::{config_struct, config_untagged_enum};
 use indexmap::IndexMap;
 use rustc_hash::FxHashMap;
 use schematic::{Config, PathSegment, ValidateError};
+use starbase_utils::glob::has_parent_traversal;
 
-config_enum!(
+config_untagged_enum!(
     /// A mapping of file paths and file globs to owners.
     #[derive(Config)]
-    #[serde(untagged)]
     pub enum OwnersPaths {
         /// A list of file paths and glob patterns. The owner of these
         /// is the project-level `defaultOwner`.
@@ -28,6 +28,18 @@ impl OwnersPaths {
     }
 }
 
+// Code owners files are read by VCS providers, which can't expand them
+fn validate_path(path: &GlobPath, segment: PathSegment) -> Result<(), ValidateError> {
+    if has_parent_traversal(path.as_str()) {
+        return Err(ValidateError::with_segment(
+            "parent traversal globs (...) are not supported for code owners",
+            segment,
+        ));
+    }
+
+    Ok(())
+}
+
 fn validate_paths<C>(
     value: &PartialOwnersPaths,
     data: &PartialOwnersConfig,
@@ -41,9 +53,15 @@ fn validate_paths<C>(
                     "a default owner is required when defining a list of paths",
                 ));
             }
+
+            for (index, path) in list.iter().enumerate() {
+                validate_path(path, PathSegment::Index(index))?;
+            }
         }
         PartialOwnersPaths::Map(map) => {
             for (key, value) in map {
+                validate_path(key, PathSegment::Key(key.to_string()))?;
+
                 if value.is_empty() && data.default_owner.is_none() {
                     return Err(ValidateError::with_segment(
                         "a default owner is required when defining an empty list of owners",
@@ -64,7 +82,6 @@ config_struct!(
     pub struct OwnersConfig {
         /// `bitbucket-legacy` only. A map of custom groups (prefixed with `@@@`),
         /// to a list of user and normal groups.
-        #[serde(default, skip_serializing_if = "FxHashMap::is_empty")]
         pub custom_groups: FxHashMap<String, Vec<String>>,
 
         /// The default owner for `paths`.
@@ -72,7 +89,6 @@ config_struct!(
         pub default_owner: Option<String>,
 
         /// GitLab only. Marks the code owners section as optional.
-        #[serde(default, skip_serializing_if = "is_false")]
         pub optional: bool,
 
         /// A list or map of file paths and glob patterns to owners.

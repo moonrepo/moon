@@ -75,15 +75,9 @@ impl WorkspaceGraph {
     pub fn get_projects_by_id<I, T>(&self, ids: I) -> miette::Result<Vec<Arc<Project>>>
     where
         I: IntoIterator<Item = T>,
-        T: AsRef<str>,
+        T: AsRef<str> + Sync,
     {
-        let mut projects = vec![];
-
-        for id in ids {
-            projects.push(self.get_project(id.as_ref())?);
-        }
-
-        Ok(projects)
+        self.projects.get_many(&ids.into_iter().collect::<Vec<_>>())
     }
 
     pub fn get_task(&self, target: &Target) -> miette::Result<Arc<Task>> {
@@ -106,17 +100,13 @@ impl WorkspaceGraph {
         project_id_or_alias: impl AsRef<str>,
     ) -> miette::Result<Vec<Arc<Task>>> {
         let project = self.get_project(project_id_or_alias)?;
-        let mut all = vec![];
 
-        for target in &project.task_targets {
-            let task = self.get_task(target)?;
-
-            if !task.is_internal() {
-                all.push(task);
-            }
-        }
-
-        Ok(all)
+        Ok(self
+            .tasks
+            .get_many(&project.task_targets)?
+            .into_iter()
+            .filter(|task| !task.is_internal())
+            .collect())
     }
 
     /// Get all non-internal tasks.

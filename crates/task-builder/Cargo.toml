@@ -21,6 +21,7 @@ moon_toolchain_plugin = { path = "../toolchain-plugin" }
 indexmap = { workspace = true }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
+scc = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 starbase_args = { workspace = true }

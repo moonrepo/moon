@@ -1,0 +1,62 @@
+---
+source: crates/cli/tests/layout_graph_test.rs
+expression: assert.output()
+---
+
+tc-tier2 @ . ───────────────────────────────────────────────
+
+  Kind: workspace
+  Member globs: packages/*, apps/*, nested
+  Owner project: root
+  Version: global
+  Lockfiles: tc.lock
+  Manifests: tc.root.cfg
+  Vendor directory: vendor
+  Supports: install dependencies
+  Projects:
+    - a (workspace member)
+    - b (workspace member, runs tasks with 2.0.0)
+    - root (workspace root)
+    - web (workspace member)
+
+tc-tier2 @ nested ──────────────────────────────────────────
+
+  Kind: workspace
+  Member globs: lib
+  Owner project: nested
+  Version: global
+  Lockfiles: nested/tc.lock
+  Manifests: nested/tc.root.cfg
+  Supports: install dependencies
+  Projects:
+    - lib (workspace member)
+    - nested (workspace root)
+
+tc-tier2 @ standalone ──────────────────────────────────────
+
+  Kind: package
+  Owner project: standalone
+  Version: 3.0.0
+  Lockfiles: standalone/tc.lock
+  Supports: install dependencies
+  Projects:
+    - standalone (package root)
+
+Not in a root ──────────────────────────────────────────────
+
+  nested (tc-tier1): no root
+  plain (tc-tier1): no root
+  root (tc-tier1): no root
+  standalone (tc-tier1): no root
+  tools (tc-tier2): tc-tier2 @ . (outside, not a member)
+
+Workspace root ─────────────────────────────────────────────
+
+  tc-tier1: no root
+  tc-tier2: tc-tier2 @ . (workspace root)
+
+Diagnostics ────────────────────────────────────────────────
+
+  b: info: runs tasks with 2.0.0, while tc-tier2 @ . installs with global
+  nested: warning: in tc-tier2 @ nested, but tc-tier2 @ . also matches it with its member globs
+  tools: info: located tc-tier2 @ ., but isn't a member of it

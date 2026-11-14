@@ -78,6 +78,111 @@ mod query_affected {
     }
 
     #[test]
+    fn includes_dependents_with_dependency_state() {
+        let sandbox = create_query_sandbox();
+
+        sandbox.create_file(
+            "metadata/moon.yml",
+            r#"tasks:
+  build:
+    command: 'noop'
+    inputs: ['build.txt']
+  test:
+    command: 'noop'
+    deps: ['build']
+    inputs: ['test.txt']
+  deploy:
+    command: 'noop'
+    deps: ['test']
+    inputs: ['deploy.txt']
+"#,
+        );
+
+        sandbox.run_git(|cmd| {
+            cmd.args(["add", "--all", "."]);
+        });
+
+        sandbox.run_git(|cmd| {
+            cmd.args(["commit", "-m", "Task deps"]);
+        });
+
+        change_files(&sandbox, ["metadata/build.txt"]);
+
+        // Not included by default
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("query").arg("affected");
+        });
+
+        let affected: Affected = serde_json::from_str(assert.stdout().trim()).unwrap();
+
+        assert!(
+            !affected
+                .tasks
+                .contains_key(&Target::parse("metadata:test").unwrap())
+        );
+
+        // Included when requested
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("query")
+                .arg("affected")
+                .arg("--dependents")
+                .arg("direct");
+        });
+
+        let mut affected: Affected = serde_json::from_str(assert.stdout().trim()).unwrap();
+
+        assert_eq!(
+            affected
+                .tasks
+                .remove(&Target::parse("metadata:test").unwrap())
+                .unwrap(),
+            AffectedTaskState {
+                dependencies: FxHashSet::from_iter([Target::parse("metadata:build").unwrap()]),
+                distance: 1,
+                ..Default::default()
+            }
+        );
+        assert!(
+            !affected
+                .tasks
+                .contains_key(&Target::parse("metadata:deploy").unwrap())
+        );
+
+        // Reports how many hops away from the changed task each one is
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("query")
+                .arg("affected")
+                .arg("--dependents")
+                .arg("deep");
+        });
+
+        let output = assert.stdout();
+        let mut affected: Affected = serde_json::from_str(output.trim()).unwrap();
+
+        // Always serialized, even when directly affected
+        assert!(output.contains("\"distance\": 0"));
+        assert_eq!(
+            affected
+                .tasks
+                .remove(&Target::parse("metadata:build").unwrap())
+                .unwrap()
+                .distance,
+            0
+        );
+        assert_eq!(
+            affected
+                .tasks
+                .remove(&Target::parse("metadata:deploy").unwrap())
+                .unwrap(),
+            AffectedTaskState {
+                dependencies: FxHashSet::from_iter([Target::parse("metadata:test").unwrap()]),
+                distance: 2,
+                ..Default::default()
+            }
+        );
+    }
+
+    #[test]
     fn respects_run_in_ci() {
         let sandbox = create_query_sandbox();
 

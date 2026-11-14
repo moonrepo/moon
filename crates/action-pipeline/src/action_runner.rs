@@ -17,6 +17,7 @@ pub async fn run_action(
 ) -> miette::Result<()> {
     let JobContext {
         emitter,
+        layout_graph,
         workspace_graph,
         ..
     } = job_context;
@@ -183,6 +184,7 @@ pub async fn run_action(
                 action_context,
                 app_context,
                 workspace_graph.clone(),
+                layout_graph.clone(),
                 job_context.daemon_client.clone(),
                 inner,
             )
@@ -300,6 +302,7 @@ mod tests {
         )));
         assert!(should_abort_on_failure(&ActionNode::setup_environment(
             SetupEnvironmentNode {
+                owner_project_id: None,
                 project_id: None,
                 root: "".into(),
                 toolchain_id: Id::raw("tc"),
@@ -308,6 +311,7 @@ mod tests {
         assert!(should_abort_on_failure(&ActionNode::install_dependencies(
             InstallDependenciesNode {
                 members: None,
+                owner_project_id: None,
                 project_id: None,
                 root: "".into(),
                 toolchain_id: Id::raw("tc"),

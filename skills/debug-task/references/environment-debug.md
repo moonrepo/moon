@@ -228,7 +228,7 @@ moon action-graph <project>:<task> --dot
 moon action-graph <project>:<task> --json
 
 # Focus on a specific target and include its dependents
-moon action-graph <project>:<task> --dependents --dot
+moon action-graph <project>:<task> --dependents deep --dot
 
 # Open an interactive visualization in the browser (humans only — starts a local web server and
 # blocks until interrupted)

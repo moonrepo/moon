@@ -1,10 +1,11 @@
-use moon_config::{ExtensionsConfig, ToolchainsConfig, WorkspaceConfig};
+use moon_config::{ExtensionsConfig, InheritedTasksManager, ToolchainsConfig, WorkspaceConfig};
 use std::{path::PathBuf, sync::Arc};
 
 #[derive(Clone, Debug, Default)]
 pub struct GraphExpanderContext {
     pub config_dir: PathBuf,
     pub extensions_config: Arc<ExtensionsConfig>,
+    pub inherited_tasks: Arc<InheritedTasksManager>,
     pub toolchains_config: Arc<ToolchainsConfig>,
     pub vcs_branch: Arc<String>,
     pub vcs_repository: Arc<String>,

@@ -1,17 +1,16 @@
 use crate::merging::MergeStrategy;
 use crate::shapes::{FilePath, GlobPath, OneOrMany};
 use crate::{config_enum, config_struct, config_unit_enum, config_untagged_enum, generate_switch};
-use schematic::schema::{StringType, UnionType};
-use schematic::{Config, ConfigEnum, Schema, SchemaBuilder, Schematic, ValidateError};
+use schematic::{Config, ConfigEnum, ValidateError};
 use std::env::consts;
 
 fn validate_env_override<C>(
-    value: &TaskOptionEnvOverride,
+    value: &PartialTaskOptionEnvOverride,
     _options: &PartialTaskOptionsConfig,
     _ctx: &C,
     _finalize: bool,
 ) -> Result<(), ValidateError> {
-    if let TaskOptionEnvOverride::Keys(keys) = value {
+    if let PartialTaskOptionEnvOverride::Keys(keys) = value {
         for key in keys {
             if key.is_empty() {
                 return Err(ValidateError::new(
@@ -47,7 +46,7 @@ fn validate_interactive<C>(
 
 config_enum!(
     /// The pattern in which affected files will be passed to the affected task.
-    #[serde(expecting = "expected `args`, `env`, or a boolean")]
+    #[derive(Config)]
     pub enum TaskOptionAffectedFilesPattern {
         /// Passed as command line arguments.
         Args,
@@ -55,17 +54,12 @@ config_enum!(
         Env,
         /// Passed as command line arguments and environment variables.
         #[serde(untagged)]
+        #[setting(default = true)]
         Enabled(bool),
     }
 );
 
-generate_switch!(TaskOptionAffectedFilesPattern, ["args", "env"]);
-
-impl Default for TaskOptionAffectedFilesPattern {
-    fn default() -> Self {
-        Self::Enabled(true)
-    }
-}
+generate_switch!(TaskOptionAffectedFilesPattern);
 
 config_struct!(
     /// Expanded information about affected files handling.
@@ -74,7 +68,6 @@ config_struct!(
         /// A list of glob patterns to filter the affected files list before
         /// passing to the task as arguments or environment variables. Globs
         /// must start with `**` to match against absolute paths.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub filter: Vec<GlobPath>,
 
         /// When matching affected files, ignore the project boundary and include
@@ -110,19 +103,20 @@ config_untagged_enum!(
 
 config_enum!(
     /// The environment in which to apply task caching.
-    #[serde(expecting = "expected `local`, `remote`, or a boolean")]
+    #[derive(Config)]
     pub enum TaskOptionCache {
         /// Only cache locally.
         Local,
         /// Only cache remotely.
         Remote,
         /// Cache both locally and remotely.
+        #[setting(default = true)]
         #[serde(untagged)]
         Enabled(bool),
     }
 );
 
-generate_switch!(TaskOptionCache, ["local", "remote"]);
+generate_switch!(TaskOptionCache);
 
 impl TaskOptionCache {
     pub fn is_local_enabled(&self) -> bool {
@@ -136,6 +130,7 @@ impl TaskOptionCache {
 
 config_untagged_enum!(
     /// The pattern in which a task is dependent on a `.env` file.
+    #[derive(Config)]
     pub enum TaskOptionEnvFile {
         /// Uses an `.env` file in the project root.
         Enabled(bool),
@@ -146,22 +141,9 @@ config_untagged_enum!(
     }
 );
 
-impl Schematic for TaskOptionEnvFile {
-    fn schema_name() -> Option<String> {
-        Some("TaskOptionEnvFile".into())
-    }
-
-    fn build_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.union(UnionType::new_any([
-            schema.infer::<bool>(),
-            schema.infer::<String>(),
-            schema.infer::<Vec<String>>(),
-        ]))
-    }
-}
-
 config_untagged_enum!(
     /// Which task environment variables override system environment variables.
+    #[derive(Config)]
     pub enum TaskOptionEnvOverride {
         /// All variables, or none.
         Enabled(bool),
@@ -169,12 +151,6 @@ config_untagged_enum!(
         Keys(Vec<String>),
     }
 );
-
-impl Default for TaskOptionEnvOverride {
-    fn default() -> Self {
-        Self::Enabled(false)
-    }
-}
 
 impl TaskOptionEnvOverride {
     /// Whether the task's value for the variable should override the system's.
@@ -191,22 +167,21 @@ impl TaskOptionEnvOverride {
     }
 }
 
-impl Schematic for TaskOptionEnvOverride {
-    fn schema_name() -> Option<String> {
-        Some("TaskOptionEnvOverride".into())
+config_unit_enum!(
+    /// How a failure of the task affects the action pipeline.
+    #[derive(ConfigEnum)]
+    pub enum TaskOptionOnFailure {
+        /// Allow the task to fail without failing the entire action pipeline.
+        Allow,
+        /// Expect the task to fail, and fail the entire action pipeline if it
+        /// passes. The task is never cached.
+        Expect,
     }
-
-    fn build_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.union(UnionType::new_any([
-            schema.infer::<bool>(),
-            schema.infer::<Vec<String>>(),
-        ]))
-    }
-}
+);
 
 config_enum!(
     /// The pattern in which to run the task automatically in CI.
-    #[serde(expecting = "expected `always`, `affected`, `only`, `skip`, or a boolean")]
+    #[derive(Config)]
     pub enum TaskOptionRunInCI {
         /// Always run, regardless of affected status.
         Always,
@@ -217,16 +192,17 @@ config_enum!(
         /// Skip running in CI but run locally and allow task relationships to be valid.
         Skip,
         /// Either affected, or don't run at all.
+        #[setting(default = true)]
         #[serde(untagged)]
         Enabled(bool),
     }
 );
 
-generate_switch!(TaskOptionRunInCI, ["always", "affected", "only", "skip"]);
+generate_switch!(TaskOptionRunInCI);
 
 config_unit_enum!(
     /// The style in which task output will be printed to the console.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum TaskOutputStyle {
         #[default]
         Buffer,
@@ -237,9 +213,9 @@ config_unit_enum!(
     }
 );
 
-config_enum!(
+config_unit_enum!(
     /// The operating system in which to only run this task on.
-    #[derive(ConfigEnum, Copy)]
+    #[derive(ConfigEnum)]
     pub enum TaskOperatingSystem {
         Linux,
         #[serde(alias = "mac")]
@@ -264,7 +240,7 @@ impl TaskOperatingSystem {
 config_unit_enum!(
     /// The priority levels a task can be bucketed into when running
     /// in the action pipeline.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum TaskPriority {
         Critical = 0,
         High = 1,
@@ -282,7 +258,7 @@ impl TaskPriority {
 
 config_unit_enum!(
     /// A list of available shells on Unix.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum TaskUnixShell {
         #[default]
         Bash,
@@ -302,7 +278,7 @@ config_unit_enum!(
 
 config_unit_enum!(
     /// A list of available shells on Windows.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum TaskWindowsShell {
         Bash,
         Elvish,
@@ -321,179 +297,178 @@ config_unit_enum!(
 config_struct!(
     /// Options to control task inheritance, execution, and more.
     #[derive(Config)]
-    #[serde(default)]
     pub struct TaskOptionsConfig {
         /// The pattern in which affected files will be passed to the task.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[setting(nested)]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub affected_files: Option<TaskOptionAffectedFilesEntry>,
-
-        /// Allow the task to fail without failing the entire action pipeline.
-        /// @since 1.13.0
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub allow_failure: Option<bool>,
 
         /// Cache the `outputs` of the task for incremental builds.
         /// Defaults to `true` if outputs are configured for the task.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub cache: Option<TaskOptionCache>,
 
         /// A custom key to include in the cache hashing process. Can be
         /// used to invalidate local and remote caches.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub cache_key: Option<String>,
 
         /// Lifetime to cache the task itself, in the format of "1h", "30m", etc.
         /// If not defined, caches live forever, or until inputs change.
         /// @since 1.29.0
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub cache_lifetime: Option<String>,
 
         /// Loads and sets environment variables from the `.env` file(s) when
         /// running the task.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[setting(nested)]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub env_file: Option<TaskOptionEnvFile>,
 
         /// Override system environment variables with the task's `env`, instead
         /// of only setting them when missing. When a list of variable names,
         /// only those variables will be overridden.
         /// @since 2.6.0
-        #[setting(validate = validate_env_override)]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[setting(nested, validate = validate_env_override)]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub env_override: Option<TaskOptionEnvOverride>,
-
-        /// Expect the task to fail, and fail the entire action pipeline if it
-        /// passes. Useful for checks that are known to be broken, which should
-        /// be re-enabled once fixed. The task is never cached.
-        /// @since 2.6.0
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub expect_failure: Option<bool>,
 
         /// Automatically infer inputs from file groups or environment variables
         /// that were utilized within `command`, `script`, `args`, and `env`.
         /// @since 1.31.0
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub infer_inputs: Option<bool>,
 
         /// Marks the task as interactive, so that it will run in isolation,
         /// and have direct access to stdin.
         /// @since 1.12.0
         #[setting(validate = validate_interactive)]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub interactive: Option<bool>,
 
         /// Marks the task as internal, which disables it from being ran
         /// from the command line, but can still be depended on by other tasks.
         /// @since 1.23.0
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub internal: Option<bool>,
 
         /// The default strategy to use when merging `args`, `deps`, `env`,
         /// `inputs`, or `outputs` with an inherited task. Can be overridden
         /// with the other field-specific merge options.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub merge: Option<MergeStrategy>,
 
         /// The strategy to use when merging `args` with an inherited task.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub merge_args: Option<MergeStrategy>,
 
         /// The strategy to use when merging `checks` with an inherited task.
         /// @since 2.4.0
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub merge_checks: Option<MergeStrategy>,
 
         /// The strategy to use when merging `deps` with an inherited task.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub merge_deps: Option<MergeStrategy>,
 
         /// The strategy to use when merging `env` with an inherited task.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub merge_env: Option<MergeStrategy>,
 
         /// The strategy to use when merging `inputs` with an inherited task.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub merge_inputs: Option<MergeStrategy>,
 
         /// The strategy to use when merging `outputs` with an inherited task.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub merge_outputs: Option<MergeStrategy>,
 
         /// The strategy to use when merging `tags` with an inherited task.
         /// @since 2.3.0
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub merge_tags: Option<MergeStrategy>,
 
         /// The strategy to use when merging `toolchains` with an inherited task.
         /// @since 2.0.0
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub merge_toolchains: Option<MergeStrategy>,
 
         /// Creates an exclusive lock on a virtual resource, preventing other
         /// tasks using the same resource from running concurrently.
         /// @since 1.24.0
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub mutex: Option<String>,
 
+        /// How a failure of the task affects the action pipeline. When `allow`,
+        /// the task can fail without failing the pipeline. When `expect`, the
+        /// task must fail, and fails the pipeline if it passes, which is useful
+        /// for checks that are known to be broken, and should be re-enabled once
+        /// fixed. An expected failure is never cached.
+        /// @since 3.0.0
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub on_failure: Option<TaskOptionOnFailure>,
+
         /// The operating system in which to only run this task on.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub os: Option<OneOrMany<TaskOperatingSystem>>,
 
         /// The style in which task output will be printed to the console.
         #[setting(env = "MOON_OUTPUT_STYLE")]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub output_style: Option<TaskOutputStyle>,
 
         /// Marks the task as persistent (continuously running). This is ideal
         /// for watchers, servers, or never-ending processes.
         /// @since 1.6.0
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub persistent: Option<bool>,
 
         /// Marks the task with a certain priority, which determines the order
         /// in which it is ran within the action pipeline.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub priority: Option<TaskPriority>,
 
         /// The number of times a failing task will be retried to succeed.
         #[setting(env = "MOON_RETRY_COUNT")]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub retry_count: Option<u8>,
 
         /// Runs direct task dependencies (via `deps`) in sequential order.
         /// Each dependency's own dependency subtree is also ordered, so that
         /// transitive dependencies run after the preceding direct dependency.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub run_deps_in_parallel: Option<bool>,
 
         /// Whether to run the task in CI or not, when executing `moon ci`,
         /// `moon check`, or `moon run`.
-        #[serde(rename = "runInCI", skip_serializing_if = "Option::is_none")]
+        #[serde(default, rename = "runInCI", skip_serializing_if = "Option::is_none")]
         pub run_in_ci: Option<TaskOptionRunInCI>,
 
         /// Runs the task automatically when executing `moon sync`.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub run_in_sync_phase: Option<bool>,
 
         /// Runs the task from the workspace root, instead of the project root.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub run_from_workspace_root: Option<bool>,
 
         /// Runs the task within a shell. When not defined, runs the task
         /// directly while relying on native `PATH` resolution.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub shell: Option<bool>,
 
         /// The maximum time in seconds that a task can run before being cancelled.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub timeout: Option<u64>,
 
         /// The shell to run the task in when on a Unix-based machine.
         /// @since 1.21.0
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub unix_shell: Option<TaskUnixShell>,
 
         /// The shell to run the task in when on a Windows machine.
         /// @since 1.21.0
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub windows_shell: Option<TaskWindowsShell>,
     }
 );

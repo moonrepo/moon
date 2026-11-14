@@ -2,7 +2,6 @@ use super::exec::*;
 use crate::app_options::SummaryOption;
 use crate::session::{MoonSession, SessionResult};
 use clap::Args;
-use moon_affected::{DownstreamScope, UpstreamScope};
 use moon_app_macros::{with_affected_args, with_shared_exec_args};
 use moon_task::TargetLocator;
 use tracing::instrument;
@@ -45,11 +44,6 @@ pub async fn ci(session: MoonSession, args: CiArgs) -> SessionResult {
         // Show full output in CI
         if exec.summary.is_none() {
             exec.summary = Some(Some(SummaryOption::Detailed));
-        }
-
-        // Include direct dependents for regression checks
-        if exec.downstream.is_none() {
-            exec.downstream = Some(DownstreamScope::Direct);
         }
 
         exec

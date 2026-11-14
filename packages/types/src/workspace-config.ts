@@ -14,10 +14,10 @@ export interface CacheCasConfig {
 	 * @env MOON_CACHE_CAS_MAX_SIZE
 	 * @since 2.4.0
 	 */
-	maxSize: string | null;
+	maxSize?: string | null;
 	/**
 	 * Verify hash on every read. When enabled, reads are slower
-	 * but detect on-disk corruption.
+	 * but they detect on-disk corruption.
 	 *
 	 * @env MOON_CACHE_CAS_VERIFY_INTEGRITY
 	 * @since 2.3.0
@@ -44,7 +44,16 @@ export interface CacheConfig {
 	 * @env MOON_CACHE_SHARED_WORKTREE_CACHE
 	 * @since 2.5.0
 	 */
-	unstable_sharedWorktreeCache: boolean;
+	sharedWorktreeCache: boolean;
+}
+
+/** Configures the code generator for scaffolding from templates. */
+export interface CodegenConfig {
+	/**
+	 * The list of file paths, relative from the workspace root,
+	 * in which to locate templates.
+	 */
+	templates?: string[];
 }
 
 /** How to order ownership rules within the generated file. */
@@ -56,7 +65,7 @@ export interface CodeownersConfig {
 	 * A map of global file paths and glob patterns to a list of owners.
 	 * Can be relative from the workspace root, or a wildcard match for any depth.
 	 */
-	globalPaths?: Record<string, string[]>;
+	globalPaths: Record<string, string[]>;
 	/**
 	 * How to order ownership rules within the generated file.
 	 *
@@ -75,7 +84,7 @@ export interface CodeownersConfig {
 	 * Automatically generate a `CODEOWNERS` file during a sync operation,
 	 * after aggregating all ownership rules from each project in the workspace.
 	 */
-	sync?: boolean;
+	sync: boolean;
 }
 
 /** Configures boundaries and constraints between projects. */
@@ -91,7 +100,7 @@ export interface ConstraintsConfig {
 	 * Enforces relationships between projects based on each project's
 	 * `tags` setting. Requires a mapping of tags, to acceptable tags.
 	 */
-	tagRelationships?: Record<Id, Id[]>;
+	tagRelationships: Record<Id, Id[]>;
 }
 
 /**
@@ -170,7 +179,7 @@ export interface DockerScaffoldConfig {
 	 *
 	 * @since 2.0.0
 	 */
-	configsPhaseGlobs?: string[];
+	configsPhaseGlobs: string[];
 	/**
 	 * List of glob patterns in which to include/exclude files in
 	 * the "sources" skeleton. Applies to both project and
@@ -178,7 +187,7 @@ export interface DockerScaffoldConfig {
 	 *
 	 * @since 2.0.0
 	 */
-	sourcesPhaseGlobs?: string[];
+	sourcesPhaseGlobs: string[];
 }
 
 /** Configures our Docker integration. */
@@ -196,56 +205,7 @@ export interface DockerConfig {
 }
 
 /** Configures experiments across the entire moon workspace. */
-export interface ExperimentsConfig {
-	/**
-	 * Track and determine affected projects and tasks asynchronously.
-	 *
-	 * @default true
-	 * @env MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING
-	 * @since 2.2.0
-	 */
-	asyncAffectedTracking?: boolean;
-	/**
-	 * Build the project and task graphs asynchronously.
-	 *
-	 * @default true
-	 * @env MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING
-	 * @since 2.2.0
-	 */
-	asyncGraphBuilding?: boolean;
-	/**
-	 * Store task outputs in a local CAS (content-addressable storage) cache.
-	 *
-	 * @env MOON_EXPERIMENT_CAS_OUTPUTS_CACHE
-	 * @since 2.3.0
-	 */
-	casOutputsCache: boolean;
-	/**
-	 * Always use the task's `outputStyle` option, even when running
-	 * the task as a primary target.
-	 *
-	 * @env MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE
-	 * @since 2.6.0
-	 */
-	explicitTaskOutputStyle: boolean;
-	/**
-	 * Use native file hashing instead of using the VCS.
-	 *
-	 * @default true
-	 * @env MOON_EXPERIMENT_NATIVE_FILE_HASHING
-	 * @since 2.3.0
-	 */
-	nativeFileHashing?: boolean;
-}
-
-/** Configures the generator for scaffolding from templates. */
-export interface GeneratorConfig {
-	/**
-	 * The list of file paths, relative from the workspace root,
-	 * in which to locate templates.
-	 */
-	templates?: string[];
-}
+export interface ExperimentsConfig {}
 
 /** The optimization to use when hashing. */
 export type HasherOptimization = 'accuracy' | 'performance';
@@ -253,7 +213,7 @@ export type HasherOptimization = 'accuracy' | 'performance';
 /** The strategy to use when walking the file system. */
 export type HasherWalkStrategy = 'glob' | 'vcs';
 
-/** Configures aspects of the content hashing engine. */
+/** Configures aspects of the task hashing engine. */
 export interface HasherConfig {
 	/**
 	 * When `warnOnMissingInputs` is enabled, filters missing file
@@ -269,7 +229,7 @@ export interface HasherConfig {
 	 *
 	 * @since 1.10.0
 	 */
-	ignorePatterns?: string[];
+	ignorePatterns: string[];
 	/**
 	 * The optimization to use when hashing.
 	 *
@@ -313,7 +273,7 @@ export interface NotifierConfig {
 	 * @env MOON_WEBHOOK_ACKNOWLEDGE
 	 * @since 1.38.0
 	 */
-	webhookAcknowledge?: boolean;
+	webhookAcknowledge: boolean;
 	/**
 	 * A secure URL in which to send webhooks to.
 	 *
@@ -365,7 +325,7 @@ export interface PipelineConfig {
 	 */
 	killProcessThreshold?: number;
 	/** Logs the task's command and arguments when running the task. */
-	logRunningCommand?: boolean;
+	logRunningCommand: boolean;
 	/**
 	 * When creating `SyncProject` actions, recursively create a `SyncProject`
 	 * action for each project dependency, and link them as a relationship.
@@ -429,7 +389,7 @@ export type RemoteApi = 'grpc' | 'http';
  */
 export interface RemoteAuthConfig {
 	/** A map of HTTP headers to inject into every request. */
-	headers?: Record<string, string>;
+	headers: Record<string, string>;
 	/**
 	 * The name of an environment variable to use as a bearer token.
 	 *
@@ -474,7 +434,7 @@ export interface RemoteCacheConfig {
 	 * @env MOON_REMOTE_CACHE_LOCAL_READ_ONLY
 	 * @since 1.40.0
 	 */
-	localReadOnly?: boolean;
+	localReadOnly: boolean;
 	/**
 	 * The maximum number of times to retry a request that failed with
 	 * a transient error (connection failure, timeout, 5xx, 429, etc),
@@ -485,15 +445,6 @@ export interface RemoteCacheConfig {
 	 * @since 2.6.0
 	 */
 	retryCount?: number;
-	/**
-	 * When downloading blobs, verify the digests/hashes in the response
-	 * match the associated blob contents. This will reduce performance
-	 * but ensure partial or corrupted blobs won't cause failures.
-	 *
-	 * @env MOON_REMOTE_CACHE_VERIFY_INTEGRITY
-	 * @since 1.36.0
-	 */
-	verifyIntegrity?: boolean;
 }
 
 /**
@@ -508,7 +459,7 @@ export interface RemoteMtlsConfig {
 	 *
 	 * @env MOON_REMOTE_MTLS_HTTP
 	 */
-	assumeHttp2?: boolean;
+	assumeHttp2: boolean;
 	/**
 	 * A file path, relative from the workspace root, to the
 	 * certificate authority PEM encoded X509 certificate.
@@ -550,7 +501,7 @@ export interface RemoteTlsConfig {
 	 *
 	 * @env MOON_REMOTE_TLS_HTTP2
 	 */
-	assumeHttp2?: boolean;
+	assumeHttp2: boolean;
 	/**
 	 * A file path, relative from the workspace root, to the
 	 * certificate authority PEM encoded X509 certificate.
@@ -619,7 +570,7 @@ export type VcsHookFormat = 'bash' | 'native';
  * The upstream version control provider, where the repository
  * source code is stored.
  */
-export type VcsProvider = 'bitbucket' | 'bitbucket-legacy' | 'github' | 'gitlab' | 'other';
+export type VcsProvider = 'bitbucket' | 'github' | 'gitlab' | 'other';
 
 /** Configures the version control system (VCS). */
 export interface VcsConfig {
@@ -649,13 +600,13 @@ export interface VcsConfig {
 	 *
 	 * @since 1.9.0
 	 */
-	hooks?: Record<string, string[]>;
+	hooks: Record<string, string[]>;
 	/**
 	 * The upstream version control provider, where the repository
 	 * source code is stored.
 	 *
 	 * @default 'github'
-	 * @type {'bitbucket' | 'bitbucket-legacy' | 'github' | 'gitlab' | 'other'}
+	 * @type {'bitbucket' | 'github' | 'gitlab' | 'other'}
 	 * @since 1.8.0
 	 */
 	provider: VcsProvider;
@@ -667,7 +618,7 @@ export interface VcsConfig {
 	 *
 	 * @since 1.9.0
 	 */
-	sync?: boolean;
+	sync: boolean;
 }
 
 export type Range = string;
@@ -685,6 +636,8 @@ export interface WorkspaceConfig {
 	 * @since 2.3.0
 	 */
 	cache: CacheConfig;
+	/** Configures the code generator for scaffolding from templates. */
+	codegen: CodegenConfig;
 	/**
 	 * Configures code ownership rules for generating a `CODEOWNERS` file.
 	 *
@@ -693,6 +646,15 @@ export interface WorkspaceConfig {
 	codeowners: CodeownersConfig;
 	/** Configures boundaries and constraints between projects. */
 	constraints: ConstraintsConfig;
+	/**
+	 * Enables a daemon that will process heavy tasks in the background,
+	 * greatly increasing performance of the main thread/executable.
+	 *
+	 * @default true
+	 * @env MOON_DAEMON
+	 * @since 2.2.0
+	 */
+	daemon?: boolean;
 	/**
 	 * The default/main project within the workspace. When a task is
 	 * ran without a project, the default will be used.
@@ -719,9 +681,7 @@ export interface WorkspaceConfig {
 	 * @since 1.12.0
 	 */
 	extends?: ExtendsFrom | null;
-	/** Configures the generator for scaffolding from templates. */
-	generator: GeneratorConfig;
-	/** Configures aspects of the content hashing engine. */
+	/** Configures aspects of the task hashing engine. */
 	hasher: HasherConfig;
 	/** Configures how and where notifications are sent. */
 	notifier: NotifierConfig;
@@ -742,14 +702,6 @@ export interface WorkspaceConfig {
 	 * @env MOON_TELEMETRY
 	 */
 	telemetry?: boolean;
-	/**
-	 * Enables a daemon that will process heavy tasks in the background,
-	 * greatly increasing performance of the main thread/executable.
-	 *
-	 * @env MOON_DAEMON
-	 * @since 2.2.0
-	 */
-	unstable_daemon: boolean;
 	/**
 	 * Configures the version control system (VCS). Also known as
 	 * source code management (SCM).
@@ -772,7 +724,7 @@ export interface PartialCacheCasConfig {
 	maxSize?: string | null;
 	/**
 	 * Verify hash on every read. When enabled, reads are slower
-	 * but detect on-disk corruption.
+	 * but they detect on-disk corruption.
 	 *
 	 * @env MOON_CACHE_CAS_VERIFY_INTEGRITY
 	 * @since 2.3.0
@@ -799,7 +751,16 @@ export interface PartialCacheConfig {
 	 * @env MOON_CACHE_SHARED_WORKTREE_CACHE
 	 * @since 2.5.0
 	 */
-	unstable_sharedWorktreeCache?: boolean | null;
+	sharedWorktreeCache?: boolean | null;
+}
+
+/** Configures the code generator for scaffolding from templates. */
+export interface PartialCodegenConfig {
+	/**
+	 * The list of file paths, relative from the workspace root,
+	 * in which to locate templates.
+	 */
+	templates?: string[] | null;
 }
 
 /** Configures code ownership rules for generating a `CODEOWNERS` file. */
@@ -947,58 +908,9 @@ export interface PartialDockerConfig {
 }
 
 /** Configures experiments across the entire moon workspace. */
-export interface PartialExperimentsConfig {
-	/**
-	 * Track and determine affected projects and tasks asynchronously.
-	 *
-	 * @default true
-	 * @env MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING
-	 * @since 2.2.0
-	 */
-	asyncAffectedTracking?: boolean | null;
-	/**
-	 * Build the project and task graphs asynchronously.
-	 *
-	 * @default true
-	 * @env MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING
-	 * @since 2.2.0
-	 */
-	asyncGraphBuilding?: boolean | null;
-	/**
-	 * Store task outputs in a local CAS (content-addressable storage) cache.
-	 *
-	 * @env MOON_EXPERIMENT_CAS_OUTPUTS_CACHE
-	 * @since 2.3.0
-	 */
-	casOutputsCache?: boolean | null;
-	/**
-	 * Always use the task's `outputStyle` option, even when running
-	 * the task as a primary target.
-	 *
-	 * @env MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE
-	 * @since 2.6.0
-	 */
-	explicitTaskOutputStyle?: boolean | null;
-	/**
-	 * Use native file hashing instead of using the VCS.
-	 *
-	 * @default true
-	 * @env MOON_EXPERIMENT_NATIVE_FILE_HASHING
-	 * @since 2.3.0
-	 */
-	nativeFileHashing?: boolean | null;
-}
+export interface PartialExperimentsConfig {}
 
-/** Configures the generator for scaffolding from templates. */
-export interface PartialGeneratorConfig {
-	/**
-	 * The list of file paths, relative from the workspace root,
-	 * in which to locate templates.
-	 */
-	templates?: string[] | null;
-}
-
-/** Configures aspects of the content hashing engine. */
+/** Configures aspects of the task hashing engine. */
 export interface PartialHasherConfig {
 	/**
 	 * When `warnOnMissingInputs` is enabled, filters missing file
@@ -1209,15 +1121,6 @@ export interface PartialRemoteCacheConfig {
 	 * @since 2.6.0
 	 */
 	retryCount?: number | null;
-	/**
-	 * When downloading blobs, verify the digests/hashes in the response
-	 * match the associated blob contents. This will reduce performance
-	 * but ensure partial or corrupted blobs won't cause failures.
-	 *
-	 * @env MOON_REMOTE_CACHE_VERIFY_INTEGRITY
-	 * @since 1.36.0
-	 */
-	verifyIntegrity?: boolean | null;
 }
 
 /**
@@ -1387,6 +1290,8 @@ export interface PartialWorkspaceConfig {
 	 * @since 2.3.0
 	 */
 	cache?: PartialCacheConfig | null;
+	/** Configures the code generator for scaffolding from templates. */
+	codegen?: PartialCodegenConfig | null;
 	/**
 	 * Configures code ownership rules for generating a `CODEOWNERS` file.
 	 *
@@ -1395,6 +1300,15 @@ export interface PartialWorkspaceConfig {
 	codeowners?: PartialCodeownersConfig | null;
 	/** Configures boundaries and constraints between projects. */
 	constraints?: PartialConstraintsConfig | null;
+	/**
+	 * Enables a daemon that will process heavy tasks in the background,
+	 * greatly increasing performance of the main thread/executable.
+	 *
+	 * @default true
+	 * @env MOON_DAEMON
+	 * @since 2.2.0
+	 */
+	daemon?: boolean | null;
 	/**
 	 * The default/main project within the workspace. When a task is
 	 * ran without a project, the default will be used.
@@ -1421,9 +1335,7 @@ export interface PartialWorkspaceConfig {
 	 * @since 1.12.0
 	 */
 	extends?: ExtendsFrom | null;
-	/** Configures the generator for scaffolding from templates. */
-	generator?: PartialGeneratorConfig | null;
-	/** Configures aspects of the content hashing engine. */
+	/** Configures aspects of the task hashing engine. */
 	hasher?: PartialHasherConfig | null;
 	/** Configures how and where notifications are sent. */
 	notifier?: PartialNotifierConfig | null;
@@ -1444,14 +1356,6 @@ export interface PartialWorkspaceConfig {
 	 * @env MOON_TELEMETRY
 	 */
 	telemetry?: boolean | null;
-	/**
-	 * Enables a daemon that will process heavy tasks in the background,
-	 * greatly increasing performance of the main thread/executable.
-	 *
-	 * @env MOON_DAEMON
-	 * @since 2.2.0
-	 */
-	unstable_daemon?: boolean | null;
 	/**
 	 * Configures the version control system (VCS). Also known as
 	 * source code management (SCM).

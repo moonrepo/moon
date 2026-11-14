@@ -19,7 +19,9 @@ by automatically running the following steps:
 
 - Determines changed files by comparing the current HEAD against a base.
 - Determines all [targets](../concepts/target) that need to run based on changed files.
-- Additionally runs affected [targets](../concepts/target) dependencies _and_ dependents.
+- Additionally runs the dependencies of affected [targets](../concepts/target). Dependents are only
+  ran when they are affected and also match the requested targets, or when
+  [`--dependents`](../concepts/affected#dependents) is passed.
 - Generates an action and dependency graph.
 - Installs the toolchain and applicable dependencies.
 - Runs all actions within the graph using a thread pool.

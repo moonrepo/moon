@@ -1,7 +1,7 @@
-amends "../../../../../../website/static/pkl/v2/InheritedTasksConfig.pkl"
+amends "../../../../../../website/static/pkl/v3/InheritedTasksConfig.pkl"
 
-import "../../../../../../website/static/pkl/v2/TaskDependencyConfig.pkl"
-import "../../../../../../website/static/pkl/v2/TaskOptionAffectedFilesConfig.pkl"
+import "../../../../../../website/static/pkl/v3/TaskDependencyConfig.pkl"
+import "../../../../../../website/static/pkl/v3/TaskOptionAffectedFilesConfig.pkl"
 
 env {
 	["KEY"] = "value"
@@ -47,7 +47,6 @@ taskOptions {
 		pass = "args"
 		passInputsWhenNoMatch = true
 	}
-	allowFailure = true
 	cache = false
 	envFile = ".env"
 	interactive = false
@@ -58,6 +57,7 @@ taskOptions {
 	mergeInputs = "preserve"
 	mergeOutputs = null
 	mutex = "lock"
+	onFailure = "allow"
 	os = new Listing { "linux"; "macos" }
 	outputStyle = "stream"
 	persistent = true

@@ -14,6 +14,7 @@ use crate::commands::extension::ExtensionCommands;
 use crate::commands::generate::GenerateArgs;
 use crate::commands::hash::HashArgs;
 use crate::commands::init::InitArgs;
+use crate::commands::layout_graph::LayoutGraphArgs;
 use crate::commands::mcp::McpArgs;
 use crate::commands::migrate::MigrateCommands;
 use crate::commands::project::ProjectArgs;
@@ -136,6 +137,13 @@ pub enum Commands {
 
     #[command(name = "init", about = "Initialize a new moon repository.")]
     Init(InitArgs),
+
+    #[command(
+        alias = "lg",
+        name = "layout-graph",
+        about = "Display an interactive graph of toolchain dependencies roots and their projects."
+    )]
+    LayoutGraph(LayoutGraphArgs),
 
     #[command(
         name = "mcp",

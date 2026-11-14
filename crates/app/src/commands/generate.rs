@@ -443,7 +443,7 @@ pub fn parse_args_into_variables(
                             }
                         }
 
-                        vars.insert(name, &list);
+                        vars.insert(name.to_owned(), &list);
                     }
                     TemplateVariable::Boolean(_) => {
                         // Booleans always have a value when matched, so only extract
@@ -453,7 +453,7 @@ pub fn parse_args_into_variables(
                         {
                             debug!(name, value, "Setting boolean variable");
 
-                            vars.insert(name, value);
+                            vars.insert(name.to_owned(), value);
                         }
                     }
                     TemplateVariable::Enum(inner) => {
@@ -467,29 +467,29 @@ pub fn parse_args_into_variables(
                                     "Setting multiple-value enum variable"
                                 );
 
-                                vars.insert(name, &value);
+                                vars.insert(name.to_owned(), &value);
                             }
                         } else if let Some(value) = matches.get_one::<String>(arg_name) {
                             debug!(name, value, "Setting single-value enum variable");
 
-                            vars.insert(name, value);
+                            vars.insert(name.to_owned(), value);
                         }
                     }
                     TemplateVariable::Number(_) => {
                         if let Some(value) = matches.get_one::<isize>(arg_name) {
                             debug!(name, value, "Setting number variable");
 
-                            vars.insert(name, value);
+                            vars.insert(name.to_owned(), value);
                         }
                     }
                     TemplateVariable::Object(_) => {
-                        vars.insert(name, &FxHashMap::<String, JsonValue>::default());
+                        vars.insert(name.to_owned(), &FxHashMap::<String, JsonValue>::default());
                     }
                     TemplateVariable::String(_) => {
                         if let Some(value) = matches.get_one::<String>(arg_name) {
                             debug!(name, value, "Setting string variable");
 
-                            vars.insert(name, value);
+                            vars.insert(name.to_owned(), value);
                         }
                     }
                 };
@@ -594,7 +594,7 @@ pub async fn gather_variables(
 
                 debug!(name, value = ?value, "Setting array variable");
 
-                context.insert(name, &value);
+                context.insert(name.to_owned(), &value);
             }
             TemplateVariable::Boolean(cfg) => {
                 let value = if skip_prompts || cfg.prompt.is_none() {
@@ -616,7 +616,7 @@ pub async fn gather_variables(
 
                 debug!(name, value, "Setting boolean variable");
 
-                context.insert(name, &value);
+                context.insert(name.to_owned(), &value);
             }
             TemplateVariable::Number(cfg) => {
                 let value = if skip_prompts || cfg.prompt.is_none() {
@@ -650,7 +650,7 @@ pub async fn gather_variables(
 
                 debug!(name, value, "Setting number variable");
 
-                context.insert(name, &value);
+                context.insert(name.to_owned(), &value);
             }
             TemplateVariable::Object(cfg) => {
                 let value = if skip_prompts || cfg.prompt.is_none() {
@@ -698,7 +698,7 @@ pub async fn gather_variables(
 
                 debug!(name, value = ?value, "Setting object variable");
 
-                context.insert(name, &value);
+                context.insert(name.to_owned(), &value);
             }
             TemplateVariable::String(cfg) => {
                 let value = if skip_prompts || cfg.prompt.is_none() {
@@ -728,7 +728,7 @@ pub async fn gather_variables(
 
                 debug!(name, value, "Setting string variable");
 
-                context.insert(name, &value);
+                context.insert(name.to_owned(), &value);
             }
             TemplateVariable::Enum(cfg) if cfg.is_multiple() => {
                 let values = cfg.get_values();
@@ -782,7 +782,7 @@ pub async fn gather_variables(
                     "Setting multiple-value enum variable"
                 );
 
-                context.insert(name, &value);
+                context.insert(name.to_owned(), &value);
             }
             TemplateVariable::Enum(cfg) if !cfg.is_multiple() => {
                 let values = cfg.get_values();
@@ -821,7 +821,7 @@ pub async fn gather_variables(
 
                 debug!(name, value, "Setting single-value enum variable");
 
-                context.insert(name, &value);
+                context.insert(name.to_owned(), &value);
             }
             _ => {
                 // Rust can't infer enum variants above correctly!

@@ -1,0 +1,5 @@
+toolchains:
+  default: 'tc-tier2'
+  tc-tier2:
+    version: '2.0.0'
+    customKey: 'standalone'

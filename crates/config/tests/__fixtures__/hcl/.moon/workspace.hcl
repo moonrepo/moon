@@ -24,7 +24,7 @@ docker {
 	}
 }
 
-generator {
+codegen {
 	templates = [
 		"/shared-templates",
 		"./templates",

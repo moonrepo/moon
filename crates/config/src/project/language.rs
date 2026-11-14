@@ -9,11 +9,11 @@ use std::str::FromStr;
 pub enum LanguageType {
     Bash,
     Batch,
-    #[variant(alias = "c++")]
+    #[variant(alias = "c++", alias = "cpp")]
     CPlusPlus,
     #[variant(alias = "c#")]
     CSharp,
-    #[variant(alias = ".net")]
+    #[variant(alias = ".net", alias = ".NET")]
     DotNet,
     Go,
     Java,

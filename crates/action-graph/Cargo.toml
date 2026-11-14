@@ -8,6 +8,10 @@ homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 publish = false
 
+[[bench]]
+name = "action_graph_builder"
+harness = false
+
 [dependencies]
 moon_action = { path = "../action" }
 moon_action_context = { path = "../action-context" }
@@ -17,13 +21,13 @@ moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_exec_plan = { path = "../exec-plan" }
 moon_graph_utils = { path = "../graph-utils" }
+moon_layout_graph = { path = "../layout-graph" }
 moon_pdk_api = { path = "../pdk-api" }
 moon_project = { path = "../project" }
 moon_task = { path = "../task" }
 moon_toolchain = { path = "../toolchain" }
 moon_query = { path = "../query" }
 moon_workspace_graph = { path = "../workspace-graph" }
-daggy = { workspace = true }
 graph-cycles = "0.3.0"
 miette = { workspace = true }
 petgraph = { workspace = true }
@@ -34,10 +38,13 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
+moon_bench_utils = { path = "../bench-utils" }
 moon_config = { path = "../config" }
 moon_test_utils = { path = "../test-utils" }
+criterion = { workspace = true }
 serde_json = { workspace = true }
 starbase_sandbox = { workspace = true }
+warpgate_api = { workspace = true }
 
 [lints]
 workspace = true

@@ -10,15 +10,15 @@ use std::process::Command;
 fn main() {
     let cwd = env::current_dir().unwrap();
 
-    generate_json_schemas(cwd.join("website/static/schemas/v2"), Default::default()).unwrap();
+    generate_json_schemas(cwd.join("website/static/schemas/v3"), Default::default()).unwrap();
 
-    generate_pkl_schemas(cwd.join("website/static/pkl/v2")).unwrap();
+    generate_pkl_schemas(cwd.join("website/static/pkl/v3")).unwrap();
 
     #[cfg(feature = "api-docs")]
     {
         for lookup in [
-            "../moonrepo/website/web/content/api/moon",
-            "../website/web/content/api/moon",
+            "../moonrepo/website/web/content/moon/api",
+            "../website/web/content/moon/api",
             "temp/moon-api-docs",
         ] {
             let dir = cwd.join(lookup);

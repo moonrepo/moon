@@ -1,4 +1,4 @@
-use moon_affected::{DownstreamScope, UpstreamScope};
+use moon_affected::Depth;
 use moon_common::{cacheable, cacheable_enum};
 use moon_target::TargetLocator;
 
@@ -8,7 +8,11 @@ cacheable!(
     pub struct AffectedBlock {
         pub base: Option<String>,
         pub head: Option<String>,
-        pub include_relations: Option<bool>,
+
+        /// How many hops away from an affected task its dependents are also
+        /// affected: `none`, `direct`, `deep`, or a number.
+        pub depth: Option<Depth>,
+
         pub source: Option<String>,
         pub status: Vec<moon_vcs::ChangedStatus>,
         pub stdin: Option<bool>,
@@ -19,8 +23,13 @@ cacheable!(
     #[derive(Default)]
     #[serde(default, deny_unknown_fields)]
     pub struct GraphBlock {
-        pub downstream: Option<DownstreamScope>,
-        pub upstream: Option<UpstreamScope>,
+        /// How many hops of dependents of the targets are also run:
+        /// `none`, `direct`, `deep`, or a number.
+        pub dependents: Option<Depth>,
+
+        /// Don't run the dependencies of the targets that were not
+        /// selected themselves.
+        pub no_dependencies: Option<bool>,
     }
 );
 
@@ -46,6 +55,7 @@ cacheable!(
 );
 
 cacheable_enum!(
+    #[derive(Clone, Debug)]
     #[serde(untagged)]
     pub enum TargetsBlock {
         Partitioned { jobs: Vec<Vec<TargetLocator>> },

@@ -20,24 +20,26 @@ pub async fn setup(session: MoonSession) -> SessionResult {
         .await?;
 
     // First ensure proto is set up (this will be a dependency for toolchain setups)
-    action_graph_builder.setup_proto().await?;
+    action_graph_builder.setup_proto();
 
-    // Add new toolchain plugin setups
-    let mut toolchain_count = 0;
+    // Add new toolchain plugin setups, and their environments
+    // in the workspace root, when the toolchain was set up
+    let mut requests = vec![];
 
     for toolchain_id in session.toolchains_config.plugins.keys() {
         if let Some(spec) = action_graph_builder.get_workspace_spec(toolchain_id) {
-            let index = action_graph_builder.setup_toolchain(&spec, None).await?;
-
-            if index.is_none() {
-                continue;
-            } else if !spec.is_system() {
-                toolchain_count += 1;
-            }
-
-            action_graph_builder.setup_environment_root(&spec).await?;
+            requests.push((
+                action_graph_builder.setup_toolchain_and_environment(&spec),
+                spec,
+            ));
         }
     }
+
+    let output = action_graph_builder.build().await?;
+    let toolchain_count = requests
+        .iter()
+        .filter(|(request, spec)| !output.report.nodes(*request).is_empty() && !spec.is_system())
+        .count();
 
     // Early exit if no toolchains are configured
     if toolchain_count == 0 {
@@ -52,7 +54,7 @@ pub async fn setup(session: MoonSession) -> SessionResult {
         return Ok(None);
     }
 
-    let (action_context, action_graph) = action_graph_builder.build();
+    let (action_context, action_graph) = (output.context, output.graph);
 
     // Check if there are any actions to run
     if action_graph.get_node_count() == 0 {

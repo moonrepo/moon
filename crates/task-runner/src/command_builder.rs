@@ -377,7 +377,7 @@ impl<'task> CommandBuilder<'task> {
 
         // Filter the list before converting
         if !affected_options.filter.is_empty() {
-            let globset = GlobSet::new(&affected_options.filter)?;
+            let globset = GlobSet::new_cached(&affected_options.filter)?;
 
             abs_files.retain(|abs_file| globset.matches(abs_file));
         }

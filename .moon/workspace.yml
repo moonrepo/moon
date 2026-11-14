@@ -15,19 +15,13 @@ projects:
     # - 'scenarios/python'
     - 'website'
 
-generator:
+codegen:
   templates:
     # - './.moon/templates'
     - './tests/fixtures/generator/templates'
 
 pipeline:
   logRunningCommand: true
-
-experiments:
-  asyncAffectedTracking: true
-  asyncGraphBuilding: true
-  casOutputsCache: true
-  nativeFileHashing: true
 
 vcs:
   defaultBranch: 'master'
@@ -52,8 +46,6 @@ remote:
     headers:
       'X-Depot-Org': '1xtpjd084j'
       'X-Depot-Project': '90xxfkst9n'
-  cache:
-    verifyIntegrity: true
   # BAZEL-REMOTE
   # host: 'grpc://0.0.0.0:9092'
   # cache:
@@ -69,4 +61,8 @@ remote:
   #   cert: 'crates/remote/tests/__fixtures__/certs-local/client.pem'
   #   domain: 'localhost'
 
-unstable_daemon: true
+cache:
+  cas:
+    verifyIntegrity: true
+
+daemon: true

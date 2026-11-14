@@ -15,10 +15,12 @@ moon_feature_flags = { version = "2.0.2", path = "../feature-flags" }
 moon_target = { version = "3.1.0", path = "../target" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
+scc = { workspace = true }
 serde = { workspace = true }
 starbase_utils = { workspace = true, features = ["glob"] }
 
 [dev-dependencies]
+serde_json = { workspace = true }
 starbase_sandbox = { workspace = true }
 
 [lints]

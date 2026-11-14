@@ -2,7 +2,7 @@ use crate::commands::graph::run_server;
 use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use moon_action_graph::{GraphToDot, GraphToJson, RunRequirements};
-use moon_affected::DownstreamScope;
+use moon_affected::Depth;
 use moon_task::Target;
 use tracing::instrument;
 
@@ -11,8 +11,12 @@ pub struct ActionGraphArgs {
     #[arg(help = "Task targets to *only* graph")]
     targets: Option<Vec<Target>>,
 
-    #[arg(long, help = "Include dependents of the focused target(s)")]
-    dependents: bool,
+    #[arg(
+        long,
+        default_value_t,
+        help = "Include dependents of the focused target(s), up to this depth (none, direct, deep, or a number of hops)"
+    )]
+    dependents: Depth,
 
     #[arg(
         long,
@@ -42,31 +46,25 @@ pub async fn action_graph(session: MoonSession, args: ActionGraphArgs) -> Sessio
     let workspace_graph = session.get_workspace_graph().await?;
     let mut action_graph_builder = session.build_action_graph().await?;
 
-    let requirements = RunRequirements {
-        dependents: if args.dependents {
-            DownstreamScope::Deep
-        } else {
-            DownstreamScope::None
-        },
+    action_graph_builder.set_requirements(RunRequirements {
+        dependents: args.dependents,
         ..Default::default()
-    };
+    });
 
     // Focus a target and its dependencies/dependents
     if let Some(targets) = &args.targets {
         for target in targets {
-            action_graph_builder
-                .run_task_by_target(target, &requirements)
-                .await?;
+            action_graph_builder.run_task_by_target(target);
         }
     }
     // Show all targets and actions
     else {
         for task in workspace_graph.get_tasks()? {
-            action_graph_builder.run_task(&task, &requirements).await?;
+            action_graph_builder.run_task(task);
         }
     }
 
-    let (_, action_graph) = action_graph_builder.build();
+    let action_graph = action_graph_builder.build().await?.graph;
 
     if args.dot {
         session.console.out.write_line(action_graph.to_dot())?;

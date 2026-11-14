@@ -47,7 +47,17 @@ report elsewhere if you need to persist it, like uploading it as a CI artifact.
 ### Options
 
 Inherits most options from [`moon exec`](./exec) and pre-fills with: `--affected`, `--ci`,
-`--on-failure=continue`, `--summary=detailed`, `--upstream=deep`, `--downstream=direct`.
+`--on-failure=continue`, `--summary=detailed`. Dependencies are always ran, unless
+`--no-dependencies` is passed.
+
+:::info
+
+In v2, `moon ci` also ran the direct dependents of affected tasks by default. In v3, `--dependents`
+defaults to `none`, as affected dependents that match the requested targets are already selected
+through [`--affected-depth`](../concepts/affected#affected-depth), and dependents outside of the
+requested targets (like a `deploy` task that depends on `publish`) should never run unasked.
+
+:::
 
 ### Configuration
 

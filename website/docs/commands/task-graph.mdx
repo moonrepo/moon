@@ -19,7 +19,8 @@ $ moon task-graph --dot > graph.dot
 ```
 
 > A task target can be passed to focus the graph to only that task and its dependencies. For
-> example, `moon task-graph app:build`.
+> example, `moon task-graph app:build`. Pass `--dependents` to also include its dependents, like
+> `moon task-graph app:build --dependents direct`.
 
 ### Arguments
 
@@ -27,7 +28,8 @@ $ moon task-graph --dot > graph.dot
 
 ### Options
 
-- `--dependents` - Include direct dependents of the focused task.
+- `--dependents <DEPTH>` - Include dependents of the focused task, up to the depth. Supports
+  "none" (default), "direct", "deep", or a number of hops. <VersionLabel version="3.0.0" />
 - `--dot` - Print the graph in DOT format.
 - `--host` - The host address. Defaults to `127.0.0.1`. <VersionLabel version="1.36.0" />
 - `--json` - Print the graph in JSON format.

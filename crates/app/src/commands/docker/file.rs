@@ -288,7 +288,10 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> SessionResult {
 async fn get_base_image(session: &MoonSession, project: &Project) -> miette::Result<String> {
     let toolchain_registry = session.get_toolchain_registry().await?;
 
-    for toolchain in toolchain_registry.load_many(&project.toolchains).await? {
+    for toolchain in toolchain_registry
+        .load_many(project.get_enabled_toolchains())
+        .await?
+    {
         let metadata = toolchain
             .define_docker_metadata(DefineDockerMetadataInput {
                 context: toolchain_registry.create_context(),

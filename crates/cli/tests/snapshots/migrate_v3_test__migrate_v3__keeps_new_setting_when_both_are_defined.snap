@@ -1,0 +1,11 @@
+---
+source: crates/cli/tests/migrate_v3_test.rs
+expression: "read_file(&sandbox, \".moon/workspace.yml\")"
+---
+cache:
+  cas:
+    verifyIntegrity: false
+remote:
+  host: grpcs://cache.example.com
+  cache:
+    compression: zstd

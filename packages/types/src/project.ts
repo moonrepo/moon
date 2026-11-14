@@ -10,9 +10,9 @@ import type {
 import type { InheritedTasks, Task } from './task';
 
 export interface FileGroup {
-	env: string[];
-	files: string[];
-	globs: string[];
+	env?: string[];
+	files?: string[];
+	globs?: string[];
 	id: Id;
 }
 
@@ -28,11 +28,12 @@ export interface Project {
 	fileGroups?: Record<string, FileGroup>;
 	id: Id;
 	inherited?: InheritedTasks | null;
-	language: LanguageType;
-	layer: LayerType;
+	inheritedFrom?: string[];
+	language?: LanguageType;
+	layer?: LayerType;
 	root: string;
 	source: string;
-	stack: StackType;
+	stack?: StackType;
 	tasks?: Record<Id, Task>;
 	taskTargets?: string[];
 	toolchains?: Id[];

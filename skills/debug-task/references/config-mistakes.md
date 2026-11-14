@@ -15,7 +15,7 @@ describes the mistake, why it happens, how to detect it, and how to fix it.
 6. [`extends` not resolving](#extends-not-resolving)
 7. [No-op tasks](#no-op-tasks)
 8. [`runInCI` variants](#runinci-variants)
-9. [`allowFailure` hiding errors](#allowfailure-hiding-errors)
+9. [`onFailure: allow` hiding errors](#onfailure-allow-hiding-errors)
 10. [`mutex` contention](#mutex-contention)
 11. [`timeout` and `retryCount`](#timeout-and-retrycount)
 12. [`os` platform filtering](#os-platform-filtering)
@@ -629,48 +629,49 @@ moon task <project>:<task> --json | grep -i runinci
 
 ---
 
-## `allowFailure` hiding errors
+## `onFailure: allow` hiding errors
 
-When `options.allowFailure` is `true`, a failing command no longer fails the pipeline: the failure
-is still recorded and displayed for the task itself, but downstream work continues and moon exits
-successfully, so the failure is easy to overlook.
+When `options.onFailure` is `allow` (`allowFailure: true` before v3), a failing command no longer
+fails the pipeline: the failure is still recorded and displayed for the task itself, but downstream
+work continues and moon exits successfully, so the failure is easy to overlook.
 
 ```yaml
 tasks:
   advisory-lint:
     command: 'eslint src/'
     options:
-      allowFailure: true # Lint failures are warnings, not blockers
+      onFailure: 'allow' # Lint failures are warnings, not blockers
 ```
 
 This is intentional for advisory tasks. But if it's inherited from a global task and the user
 doesn't realize it's set, real errors go unnoticed.
 
-**Gotcha with deps:** A task **cannot** depend on a task with `allowFailure: true` — the task
-builder rejects the configuration with a hard `AllowFailureDepRequirement` error, because a failing
+**Gotcha with deps:** A task **cannot** depend on a task with `onFailure: allow` — the task builder
+rejects the configuration with a hard `AllowFailureDepRequirement` error, because a failing
 dependency would let the dependent task run with incorrect results. If a task suddenly errors at
-graph-build time after someone added `allowFailure` to an upstream task, this is why.
+graph-build time after someone allowed an upstream task to fail, this is why.
 
 ### How to detect
 
 ```bash
 moon task <project>:<task> --json
-# Check options.allowFailure
+# Check options.onFailure (options.allowFailure before v3)
 ```
 
-### `expectFailure` <sup>v2.6+</sup>
+### `onFailure: expect` <sup>v2.6+</sup>
 
-The stricter alternative for known-broken checks: the task passes when its command fails, and fails
-with `task_runner::unexpected_pass` once the command passes, prompting the setting to be removed.
-Unlike `allowFailure`, other tasks can depend on it. Surprises:
+The stricter alternative for known-broken checks (`expectFailure: true` in v2.6): the task passes
+when its command fails, and fails with `task_runner::unexpected_pass` once the command passes,
+prompting the setting to be removed. Unlike `allow`, other tasks can depend on it. Surprises:
 
 - Exit codes `126`/`127` (command not executable/found), `129`-`192` (killed by a signal), timeouts,
   and signals fail with `task_runner::unexpected_failure`, so a typo in the command is not an
   expected failure.
 - The task is never cached (`options.cache` is forced to `false`), and is not retried after an
   expected failure or an unexpected pass.
-- Combining it with `allowFailure` or `persistent`, including through `taskOptions` defaults, is a
-  task build error (`ExpectFailureConflict`).
+- Combining it with `persistent`, including through `taskOptions` defaults or a preset, is a task
+  build error (`ExpectFailureConflict`). In v2.6, combining `expectFailure` with `allowFailure` was
+  also an error, while in v3 a task's `onFailure` overrides the inherited value.
 
 ---
 
@@ -1034,7 +1035,7 @@ Other reasons a cleanup won't run:
   run. Cleanups should be self-contained.
 
 Shared cleanups (same `args`/`env`) run once, after all of the tasks that depend on them. They also
-still run when the task's deps don't, like with `--upstream none`.
+still run when the task's deps don't, like with `--no-dependencies` <sup>v3.0+</sup>.
 
 ### Wait dep problems
 
@@ -1235,14 +1236,14 @@ the task runs in CI, the CI check fires first (`RunInCiDepRequirement`), and sti
 deps — also enable `runInCI` on the persistent dep (or set it to `'skip'`), or disable `runInCI` on
 the task.
 
-**`AllowFailureDepRequirement`** — a task depends on a task with `allowFailure: true`. This is a
-hard error: moon rejects the configuration, because a failing dependency would still let the
-dependent task run, producing incorrect results. <sup>v2.6+</sup> `cleanup` deps are exempt, as they
-run after the task.
+**`AllowFailureDepRequirement`** — a task depends on a task with `onFailure: allow`. This is a hard
+error: moon rejects the configuration, because a failing dependency would still let the dependent
+task run, producing incorrect results. <sup>v2.6+</sup> `cleanup` deps are exempt, as they run after
+the task.
 
-**`ExpectFailureConflict`** <sup>v2.6+</sup> — a task enables `expectFailure` along with
-`allowFailure` or `persistent` (possibly inherited from `taskOptions` defaults). Fix: disable the
-other option for that task.
+**`ExpectFailureConflict`** <sup>v2.6+</sup> — a task sets `onFailure: expect` and is `persistent`
+(possibly inherited from `taskOptions` defaults or a preset). In v2.6, `expectFailure` also
+conflicted with `allowFailure`. Fix: disable the other option for that task.
 
 **`RunInCiDepRequirement`** — a task that runs in CI depends on a task that doesn't run in CI
 (`runInCI: false`). The dependency won't execute in CI, so the dependent task may fail or produce

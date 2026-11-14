@@ -26,7 +26,7 @@ tasks:
     toolchain: system
     options:
       shell: true
-      expectFailure: true
+      onFailure: expect
       retryCount: 3
 
   expect-failure-passes:
@@ -34,7 +34,7 @@ tasks:
     toolchain: system
     options:
       shell: true
-      expectFailure: true
+      onFailure: expect
       retryCount: 3
 
   expect-failure-not-found:
@@ -42,7 +42,7 @@ tasks:
     toolchain: system
     options:
       shell: true
-      expectFailure: true
+      onFailure: expect
       retryCount: 1
 
   retry-slow:

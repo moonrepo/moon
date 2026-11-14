@@ -10,10 +10,13 @@ use std::path::{Path, PathBuf};
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
 pub struct FileGroup {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub env: Vec<String>,
 
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub files: Vec<WorkspaceRelativePathBuf>,
 
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub globs: Vec<WorkspaceRelativePathBuf>,
 
     pub id: Id,

@@ -4,8 +4,9 @@ use crate::queries::changed_files::*;
 use crate::queries::projects::*;
 use crate::session::{MoonSession, SessionResult};
 use clap::Args;
-use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
+use moon_affected::{AffectedTracker, Depth};
 use moon_common::is_ci;
+use moon_workspace_graph::GraphConnections;
 use starbase_utils::json;
 use tracing::instrument;
 
@@ -26,22 +27,20 @@ pub struct QueryProjectsArgs {
     #[arg(
         long,
         default_value_t,
-        visible_alias = "dependents",
-        help = "Include downstream dependents of queried projects",
+        help = "Include dependencies of affected projects, up to this depth (none, direct, deep, or a number of hops)",
         help_heading = HEADING_AFFECTED,
         requires = "affected-args",
     )]
-    downstream: DownstreamScope,
+    dependencies: Depth,
 
     #[arg(
         long,
         default_value_t,
-        visible_alias = "dependencies",
-        help = "Include upstream dependencies of queried projects",
+        help = "Include dependents of affected projects, up to this depth (none, direct, deep, or a number of hops)",
         help_heading = HEADING_AFFECTED,
         requires = "affected-args",
     )]
-    upstream: UpstreamScope,
+    dependents: Depth,
 
     // Filters
     #[arg(long, help = "Filter projects that match this alias", help_heading = HEADING_FILTERS)]
@@ -80,6 +79,7 @@ pub async fn projects(session: MoonSession, args: QueryProjectsArgs) -> SessionR
         language: args.language,
         layer: args.layer,
         query: args.query,
+        include: Default::default(),
         stack: args.stack,
         source: args.source,
         tags: args.tags,
@@ -93,15 +93,27 @@ pub async fn projects(session: MoonSession, args: QueryProjectsArgs) -> SessionR
 
         let mut affected_tracker = AffectedTracker::new(workspace_graph.clone(), changed_files);
         affected_tracker.set_ci_check(is_ci());
-        affected_tracker.set_project_scopes(args.upstream, args.downstream);
+        affected_tracker.set_depth(args.dependents);
+        affected_tracker.track_projects().await?;
 
-        if session.workspace_config.experiments.async_affected_tracking {
-            affected_tracker.track_projects_async().await?;
-        } else {
-            affected_tracker.track_projects()?;
+        let affected = affected_tracker.build();
+
+        // Dependencies are never affected, so include them explicitly
+        if !args.dependencies.is_none() {
+            let projects = workspace_graph.get_projects_by_id(affected.projects.keys())?;
+            let projects = projects
+                .iter()
+                .map(|project| project.as_ref())
+                .collect::<Vec<_>>();
+
+            options.include.extend(
+                workspace_graph
+                    .projects
+                    .dependencies_within(&projects, args.dependencies),
+            );
         }
 
-        options.affected = Some(affected_tracker.build());
+        options.affected = Some(affected);
     }
 
     // Query for projects that match the filters

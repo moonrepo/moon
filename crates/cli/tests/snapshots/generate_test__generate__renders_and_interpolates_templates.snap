@@ -21,18 +21,18 @@ numberReqNotEmpty = 123
 enum = a
 enumNotEmpty = b
 multenum = []
-multenumNotEmpty = [b]
+multenumNotEmpty = ["b"]
 
-object = [object]
-objectNotEmpty = [object]
+object = {}
+objectNotEmpty = {"key": "value"}
 objectNotEmpty.key = value
-objectReq = [object]
-objectReqNotEmpty = [object]
+objectReq = {}
+objectReqNotEmpty = {"key": "value"}
 objectReqNotEmpty['key'] = value
 
 array = []
-arrayNotEmpty = [value]
-arrayNotEmpty.0 = value
+arrayNotEmpty = ["value"]
+arrayNotEmpty[0] = value
 arrayReq = []
-arrayReqNotEmpty = [value]
+arrayReqNotEmpty = ["value"]
 arrayReqNotEmpty[0] = value

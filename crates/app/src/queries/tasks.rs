@@ -1,10 +1,10 @@
 use super::convert_to_regex;
 use moon_affected::Affected;
 use moon_common::Id;
-use moon_task::Task;
+use moon_task::{Target, Task};
 use moon_workspace_graph::WorkspaceGraph;
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 use tracing::debug;
 
@@ -12,6 +12,11 @@ use tracing::debug;
 pub struct QueryTasksOptions {
     pub affected: Option<Affected>,
     pub query: Option<String>,
+
+    /// Tasks to include when filtering by affected, even though they
+    /// are not affected themselves (for example, dependencies of affected).
+    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
+    pub include: BTreeSet<Target>,
 
     // Filters
     pub id: Option<String>,
@@ -119,7 +124,8 @@ pub async fn query_tasks(
         tasks = tasks
             .into_iter()
             .filter_map(|task| {
-                if affected.is_task_affected(&task.target) {
+                if affected.is_task_affected(&task.target) || options.include.contains(&task.target)
+                {
                     Some(task)
                 } else {
                     None

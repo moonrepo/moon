@@ -1,5 +1,5 @@
 use moon_app::commands::generate::parse_args_into_variables;
-use moon_codegen::tera::{Number, Value};
+use moon_codegen::tera::Value;
 use moon_common::path::standardize_separators;
 use moon_config::{
     TemplateVariable, TemplateVariableArraySetting, TemplateVariableBoolSetting,
@@ -572,10 +572,10 @@ mod generate {
 
                 assert_eq!(
                     context.get("array").unwrap(),
-                    &Value::Array(vec![
-                        Value::String("abc".into()),
-                        Value::Number(Number::from_i128(123).unwrap()),
-                        Value::Number(Number::from_f64(456.78).unwrap()),
+                    &Value::from(vec![
+                        Value::from("abc"),
+                        Value::from(123),
+                        Value::from(456.78),
                     ])
                 );
             }
@@ -602,7 +602,7 @@ mod generate {
                 let context =
                     parse_args_into_variables(&["--bool".into()], &create_vars()).unwrap();
 
-                assert_eq!(context.get("bool").unwrap(), &Value::Bool(true));
+                assert_eq!(context.get("bool").unwrap(), &Value::from(true));
             }
 
             #[test]
@@ -610,7 +610,7 @@ mod generate {
                 let context =
                     parse_args_into_variables(&["--no-bool".into()], &create_vars()).unwrap();
 
-                assert_eq!(context.get("bool").unwrap(), &Value::Bool(false));
+                assert_eq!(context.get("bool").unwrap(), &Value::from(false));
             }
 
             #[test]
@@ -621,7 +621,7 @@ mod generate {
                 )
                 .unwrap();
 
-                assert_eq!(context.get("bool").unwrap(), &Value::Bool(false));
+                assert_eq!(context.get("bool").unwrap(), &Value::from(false));
             }
 
             #[test]
@@ -632,7 +632,7 @@ mod generate {
                 )
                 .unwrap();
 
-                assert_eq!(context.get("bool").unwrap(), &Value::Bool(true));
+                assert_eq!(context.get("bool").unwrap(), &Value::from(true));
             }
         }
 
@@ -652,10 +652,7 @@ mod generate {
                     parse_args_into_variables(&["--number".into(), "123".into()], &create_vars())
                         .unwrap();
 
-                assert_eq!(
-                    context.get("number").unwrap(),
-                    &Value::Number(Number::from(123))
-                );
+                assert_eq!(context.get("number").unwrap(), &Value::from(123));
             }
 
             #[test]
@@ -664,10 +661,7 @@ mod generate {
                     parse_args_into_variables(&["--number".into(), "-123".into()], &create_vars())
                         .unwrap();
 
-                assert_eq!(
-                    context.get("number").unwrap(),
-                    &Value::Number(Number::from(-123))
-                );
+                assert_eq!(context.get("number").unwrap(), &Value::from(-123));
             }
 
             #[test]
@@ -693,7 +687,7 @@ mod generate {
                     parse_args_into_variables(&["--string".into(), "abc".into()], &create_vars())
                         .unwrap();
 
-                assert_eq!(context.get("string").unwrap(), &Value::String("abc".into()));
+                assert_eq!(context.get("string").unwrap(), &Value::from("abc"));
             }
 
             #[test]
@@ -719,7 +713,7 @@ mod generate {
                     parse_args_into_variables(&["--enum".into(), "a".into()], &create_vars())
                         .unwrap();
 
-                assert_eq!(context.get("enum").unwrap(), &Value::String("a".into()));
+                assert_eq!(context.get("enum").unwrap(), &Value::from("a"));
             }
 
             #[test]
@@ -753,7 +747,7 @@ mod generate {
 
                 assert_eq!(
                     context.get("multienum").unwrap(),
-                    &Value::Array(vec![Value::String("a".into())])
+                    &Value::from(vec![Value::from("a")])
                 );
             }
 
@@ -772,7 +766,7 @@ mod generate {
 
                 assert_eq!(
                     context.get("multienum").unwrap(),
-                    &Value::Array(vec![Value::String("a".into()), Value::String("b".into())])
+                    &Value::from(vec![Value::from("a"), Value::from("b")])
                 );
             }
 

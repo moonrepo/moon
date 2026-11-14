@@ -17,6 +17,9 @@ pub struct ExtArgs {
 pub async fn ext(session: MoonSession, args: ExtArgs) -> SessionResult {
     let extension_registry = session.get_extension_registry().await?;
 
+    // Preload all projects so that host functions have data to reference
+    session.get_workspace_graph().await?.get_projects()?;
+
     extension_registry
         .load(&args.id)
         .await?

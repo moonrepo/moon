@@ -2,9 +2,11 @@ use crate::inherited_tasks_config::*;
 use crate::shapes::{Input, OneOrMany};
 use miette::IntoDiagnostic;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf, standardize_separators};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxBuildHasher, FxHashMap};
 use schematic::schema::indexmap::IndexMap;
+use std::fmt;
 use std::path::Path;
+use std::sync::Arc;
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct InheritedTasksEntry {
@@ -12,9 +14,34 @@ pub struct InheritedTasksEntry {
     pub config: InheritedTasksConfig,
 }
 
-#[derive(Clone, Debug, Default)]
+/// Inherited configs derived from a distinct set of matched entries,
+/// keyed by the ordered source paths of those entries.
+type InheritedTasksCache = scc::HashMap<Vec<String>, Arc<InheritedTasks>, FxBuildHasher>;
+
+#[derive(Default)]
 pub struct InheritedTasksManager {
     pub configs: Vec<InheritedTasksEntry>,
+
+    // Many projects match the same set of configs, so derive each
+    // distinct set once and share it, instead of cloning per project
+    cache: InheritedTasksCache,
+}
+
+impl Clone for InheritedTasksManager {
+    fn clone(&self) -> Self {
+        Self {
+            configs: self.configs.clone(),
+            cache: InheritedTasksCache::default(),
+        }
+    }
+}
+
+impl fmt::Debug for InheritedTasksManager {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("InheritedTasksManager")
+            .field("configs", &self.configs)
+            .finish_non_exhaustive()
+    }
 }
 
 impl InheritedTasksManager {
@@ -29,14 +56,62 @@ impl InheritedTasksManager {
             config,
         });
 
+        // Derived configs may now be stale
+        self.cache.clear_sync();
+
         Ok(())
     }
 
-    pub fn get_inherited_config(&self, input: InheritFor) -> miette::Result<InheritedTasks> {
+    pub fn get_inherited_config(&self, input: InheritFor) -> miette::Result<Arc<InheritedTasks>> {
+        self.get_or_create_inherited_config(self.match_inherited_configs_in_order(input))
+    }
+
+    pub fn get_inherited_config_from_sources(
+        &self,
+        sources: &[String],
+    ) -> miette::Result<Arc<InheritedTasks>> {
+        self.get_or_create_inherited_config(
+            sources
+                .iter()
+                .filter_map(|source| {
+                    self.configs
+                        .iter()
+                        .find(|entry| standardize_separators(entry.input.as_str()) == *source)
+                })
+                .collect(),
+        )
+    }
+
+    fn get_or_create_inherited_config(
+        &self,
+        entries: Vec<&InheritedTasksEntry>,
+    ) -> miette::Result<Arc<InheritedTasks>> {
+        // The derived config is determined by the ordered entries alone
+        let key = entries
+            .iter()
+            .map(|entry| standardize_separators(entry.input.as_str()))
+            .collect::<Vec<_>>();
+
+        if let Some(config) = self.cache.read_sync(&key, |_, config| Arc::clone(config)) {
+            return Ok(config);
+        }
+
+        // Create outside of the bucket lock, and if another thread won the
+        // race, use its value so that all consumers share the same instance
+        let config = Arc::new(Self::create_inherited_config(entries)?);
+
+        Ok(Arc::clone(
+            self.cache.entry_sync(key).or_insert_with(|| config).get(),
+        ))
+    }
+
+    fn create_inherited_config(
+        entries: Vec<&InheritedTasksEntry>,
+    ) -> miette::Result<InheritedTasks> {
         let mut configs = IndexMap::default();
         let mut layers = FxHashMap::<String, Vec<String>>::default();
 
-        for config_entry in self.match_inherited_configs_in_order(input) {
+        for config_entry in entries {
             let source_path = standardize_separators(config_entry.input.as_str());
             let mut config = config_entry.config.clone();
 

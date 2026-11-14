@@ -1,0 +1,10 @@
+---
+source: crates/cli/tests/migrate_v3_test.rs
+expression: "read_file(&sandbox, \"packages/app/moon.yml\")"
+---
+language: typescript
+tasks:
+  build:
+    command: vite build
+    options:
+      cache: true

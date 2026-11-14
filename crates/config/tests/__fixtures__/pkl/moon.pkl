@@ -1,6 +1,6 @@
-amends "../../../../../website/static/pkl/v2/ProjectConfig.pkl"
+amends "../../../../../website/static/pkl/v3/ProjectConfig.pkl"
 
-import "../../../../../website/static/pkl/v2/ProjectDependencyConfig.pkl"
+import "../../../../../website/static/pkl/v3/ProjectDependencyConfig.pkl"
 
 dependsOn = new Listing {
 	"a"

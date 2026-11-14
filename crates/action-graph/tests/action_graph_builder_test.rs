@@ -3133,6 +3133,51 @@ mod action_graph_builder {
             }
 
             #[tokio::test(flavor = "multi_thread")]
+            async fn preserves_task_ordering_edges_with_upstream_none_and_downstream_deep() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let task_c = wg.get_task_from_project("deps-affected", "c").unwrap();
+                let task_b = wg.get_task_from_project("deps-affected", "b").unwrap();
+                let task_a = wg.get_task_from_project("deps-affected", "a").unwrap();
+
+                // When c is run with upstream none and downstream deep, c's dependents (b, a) are added.
+                // Because upstream is none, c's dependencies (such as d) are excluded.
+                // However, b depends on c, and a depends on b. The ordering edges between
+                // the included tasks must be preserved so they do not run concurrently.
+                builder
+                    .run_task(
+                        &task_c,
+                        &RunRequirements {
+                            dependencies: UpstreamScope::None,
+                            dependents: DownstreamScope::Deep,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                let idx_c = graph.get_node_index(&ActionNode::run_task(RunTaskNode::new(
+                    task_c.target.clone(),
+                )));
+                let idx_b = graph.get_node_index(&ActionNode::run_task(RunTaskNode::new(
+                    task_b.target.clone(),
+                )));
+                let idx_a = graph.get_node_index(&ActionNode::run_task(RunTaskNode::new(
+                    task_a.target.clone(),
+                )));
+
+                // Node for b requires node for c, and node for a requires node for b
+                assert!(graph.get_inner_graph().find_edge(idx_b, idx_c).is_some());
+                assert!(graph.get_inner_graph().find_edge(idx_a, idx_b).is_some());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
             async fn expands_skipped_dependents_when_task_is_revisited_in_scope() {
                 let sandbox = create_sandbox("tasks");
                 let mut container = ActionGraphContainer::new(sandbox.path());

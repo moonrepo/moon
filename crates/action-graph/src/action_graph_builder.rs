@@ -236,6 +236,45 @@ impl<'query> ActionGraphBuilder<'query> {
             }
         }
 
+        // Link required edges for dependencies that were out of scope when their dependent task
+        // was processed (e.g. via --upstream=none with --downstream=deep), but whose dependency tasks
+        // are actually present in the action graph (e.g. affected tasks or explicitly targeted)
+        if !self.unlinked_dependencies.is_empty() {
+            let mut target_to_indices: FxHashMap<&Target, Vec<NodeIndex>> = FxHashMap::default();
+            for (node, ni) in &self.nodes {
+                if let ActionNode::RunTask(task_node) = node {
+                    target_to_indices
+                        .entry(&task_node.target)
+                        .or_default()
+                        .push(*ni);
+                }
+            }
+
+            let mut edges_to_link = Vec::new();
+            for (target, unlinked_indices) in mem::take(&mut self.unlinked_dependencies) {
+                if let Some(ignored_deps) = self.ignored_dependencies.get_mut(&target) {
+                    ignored_deps.retain(|dep_target| {
+                        if let Some(dep_indices) = target_to_indices.get(dep_target) {
+                            for from_idx in &unlinked_indices {
+                                for to_idx in dep_indices {
+                                    edges_to_link.push((*from_idx, *to_idx));
+                                }
+                            }
+                            false
+                        } else {
+                            true
+                        }
+                    });
+                }
+            }
+
+            for (from_idx, to_idx) in edges_to_link {
+                let _ = self.link_edge(from_idx, to_idx, TaskDependencyType::Required);
+            }
+
+            self.ignored_dependencies.retain(|_, deps| !deps.is_empty());
+        }
+
         if !self.ignored_dependencies.is_empty() {
             context.ignored_dependencies = mem::take(&mut self.ignored_dependencies);
         }

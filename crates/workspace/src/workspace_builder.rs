@@ -131,8 +131,7 @@ impl WorkspaceBuilder {
         // written, or is from an incompatible version, is treated as a miss
         let cache = match &state.graph_digest {
             Some(graph_digest) if digest.hash == state.last_hash => {
-                match read_cache_object::<WorkspaceBuilder>(&context.cache_engine, graph_digest)
-                    .await
+                match read_cache_blob::<WorkspaceBuilder>(&context.cache_engine, graph_digest).await
                 {
                     Ok(cache) => cache,
                     Err(error) => {
@@ -215,7 +214,7 @@ impl WorkspaceBuilder {
         // Store the graph before saving the state that points to it, so the
         // state only ever references a graph built for its hash, and a failure
         // in between is a miss
-        state.graph_digest = Some(write_cache_object(&context.cache_engine, &graph).await?);
+        state.graph_digest = Some(write_cache_blob(&context.cache_engine, &graph).await?);
         state.last_hash = digest.hash;
 
         context

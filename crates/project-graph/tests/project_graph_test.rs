@@ -19,6 +19,7 @@ use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::{Duration, SystemTime};
 
 pub fn append_file<P: AsRef<Path>>(path: P, data: &str) {
     let mut file = OpenOptions::new().append(true).open(path.as_ref()).unwrap();
@@ -26,29 +27,57 @@ pub fn append_file<P: AsRef<Path>>(path: P, data: &str) {
     writeln!(file, "\n\n{data}").unwrap();
 }
 
-/// The path of an object in the local objects store, which shards objects by
-/// the first 2 chars of their hash.
-fn object_path(root: &Path, digest: &Digest) -> PathBuf {
-    root.join(".moon/cache/objects")
+/// The local objects store, which holds states and hash fingerprints.
+const OBJECTS_DIR: &str = ".moon/cache/objects";
+
+/// The local actions store's blobs, which holds the cached workspace graph.
+const BLOBS_DIR: &str = ".moon/cache/blobs";
+
+/// The path of an entry in a local store, which shards entries by the first
+/// 2 chars of their hash.
+fn store_path(root: &Path, dir: &str, digest: &Digest) -> PathBuf {
+    root.join(dir)
         .join(digest.hash.prefix())
         .join(digest.hash.suffix())
 }
 
 /// The workspace graph's cache state, stored under its key in the objects store.
+/// It's only written when the graph is rebuilt, not on a cache hit.
+fn graph_state_path(root: &Path) -> PathBuf {
+    store_path(root, OBJECTS_DIR, &Digest::from_bytes(STATE_KEY).unwrap())
+}
+
 fn load_graph_state(root: &Path) -> WorkspaceGraphCacheState {
-    json::read_file(object_path(root, &Digest::from_bytes(STATE_KEY).unwrap())).unwrap()
+    json::read_file(graph_state_path(root)).unwrap()
 }
 
-/// The cached workspace graph, stored by the digest of its content, which the
-/// state records.
+fn modified_at(path: &Path) -> SystemTime {
+    std::fs::metadata(path).unwrap().modified().unwrap()
+}
+
+fn backdate(path: &Path, age: Duration) {
+    OpenOptions::new()
+        .write(true)
+        .open(path)
+        .unwrap()
+        .set_modified(SystemTime::now() - age)
+        .unwrap();
+}
+
+/// The cached workspace graph, stored as a blob in the actions store by the
+/// digest of its content, which the state records.
 fn graph_cache_path(root: &Path) -> PathBuf {
-    object_path(root, &load_graph_state(root).graph_digest.unwrap())
+    store_path(
+        root,
+        BLOBS_DIR,
+        &load_graph_state(root).graph_digest.unwrap(),
+    )
 }
 
-/// The hashes of every object in the local objects store.
-fn stored_objects(root: &Path) -> Vec<String> {
+/// The hashes of every entry in a local store.
+fn stored_hashes(root: &Path, dir: &str) -> Vec<String> {
     let mut hashes = vec![];
-    let dir = root.join(".moon/cache/objects");
+    let dir = root.join(dir);
 
     if !dir.exists() {
         return hashes;
@@ -72,6 +101,16 @@ fn stored_objects(root: &Path) -> Vec<String> {
 
     hashes.sort();
     hashes
+}
+
+/// The hashes of every object in the local objects store.
+fn stored_objects(root: &Path) -> Vec<String> {
+    stored_hashes(root, OBJECTS_DIR)
+}
+
+/// The hashes of every blob in the local actions store.
+fn stored_blobs(root: &Path) -> Vec<String> {
+    stored_hashes(root, BLOBS_DIR)
 }
 
 fn map_ids(ids: Vec<Id>) -> Vec<String> {
@@ -532,7 +571,8 @@ tasks:
         async fn doesnt_cache_if_no_vcs() {
             let (sandbox, _graph) = build_cached_graph(|_| {}).await;
 
-            assert!(stored_objects(sandbox.path()).is_empty())
+            assert!(stored_objects(sandbox.path()).is_empty());
+            assert!(stored_blobs(sandbox.path()).is_empty());
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -548,7 +588,8 @@ tasks:
                 })
                 .await;
 
-            assert!(stored_objects(sandbox.path()).is_empty())
+            assert!(stored_objects(sandbox.path()).is_empty());
+            assert!(stored_blobs(sandbox.path()).is_empty());
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -609,9 +650,9 @@ tasks:
 
             assert!(cache_path(&sandbox).exists());
 
-            // Objects are staged in the store's temp directory, and moved into
+            // Blobs are staged in the store's temp directory, and moved into
             // place once fully written
-            let temp_dir = sandbox.path().join(".moon/cache/objects/temp");
+            let temp_dir = sandbox.path().join(BLOBS_DIR).join("temp");
 
             assert!(std::fs::read_dir(temp_dir).unwrap().next().is_none());
         }
@@ -658,6 +699,35 @@ tasks:
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn marks_cached_graph_as_used_on_hit() {
+            let (sandbox, _graph) = build_cached_graph(|sandbox| {
+                sandbox.enable_git();
+            })
+            .await;
+
+            // No task manifest references the graph, so cleaning removes it
+            // once it's older than the lifetime, unless a hit refreshes it
+            let cache_path = cache_path(&sandbox);
+            let state_path = graph_state_path(sandbox.path());
+            let state_modified = modified_at(&state_path);
+
+            backdate(&cache_path, Duration::from_secs(172800));
+
+            do_generate(sandbox.path()).await;
+
+            // The graph was a hit (the state wasn't saved again), and the same
+            // graph was refreshed, instead of being written again
+            assert_eq!(modified_at(&state_path), state_modified);
+            assert_eq!(graph_cache_path(sandbox.path()), cache_path);
+            assert!(
+                SystemTime::now()
+                    .duration_since(modified_at(&cache_path))
+                    .unwrap_or_default()
+                    < Duration::from_secs(3600)
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn creates_states_and_fingerprints() {
             let (sandbox, _graph) = build_cached_graph(|sandbox| {
                 sandbox.enable_git();
@@ -668,15 +738,16 @@ tasks:
 
             assert!(!state.last_hash.as_str().is_empty());
 
-            // The hash fingerprint is in the local objects store, which
-            // shards objects by the first 2 chars of their hash.
+            // The hash fingerprint is in the local objects store, while the
+            // graph is a blob in the local actions store
             assert!(
-                sandbox
-                    .path()
-                    .join(".moon/cache/objects")
-                    .join(&state.last_hash.as_str()[0..2])
-                    .join(&state.last_hash.as_str()[2..])
-                    .exists()
+                stored_objects(sandbox.path())
+                    .iter()
+                    .any(|hash| hash == state.last_hash.as_str())
+            );
+            assert_eq!(
+                stored_blobs(sandbox.path()),
+                [state.graph_digest.unwrap().hash.as_str()]
             );
         }
 
@@ -936,13 +1007,11 @@ tasks:
                 let state = load_state(&sandbox);
                 let mut blobs = stored_objects(sandbox.path());
 
-                // The state and graph live in the same store, so leave them out
+                // The state lives in the same store, so leave it out (the
+                // graph is a blob in the actions store)
                 let state_key = Digest::from_bytes(STATE_KEY).unwrap();
-                let graph_digest = state.graph_digest.clone().unwrap();
 
-                blobs.retain(|blob| {
-                    blob != state_key.hash.as_str() && blob != graph_digest.hash.as_str()
-                });
+                blobs.retain(|blob| blob != state_key.hash.as_str());
 
                 // The hash was regenerated with the discovered input files,
                 // but only the final fingerprint is stored
@@ -1028,14 +1097,11 @@ tasks:
             assert_vcs_context(&build_cached_graph(&sandbox).await);
 
             // The cache isn't written again on a hit
-            let cache_path = graph_cache_path(sandbox.path());
-            let modified = std::fs::metadata(&cache_path).unwrap().modified().unwrap();
+            let state_path = graph_state_path(sandbox.path());
+            let modified = modified_at(&state_path);
 
             assert_vcs_context(&build_cached_graph(&sandbox).await);
-            assert_eq!(
-                std::fs::metadata(&cache_path).unwrap().modified().unwrap(),
-                modified
-            );
+            assert_eq!(modified_at(&state_path), modified);
         }
 
         #[tokio::test(flavor = "multi_thread")]

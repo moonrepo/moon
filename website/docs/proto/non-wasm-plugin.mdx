@@ -271,6 +271,10 @@ To resolve a list of available versions using a JSON manifest, the following set
 - `manifest-version-key` - If the response is an array of objects, this is the key to extract the
   version from. If the response is an array of strings, this setting can be omitted. Defaults to
   `version`.
+  - Also accepts a [JSON path](./wasm-plugin#from-a-json-index), like `releases[*].tag`, for
+    responses with another shape, or `*~` for a response that is an object keyed by version. A
+    plain key, like `version`, still selects that key of each object.
+    <VersionLabel version="0.64.0" inline />
 
 <NonWasmTabs
   title="protostar"
@@ -315,6 +319,9 @@ following groups are supported:
 - `major` / `year` - The major version number. Defaults to `0` if missing.
 - `minor` / `month` - The minor version number. Defaults to `0` if missing.
 - `patch` / `day` - The patch version number. Defaults to `0` if missing.
+- `revision` - The 4th version number, for semantic versions with a
+  [revision](./tool-spec#revisions), like `1.2.3.4`. Does nothing if missing.
+  <VersionLabel version="0.64.0" inline />
 - `pre` - The pre-release identifier, like "rc.0" or "alpha.0". Supports an optional leading `-`.
   Does nothing if missing.
 - `build` - The build metadata, like a timestamp. Supports an optional leading `+`. Does nothing if
@@ -331,13 +338,18 @@ following groups are supported:
 
 > If no named capture groups are found, the match at index `1` is used as the version.
 
+Since v0.64, versions loaded from Git tags or a JSON manifest can be replaced by users with the
+[`[tools.*.versions-source]`](./config#toolsversions-source) setting, for example, to load versions
+from an internal mirror. <VersionLabel version="0.64.0" />
+
 ### Detecting versions
 
 And lastly, we can configure how to [detect a version](./detection) contextually at runtime, using
 the `[detect]` setting. At this time, we only support 1 setting:
 
 - `version-files` - A list of version files to extract from. The contents of these files can _only_
-  be the version string itself.
+  be the version string itself. Since v0.64, the first line with a version is used, and comments
+  (everything after a `#`) are ignored. <VersionLabel version="0.64.0" inline />
 
 <NonWasmTabs
   title="protostar"
@@ -511,7 +523,8 @@ that returns a JSON array of versions. These settings work the same as their
 - `git_tag_pattern` - A regex pattern to parse each tag with. Defaults to `version_pattern`.
 - `index_url` - A URL that returns a JSON array of strings or objects.
 - `index_version_key` - When the index returns objects, the key to extract the version from.
-  Defaults to `version`.
+  Defaults to `version`. Also accepts a [JSON path](./wasm-plugin#from-a-json-index), like
+  `releases[*].tag`, or `*~` for an index keyed by version. <VersionLabel version="0.64.0" inline />
 - `version_pattern` - A regex pattern to parse each version with, using
   [named capture groups](#version-patterns).
 

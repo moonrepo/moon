@@ -121,6 +121,17 @@ impl ToolchainsConfig {
             .or_else(|| self.plugins.get(&unstable_id))
     }
 
+    /// Return the identifier that a toolchain was configured with, which
+    /// may be its stable or unstable ("unstable_" prefixed) form.
+    pub fn get_plugin_id(&self, id: impl AsRef<str>) -> Option<&Id> {
+        let (stable_id, unstable_id) = Id::stable_and_unstable(id);
+
+        self.plugins
+            .get_key_value(&stable_id)
+            .or_else(|| self.plugins.get_key_value(&unstable_id))
+            .map(|(id, _)| id)
+    }
+
     pub fn inherit_versions_from_env_vars(&mut self) -> miette::Result<()> {
         for (id, config) in &mut self.plugins {
             if let Ok(version) = env::var(format!("MOON_{}_VERSION", id.to_env_var())) {

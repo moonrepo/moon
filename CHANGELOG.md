@@ -105,6 +105,21 @@
     in `moon project --json`. Other output, like `moon projects --json`, `moon query projects`, and
     `moon project-graph --json`, includes the paths of those configs in a new `inheritedFrom` field
     instead.
+- **Toolchains**
+  - Reworked the `define_requirements` function of the toolchain plugin API, so that each required
+    toolchain controls how it's ordered. The `requires` field is now a list of
+    `ToolchainRequirement`s, each with an `id`, and a `setup_toolchain` and `setup_environment`
+    phase (`before` or `after`), which is when the required toolchain's action runs, relative to the
+    same action of the toolchain that requires it. They default to `before` and `after`, while
+    `null` doesn't order that action. The `for_setup_environment` and `for_setup_toolchain` fields
+    have been removed, and plugins built with a previous version of the plugin API must be updated.
+  - Added an `inheritable_dependencies` field to `ParseManifestOutput` in the toolchain plugin API,
+    for the dependencies that packages in a workspace can inherit, like Cargo's
+    `[workspace.dependencies]`, which aren't dependencies of the root package itself. Inherited
+    dependencies are now only resolved from this field, of the dependencies root's manifest (or the
+    project's own manifest when it's the root), in any scope, instead of from the same scope of the
+    root manifest's dependencies. Plugins that return inherited dependencies must return the
+    versions they inherit in this field.
 
 #### 🚀 Updates
 
@@ -121,10 +136,12 @@
     through a dependency is, like `(2 hops away)`. Affected projects and tasks in the JSON output of
     `moon query affected` also include a `distance` field, which is `0` when directly affected.
   - When a toolchain's environment is setup, the environments of the toolchains that it requires
-    (from `define_requirements`) are now also setup, in the same dependencies root, beforehand. For
-    example, the Node.js package manager and Deno toolchains implement `setup_environment` (like
-    importing Yarn plugins), which never ran before, as they don't locate a dependencies root (the
-    JavaScript toolchain does).
+    (from `define_requirements`, with a `setup_environment` phase) are now also setup, in the same
+    dependencies root, before or after it. For example, the Node.js package manager and Deno
+    toolchains implement `setup_environment` (like importing Yarn plugins), which never ran before,
+    as they don't locate a dependencies root (the JavaScript toolchain does). Installing
+    dependencies in the root waits for these, including the toolchains and environments that are
+    setup after the root's toolchain, like Node.js and its package manager after JavaScript.
   - Rewrote the action graph builder, which now builds the graph in stages, instead of inserting one
     action at a time. Building the graph is 13% to 47% faster in our benchmarks, and the graphs are
     the same, except:
@@ -205,6 +222,10 @@
     isn't a member of the workspace that it located, a nested workspace that an enclosing
     workspace's members also match, and a member that overrides the workspace's version. Also
     supports `--dot` and `--json` output, and placing a single project, like a run would.
+  - `moon project` now lists the dependencies roots that the project is a member of, for its
+    toolchains and its tasks' toolchains, with its role in each (like
+    `node @ . (workspace member)`), derived from the layout graph. With `--json`, they're included
+    in a new `dependenciesRoots` field, each with a `toolchain`, `root`, and `role`.
   - Added a `moon migrate v3` command, that migrates the settings that have been renamed or removed
     in v3, within `.moon/workspace.*`, `.moon/tasks/**/*`, and `moon.*` configuration files. Only
     files that change are re-written, which strips their comments. Pkl files, execution plans, and
@@ -233,6 +254,12 @@
   - When the only focused project is the root project of a dependencies workspace, the production
     install now receives no project, like the workspace's other actions, while its toolchain config
     is still that project's merged config.
+  - `moon docker scaffold` now copies the manifests and lockfiles of dependencies roots that aren't
+    a project, like a package manager workspace whose members are projects, into the configs
+    skeleton, and calls the `scaffold_docker` plugin function for them, without a project, like the
+    workspace root. Previously, only the roots of projects and the workspace were scaffolded, so
+    installs within Docker could not locate these roots. The sources skeleton includes the roots of
+    the focused projects and their dependencies.
 - **Hasher**
   - Improved the performance of file hashing.
     - File hashes are now memoized for the lifetime of the process, and reused while the file's size
@@ -269,6 +296,21 @@
   - Added an `inject_task_inputs` field to `RegisterToolchainOutput` in the toolchain plugin API,
     which controls whether the toolchain's manifest and lock file names are injected as an affected
     only input into the tasks that use it. Defaults to `true`.
+  - A project's toolchains now also include the toolchains required by those configured in
+    `toolchains.default`, and inferred from its language, instead of only those detected from its
+    files, and the toolchains that those require, and so on. Like a task's, they also include the
+    configured toolchains that require one of them, like `javascript` and its package manager for a
+    project that uses `node`. A project can still disable any of these toolchains in its
+    `toolchains` settings, with either its stable or `unstable_` identifier, and a disabled
+    toolchain doesn't add the toolchains that it requires, or that require it.
+  - A task's toolchains now include the toolchains that are required by its required toolchains, and
+    so on, and are resolved with the project's toolchain settings, instead of only the workspace's.
+    Toolchains that require one of the task's toolchains are still added, but no longer the
+    toolchains that only require one of the toolchains it requires. Tasks whose toolchains change
+    get a new hash.
+  - Required toolchains are now resolved to the identifier they were configured with, so a
+    requirement on `unstable_example`, when `example` is configured (or the reverse), sets up the
+    configured toolchain, instead of a separate one.
   - Added support for proto v0.63's config trust. As moon already runs the workspace's tasks,
     `.prototools` configs within the workspace are always trusted, while other local configs, like
     one in a parent directory, must be trusted with `proto trust` before their security-sensitive
@@ -327,9 +369,8 @@
   included in task hashes, as their version was only looked up in the workspace's dependencies of
   the same scope. Inherited versions are now resolved from the workspace's dependencies (like
   `[workspace.dependencies]`) whichever scope inherits them, including for a project at the root of
-  the workspace. When an inherited version can't be resolved, its locked versions are hashed
-  instead. Tasks of affected projects will have a new hash, so they will not be cached on their
-  first run after upgrading.
+  the workspace. Tasks of affected projects will have a new hash, so they will not be cached on
+  their first run after upgrading.
 - Fixed an issue where `--upstream none` would also remove the ordering edges between selected tasks
   that depend on each other, allowing them to run concurrently or in the wrong order. Use
   `--no-dependencies` instead, which keeps them ordered.
@@ -342,6 +383,11 @@
   ID and an alias) with different scopes.
 - Fixed an issue where task input globs configured with `cache: false` were read back as cached when
   deserialized from JSON, like when WASM plugins load tasks.
+- Fixed an issue where dependencies that inherit their version from the workspace (like Cargo's
+  `workspace = true`) were hashed with the wrong version, or not at all, when the workspace root is
+  also a package that declares or inherits a dependency of the same name. Their versions are now
+  hashed with `hasher.optimization: performance` too, and installing dependencies runs again when
+  an inheritable version changes.
 - Fixed an issue where the workspace graph's cache could be left in an inconsistent state if moon
   was interrupted while saving it, which would load an outdated graph, or fail every command until
   the cache was removed. The graph is now written atomically, and saved before the state that marks

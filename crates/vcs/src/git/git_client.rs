@@ -1,11 +1,12 @@
-use super::common::{clean_git_version, normalize_branch_ref, validate_revision};
+use super::common::{
+    clean_git_version, extract_repository_slug, normalize_branch_ref, validate_revision,
+};
 use super::git_error::GitError;
 use super::tree::*;
 use crate::changed_files::*;
 use crate::git::common::create_command;
 use crate::vcs::{Vcs, VcsHookEnvironment};
 use async_trait::async_trait;
-use git_url_parse::types::provider::GenericProvider;
 use gix::repository::Kind;
 use miette::IntoDiagnostic;
 use moon_common::path::{
@@ -435,8 +436,6 @@ impl Vcs for Git {
     }
 
     async fn get_repository_slug(&self) -> miette::Result<String> {
-        use git_url_parse::GitUrl;
-
         for candidate in &self.remote_candidates {
             if let Ok(output) = self
                 .create_command(["remote", "get-url", candidate])
@@ -445,15 +444,7 @@ impl Vcs for Git {
             {
                 let remote_url = output_to_trimmed_string(&output.stdout);
 
-                return Ok(
-                    if let Ok(url) = GitUrl::parse(&remote_url)
-                        .and_then(|url| url.provider_info::<GenericProvider>())
-                    {
-                        url.fullname()
-                    } else {
-                        remote_url
-                    },
-                );
+                return Ok(extract_repository_slug(&remote_url).unwrap_or(remote_url));
             }
         }
 

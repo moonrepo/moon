@@ -2946,18 +2946,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "git-url-parse"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8df306e4dfc91752e89b74c88ee876c8518890600f82255254828f9192dd003c"
-dependencies = [
- "getset",
- "nom 8.0.0",
- "thiserror 2.0.21",
- "url",
-]
-
-[[package]]
 name = "gix"
 version = "0.88.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6717,7 +6705,6 @@ name = "moon_vcs"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "git-url-parse",
  "gix",
  "ignore",
  "miette 7.6.0",

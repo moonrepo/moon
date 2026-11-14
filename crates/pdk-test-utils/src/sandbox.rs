@@ -199,6 +199,7 @@ impl MoonWasmSandbox {
 
         let host_data = HostData {
             cache_dir: self.moon_dir.join("cache"),
+            foreign_platform: None,
             http_client: loader.get_http_client().unwrap().clone(),
             virtual_paths,
             working_dir: self.root.clone(),

@@ -1,15 +1,39 @@
+use crate::commands::layout_graph::format_placement;
 use crate::prompts::select_identifier;
 use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use convert_case::{Case, Casing};
 use iocraft::prelude::{View, element};
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{Id, is_test_env};
 use moon_console::ui::{
     Container, Entry, List, ListItem, Map, MapItem, Section, SelectOption, SelectProps, Style,
     StyledText,
 };
+use moon_layout_graph::Placement;
+use moon_project::Project;
+use moon_toolchain::DependenciesWorkspaceRole;
+use serde::Serialize;
 use starbase_utils::json;
 use tracing::instrument;
+
+/// A dependencies root that the project is a member of.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DependenciesRootJson<'graph> {
+    toolchain: &'graph Id,
+    root: &'graph WorkspaceRelativePathBuf,
+    role: DependenciesWorkspaceRole,
+}
+
+/// The project, with the dependencies roots that it's a member of.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ProjectJson<'data> {
+    #[serde(flatten)]
+    project: &'data Project,
+    dependencies_roots: Vec<DependenciesRootJson<'data>>,
+}
 
 #[derive(Args, Clone, Debug)]
 pub struct ProjectArgs {
@@ -55,14 +79,47 @@ pub async fn project(session: MoonSession, args: ProjectArgs) -> SessionResult {
     let config = &project.config;
     let console = &session.console;
 
+    // The dependencies roots that the project is a member of, for its
+    // toolchains and its tasks' toolchains, placed like a run would
+    let mut layout_builder = session.build_layout_graph().await?;
+    layout_builder
+        .place_project(workspace_graph.get_project(&project.id)?)
+        .await?;
+
+    let layout_graph = layout_builder.build();
+    let memberships = layout_graph
+        .bindings(&project.id)
+        .iter()
+        .filter_map(|binding| match &binding.placement {
+            Placement::Root { index, role } => Some((binding, layout_graph.root(*index), *role)),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+
     if args.json {
-        console.out.write_line(json::format(&project, true)?)?;
+        console.out.write_line(json::format(
+            &ProjectJson {
+                project: &project,
+                dependencies_roots: memberships
+                    .iter()
+                    .map(|(_, root, role)| DependenciesRootJson {
+                        toolchain: &root.toolchain,
+                        root: &root.root,
+                        role: *role,
+                    })
+                    .collect(),
+            },
+            true,
+        )?)?;
 
         return Ok(None);
     }
 
     let show_in_prod = !is_test_env();
-    let toolchains = project.get_enabled_toolchains();
+    let dependencies_roots = memberships
+        .iter()
+        .map(|(binding, ..)| format_placement(&layout_graph, binding))
+        .collect::<Vec<_>>();
 
     session.console.render(element! {
         Container {
@@ -164,14 +221,29 @@ pub async fn project(session: MoonSession, args: ProjectArgs) -> SessionResult {
                         )
                     }
                 }))
-                Entry(
-                    name: if toolchains.len() == 1 {
-                        "Toolchain"
-                    } else {
-                        "Toolchains"
-                    },
-                    content: toolchains.into_iter().cloned().collect::<Vec<_>>().join(", "),
-                )
+                #((!dependencies_roots.is_empty()).then(|| {
+                    element! {
+                        Entry(
+                            name: if dependencies_roots.len() == 1 {
+                                "Toolchain"
+                            } else {
+                                "Toolchains"
+                            }
+                        ) {
+                            List {
+                                #(dependencies_roots.iter().map(|root| {
+                                    element! {
+                                        ListItem {
+                                            StyledText(
+                                                content: root,
+                                            )
+                                        }
+                                    }
+                                }))
+                            }
+                        }
+                    }
+                }))
                 Entry(
                     name: "Language",
                     content: project.language.to_string(),

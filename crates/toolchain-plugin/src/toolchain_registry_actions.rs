@@ -14,7 +14,7 @@ use moon_plugin::{CallOptions, CallResult};
 use moon_toolchain::DependenciesWorkspace;
 use proto_core::UnresolvedVersionSpec;
 use proto_pdk_api::ActivateEnvironmentOutput;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::path::{Path, PathBuf};
 
 // These implementations aggregate the call results from all toolchains
@@ -113,28 +113,12 @@ impl ToolchainRegistry {
         Ok(detected)
     }
 
-    pub async fn detect_project_toolchain_from_usage<InFn>(
-        &self,
-        dir: &Path,
-        input_factory: InFn,
-    ) -> miette::Result<Vec<Id>>
-    where
-        InFn: Fn(&ToolchainPlugin) -> DefineRequirementsInput,
-    {
+    pub async fn detect_project_toolchain_from_usage(&self, dir: &Path) -> miette::Result<Vec<Id>> {
         let mut detected = IndexSet::<Id>::default();
 
         for toolchain in self.load_all().await? {
             if toolchain.detect_project_usage(dir)? {
                 detected.insert(toolchain.id.clone());
-            }
-        }
-
-        for result in self
-            .define_requirements_many(detected.iter().collect(), input_factory)
-            .await?
-        {
-            for require_id in result.output.requires {
-                detected.insert(Id::new(require_id)?);
             }
         }
 
@@ -212,39 +196,108 @@ impl ToolchainRegistry {
         Ok(results.into_iter().map(|result| result.output).collect())
     }
 
-    pub async fn expand_task_usage<InFn>(
+    /// Expand the toolchains with the toolchains that they require, and the
+    /// toolchains that those require, and so on. The configured toolchains that
+    /// require any of the provided toolchains (or of those dependents) are also
+    /// added, with their own requirements, like Node.js also using the JavaScript
+    /// toolchain and its configured package manager, which require it. The
+    /// dependents of required toolchains are not added, as they're siblings,
+    /// like pnpm for npm, as both require Node.js.
+    ///
+    /// The provided toolchains stay first and in order, as consumers treat the
+    /// first as the primary (the `$taskToolchain` token), and the list is hashed
+    /// as-is. Identifiers are resolved to how the toolchains were configured
+    /// (stable or unstable), and toolchains that aren't configured are kept, so
+    /// that the consumer can filter them.
+    ///
+    /// Excluded toolchains (like those a project disables) are never added, nor
+    /// expanded from, so their requirements and dependents are only added when
+    /// another toolchain leads to them.
+    pub async fn expand_requirements<InFn>(
         &self,
         ids: Vec<Id>,
+        excluded: Vec<Id>,
         input_factory: InFn,
     ) -> miette::Result<Vec<Id>>
     where
         InFn: Fn(&ToolchainPlugin) -> DefineRequirementsInput,
     {
-        // Ordered, so that the toolchains a task configured stay ahead of the
-        // ones pulled in by requirements. Consumers treat the first as the
-        // primary (the `$taskToolchain` token), and the list is hashed as-is
-        let mut expanded = IndexSet::<Id>::from_iter(ids);
+        let excluded = excluded
+            .into_iter()
+            .map(|id| self.resolve_toolchain_id(id))
+            .collect::<FxHashSet<_>>();
+
+        let mut expanded = ids
+            .into_iter()
+            .map(|id| self.resolve_toolchain_id(id))
+            .filter(|id| !excluded.contains(id))
+            .collect::<IndexSet<_>>();
+
+        // The provided toolchains and their dependents
+        let mut dependents = expanded.clone();
+
+        // The requirements of every configured toolchain, as any may be a dependent,
+        // while toolchains that aren't configured can't define requirements
+        let mut requirements = vec![];
+
+        let candidate_ids = self
+            .get_plugin_ids()
+            .into_iter()
+            .filter(|id| !excluded.contains(*id))
+            .collect();
 
         for result in self
-            .define_requirements_many(self.get_plugin_ids(), input_factory)
+            .define_requirements_many(candidate_ids, &input_factory)
             .await?
         {
-            if expanded.contains(&result.id)
-                || result
-                    .output
-                    .requires
-                    .iter()
-                    .any(|id| expanded.contains(id.as_str()))
-            {
-                for require_id in result.output.requires {
-                    expanded.insert(Id::new(require_id)?);
+            let mut required = vec![];
+
+            for requirement in result.output.requires {
+                // An invalid identifier can't be a configured toolchain, and is
+                // reported, naming this toolchain, when the action graph sets it up
+                if let Ok(require_id) = Id::new(requirement.id) {
+                    let require_id = self.resolve_toolchain_id(require_id);
+
+                    if !excluded.contains(&require_id) {
+                        required.push(require_id);
+                    }
+                }
+            }
+
+            requirements.push((result.id, required));
+        }
+
+        loop {
+            let counts = (expanded.len(), dependents.len());
+
+            for (id, required) in &requirements {
+                if !dependents.contains(id) && required.iter().any(|req| dependents.contains(req)) {
+                    dependents.insert(id.to_owned());
+                    expanded.insert(id.to_owned());
                 }
 
-                expanded.insert(result.id);
+                if expanded.contains(id) {
+                    expanded.extend(required.iter().cloned());
+                }
+            }
+
+            // Nothing was added, so every dependent and requirement is known
+            if (expanded.len(), dependents.len()) == counts {
+                break;
             }
         }
 
         Ok(expanded.into_iter().collect())
+    }
+
+    /// Resolve the identifier to how the toolchain was configured, which may be
+    /// its stable or unstable ("unstable_" prefixed) form. If not configured,
+    /// it's returned as-is.
+    pub fn resolve_toolchain_id(&self, id: Id) -> Id {
+        match self.config_data.get_plugin_id(&id) {
+            Some(configured_id) => configured_id.to_owned(),
+            None => id,
+        }
     }
 
     pub async fn extend_command_many<InFn>(

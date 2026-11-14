@@ -1,12 +1,13 @@
 use crate::abort_state::AbortState;
 use crate::event_emitter::EventEmitter;
+use crate::priority_semaphore::PrioritySemaphore;
 use moon_action::Action;
 use moon_daemon_client::DaemonClient;
 use moon_workspace_graph::WorkspaceGraph;
 use petgraph::graph::NodeIndex;
 use rustc_hash::FxHashMap;
 use std::sync::Arc;
-use tokio::sync::{RwLock, Semaphore, mpsc::Sender, mpsc::UnboundedSender};
+use tokio::sync::{RwLock, mpsc::Sender, mpsc::UnboundedSender};
 use tokio_util::sync::CancellationToken;
 
 /// A job that has completed, as sent to the dispatcher.
@@ -56,8 +57,8 @@ pub struct JobContext {
     /// Currently running jobs (used by the dispatcher)
     pub running_jobs: Arc<RwLock<FxHashMap<NodeIndex, u64>>>,
 
-    /// Acquires a permit for concurrency
-    pub semaphore: Arc<Semaphore>,
+    /// Acquires a permit for concurrency, in priority order
+    pub semaphore: Arc<PrioritySemaphore>,
 
     /// The project and task graphs, for use within actions
     pub workspace_graph: Arc<WorkspaceGraph>,

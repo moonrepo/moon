@@ -399,7 +399,7 @@
 
 #### ⚙️ Internal
 
-- Updated proto to [v0.63.1](https://github.com/moonrepo/proto/releases/tag/v0.63.1).
+- Updated proto to [v0.64.0](https://github.com/moonrepo/proto/releases/tag/v0.64.0).
 
 ## 2.6.6
 

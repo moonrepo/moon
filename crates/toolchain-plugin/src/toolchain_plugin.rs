@@ -247,7 +247,8 @@ impl ToolchainPlugin {
             paths.extend(locations.globals_dirs);
             paths.extend(locations.exes_dirs);
 
-            if let Some(dir) = locations.exe_file.parent() {
+            // Some tools (like backends) have no primary executable
+            if let Some(dir) = locations.exe_file.as_deref().and_then(Path::parent) {
                 paths.insert(dir.to_path_buf());
             }
         }

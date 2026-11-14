@@ -140,6 +140,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [install](https://moonrepo.dev/docs/proto/commands/install): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [list-remote](https://moonrepo.dev/docs/proto/commands/list-remote): :::danger
 - [list](https://moonrepo.dev/docs/proto/commands/list): :::danger
+- [lock](https://moonrepo.dev/docs/proto/commands/lock): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [mcp](https://moonrepo.dev/docs/proto/commands/mcp): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [outdated](https://moonrepo.dev/docs/proto/commands/outdated): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [pin](https://moonrepo.dev/docs/proto/commands/pin): import VersionLabel from '@site/src/components/Docs/VersionLabel';
@@ -149,7 +150,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [plugin remove](https://moonrepo.dev/docs/proto/commands/plugin/remove): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [plugin search](https://moonrepo.dev/docs/proto/commands/plugin/search): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [regen](https://moonrepo.dev/docs/proto/commands/regen): import VersionLabel from '@site/src/components/Docs/VersionLabel';
-- [run](https://moonrepo.dev/docs/proto/commands/run): The `proto run <tool> [version]` (or `proto r`) command will run a tool after
+- [run](https://moonrepo.dev/docs/proto/commands/run): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [setup](https://moonrepo.dev/docs/proto/commands/setup): The `proto setup` command will setup proto in your current shell by modifying an applicable profile
 - [shell](https://moonrepo.dev/docs/proto/commands/shell): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [status](https://moonrepo.dev/docs/proto/commands/status): import VersionLabel from '@site/src/components/Docs/VersionLabel';
@@ -300,3 +301,4 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [proto v0.62 - Community plugins, shell deactivation, and Zig support](https://moonrepo.dev/blog/2026-09-03_proto-v0.62): Dozens of community tools now install by name alone, shell activation learned how to turn itself
 - [moon v2.6 - Cleanup and wait task dependencies, OpenTelemetry metrics, Pkl type checking, and more](https://moonrepo.dev/blog/2026-10-05_moon-v2.6): This release is all about what happens _around_ your tasks. Dependencies can now run after a task to
 - [proto v0.63 - Trusted configs, Kotlin support, and schema plugins v2](https://moonrepo.dev/blog/2026-10-06_proto-v0.63): This release is all about trust. Configuration files now have to earn it before they can touch your
+- [proto v0.64 - Locking without installing, tool requirements, and custom version sources](https://moonrepo.dev/blog/2026-11-13_proto-v0.64): Lockfiles can now be filled in for every platform without installing a single tool, tools can

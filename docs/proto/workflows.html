@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.701e0713.js" defer="defer"></script>
-<script src="/assets/js/main.92cc8011.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.806ad913.js" defer="defer"></script>
+<script src="/assets/js/main.0e7fbb2c.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -30,6 +30,12 @@ executables. Shims <em>are not</em> symlinks to the tool&#x27;s binary, but are 
 <a class="" href="/docs/proto/commands/run"><code>proto run</code></a>, enabling <a class="" href="/docs/proto/detection">runtime version detection</a> on every
 invocation! For example, these are equivalent:</p>
 <div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto run </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><span class="token plain"> -- </span><span class="token parameter variable" style="color:#fef9c3">--version</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token number" style="color:#94dded">20.0</span><span class="token plain">.0</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--version</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token number" style="color:#94dded">20.0</span><span class="token plain">.0</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ </span><span class="token function" style="color:#ff94ff;font-weight:bold">which</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">~/.proto/shims/node</span><br></div></code></pre></div></div>
+<p>Each shim is a hard link to the <code>proto-shim</code> executable, so no matter how many shims exist, they
+only use the disk space of a single executable. If a hard link can&#x27;t be created (for example, when
+<code>proto-shim</code> is on a different drive), the executable is copied instead. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v0.64.0</span></p>
+<blockquote>
+<p>Before v0.64, each shim was a copy of the <code>proto-shim</code> executable.</p>
+</blockquote>
 <h3 class="anchor anchorTargetStickyNavbar_tleR" id="setup">Setup<a href="#setup" class="hash-link" aria-label="Direct link to Setup" title="Direct link to Setup" translate="no">​</a></h3>
 <p>To make use of shims, prepend the <code>~/.proto/shims</code> directory to <code>PATH</code> in your shell profile. This
 <em>must come before</em> the <a href="#binary-linking" class="">bin directory</a> if using both.</p>
@@ -55,6 +61,12 @@ range (<code>~major.minor</code>). Is created for each separate major + minor ve
 <li class=""><code>~/.proto/bin/node-canary</code> - Points to a canary install, if it exists.</li>
 </ul>
 <div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ node-22 </span><span class="token parameter variable" style="color:#fef9c3">--version</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token number" style="color:#94dded">22.5</span><span class="token plain">.1</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ </span><span class="token function" style="color:#ff94ff;font-weight:bold">which</span><span class="token plain"> node-22</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">~/.proto/bin/node-22 -</span><span class="token operator" style="color:#b7a9f9">&gt;</span><span class="token plain"> ~/.proto/tools/node/22.5.1/bin/node</span><br></div></code></pre></div></div>
+<p>On Windows, these are also symlinks, which require Developer Mode to be enabled in the Windows
+settings, or proto to be run as an administrator. Without either, the executables are copied
+instead, which uses more disk space, and <a class="" href="/docs/proto/commands/diagnose"><code>proto diagnose</code></a> will warn. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v0.64.0</span></p>
+<blockquote>
+<p>Before v0.64, executables were always copied on Windows.</p>
+</blockquote>
 <div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>Not all tools support symlinking a binary, as not all files are executable. For example, most
 Node.js package managers currently do not support this, as JavaScript files are not executable
 (especially on Windows). Shims are required for these tools.</p></div></div>

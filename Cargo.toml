@@ -27,7 +27,6 @@ convert_case = "0.12.0"
 criterion = { package = "codspeed-criterion-compat", version = "5.0.2", default-features = false, features = [
   "async_tokio",
 ] }
-dirs = "6.0.0"
 futures = "0.3.34"
 httpmock = "0.8.3"
 indexmap = "2.14.2"
@@ -129,6 +128,12 @@ warpgate_pdk = "0.20.0"
 # warpgate = { path = "../proto/crates/warpgate" }
 # warpgate_api = { path = "../proto/crates/warpgate-api" }
 # warpgate_pdk = { path = "../proto/crates/warpgate-pdk" }
+
+[workspace.lints.cargo]
+# Only checks `dependencies` and `build-dependencies`, while
+# `dev-dependencies` are still checked by cargo-shear
+unused_dependencies = "deny"
+unused_workspace_dependencies = "deny"
 
 [workspace.lints.clippy]
 # Very noisy, lots of false positives!

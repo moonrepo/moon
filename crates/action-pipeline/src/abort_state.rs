@@ -1,6 +1,6 @@
 use rustc_hash::FxHashSet;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Mutex, OnceLock};
 use std::time::Instant;
 use tokio_util::sync::CancellationToken;
 
@@ -120,16 +120,6 @@ impl AbortState {
                 _ = cancel_token.cancelled() => {}
             };
         }
-    }
-}
-
-/// Marks cleanup jobs as drained when dropped, so that the pipeline never waits
-/// on a drain that will never happen (the dispatcher returned early or panicked).
-pub struct DrainedGuard(pub Arc<AbortState>);
-
-impl Drop for DrainedGuard {
-    fn drop(&mut self) {
-        self.0.mark_drained();
     }
 }
 

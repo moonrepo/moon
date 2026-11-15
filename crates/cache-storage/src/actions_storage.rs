@@ -7,6 +7,7 @@ use moon_hash::Digest;
 use moon_manifest::TaskManifest;
 use rustc_hash::FxHashMap;
 use std::collections::VecDeque;
+use std::mem::DropGuard;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
@@ -80,16 +81,6 @@ enum ConnectionState {
     Finished,
 }
 
-/// Marks the connection as finished when dropped, so waiters are released
-/// even if connecting panics or its task is aborted.
-struct FinishConnection<'a>(&'a watch::Sender<ConnectionState>);
-
-impl Drop for FinishConnection<'_> {
-    fn drop(&mut self) {
-        self.0.send_replace(ConnectionState::Finished);
-    }
-}
-
 #[derive(Debug)]
 pub struct ActionsStorage {
     background_tasks: Arc<Mutex<Vec<JoinHandle<miette::Result<()>>>>>,
@@ -147,7 +138,11 @@ impl ActionsStorage {
     pub async fn connect_backends(&self) -> miette::Result<()> {
         self.connection.send_replace(ConnectionState::Connecting);
 
-        let _finish = FinishConnection(&self.connection);
+        // Mark the connection as finished when dropped, so waiters are
+        // released even if connecting panics or its task is aborted
+        let _finish = DropGuard::new(&self.connection, |connection| {
+            connection.send_replace(ConnectionState::Finished);
+        });
         let mut set = JoinSet::new();
 
         for backend in self.get_backends() {

@@ -193,7 +193,7 @@ impl ToolchainPlugin {
             // Match against the provided member globs
             else if let Some(members) = &workspace.members {
                 GlobSet::new_cached(members)?
-                    .matches(path.strip_prefix(&workspace.root).unwrap_or(path))
+                    .matches(path.trim_prefix(&workspace.root))
                     .then_some(DependenciesWorkspaceRole::WorkspaceMember)
             }
             // No members means there's no workspace at all, only the root

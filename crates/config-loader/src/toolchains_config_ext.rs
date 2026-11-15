@@ -60,7 +60,7 @@ impl ToolchainsConfigExt {
             let proto_id = match &config.version_from_prototools {
                 ToolchainPluginVersionFrom::Enabled(enabled) => {
                     if *enabled {
-                        id.as_str().strip_prefix("unstable_").unwrap_or(id.as_str())
+                        id.as_str().trim_prefix("unstable_")
                     } else {
                         continue;
                     }

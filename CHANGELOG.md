@@ -390,8 +390,8 @@
 - Fixed an issue where dependencies that inherit their version from the workspace (like Cargo's
   `workspace = true`) were hashed with the wrong version, or not at all, when the workspace root is
   also a package that declares or inherits a dependency of the same name. Their versions are now
-  hashed with `hasher.optimization: performance` too, and installing dependencies runs again when
-  an inheritable version changes.
+  hashed with `hasher.optimization: performance` too, and installing dependencies runs again when an
+  inheritable version changes.
 - Fixed an issue where the workspace graph's cache could be left in an inconsistent state if moon
   was interrupted while saving it, which would load an outdated graph, or fail every command until
   the cache was removed. The graph is now written atomically, and saved before the state that marks
@@ -446,10 +446,18 @@
     `platform` and `toolchain.default` in `moon.yml`.
   - Settings were re-ordered, and `moon.yml` files in nested `node_modules` were migrated.
   - Files that didn't require a migration were still re-written, which stripped their comments.
+- Fixed an issue where the repository slug was extracted incorrectly from Git remote URLs with
+  nested owners (like GitLab subgroups) and no `.git` suffix, or with `.git` in the repository name
+  (like `owner/owner.github.io.git`).
+- Fixed an issue where unquoting a task argument would remove too many characters when its value
+  started or ended with the quote character, like an escaped quote (`"say \"hi\""`), or nested
+  parentheses (`%(foo(bar))`).
 
 #### ⚙️ Internal
 
 - Updated proto to [v0.64.0](https://github.com/moonrepo/proto/releases/tag/v0.64.0).
+- Updated Rust to v1.100.0.
+- Updated dependencies.
 
 ## 2.6.6
 

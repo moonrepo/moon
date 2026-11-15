@@ -9,6 +9,7 @@ use starbase_utils::hash::{
     sha256::native::{Digest as ShaDigest, Sha256},
 };
 use std::io::{Read, Write};
+use std::mem::DropGuard;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
@@ -26,19 +27,8 @@ pub struct CasStore {
     pub config: CacheCasConfig,
 }
 
-/// Drop guard that removes a temp file unless explicitly committed.
-struct TempGuard {
-    path: PathBuf,
-    committed: bool,
-}
-
-impl Drop for TempGuard {
-    fn drop(&mut self) {
-        if !self.committed {
-            let _ = fs::remove_file(&self.path);
-        }
-    }
-}
+/// Removes a temp file when dropped, unless dismissed when committed.
+type TempGuard = DropGuard<PathBuf, fn(PathBuf)>;
 
 impl CasStore {
     /// Create or open a CAS store rooted at `root`.
@@ -61,14 +51,14 @@ impl CasStore {
 
     #[instrument(skip(self, bytes), fields(size = bytes.len()))]
     pub fn write(&self, hash: &ContentHash, bytes: &[u8]) -> miette::Result<bool> {
-        let mut guard = self.create_temp_file()?;
+        let guard = self.create_temp_file()?;
 
         {
-            let mut file = fs::create_file(&guard.path)?;
+            let mut file = fs::create_file(&*guard)?;
 
             file.write_all(bytes)
                 .map_err(|error| CasError::WriteFailed {
-                    path: guard.path.clone(),
+                    path: guard.to_path_buf(),
                     error: Box::new(error),
                 })?;
         }
@@ -76,7 +66,7 @@ impl CasStore {
         // No fsync: the temp-file + rename pattern guarantees readers never
         // see partial content. Power-loss before durability flush would leave
         // a missing blob, which on the next run just becomes a cache miss.
-        self.commit_temp_file(hash, &mut guard)?;
+        self.commit_temp_file(hash, guard)?;
 
         Ok(true)
     }
@@ -90,18 +80,18 @@ impl CasStore {
         // to a plain copy otherwise. We still stage through a temp + rename so
         // readers never observe a partial object and the non-atomic copy
         // fallback stays safe.
-        let mut guard = self.create_temp_file()?;
+        let guard = self.create_temp_file()?;
 
-        fs::reflink_file(source, &guard.path)?;
+        fs::reflink_file(source, &*guard)?;
 
         // The reflink also clones the source's permissions. Grant the owner
         // write access so a read-only source (e.g. a task emitting read-only
         // outputs, #2608) doesn't produce a read-only object, which would fail
         // later store mutations like `touch`
-        grant_owner_write_access(&guard.path)?;
+        grant_owner_write_access(&guard)?;
 
         // No fsync: see `write` for rationale.
-        self.commit_temp_file(hash, &mut guard)?;
+        self.commit_temp_file(hash, guard)?;
 
         Ok(true)
     }
@@ -147,19 +137,19 @@ impl CasStore {
     /// discarding the temp on a hit. When the source is a file, prefer
     /// [`Self::store_file`], which avoids that churn.
     pub fn store_stream<R: Read>(&self, mut reader: R) -> miette::Result<Digest> {
-        let mut guard = self.create_temp_file()?;
+        let guard = self.create_temp_file()?;
         let mut size = 0;
 
         let hash = {
             let mut hasher = Sha256::default();
-            let mut file = fs::create_file(&guard.path)?;
+            let mut file = fs::create_file(&*guard)?;
             let mut buffer = [0u8; 64 * 1024];
 
             loop {
                 let n = reader
                     .read(&mut buffer)
                     .map_err(|error| CasError::ReadFailed {
-                        path: guard.path.clone(),
+                        path: guard.to_path_buf(),
                         error: Box::new(error),
                     })?;
 
@@ -173,7 +163,7 @@ impl CasStore {
 
                 file.write_all(&buffer[..n])
                     .map_err(|error| CasError::WriteFailed {
-                        path: guard.path.clone(),
+                        path: guard.to_path_buf(),
                         error: Box::new(error),
                     })?;
             }
@@ -191,7 +181,7 @@ impl CasStore {
             return Ok(digest);
         }
 
-        self.commit_temp_file(&digest.hash, &mut guard)?;
+        self.commit_temp_file(&digest.hash, guard)?;
 
         trace!(
             hash = digest.hash.as_str(),
@@ -418,18 +408,17 @@ impl CasStore {
             .take(32)
             .collect();
 
-        Ok(TempGuard {
-            path: self.temp_dir.join(key),
-            committed: false,
-        })
+        Ok(DropGuard::new(self.temp_dir.join(key), |path| {
+            let _ = fs::remove_file(path);
+        }))
     }
 
-    fn commit_temp_file(&self, hash: &ContentHash, guard: &mut TempGuard) -> miette::Result<()> {
+    fn commit_temp_file(&self, hash: &ContentHash, guard: TempGuard) -> miette::Result<()> {
         let dest = self.object_path(hash);
 
-        fs::rename(&guard.path, &dest)?;
+        fs::rename(&*guard, &dest)?;
 
-        guard.committed = true;
+        DropGuard::dismiss(guard);
 
         Ok(())
     }

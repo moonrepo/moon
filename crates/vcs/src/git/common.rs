@@ -77,7 +77,39 @@ pub fn validate_revision(revision: &str) -> Result<(), GitError> {
 /// joined with a remote to form a `<remote>/<branch>` merge base candidate.
 /// Multi-segment branch names (`refs/heads/foo/bar`) are preserved in full.
 pub fn normalize_branch_ref(revision: &str) -> &str {
-    revision.strip_prefix("refs/heads/").unwrap_or(revision)
+    revision.trim_prefix("refs/heads/")
+}
+
+/// Extract the repository slug (`owner/repo`) from a remote URL, in any form
+/// Git supports (HTTP(S), SSH, scp-like, Git daemon). Nested owners, like
+/// GitLab subgroups, are preserved in full (`group/subgroup/repo`). Returns
+/// `None` for local paths, remote helpers, and URLs without both an owner and
+/// a repository.
+pub fn extract_repository_slug(remote_url: &str) -> Option<String> {
+    use gix::bstr::ByteSlice;
+    use gix::url::Scheme;
+
+    let url = gix::url::parse(remote_url).ok()?;
+
+    if !matches!(
+        url.scheme,
+        Scheme::Git | Scheme::Ssh | Scheme::Http | Scheme::Https
+    ) {
+        return None;
+    }
+
+    let slug = url
+        .path
+        .to_str()
+        .ok()?
+        .trim_matches('/')
+        .trim_suffix(".git");
+
+    if !slug.contains('/') || slug.split('/').any(str::is_empty) {
+        return None;
+    }
+
+    Some(slug.to_owned())
 }
 
 pub fn clean_git_version(version: String) -> String {
@@ -214,5 +246,61 @@ mod tests {
             "refs/remotes/origin/main"
         );
         assert_eq!(normalize_branch_ref("refs/tags/v1.2.3"), "refs/tags/v1.2.3");
+    }
+
+    #[test]
+    fn extracts_repository_slugs() {
+        for url in [
+            "https://github.com/moonrepo/moon.git",
+            "https://github.com/moonrepo/moon",
+            "https://github.com/moonrepo/moon/",
+            "https://user:token@github.com/moonrepo/moon.git",
+            "http://localhost:3000/moonrepo/moon.git",
+            "git@github.com:moonrepo/moon.git",
+            "git@github.com:moonrepo/moon",
+            "ssh://git@github.com/moonrepo/moon.git",
+            "ssh://git@github.com:22/moonrepo/moon.git",
+            "git://github.com/moonrepo/moon.git",
+        ] {
+            assert_eq!(
+                extract_repository_slug(url).as_deref(),
+                Some("moonrepo/moon"),
+                "{url}"
+            );
+        }
+
+        // Nested owners (GitLab subgroups), with or without the suffix
+        assert_eq!(
+            extract_repository_slug("https://gitlab.com/group/sub/repo.git").as_deref(),
+            Some("group/sub/repo")
+        );
+        assert_eq!(
+            extract_repository_slug("git@gitlab.com:group/sub/repo").as_deref(),
+            Some("group/sub/repo")
+        );
+
+        // Only the trailing `.git` suffix is removed
+        assert_eq!(
+            extract_repository_slug("https://github.com/moonrepo/moonrepo.github.io.git")
+                .as_deref(),
+            Some("moonrepo/moonrepo.github.io")
+        );
+    }
+
+    #[test]
+    fn doesnt_extract_repository_slugs() {
+        for url in [
+            "",
+            "/local/path/repo.git",
+            "./relative/repo",
+            "file:///local/path/repo.git",
+            "https://github.com/repo.git",
+            "https://github.com/",
+            "https://github.com/moonrepo//moon.git",
+            "git@github.com:repo.git",
+            "ext::ssh -i key example.com %S foo/repo",
+        ] {
+            assert_eq!(extract_repository_slug(url), None, "{url}");
+        }
     }
 }

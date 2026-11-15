@@ -2946,18 +2946,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "git-url-parse"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8df306e4dfc91752e89b74c88ee876c8518890600f82255254828f9192dd003c"
-dependencies = [
- "getset",
- "nom 8.0.0",
- "thiserror 2.0.21",
- "url",
-]
-
-[[package]]
 name = "gix"
 version = "0.88.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5339,7 +5327,6 @@ dependencies = [
  "moon_action_graph",
  "moon_actions",
  "moon_affected",
- "moon_api",
  "moon_app_context",
  "moon_cache",
  "moon_common",
@@ -5355,7 +5342,6 @@ dependencies = [
  "moon_test_utils",
  "moon_time",
  "moon_toolchain",
- "moon_toolchain_plugin",
  "moon_workspace_graph",
  "num_cpus",
  "opentelemetry",
@@ -5382,8 +5368,6 @@ dependencies = [
  "moon_affected",
  "moon_app_context",
  "moon_cache",
- "moon_cache_item",
- "moon_cache_storage",
  "moon_codeowners",
  "moon_common",
  "moon_config",
@@ -5391,7 +5375,6 @@ dependencies = [
  "moon_console",
  "moon_daemon_client",
  "moon_env_var",
- "moon_feature_flags",
  "moon_hash",
  "moon_layout_graph",
  "moon_pdk_api",
@@ -5431,7 +5414,6 @@ dependencies = [
  "moon_env_var",
  "moon_graph_utils",
  "moon_project",
- "moon_target",
  "moon_task",
  "moon_test_utils",
  "moon_workspace_graph",
@@ -5595,7 +5577,6 @@ version = "0.0.1"
 dependencies = [
  "bytes",
  "miette 7.6.0",
- "moon_common",
  "moon_hash",
  "serde",
  "starbase_sandbox",
@@ -5615,7 +5596,6 @@ dependencies = [
  "moon_cache_storage",
  "moon_cas",
  "moon_common",
- "moon_config",
  "moon_env_var",
  "moon_hash",
  "moon_target",
@@ -5676,7 +5656,6 @@ dependencies = [
  "miette 7.6.0",
  "moon_blob",
  "moon_cache_storage",
- "moon_cas",
  "moon_common",
  "moon_config",
  "moon_env_var",
@@ -5822,7 +5801,6 @@ dependencies = [
 name = "moon_common"
 version = "2.1.0"
 dependencies = [
- "dirs 6.0.0",
  "miette 7.6.0",
  "relative-path",
  "rustc-hash",
@@ -5910,7 +5888,6 @@ dependencies = [
  "miette 7.6.0",
  "moon_common",
  "moon_daemon_client",
- "moon_daemon_proto",
  "moon_daemon_server",
  "moon_daemon_utils",
  "moon_test_utils",
@@ -5967,7 +5944,6 @@ dependencies = [
  "moon_hash",
  "moon_notifier",
  "moon_process",
- "moon_target",
  "moon_test_utils",
  "moon_vcs",
  "moon_workspace_graph",
@@ -6019,7 +5995,6 @@ name = "moon_env"
 version = "0.0.1"
 dependencies = [
  "miette 7.6.0",
- "moon_common",
  "starbase_utils",
  "tracing",
 ]
@@ -6081,7 +6056,6 @@ dependencies = [
  "miette 7.6.0",
  "moon_common",
  "moon_config",
- "moon_feature_flags",
  "serde",
  "serde_json",
  "starbase_sandbox",
@@ -6455,7 +6429,6 @@ dependencies = [
  "miette 7.6.0",
  "moon_common",
  "moon_config",
- "moon_feature_flags",
  "moon_target",
  "rustc-hash",
  "scc",
@@ -6506,7 +6479,6 @@ dependencies = [
  "moon_project_graph",
  "moon_task",
  "moon_time",
- "moon_token",
  "pathdiff",
  "petgraph 0.8.3",
  "regex",
@@ -6549,7 +6521,6 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_env_var",
- "moon_feature_flags",
  "moon_hash",
  "moon_layout_graph",
  "moon_pdk_api",
@@ -6559,7 +6530,6 @@ dependencies = [
  "moon_test_utils",
  "moon_toolchain",
  "moon_toolchain_plugin",
- "moon_vcs",
  "rustc-hash",
  "serde",
  "starbase_sandbox",
@@ -6577,7 +6547,6 @@ dependencies = [
  "moon_action",
  "moon_action_context",
  "moon_affected",
- "moon_api",
  "moon_app_context",
  "moon_blob",
  "moon_cache",
@@ -6655,7 +6624,6 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_env_var",
- "moon_file_group",
  "moon_graph_utils",
  "moon_project",
  "moon_project_graph",
@@ -6694,11 +6662,8 @@ dependencies = [
  "moon_bench_utils",
  "moon_common",
  "moon_config",
- "moon_env_var",
- "moon_feature_flags",
  "moon_pdk_api",
  "moon_plugin",
- "moon_process",
  "moon_test_utils",
  "moon_toolchain",
  "proto_core",
@@ -6717,7 +6682,6 @@ name = "moon_vcs"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "git-url-parse",
  "gix",
  "ignore",
  "miette 7.6.0",
@@ -6773,7 +6737,6 @@ dependencies = [
  "moon_config_loader",
  "moon_env_var",
  "moon_extension_plugin",
- "moon_feature_flags",
  "moon_graph_utils",
  "moon_hash",
  "moon_pdk_api",

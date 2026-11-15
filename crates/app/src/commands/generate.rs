@@ -269,8 +269,7 @@ pub async fn generate(session: MoonSession, args: GenerateArgs) -> SessionResult
                                 content: format!(
                                     "<{style}>{label}</{style}> <muted>{arrow}</muted> <mutedlight>{}</mutedlight>",
                                     file.dest_path
-                                        .strip_prefix(&session.working_dir)
-                                        .unwrap_or(&file.dest_path)
+                                        .trim_prefix(&session.working_dir)
                                         .display()
                                 ),
                             )
@@ -285,8 +284,7 @@ pub async fn generate(session: MoonSession, args: GenerateArgs) -> SessionResult
                                 content: format!(
                                     "<success>created</success> <muted>--➤</muted> <mutedlight>{}</mutedlight>",
                                     asset.dest_path
-                                        .strip_prefix(&session.working_dir)
-                                        .unwrap_or(&asset.dest_path)
+                                        .trim_prefix(&session.working_dir)
                                         .display()
                                 ),
                             )
@@ -415,7 +413,7 @@ pub fn parse_args_into_variables(
             // the variable configs, so that subsequent values can overwrite
             for arg_id in matches.ids() {
                 let arg_name = arg_id.as_str();
-                let name = arg_name.strip_prefix("no-").unwrap_or(arg_name);
+                let name = arg_name.trim_prefix("no-");
 
                 let Some(cfg) = config.get(name) else {
                     continue;
@@ -501,7 +499,7 @@ pub fn parse_args_into_variables(
             // clap includes some information we don't want,
             // so let's try and strip it before adding to the error
             for line in error.to_string().lines() {
-                let line = line.strip_prefix("error:").unwrap_or(line);
+                let line = line.trim_prefix("error:");
 
                 if line.is_empty()
                     || line.starts_with("Usage:")

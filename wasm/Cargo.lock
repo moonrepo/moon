@@ -327,15 +327,6 @@ dependencies = [
 
 [[package]]
 name = "dirs"
-version = "6.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3e8aa94d75141228480295a7d0e7feb620b1a5ad9f12bc40be62411e38cce4e"
-dependencies = [
- "dirs-sys",
-]
-
-[[package]]
-name = "dirs"
 version = "7.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8d57d423b3c82e89b9a24ca3091fee61f456a26edbd28d26c65906f4bc1dcd8f"
@@ -407,7 +398,6 @@ dependencies = [
  "extism-pdk",
  "moon_common",
  "moon_config",
- "moon_pdk",
  "moon_pdk_api",
  "moon_target",
 ]
@@ -814,7 +804,6 @@ checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
 name = "moon_common"
 version = "2.1.0"
 dependencies = [
- "dirs 6.0.0",
  "miette",
  "relative-path",
  "rustc-hash",
@@ -845,10 +834,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_feature_flags"
-version = "2.0.2"
-
-[[package]]
 name = "moon_file_group"
 version = "2.0.5"
 dependencies = [
@@ -856,7 +841,6 @@ dependencies = [
  "miette",
  "moon_common",
  "moon_config",
- "moon_feature_flags",
  "serde",
  "starbase_utils",
  "thiserror",
@@ -929,7 +913,6 @@ dependencies = [
  "miette",
  "moon_common",
  "moon_config",
- "moon_feature_flags",
  "moon_target",
  "rustc-hash",
  "scc",
@@ -1544,7 +1527,7 @@ version = "0.6.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c1d9c6af2edf0ed6c466c07c9d6b8188999eaa3b504e49008f7c927d4eb49960"
 dependencies = [
- "dirs 7.0.0",
+ "dirs",
  "owo-colors",
  "relative-path",
  "supports-color",
@@ -1556,7 +1539,7 @@ version = "0.14.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "431b48afd0f2893c566f387dcc104799d1e35ee9a439a6d951ede0c4002ef8d3"
 dependencies = [
- "dirs 7.0.0",
+ "dirs",
  "ec4rs",
  "jwalk",
  "miette",

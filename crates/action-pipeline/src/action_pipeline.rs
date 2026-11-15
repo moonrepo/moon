@@ -1,4 +1,4 @@
-use crate::abort_state::{AbortState, DrainedGuard};
+use crate::abort_state::AbortState;
 use crate::event_emitter::{Event, EventEmitter};
 use crate::job::Job;
 use crate::job_context::{CompletedJob, JobContext};
@@ -390,8 +390,12 @@ impl ActionPipeline {
         debug!(total_jobs = node_count, "Dispatching jobs in the pipeline");
 
         Ok(tokio::spawn(Box::pin(async move {
-            // Always unblock the pipeline, even if dispatching fails
-            let _drained = DrainedGuard(Arc::clone(&job_context.abort_state));
+            // Mark cleanup jobs as drained when dropped, so that the pipeline
+            // never waits on a drain that will never happen (dispatching
+            // returned early or panicked)
+            let _drained = mem::DropGuard::new(Arc::clone(&job_context.abort_state), |state| {
+                state.mark_drained();
+            });
 
             let mut dispatcher = JobDispatcher::new(
                 &action_graph,

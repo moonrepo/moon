@@ -9,7 +9,6 @@ repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
-moon_api = { path = "../api" }
 moon_app_context = { path = "../app-context" }
 moon_action = { path = "../action" }
 moon_action_context = { path = "../action-context" }

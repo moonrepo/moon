@@ -77,7 +77,7 @@ pub fn validate_revision(revision: &str) -> Result<(), GitError> {
 /// joined with a remote to form a `<remote>/<branch>` merge base candidate.
 /// Multi-segment branch names (`refs/heads/foo/bar`) are preserved in full.
 pub fn normalize_branch_ref(revision: &str) -> &str {
-    revision.strip_prefix("refs/heads/").unwrap_or(revision)
+    revision.trim_prefix("refs/heads/")
 }
 
 /// Extract the repository slug (`owner/repo`) from a remote URL, in any form

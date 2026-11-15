@@ -84,11 +84,7 @@ impl<'a> DotEnv<'a> {
         }
 
         // Handle export prefix
-        let mut line_content = if let Some(stripped) = trimmed.strip_prefix("export ") {
-            stripped
-        } else {
-            trimmed
-        };
+        let mut line_content = trimmed.trim_prefix("export ");
 
         // Handle trailing comment
         if let Some(index) = find_trailing_comment(line_content) {

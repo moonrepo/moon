@@ -449,6 +449,9 @@
 - Fixed an issue where the repository slug was extracted incorrectly from Git remote URLs with
   nested owners (like GitLab subgroups) and no `.git` suffix, or with `.git` in the repository name
   (like `owner/owner.github.io.git`).
+- Fixed an issue where unquoting a task argument would remove too many characters when its value
+  started or ended with the quote character, like an escaped quote (`"say \"hi\""`), or nested
+  parentheses (`%(foo(bar))`).
 
 #### ⚙️ Internal
 

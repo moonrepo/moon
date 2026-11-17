@@ -1,6 +1,6 @@
 use crate::shapes::{Input, OneOrMany, Output};
 use crate::task::TaskCheck;
-use crate::task_options_config::{PartialTaskOptionsConfig, TaskOptionsConfig};
+use crate::task_options_config::TaskOptionsConfig;
 use crate::{config_struct, config_unit_enum, config_untagged_enum};
 use indexmap::IndexMap;
 use moon_common::Id;

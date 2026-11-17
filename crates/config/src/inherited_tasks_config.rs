@@ -3,7 +3,7 @@ use crate::project::LanguageType;
 use crate::project_config::{LayerType, StackType};
 use crate::shapes::{FilePath, Input, OneOrMany};
 use crate::task_config::{EnvMap, TaskConfig, TaskDependency, validate_deps};
-use crate::task_options_config::{PartialTaskOptionsConfig, TaskOptionsConfig};
+use crate::task_options_config::TaskOptionsConfig;
 use crate::{config_struct, config_untagged_enum};
 use moon_common::{Id, cacheable};
 use rustc_hash::FxHashMap;

@@ -126,7 +126,7 @@ mod template_file {
         }
 
         #[test]
-        #[should_panic(expected = "Failed to parse TemplateFrontmatterConfig")]
+        #[should_panic(expected = "Failed to parse frontmatter.yml")]
         fn errors_invalid_fm_syntax() {
             create_file_with_content("---\nforce = true\n---\n\nexport {};");
         }

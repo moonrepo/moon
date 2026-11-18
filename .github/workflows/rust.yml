@@ -81,8 +81,7 @@ jobs:
     env:
       # Cargo 1.100+ passes a `-L` for every dependency, which exceeds the command line length
       # limit on Windows when sccache runs rustc (Cargo itself falls back to an argfile)
-      RUSTC_WRAPPER:
-        ${{ vars.ENABLE_SCCACHE == 'true' && !contains(matrix.os, 'windows') && 'sccache' || '' }}
+      RUSTC_WRAPPER: ${{ vars.ENABLE_SCCACHE == 'true' && !contains(matrix.os, 'windows') && 'sccache' || '' }}
     steps:
       - uses: actions/checkout@v6
       - uses: arduino/setup-protoc@v3
@@ -125,8 +124,7 @@ jobs:
       COVERAGE: ${{ needs.test-plan.outputs.coverage == 'true' && !contains(matrix.os, 'windows') }}
       # Cargo 1.100+ passes a `-L` for every dependency, which exceeds the command line length
       # limit on Windows when sccache runs rustc (Cargo itself falls back to an argfile)
-      RUSTC_WRAPPER:
-        ${{ vars.ENABLE_SCCACHE == 'true' && !contains(matrix.os, 'windows') && 'sccache' || '' }}
+      RUSTC_WRAPPER: ${{ vars.ENABLE_SCCACHE == 'true' && !contains(matrix.os, 'windows') && 'sccache' || '' }}
       # Temporary until we upgrade starbase
       GIT_AUTHOR_NAME: 'Sandbox'
       GIT_AUTHOR_EMAIL: 'fakeemail@somedomain.dev'

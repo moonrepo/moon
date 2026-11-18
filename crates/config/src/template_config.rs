@@ -6,10 +6,10 @@ use schematic::{Config, ValidateError, validate};
 use serde_json::Value;
 
 macro_rules! var_setting {
-    ($name:ident, $ty:ty) => {
+    ($name:ident, $ty:ty, $doc:literal) => {
         config_struct!(
-            /// Configuration for a template variable.
             #[derive(Config)]
+            #[doc = $doc]
             pub struct $name {
                 /// The default value of the variable if none was provided.
                 #[serde(alias = "defaultValue")]
@@ -34,11 +34,15 @@ macro_rules! var_setting {
     };
 }
 
-var_setting!(TemplateVariableArraySetting, Vec<Value>);
-var_setting!(TemplateVariableBoolSetting, bool);
-var_setting!(TemplateVariableNumberSetting, isize);
-var_setting!(TemplateVariableObjectSetting, FxHashMap<String, Value>);
-var_setting!(TemplateVariableStringSetting, String);
+var_setting!(
+    TemplateVariableArraySetting,
+    Vec<Value>,
+    "An array variable."
+);
+var_setting!(TemplateVariableBoolSetting, bool, "A boolean variable.");
+var_setting!(TemplateVariableNumberSetting, isize, "A number variable.");
+var_setting!(TemplateVariableObjectSetting, FxHashMap<String, Value>, "An object variable.");
+var_setting!(TemplateVariableStringSetting, String, "A string variable.");
 
 config_struct!(
     #[derive(Config)]
@@ -120,6 +124,7 @@ fn validate_enum_default<C>(
 }
 
 config_struct!(
+    /// A string enumerable variable.
     #[derive(Config)]
     pub struct TemplateVariableEnumSetting {
         /// The default value of the variable if none was provided.

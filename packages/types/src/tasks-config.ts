@@ -253,14 +253,12 @@ export type TaskArgs = null | string | string[];
 
 /** Task check configuration for conditions. */
 export interface TaskCheckConditionConfig {
-	check: 'condition';
 	/** The shell script to execute. */
 	script: string;
 }
 
 /** Task check configuration for requirements. */
 export interface TaskCheckRequirementConfig {
-	check: 'requirement';
 	/** The shell script to execute. */
 	script: string;
 }
@@ -270,7 +268,6 @@ export type TaskCheckFingerprint = 'exit-code' | 'stderr' | 'stdout' | boolean;
 
 /** Task check configuration for fingerprinting. */
 export interface TaskCheckFingerprintConfig {
-	check: 'fingerprint';
 	/**
 	 * The content hashing strategy.
 	 *
@@ -282,9 +279,15 @@ export interface TaskCheckFingerprintConfig {
 }
 
 export type TaggedTaskCheck =
-	| TaskCheckConditionConfig
-	| TaskCheckRequirementConfig
-	| TaskCheckFingerprintConfig;
+	| ({
+			check: 'condition';
+	  } & TaskCheckConditionConfig)
+	| ({
+			check: 'requirement';
+	  } & TaskCheckRequirementConfig)
+	| ({
+			check: 'fingerprint';
+	  } & TaskCheckFingerprintConfig);
 
 export type TaskCheck = string | TaggedTaskCheck;
 
@@ -408,17 +411,11 @@ export type TaskWindowsShell =
 
 /** Options to control task inheritance, execution, and more. */
 export interface TaskOptionsConfig {
-	/**
-	 * The pattern in which affected files will be passed to the task.
-	 *
-	 * @default true
-	 */
+	/** The pattern in which affected files will be passed to the task. */
 	affectedFiles?: TaskOptionAffectedFilesEntry | null;
 	/**
 	 * Cache the `outputs` of the task for incremental builds.
 	 * Defaults to `true` if outputs are configured for the task.
-	 *
-	 * @default true
 	 */
 	cache?: TaskOptionCache | null;
 	/**
@@ -471,58 +468,33 @@ export interface TaskOptionsConfig {
 	 * The default strategy to use when merging `args`, `deps`, `env`,
 	 * `inputs`, or `outputs` with an inherited task. Can be overridden
 	 * with the other field-specific merge options.
-	 *
-	 * @default 'append'
 	 */
 	merge?: MergeStrategy | null;
-	/**
-	 * The strategy to use when merging `args` with an inherited task.
-	 *
-	 * @default 'append'
-	 */
+	/** The strategy to use when merging `args` with an inherited task. */
 	mergeArgs?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `checks` with an inherited task.
 	 *
-	 * @default 'append'
 	 * @since 2.4.0
 	 */
 	mergeChecks?: MergeStrategy | null;
-	/**
-	 * The strategy to use when merging `deps` with an inherited task.
-	 *
-	 * @default 'append'
-	 */
+	/** The strategy to use when merging `deps` with an inherited task. */
 	mergeDeps?: MergeStrategy | null;
-	/**
-	 * The strategy to use when merging `env` with an inherited task.
-	 *
-	 * @default 'append'
-	 */
+	/** The strategy to use when merging `env` with an inherited task. */
 	mergeEnv?: MergeStrategy | null;
-	/**
-	 * The strategy to use when merging `inputs` with an inherited task.
-	 *
-	 * @default 'append'
-	 */
+	/** The strategy to use when merging `inputs` with an inherited task. */
 	mergeInputs?: MergeStrategy | null;
-	/**
-	 * The strategy to use when merging `outputs` with an inherited task.
-	 *
-	 * @default 'append'
-	 */
+	/** The strategy to use when merging `outputs` with an inherited task. */
 	mergeOutputs?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `tags` with an inherited task.
 	 *
-	 * @default 'append'
 	 * @since 2.3.0
 	 */
 	mergeTags?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `toolchains` with an inherited task.
 	 *
-	 * @default 'append'
 	 * @since 2.0.0
 	 */
 	mergeToolchains?: MergeStrategy | null;
@@ -548,7 +520,6 @@ export interface TaskOptionsConfig {
 	/**
 	 * The style in which task output will be printed to the console.
 	 *
-	 * @default 'buffer'
 	 * @env MOON_OUTPUT_STYLE
 	 */
 	outputStyle?: TaskOutputStyle | null;
@@ -562,8 +533,6 @@ export interface TaskOptionsConfig {
 	/**
 	 * Marks the task with a certain priority, which determines the order
 	 * in which it is ran within the action pipeline.
-	 *
-	 * @default 'normal'
 	 */
 	priority?: TaskPriority | null;
 	/**
@@ -583,8 +552,6 @@ export interface TaskOptionsConfig {
 	/**
 	 * Whether to run the task in CI or not, when executing `moon ci`,
 	 * `moon check`, or `moon run`.
-	 *
-	 * @default true
 	 */
 	runInCI?: TaskOptionRunInCI | null;
 	/** Runs the task automatically when executing `moon sync`. */
@@ -603,14 +570,12 @@ export interface TaskOptionsConfig {
 	/**
 	 * The shell to run the task in when on a Unix-based machine.
 	 *
-	 * @default 'bash'
 	 * @since 1.21.0
 	 */
 	unixShell?: TaskUnixShell | null;
 	/**
 	 * The shell to run the task in when on a Windows machine.
 	 *
-	 * @default 'pwsh'
 	 * @since 1.21.0
 	 */
 	windowsShell?: TaskWindowsShell | null;
@@ -717,8 +682,6 @@ export interface TaskConfig {
 	/**
 	 * The type of task, primarily used for categorical reasons. When not provided,
 	 * will be automatically determined based on configured outputs.
-	 *
-	 * @default 'test'
 	 */
 	type?: TaskType | null;
 }
@@ -954,17 +917,11 @@ export type PartialTaskOptionEnvOverride = boolean | string[];
 
 /** Options to control task inheritance, execution, and more. */
 export interface PartialTaskOptionsConfig {
-	/**
-	 * The pattern in which affected files will be passed to the task.
-	 *
-	 * @default true
-	 */
+	/** The pattern in which affected files will be passed to the task. */
 	affectedFiles?: PartialTaskOptionAffectedFilesEntry | null;
 	/**
 	 * Cache the `outputs` of the task for incremental builds.
 	 * Defaults to `true` if outputs are configured for the task.
-	 *
-	 * @default true
 	 */
 	cache?: TaskOptionCache | null;
 	/**
@@ -1017,58 +974,33 @@ export interface PartialTaskOptionsConfig {
 	 * The default strategy to use when merging `args`, `deps`, `env`,
 	 * `inputs`, or `outputs` with an inherited task. Can be overridden
 	 * with the other field-specific merge options.
-	 *
-	 * @default 'append'
 	 */
 	merge?: MergeStrategy | null;
-	/**
-	 * The strategy to use when merging `args` with an inherited task.
-	 *
-	 * @default 'append'
-	 */
+	/** The strategy to use when merging `args` with an inherited task. */
 	mergeArgs?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `checks` with an inherited task.
 	 *
-	 * @default 'append'
 	 * @since 2.4.0
 	 */
 	mergeChecks?: MergeStrategy | null;
-	/**
-	 * The strategy to use when merging `deps` with an inherited task.
-	 *
-	 * @default 'append'
-	 */
+	/** The strategy to use when merging `deps` with an inherited task. */
 	mergeDeps?: MergeStrategy | null;
-	/**
-	 * The strategy to use when merging `env` with an inherited task.
-	 *
-	 * @default 'append'
-	 */
+	/** The strategy to use when merging `env` with an inherited task. */
 	mergeEnv?: MergeStrategy | null;
-	/**
-	 * The strategy to use when merging `inputs` with an inherited task.
-	 *
-	 * @default 'append'
-	 */
+	/** The strategy to use when merging `inputs` with an inherited task. */
 	mergeInputs?: MergeStrategy | null;
-	/**
-	 * The strategy to use when merging `outputs` with an inherited task.
-	 *
-	 * @default 'append'
-	 */
+	/** The strategy to use when merging `outputs` with an inherited task. */
 	mergeOutputs?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `tags` with an inherited task.
 	 *
-	 * @default 'append'
 	 * @since 2.3.0
 	 */
 	mergeTags?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `toolchains` with an inherited task.
 	 *
-	 * @default 'append'
 	 * @since 2.0.0
 	 */
 	mergeToolchains?: MergeStrategy | null;
@@ -1094,7 +1026,6 @@ export interface PartialTaskOptionsConfig {
 	/**
 	 * The style in which task output will be printed to the console.
 	 *
-	 * @default 'buffer'
 	 * @env MOON_OUTPUT_STYLE
 	 */
 	outputStyle?: TaskOutputStyle | null;
@@ -1108,8 +1039,6 @@ export interface PartialTaskOptionsConfig {
 	/**
 	 * Marks the task with a certain priority, which determines the order
 	 * in which it is ran within the action pipeline.
-	 *
-	 * @default 'normal'
 	 */
 	priority?: TaskPriority | null;
 	/**
@@ -1129,8 +1058,6 @@ export interface PartialTaskOptionsConfig {
 	/**
 	 * Whether to run the task in CI or not, when executing `moon ci`,
 	 * `moon check`, or `moon run`.
-	 *
-	 * @default true
 	 */
 	runInCI?: TaskOptionRunInCI | null;
 	/** Runs the task automatically when executing `moon sync`. */
@@ -1149,14 +1076,12 @@ export interface PartialTaskOptionsConfig {
 	/**
 	 * The shell to run the task in when on a Unix-based machine.
 	 *
-	 * @default 'bash'
 	 * @since 1.21.0
 	 */
 	unixShell?: TaskUnixShell | null;
 	/**
 	 * The shell to run the task in when on a Windows machine.
 	 *
-	 * @default 'pwsh'
 	 * @since 1.21.0
 	 */
 	windowsShell?: TaskWindowsShell | null;
@@ -1257,8 +1182,6 @@ export interface PartialTaskConfig {
 	/**
 	 * The type of task, primarily used for categorical reasons. When not provided,
 	 * will be automatically determined based on configured outputs.
-	 *
-	 * @default 'test'
 	 */
 	type?: TaskType | null;
 }

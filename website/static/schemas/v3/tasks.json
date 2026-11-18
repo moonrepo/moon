@@ -464,7 +464,9 @@
           "description": "The order in which this configuration is inherited by a project. Lower is inherited first, while higher is last.",
           "anyOf": [
             {
-              "type": "number"
+              "type": "integer",
+              "maximum": 65535,
+              "minimum": 0
             },
             {
               "type": "null"
@@ -843,13 +845,59 @@
     "TaggedTaskCheck": {
       "anyOf": [
         {
-          "$ref": "#/definitions/TaskCheckConditionConfig"
+          "type": "object",
+          "properties": {
+            "check": {
+              "title": "check",
+              "const": "condition"
+            },
+            "script": {
+              "title": "script",
+              "description": "The shell script to execute.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
         },
         {
-          "$ref": "#/definitions/TaskCheckRequirementConfig"
+          "type": "object",
+          "properties": {
+            "check": {
+              "title": "check",
+              "const": "requirement"
+            },
+            "script": {
+              "title": "script",
+              "description": "The shell script to execute.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
         },
         {
-          "$ref": "#/definitions/TaskCheckFingerprintConfig"
+          "type": "object",
+          "properties": {
+            "check": {
+              "title": "check",
+              "const": "fingerprint"
+            },
+            "hash": {
+              "title": "hash",
+              "description": "The content hashing strategy.",
+              "default": true,
+              "allOf": [
+                {
+                  "$ref": "#/definitions/TaskCheckFingerprint"
+                }
+              ]
+            },
+            "script": {
+              "title": "script",
+              "description": "The shell script to execute.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
         }
       ]
     },
@@ -887,10 +935,6 @@
       "description": "Task check configuration for conditions.",
       "type": "object",
       "properties": {
-        "check": {
-          "title": "check",
-          "const": "condition"
-        },
         "script": {
           "title": "script",
           "description": "The shell script to execute.",
@@ -925,10 +969,6 @@
       "description": "Task check configuration for fingerprinting.",
       "type": "object",
       "properties": {
-        "check": {
-          "title": "check",
-          "const": "fingerprint"
-        },
         "hash": {
           "title": "hash",
           "description": "The content hashing strategy.",
@@ -951,10 +991,6 @@
       "description": "Task check configuration for requirements.",
       "type": "object",
       "properties": {
-        "check": {
-          "title": "check",
-          "const": "requirement"
-        },
         "script": {
           "title": "script",
           "description": "The shell script to execute.",
@@ -1205,7 +1241,6 @@
         "type": {
           "title": "type",
           "description": "The type of task, primarily used for categorical reasons. When not provided, will be automatically determined based on configured outputs.",
-          "default": "test",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskType"
@@ -1511,7 +1546,6 @@
         "affectedFiles": {
           "title": "affectedFiles",
           "description": "The pattern in which affected files will be passed to the task.",
-          "default": true,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskOptionAffectedFilesEntry"
@@ -1524,7 +1558,6 @@
         "cache": {
           "title": "cache",
           "description": "Cache the outputs of the task for incremental builds. Defaults to true if outputs are configured for the task.",
-          "default": true,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskOptionCache"
@@ -1625,7 +1658,6 @@
         "merge": {
           "title": "merge",
           "description": "The default strategy to use when merging args, deps, env, inputs, or outputs with an inherited task. Can be overridden with the other field-specific merge options.",
-          "default": "append",
           "anyOf": [
             {
               "$ref": "#/definitions/MergeStrategy"
@@ -1639,7 +1671,6 @@
         "mergeArgs": {
           "title": "mergeArgs",
           "description": "The strategy to use when merging args with an inherited task.",
-          "default": "append",
           "anyOf": [
             {
               "$ref": "#/definitions/MergeStrategy"
@@ -1653,7 +1684,6 @@
         "mergeChecks": {
           "title": "mergeChecks",
           "description": "The strategy to use when merging checks with an inherited task. @since 2.4.0",
-          "default": "append",
           "anyOf": [
             {
               "$ref": "#/definitions/MergeStrategy"
@@ -1667,7 +1697,6 @@
         "mergeDeps": {
           "title": "mergeDeps",
           "description": "The strategy to use when merging deps with an inherited task.",
-          "default": "append",
           "anyOf": [
             {
               "$ref": "#/definitions/MergeStrategy"
@@ -1681,7 +1710,6 @@
         "mergeEnv": {
           "title": "mergeEnv",
           "description": "The strategy to use when merging env with an inherited task.",
-          "default": "append",
           "anyOf": [
             {
               "$ref": "#/definitions/MergeStrategy"
@@ -1695,7 +1723,6 @@
         "mergeInputs": {
           "title": "mergeInputs",
           "description": "The strategy to use when merging inputs with an inherited task.",
-          "default": "append",
           "anyOf": [
             {
               "$ref": "#/definitions/MergeStrategy"
@@ -1709,7 +1736,6 @@
         "mergeOutputs": {
           "title": "mergeOutputs",
           "description": "The strategy to use when merging outputs with an inherited task.",
-          "default": "append",
           "anyOf": [
             {
               "$ref": "#/definitions/MergeStrategy"
@@ -1723,7 +1749,6 @@
         "mergeTags": {
           "title": "mergeTags",
           "description": "The strategy to use when merging tags with an inherited task. @since 2.3.0",
-          "default": "append",
           "anyOf": [
             {
               "$ref": "#/definitions/MergeStrategy"
@@ -1737,7 +1762,6 @@
         "mergeToolchains": {
           "title": "mergeToolchains",
           "description": "The strategy to use when merging toolchains with an inherited task. @since 2.0.0",
-          "default": "append",
           "anyOf": [
             {
               "$ref": "#/definitions/MergeStrategy"
@@ -1798,7 +1822,6 @@
         "outputStyle": {
           "title": "outputStyle",
           "description": "The style in which task output will be printed to the console.",
-          "default": "buffer",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskOutputStyle"
@@ -1824,7 +1847,6 @@
         "priority": {
           "title": "priority",
           "description": "Marks the task with a certain priority, which determines the order in which it is ran within the action pipeline.",
-          "default": "normal",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskPriority"
@@ -1839,7 +1861,9 @@
           "description": "The number of times a failing task will be retried to succeed.",
           "anyOf": [
             {
-              "type": "number"
+              "type": "integer",
+              "maximum": 255,
+              "minimum": 0
             },
             {
               "type": "null"
@@ -1874,7 +1898,6 @@
         "runInCI": {
           "title": "runInCI",
           "description": "Whether to run the task in CI or not, when executing moon ci, moon check, or moon run.",
-          "default": true,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskOptionRunInCI"
@@ -1916,7 +1939,8 @@
           "description": "The maximum time in seconds that a task can run before being cancelled.",
           "anyOf": [
             {
-              "type": "number"
+              "type": "integer",
+              "minimum": 0
             },
             {
               "type": "null"
@@ -1926,7 +1950,6 @@
         "unixShell": {
           "title": "unixShell",
           "description": "The shell to run the task in when on a Unix-based machine. @since 1.21.0",
-          "default": "bash",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskUnixShell"
@@ -1940,7 +1963,6 @@
         "windowsShell": {
           "title": "windowsShell",
           "description": "The shell to run the task in when on a Windows machine. @since 1.21.0",
-          "default": "pwsh",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskWindowsShell"

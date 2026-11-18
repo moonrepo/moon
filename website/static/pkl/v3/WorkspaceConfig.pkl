@@ -87,6 +87,7 @@ typealias ExtendsFrom = String | Listing<String>
 
 typealias Id = String
 
+/// A version range composed of clauses, in which any clause may match.
 typealias Range = String
 
 /// Configures projects in the workspace.

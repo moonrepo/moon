@@ -8,6 +8,7 @@ pub use output::*;
 pub use poly::*;
 pub use portable_path::*;
 
+use crate::apply_partial_layers;
 use schematic::{Config, ConfigError, ParseError, PartialConfig};
 
 /// Finalize a partial configuration that was deserialized on its own, instead
@@ -15,9 +16,7 @@ use schematic::{Config, ConfigError, ParseError, PartialConfig};
 pub(crate) fn finalize_partial<T: Config>(partial: T::Partial) -> Result<T, ParseError> {
     let map_error = |error: ConfigError| ParseError::new(error.to_full_string());
     let context = Default::default();
-
-    // Finalizing applies the default values
-    let partial = partial.finalize(&context).map_err(map_error)?;
+    let partial = apply_partial_layers(partial, &context).map_err(map_error)?;
 
     partial.validate(&context, true).map_err(map_error)?;
 

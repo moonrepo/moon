@@ -36,4 +36,34 @@ variables: Mapping<String, TemplateVariable>?
 typealias Id = String
 
 /// Each type of template variable.
-typealias TemplateVariable = TemplateVariableArraySetting | TemplateVariableBoolSetting | TemplateVariableEnumSetting | TemplateVariableNumberSetting | TemplateVariableObjectSetting | TemplateVariableStringSetting
+typealias TemplateVariable = TemplateVariableArray | TemplateVariableBoolean | TemplateVariableEnum | TemplateVariableNumber | TemplateVariableObject | TemplateVariableString
+
+/// An array variable.
+class TemplateVariableArray extends TemplateVariableArraySetting {
+  type: "array"
+}
+
+/// A boolean variable.
+class TemplateVariableBoolean extends TemplateVariableBoolSetting {
+  type: "boolean"
+}
+
+/// A string enumerable variable.
+class TemplateVariableEnum extends TemplateVariableEnumSetting {
+  type: "enum"
+}
+
+/// A number variable.
+class TemplateVariableNumber extends TemplateVariableNumberSetting {
+  type: "number"
+}
+
+/// An object variable.
+class TemplateVariableObject extends TemplateVariableObjectSetting {
+  type: "object"
+}
+
+/// A string variable.
+class TemplateVariableString extends TemplateVariableStringSetting {
+  type: "string"
+}

@@ -1,7 +1,7 @@
 use crate::project::*;
 use crate::shapes::Input;
 use crate::task_config::{EnvMap, TaskConfig};
-use crate::task_options_config::{PartialTaskOptionsConfig, TaskOptionsConfig};
+use crate::task_options_config::TaskOptionsConfig;
 use crate::{config_struct, config_unit_enum, config_untagged_enum};
 use moon_common::Id;
 use rustc_hash::FxHashMap;

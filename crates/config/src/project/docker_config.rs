@@ -1,7 +1,5 @@
 use crate::config_struct;
-use crate::workspace::{
-    DockerFileConfig, DockerScaffoldConfig, PartialDockerFileConfig, PartialDockerScaffoldConfig,
-};
+use crate::workspace::{DockerFileConfig, DockerScaffoldConfig};
 use schematic::Config;
 
 config_struct!(

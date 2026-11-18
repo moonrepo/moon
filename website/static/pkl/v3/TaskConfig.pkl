@@ -98,7 +98,7 @@ typealias Input = String | FileInput | FileGroupInput | GlobInput | ProjectInput
 
 typealias Output = String | FileOutput | GlobOutput
 
-typealias TaggedTaskCheck = TaskCheckConditionConfig | TaskCheckRequirementConfig | TaskCheckFingerprintConfig
+typealias TaggedTaskCheck = TaggedTaskCheckCondition | TaggedTaskCheckRequirement | TaggedTaskCheckFingerprint
 
 /// Configures a command and its arguments to execute.
 typealias TaskArgs = (String | Listing<String>)?
@@ -113,3 +113,15 @@ typealias TaskPreset = "utility" | "server"
 
 /// The type of task.
 typealias TaskType = "build" | "run" | *"test"
+
+class TaggedTaskCheckCondition extends TaskCheckConditionConfig {
+  check: "condition"
+}
+
+class TaggedTaskCheckRequirement extends TaskCheckRequirementConfig {
+  check: "requirement"
+}
+
+class TaggedTaskCheckFingerprint extends TaskCheckFingerprintConfig {
+  check: "fingerprint"
+}

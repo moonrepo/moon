@@ -46,7 +46,6 @@ export interface TemplateVariableArraySetting {
 	prompt?: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
 	required?: boolean | null;
-	type: 'array';
 }
 
 /** A boolean variable. */
@@ -63,7 +62,6 @@ export interface TemplateVariableBoolSetting {
 	prompt?: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
 	required?: boolean | null;
-	type: 'boolean';
 }
 
 export type TemplateVariableEnumDefault = string | string[];
@@ -91,7 +89,6 @@ export interface TemplateVariableEnumSetting {
 	order?: number | null;
 	/** Prompt the user for a value when the generator is running. */
 	prompt?: string | null;
-	type: 'enum';
 	/** List of acceptable values for this variable. */
 	values: TemplateVariableEnumValue[];
 }
@@ -110,7 +107,6 @@ export interface TemplateVariableNumberSetting {
 	prompt?: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
 	required?: boolean | null;
-	type: 'number';
 }
 
 /** An object variable. */
@@ -127,7 +123,6 @@ export interface TemplateVariableObjectSetting {
 	prompt?: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
 	required?: boolean | null;
-	type: 'object';
 }
 
 /** A string variable. */
@@ -144,17 +139,28 @@ export interface TemplateVariableStringSetting {
 	prompt?: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
 	required?: boolean | null;
-	type: 'string';
 }
 
 /** Each type of template variable. */
 export type TemplateVariable =
-	| TemplateVariableArraySetting
-	| TemplateVariableBoolSetting
-	| TemplateVariableEnumSetting
-	| TemplateVariableNumberSetting
-	| TemplateVariableObjectSetting
-	| TemplateVariableStringSetting;
+	| ({
+			type: 'array';
+	  } & TemplateVariableArraySetting)
+	| ({
+			type: 'boolean';
+	  } & TemplateVariableBoolSetting)
+	| ({
+			type: 'enum';
+	  } & TemplateVariableEnumSetting)
+	| ({
+			type: 'number';
+	  } & TemplateVariableNumberSetting)
+	| ({
+			type: 'object';
+	  } & TemplateVariableObjectSetting)
+	| ({
+			type: 'string';
+	  } & TemplateVariableStringSetting);
 
 /**
  * Configures a template and its files to be scaffolded.
@@ -196,7 +202,6 @@ export interface PartialTemplateVariableArraySetting {
 	prompt?: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
 	required?: boolean | null;
-	type?: 'array' | null;
 }
 
 /** A boolean variable. */
@@ -213,7 +218,6 @@ export interface PartialTemplateVariableBoolSetting {
 	prompt?: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
 	required?: boolean | null;
-	type?: 'boolean' | null;
 }
 
 export type PartialTemplateVariableEnumDefault = string | string[];
@@ -241,7 +245,6 @@ export interface PartialTemplateVariableEnumSetting {
 	order?: number | null;
 	/** Prompt the user for a value when the generator is running. */
 	prompt?: string | null;
-	type?: 'enum' | null;
 	/** List of acceptable values for this variable. */
 	values?: PartialTemplateVariableEnumValue[] | null;
 }
@@ -260,7 +263,6 @@ export interface PartialTemplateVariableNumberSetting {
 	prompt?: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
 	required?: boolean | null;
-	type?: 'number' | null;
 }
 
 /** An object variable. */
@@ -277,7 +279,6 @@ export interface PartialTemplateVariableObjectSetting {
 	prompt?: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
 	required?: boolean | null;
-	type?: 'object' | null;
 }
 
 /** A string variable. */
@@ -294,17 +295,28 @@ export interface PartialTemplateVariableStringSetting {
 	prompt?: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
 	required?: boolean | null;
-	type?: 'string' | null;
 }
 
 /** Each type of template variable. */
 export type PartialTemplateVariable =
-	| PartialTemplateVariableArraySetting
-	| PartialTemplateVariableBoolSetting
-	| PartialTemplateVariableEnumSetting
-	| PartialTemplateVariableNumberSetting
-	| PartialTemplateVariableObjectSetting
-	| PartialTemplateVariableStringSetting;
+	| ({
+			type: 'array';
+	  } & PartialTemplateVariableArraySetting)
+	| ({
+			type: 'boolean';
+	  } & PartialTemplateVariableBoolSetting)
+	| ({
+			type: 'enum';
+	  } & PartialTemplateVariableEnumSetting)
+	| ({
+			type: 'number';
+	  } & PartialTemplateVariableNumberSetting)
+	| ({
+			type: 'object';
+	  } & PartialTemplateVariableObjectSetting)
+	| ({
+			type: 'string';
+	  } & PartialTemplateVariableStringSetting);
 
 /**
  * Configures a template and its files to be scaffolded.

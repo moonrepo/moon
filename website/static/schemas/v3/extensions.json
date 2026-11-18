@@ -55,9 +55,7 @@
           ]
         }
       },
-      "additionalProperties": {
-        "type": ["boolean", "object", "array", "number", "string", "integer"]
-      }
+      "additionalProperties": {}
     },
     "Id": {
       "type": "string"

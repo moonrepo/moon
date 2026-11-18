@@ -261,7 +261,6 @@ export interface NotifierConfig {
 	/**
 	 * Display an OS notification for certain action pipeline events.
 	 *
-	 * @default 'never'
 	 * @since 1.38.0
 	 */
 	terminalNotifications?: NotifierEventType | null;
@@ -621,6 +620,7 @@ export interface VcsConfig {
 	sync: boolean;
 }
 
+/** A version range composed of clauses, in which any clause may match. */
 export type Range = string;
 
 /**
@@ -953,7 +953,6 @@ export interface PartialNotifierConfig {
 	/**
 	 * Display an OS notification for certain action pipeline events.
 	 *
-	 * @default 'never'
 	 * @since 1.38.0
 	 */
 	terminalNotifications?: NotifierEventType | null;

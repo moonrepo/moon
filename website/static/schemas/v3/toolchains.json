@@ -150,9 +150,7 @@
           "markdownDescription": "Inherit the version from the root `.prototools`. When true, matches using the same identifier, otherwise a string can be provided for a custom identifier."
         }
       },
-      "additionalProperties": {
-        "type": ["boolean", "object", "array", "number", "string", "integer"]
-      }
+      "additionalProperties": {}
     },
     "ToolchainPluginVersionFrom": {
       "description": "The strategy in which to inherit a version from .prototools.",

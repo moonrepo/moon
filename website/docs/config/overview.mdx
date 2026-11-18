@@ -261,8 +261,9 @@ some key differences to be aware of!
   [special feature](https://pkl-lang.org/main/current/language-reference/index.html#default-element)
   in Pkl and cannot be used as a setting name. This only applies to
   [`template.pkl`](../config/template#default), but can be worked around by using `defaultValue`
-  instead, or by creating the variable with its [module](#type-checking), such as
-  `new TemplateVariableNumberSetting { default = 0 }`.
+  instead, or by creating the variable with its class from the `TemplateConfig`
+  [module](#type-checking), such as `new TemplateVariableNumber { default = 0 }`, which also sets
+  its `type`.
 
 ```pkl title="template.pkl"
 variables {

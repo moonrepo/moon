@@ -1,24 +1,18 @@
 amends "../../../../../website/static/pkl/v3/TemplateConfig.pkl"
 
-import "../../../../../website/static/pkl/v3/TemplateVariableBoolSetting.pkl"
-import "../../../../../website/static/pkl/v3/TemplateVariableEnumSetting.pkl"
 import "../../../../../website/static/pkl/v3/TemplateVariableEnumValueConfig.pkl"
-import "../../../../../website/static/pkl/v3/TemplateVariableNumberSetting.pkl"
-import "../../../../../website/static/pkl/v3/TemplateVariableStringSetting.pkl"
 
 title = "Title"
 description = "Description"
 destination = "./out"
 id = "template-name"
 variables {
-	["boolean"] = new TemplateVariableBoolSetting {
-		type = "boolean"
+	["boolean"] = new TemplateVariableBoolean {
 		defaultValue = false
 		prompt = "Why?"
 		required = true
 	}
-	["enum"] = new TemplateVariableEnumSetting {
-		type = "enum"
+	["enum"] = new TemplateVariableEnum {
 		multiple = true
 		order = 4
 		values = new Listing {
@@ -30,14 +24,12 @@ variables {
 			"c"
 		}
 	}
-	["number"] = new TemplateVariableNumberSetting {
-		type = "number"
+	["number"] = new TemplateVariableNumber {
 		defaultValue = 123
 		prompt = "Why?"
 		order = 1
 	}
-	["string"] = new TemplateVariableStringSetting {
-		type = "string"
+	["string"] = new TemplateVariableString {
 		defaultValue = "abc"
 		internal = true
 		prompt = "Why?"

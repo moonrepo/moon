@@ -18,7 +18,7 @@ use proto_core::reporter::ProtoConsole;
 use proto_core::utils::log::LogWriter;
 use proto_core::{
     PluginLocator, PluginType as ProtoPluginType, Tool, ToolContext, ToolSpec,
-    UnresolvedVersionSpec, locate_plugin,
+    UnresolvedVersionSpec, VersionSpec, locate_plugin,
 };
 use proto_pdk_api::{ActivateEnvironmentInput, ActivateEnvironmentOutput, InstallStrategy};
 use starbase_utils::glob::{self, GlobSet};
@@ -43,6 +43,7 @@ pub struct ToolchainPlugin {
 
     globals_cache: scc::HashMap<UnresolvedVersionSpec, Option<PathBuf>>,
     locations_cache: scc::HashMap<UnresolvedVersionSpec, (ToolSpec, LocatorResponse)>,
+    resolved_versions: scc::HashMap<UnresolvedVersionSpec, VersionSpec>,
 }
 
 #[async_trait]
@@ -79,6 +80,7 @@ impl Plugin for ToolchainPlugin {
             locator: registration.locator,
             globals_cache: scc::HashMap::new(),
             locations_cache: scc::HashMap::new(),
+            resolved_versions: scc::HashMap::new(),
             setup: AtomicBool::new(false),
             metadata,
             plugin,
@@ -291,6 +293,18 @@ impl ToolchainPlugin {
         }
 
         Ok(output)
+    }
+
+    /// The version that setting up the toolchain resolved the provided
+    /// version to, like `~22` to `22.1.0`, which is what its tasks run with.
+    /// Returns `None` if it hasn't been setup with that version.
+    pub async fn get_resolved_version(
+        &self,
+        version: &UnresolvedVersionSpec,
+    ) -> Option<VersionSpec> {
+        self.resolved_versions
+            .read_async(version, |_, resolved| resolved.to_owned())
+            .await
     }
 
     #[instrument(skip(self))]
@@ -790,9 +804,16 @@ impl ToolchainPlugin {
                     Linker::link(&tool, &spec, false).await?;
                 }
 
-                // Track used at so that proto's auto-clean doesn't remove it
-                if let Some(version) = &spec.version {
-                    tool.inventory.create_product(version).track_used_at()?;
+                if let Some(resolved_version) = &spec.version {
+                    // Track used at so that proto's auto-clean doesn't remove it
+                    tool.inventory
+                        .create_product(resolved_version)
+                        .track_used_at()?;
+
+                    // Remember what the version resolved to, as tasks run with it
+                    self.resolved_versions
+                        .upsert_async(version.to_owned(), resolved_version.to_owned())
+                        .await;
                 }
 
                 self.setup.store(true, Ordering::Relaxed);

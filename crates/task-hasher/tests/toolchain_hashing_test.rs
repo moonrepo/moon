@@ -1,11 +1,12 @@
 use moon_app_context::AppContext;
 use moon_common::Id;
-use moon_config::{HasherOptimization, WorkspaceConfig};
+use moon_config::{HasherOptimization, UnresolvedVersionSpec, WorkspaceConfig};
 use moon_hash::ContentHasher;
 use moon_layout_graph::{LayoutGraph, LayoutGraphBuilder};
+use moon_pdk_api::SetupToolchainInput;
 use moon_task_hasher::hash_toolchain_task_contents;
 use moon_test_utils::{WorkspaceGraph, WorkspaceMocker};
-use starbase_sandbox::{Sandbox, create_sandbox};
+use starbase_sandbox::{Sandbox, create_empty_sandbox, create_sandbox};
 use starbase_utils::json::serde_json::{self, Value};
 use std::sync::Arc;
 
@@ -162,8 +163,80 @@ fn get_parsed_custom_keys(sandbox: &Sandbox) -> Vec<(String, String, Value)> {
     parsed
 }
 
+// The `tc-tier3-tool` test toolchain registers a real proto tool, which the
+// project overrides with a partial version (the workspace's is always 1.2.3
+// for test toolchains), and pretends that proto installed 1.2.3
+async fn create_graphs_with_tool(sandbox: &Sandbox) -> (Arc<AppContext>, Arc<WorkspaceGraph>) {
+    sandbox.create_file(".moon/workspace.yml", "projects:\n  app: 'app'\n");
+    sandbox.create_file(
+        "app/moon.yml",
+        "toolchains:\n  default: 'tc-tier3-tool'\n  tc-tier3-tool:\n    version: '~1'\n\
+         tasks:\n  build:\n    command: 'build'\n",
+    );
+    sandbox.create_file(
+        ".proto/tools/tc-tier3-tool/manifest.json",
+        r#"{ "installed_versions": ["1.2.3"] }"#,
+    );
+    sandbox.create_file(".proto/tools/tc-tier3-tool/1.2.3/bin/tc-tool", "");
+
+    let mocker = WorkspaceMocker::new(sandbox.path())
+        .load_default_configs()
+        .with_test_toolchains()
+        .update_toolchains_config(|config| {
+            config.plugins.entry(Id::raw("tc-tier3-tool")).or_default();
+        });
+
+    (
+        Arc::new(mocker.mock_app_context()),
+        Arc::new(mocker.mock_workspace_graph().await),
+    )
+}
+
+fn get_version(hash: &str) -> Value {
+    serde_json::from_str::<Vec<Value>>(hash)
+        .unwrap()
+        .into_iter()
+        .find(|content| content["toolchain"] == "tc-tier3-tool")
+        .map(|content| content["version"].clone())
+        .unwrap_or_default()
+}
+
 mod toolchain_hashing {
     use super::*;
+
+    // The version that the setup resolved is hashed, which the task runs
+    // with, as another machine may resolve the same requirement differently
+    #[tokio::test(flavor = "multi_thread")]
+    async fn hashes_the_resolved_version_after_setup() {
+        let sandbox = create_empty_sandbox();
+        let (app_context, workspace_graph) = create_graphs_with_tool(&sandbox).await;
+        let layout = LayoutGraph::default();
+
+        let before = hash_toolchains(&app_context, &workspace_graph, &layout, "app").await;
+
+        app_context
+            .toolchain_registry
+            .load("tc-tier3-tool")
+            .await
+            .unwrap()
+            .setup_toolchain(
+                SetupToolchainInput {
+                    configured_version: UnresolvedVersionSpec::parse("~1").ok(),
+                    context: app_context.toolchain_registry.create_context(),
+                    ..Default::default()
+                },
+                None,
+                || panic!("tool should already be installed"),
+            )
+            .await
+            .unwrap();
+
+        let after = hash_toolchains(&app_context, &workspace_graph, &layout, "app").await;
+
+        // Without a setup, the requirement is hashed
+        assert_eq!(get_version(&before), "~1");
+        assert_eq!(get_version(&after), "1.2.3");
+    }
 
     // A dependencies root's files are parsed with the root's config, which is
     // its root project's, while a project's manifest is parsed with the

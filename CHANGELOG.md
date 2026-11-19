@@ -447,6 +447,10 @@
   environment.
 - Fixed an issue where `moon docker file` could pick the default base image of a toolchain that the
   project disabled.
+- Fixed an issue where a task's hash included its toolchain's configured version (like `~22`),
+  instead of the version it was resolved to when setting up the toolchain (like `22.22.3`), which
+  the task runs with. Machines that resolved different versions shared a hash, and remote cache
+  entries. Tasks of toolchains configured with a partial version or an alias get a new hash.
 - Fixed some issues with detecting a task's toolchains from its command:
   - proto's versioned binaries, like `node-20` or `python-3.12`, were never detected.
   - Relative paths, like `bin/rails` or `./bin/rspec`, weren't detected, as the whole command was

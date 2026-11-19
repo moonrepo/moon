@@ -202,7 +202,10 @@ async fn apply_toolchain(
         version: None,
     };
 
-    // Has a version override, or an inherited version
+    // Has a version override, or an inherited version, which is hashed as the
+    // version that setting up the toolchain resolved it to (like `~22` to
+    // `22.1.0`), as the task runs with it, and other machines may resolve the
+    // same requirement to another version. Without a setup, it's the requirement
     if let Some(version) = get_toolchain_spec(
         &app_context.toolchains_config,
         &toolchain.id,
@@ -210,7 +213,10 @@ async fn apply_toolchain(
     )
     .and_then(|spec| spec.req)
     {
-        fingerprint.version = Some(version);
+        fingerprint.version = Some(match toolchain.get_resolved_version(&version).await {
+            Some(resolved_version) => resolved_version.to_unresolved_spec(),
+            None => version,
+        });
         inject = true;
     }
 

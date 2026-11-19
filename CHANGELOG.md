@@ -447,6 +447,10 @@
   environment.
 - Fixed an issue where `moon docker file` could pick the default base image of a toolchain that the
   project disabled.
+- Fixed some issues with detecting a task's toolchains from its command:
+  - proto's versioned binaries, like `node-20` or `python-3.12`, were never detected.
+  - Relative paths, like `bin/rails` or `./bin/rspec`, weren't detected, as the whole command was
+    compared. They're now matched by their file name.
 - Fixed some issues with `moon migrate v2`:
   - The `.moon/tasks.yml` file was moved to `.moon/tasks/all.yml` with an `inheritedBy` condition
     for a `tasks` language, so its tasks were no longer inherited by any project.

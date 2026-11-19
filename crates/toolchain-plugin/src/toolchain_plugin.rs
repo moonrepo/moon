@@ -390,18 +390,32 @@ impl ToolchainPlugin {
 
     #[instrument(skip(self))]
     pub fn detect_task_usage(&self, command: &String) -> miette::Result<bool> {
-        if self.metadata.exe_names.contains(command) {
+        // Match a relative path, like `bin/rails` or `./bin/rspec`, by its
+        // file name, while an absolute path is never a toolchain's executable
+        let name = if command.contains(['/', '\\']) {
+            if command.starts_with(['/', '\\']) || Path::new(command).is_absolute() {
+                return Ok(false);
+            }
+
+            command.rsplit(['/', '\\']).next().unwrap_or_default()
+        } else {
+            command.as_str()
+        };
+
+        let is_exe_name = |name: &str| self.metadata.exe_names.iter().any(|exe| exe == name);
+
+        if is_exe_name(name) {
             return Ok(true);
         }
 
-        // Support proto binaries like `node-20.1` or `python-3`
-        for exe in &self.metadata.exe_names {
-            if let Some((name, version)) = exe.split_once('-')
-                && name == exe
-                && version.chars().all(|ch| ch.is_ascii_digit() || ch == '.')
-            {
-                return Ok(true);
-            }
+        // Support proto's versioned binaries, like `node-20.1` or `python-3`,
+        // splitting on the last hyphen, as executable names may contain them
+        if let Some((name, version)) = name.rsplit_once('-')
+            && version.starts_with(|ch: char| ch.is_ascii_digit())
+            && version.chars().all(|ch| ch.is_ascii_digit() || ch == '.')
+            && is_exe_name(name)
+        {
+            return Ok(true);
         }
 
         Ok(false)

@@ -57,6 +57,66 @@ mod toolchain_plugin {
         }
     }
 
+    mod detect_task_usage {
+        use super::*;
+
+        // The `tc-tier3-tool` test toolchain's executable is `tc-tool`
+        async fn detects(command: &str) -> bool {
+            let sandbox = create_empty_sandbox();
+            let registry = WorkspaceMocker::new(sandbox.path())
+                .with_test_toolchains()
+                .update_toolchains_config(|config| {
+                    config.plugins.entry(Id::raw("tc-tier3-tool")).or_default();
+                })
+                .mock_toolchain_registry();
+            let toolchain = registry.load("tc-tier3-tool").await.unwrap();
+
+            toolchain.detect_task_usage(&command.to_owned()).unwrap()
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn matches_exe_names() {
+            assert!(detects("tc-tool").await);
+            assert!(!detects("tc").await);
+            assert!(!detects("tc-tool-extra").await);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn matches_versioned_binaries() {
+            for command in ["tc-tool-1", "tc-tool-1.2", "tc-tool-1.2.3"] {
+                assert!(detects(command).await, "{command}");
+            }
+
+            for command in ["tc-tool-", "tc-tool-.1", "tc-tool-1a", "tc-1.2"] {
+                assert!(!detects(command).await, "{command}");
+            }
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn matches_relative_paths_by_file_name() {
+            for command in [
+                "bin/tc-tool",
+                "./bin/tc-tool",
+                "../tc-tool",
+                "bin\\tc-tool",
+                "./bin/tc-tool-1.2",
+            ] {
+                assert!(detects(command).await, "{command}");
+            }
+
+            for command in ["bin/other", "bin/", "tc-tool/other"] {
+                assert!(!detects(command).await, "{command}");
+            }
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_match_absolute_paths() {
+            for command in ["/usr/bin/tc-tool", "\\bin\\tc-tool"] {
+                assert!(!detects(command).await, "{command}");
+            }
+        }
+    }
+
     mod guarded_funcs {
         use super::*;
 

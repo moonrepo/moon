@@ -447,6 +447,10 @@
   environment.
 - Fixed an issue where `moon docker file` could pick the default base image of a toolchain that the
   project disabled.
+- Fixed an issue where `moon docker file` without a TTY (and without `--defaults`) would use the
+  `scratch` image, instead of the configured or toolchain's default image, and use the project's
+  first task as both the build and start task, when neither was configured. It now uses the same
+  defaults as `--defaults`.
 - Fixed an issue where a task's hash included its toolchain's configured version (like `~22`),
   instead of the version it was resolved to when setting up the toolchain (like `22.22.3`), which
   the task runs with. Machines that resolved different versions shared a hash, and remote cache

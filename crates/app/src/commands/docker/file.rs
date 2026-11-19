@@ -137,20 +137,24 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> SessionResult {
         .or_else(|| workspace_docker.file.image.clone())
         .unwrap_or(base_image);
 
+    // Prompts aren't rendered without a TTY, and only write their value when
+    // submitted, so they start with the defaults, like `--defaults`
     if let Some(image) = args.image {
         options.image = image;
-    } else if args.defaults {
-        options.image = default_image;
     } else {
-        console
-            .render_prompt(element! {
-                Input(
-                    label: "Docker image?",
-                    default_value: default_image,
-                    on_value: &mut options.image,
-                )
-            })
-            .await?;
+        options.image = default_image.clone();
+
+        if !args.defaults {
+            console
+                .render_prompt(element! {
+                    Input(
+                        label: "Docker image?",
+                        default_value: default_image,
+                        on_value: &mut options.image,
+                    )
+                })
+                .await?;
+        }
     }
 
     debug!(image = &options.image, "Using Docker image");
@@ -171,7 +175,9 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> SessionResult {
                 .iter()
                 .position(|cursor_id| *cursor_id == id.as_str())
         });
-        let mut index = default_index.unwrap_or(0);
+
+        // Without a setting, the default is the last "(none)" option
+        let mut index = default_index.unwrap_or(task_ids.len());
 
         console
             .render_prompt(element! {
@@ -224,7 +230,9 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> SessionResult {
                 .iter()
                 .position(|cursor_id| *cursor_id == id.as_str())
         });
-        let mut index = default_index.unwrap_or(0);
+
+        // Without a setting, the default is the last "(none)" option
+        let mut index = default_index.unwrap_or(task_ids.len());
 
         console
             .render_prompt(element! {

@@ -74,6 +74,33 @@ mod docker_file {
         assert!(sandbox.path().join("has-tasks/Dockerfile").exists());
     }
 
+    // Prompts aren't rendered without a TTY, like in tests,
+    // so their defaults are used, like with `--defaults`
+    #[test]
+    fn uses_defaults_without_a_tty() {
+        let sandbox = create_moon_sandbox("dockerfile");
+
+        for id in ["has-tasks", "with-config"] {
+            sandbox
+                .run_bin(|cmd| {
+                    cmd.args(["docker", "file", id]);
+                })
+                .success();
+        }
+
+        let file = fs::read_to_string(sandbox.path().join("with-config/Dockerfile")).unwrap();
+
+        assert!(file.contains("FROM oven/bun:latest"));
+        assert!(file.contains("moon run with-config:compile"));
+        assert!(file.contains("moon run with-config:serve"));
+
+        // Without settings, there's no build or start task
+        let file = fs::read_to_string(sandbox.path().join("has-tasks/Dockerfile")).unwrap();
+
+        assert!(file.contains("FROM scratch"));
+        assert!(!file.contains("moon run"));
+    }
+
     #[test]
     fn can_change_dest() {
         let sandbox = create_moon_sandbox("dockerfile");

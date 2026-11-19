@@ -106,6 +106,14 @@ pub fn locate_dependencies_root_from(
 pub fn parse_lock(Json(input): Json<ParseLockInput>) -> FnResult<Json<ParseLockOutput>> {
     let mut output = ParseLockOutput::default();
 
+    record_input(
+        &input.context,
+        &input.toolchain_config,
+        "parse_lock",
+        &input.path.to_string_lossy(),
+        json::to_value(&input)?,
+    )?;
+
     for line in fs::read_to_string(&input.path)?.lines() {
         if let Some((name, version)) = line.trim().split_once('@')
             && !name.is_empty()
@@ -133,6 +141,14 @@ pub fn parse_manifest(
     Json(input): Json<ParseManifestInput>,
 ) -> FnResult<Json<ParseManifestOutput>> {
     let mut output = ParseManifestOutput::default();
+
+    record_input(
+        &input.context,
+        &input.toolchain_config,
+        "parse_manifest",
+        &input.path.to_string_lossy(),
+        json::to_value(&input)?,
+    )?;
 
     for line in fs::read_to_string(&input.path)?.lines() {
         let [kind, name, version] = line.split_whitespace().collect::<Vec<_>>()[..] else {

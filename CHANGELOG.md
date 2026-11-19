@@ -304,6 +304,11 @@
   - Added an `inject_task_inputs` field to `RegisterToolchainOutput` in the toolchain plugin API,
     which controls whether the toolchain's manifest and lock file names are injected as an affected
     only input into the tasks that use it. Defaults to `true`.
+  - Added a `toolchain_config` field to `InitializeToolchainInput`, `RegisterToolchainInput`,
+    `ParseLockInput`, and `ParseManifestInput` in the toolchain plugin API, so that every toolchain
+    function receives the toolchain's configuration. A dependencies root's lockfile and manifest are
+    parsed with the root's configuration, and a project's manifest with the project's.
+    `InitializeToolchainInput` is now its own type, instead of an alias of `InitializePluginInput`.
   - A project's toolchains now also include the toolchains required by those configured in
     `toolchains.default`, and inferred from its language, instead of only those detected from its
     files, and the toolchains that those require, and so on. Like a task's, they also include the

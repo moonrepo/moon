@@ -26,16 +26,17 @@ async fn create_graphs_with(
         .update_workspace_config(op)
         .with_test_toolchains()
         .update_toolchains_config(|config| {
+            let plugin = config.plugins.get_mut(&Id::raw("tc-tier2")).unwrap();
+
             // Locate roots from each project, instead of the working dir
-            config
-                .plugins
-                .get_mut(&Id::raw("tc-tier2"))
-                .unwrap()
+            plugin
                 .config
-                .insert(
-                    "testLocateRoots".into(),
-                    starbase_utils::json::JsonValue::Bool(true),
-                );
+                .insert("testLocateRoots".into(), Value::Bool(true));
+
+            // Record the inputs of plugin calls, see `get_parsed_custom_keys`
+            plugin
+                .config
+                .insert("testRecordInputs".into(), Value::Bool(true));
         })
         .with_global_envs();
 
@@ -114,8 +115,112 @@ fn create_inherited_dependencies(sandbox: &Sandbox, dep_a_version: &str) {
     );
 }
 
+// Sets a custom setting for a project, to check which config is passed
+fn set_custom_key(sandbox: &Sandbox, source: &str, key: &str) {
+    sandbox.create_file(
+        format!("{source}/moon.yml"),
+        format!(
+            "toolchains:\n  default: 'tc-tier2'\n  tc-tier2:\n    customKey: '{key}'\n\
+             tasks:\n  build:\n    command: 'build'\n"
+        ),
+    );
+}
+
+// The function, workspace relative path, and custom setting of each file
+// that `tc-tier2` parsed
+fn get_parsed_custom_keys(sandbox: &Sandbox) -> Vec<(String, String, Value)> {
+    let mut parsed = vec![];
+
+    for func in ["parse_lock", "parse_manifest"] {
+        let dir = sandbox
+            .path()
+            .join(".moon/cache/tcInputs/tc-tier2")
+            .join(func);
+
+        let Ok(entries) = std::fs::read_dir(dir) else {
+            continue;
+        };
+
+        for entry in entries {
+            let input: Value =
+                serde_json::from_str(&std::fs::read_to_string(entry.unwrap().path()).unwrap())
+                    .unwrap();
+
+            parsed.push((
+                func.to_owned(),
+                input["path"]
+                    .as_str()
+                    .unwrap()
+                    .trim_start_matches("/workspace/")
+                    .to_owned(),
+                input["toolchain_config"]["customKey"].clone(),
+            ));
+        }
+    }
+
+    parsed.sort_by(|a, d| (&a.0, &a.1).cmp(&(&d.0, &d.1)));
+    parsed
+}
+
 mod toolchain_hashing {
     use super::*;
+
+    // A dependencies root's files are parsed with the root's config, which is
+    // its root project's, while a project's manifest is parsed with the
+    // project's. Without a root to be a member of, it's always the project's
+    #[tokio::test(flavor = "multi_thread")]
+    async fn parses_files_with_the_config_of_their_owner() {
+        for (project_id, expected) in [
+            (
+                "a",
+                vec![
+                    ("parse_lock", "tc.lock", "root"),
+                    ("parse_manifest", "packages/a/tc.cfg", "a"),
+                    ("parse_manifest", "tc.root.cfg", "root"),
+                ],
+            ),
+            (
+                "standalone",
+                vec![
+                    ("parse_lock", "standalone/tc.lock", "standalone"),
+                    ("parse_manifest", "standalone/tc.cfg", "standalone"),
+                ],
+            ),
+            (
+                "tools",
+                vec![
+                    ("parse_lock", "tc.lock", "tools"),
+                    ("parse_manifest", "tc.root.cfg", "tools"),
+                    ("parse_manifest", "tools/tc.cfg", "tools"),
+                ],
+            ),
+        ] {
+            let sandbox = create_sandbox("layout-hash");
+
+            for (source, key) in [
+                (".", "root"),
+                ("packages/a", "a"),
+                ("standalone", "standalone"),
+                ("tools", "tools"),
+            ] {
+                set_custom_key(&sandbox, source, key);
+            }
+
+            let (app_context, workspace_graph) = create_graphs(&sandbox).await;
+            let layout = place_project(&app_context, &workspace_graph, project_id).await;
+
+            hash_toolchains(&app_context, &workspace_graph, &layout, project_id).await;
+
+            assert_eq!(
+                get_parsed_custom_keys(&sandbox),
+                expected
+                    .into_iter()
+                    .map(|(func, path, key)| (func.to_owned(), path.to_owned(), Value::from(key)))
+                    .collect::<Vec<_>>(),
+                "project {project_id}"
+            );
+        }
+    }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn hashes_locked_dependencies_of_the_root() {

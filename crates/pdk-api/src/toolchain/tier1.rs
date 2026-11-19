@@ -1,4 +1,4 @@
-use crate::common::{InitializePluginInput, InitializePluginOutput};
+use crate::common::InitializePluginOutput;
 use crate::context::*;
 use crate::is_true;
 use moon_common::Id;
@@ -11,7 +11,18 @@ pub use proto_pdk_api::{
     DetectVersionInput, DetectVersionOutput, ParseVersionFileInput, ParseVersionFileOutput,
 };
 
-pub type InitializeToolchainInput = InitializePluginInput;
+api_struct!(
+    /// Input passed to the `initialize_toolchain` function.
+    pub struct InitializeToolchainInput {
+        /// Current moon context.
+        pub context: MoonContext,
+
+        /// Workspace toolchain configuration. Is null when the
+        /// toolchain hasn't been configured yet.
+        pub toolchain_config: serde_json::Value,
+    }
+);
+
 pub type InitializeToolchainOutput = InitializePluginOutput;
 
 // METADATA
@@ -21,6 +32,10 @@ api_struct!(
     pub struct RegisterToolchainInput {
         /// ID of the toolchain, as it was configured.
         pub id: Id,
+
+        /// Workspace toolchain configuration. Is null when the
+        /// toolchain hasn't been configured yet.
+        pub toolchain_config: serde_json::Value,
     }
 );
 

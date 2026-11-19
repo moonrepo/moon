@@ -250,6 +250,12 @@ api_struct!(
         /// Virtual path to the dependencies root. This is where
         /// the lockfile and root manifest should exist.
         pub root: VirtualPath,
+
+        /// Workspace and project merged toolchain configuration,
+        /// with the latter taking precedence. When hashing a task, its
+        /// project's manifest is parsed with that project's, otherwise
+        /// it's the dependencies root's (see `ParseLockInput`).
+        pub toolchain_config: serde_json::Value,
     }
 );
 
@@ -392,6 +398,12 @@ api_struct!(
         /// Virtual path to the dependencies root. This is where
         /// the lockfile and root manifest should exist.
         pub root: VirtualPath,
+
+        /// The dependencies root's toolchain configuration: the workspace's
+        /// merged with the project's at the root (if there is one), with the
+        /// latter taking precedence. When hashing a task whose project located
+        /// the root without being a member of it, it's that project's.
+        pub toolchain_config: serde_json::Value,
     }
 );
 

@@ -1,12 +1,15 @@
 use async_trait::async_trait;
 use moon_env::MoonEnvironment;
 use proto_core::ProtoEnvironment;
+use starbase_utils::json::JsonValue;
 use std::fmt::Debug;
 use std::path::PathBuf;
 use std::sync::Arc;
 use warpgate::{Id, PluginContainer, PluginLocator};
 
 pub struct PluginRegistration {
+    /// Workspace configuration of the plugin, or null when not configured.
+    pub config: JsonValue,
     pub container: PluginContainer,
     pub id: Id,        // unstable_foo
     pub id_stable: Id, // foo

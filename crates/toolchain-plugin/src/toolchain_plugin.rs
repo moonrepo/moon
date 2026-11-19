@@ -55,6 +55,7 @@ impl Plugin for ToolchainPlugin {
                 "register_toolchain",
                 RegisterToolchainInput {
                     id: registration.id.clone(),
+                    toolchain_config: registration.config,
                 },
             )
             .await?;

@@ -20,7 +20,7 @@ use moon_toolchain::get_toolchain_spec;
 use moon_toolchain_plugin::ToolchainPlugin;
 use starbase_utils::json::JsonValue;
 use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::task::JoinSet;
 
@@ -189,7 +189,7 @@ pub async fn hash_toolchain_task_contents(
 async fn apply_toolchain(
     app_context: Arc<AppContext>,
     toolchain: Arc<ToolchainPlugin>,
-    deps_root: Option<PathBuf>,
+    deps_root: Option<DependenciesRoot>,
     project: ProjectFragment,
     project_config: Arc<ProjectConfig>,
     task: TaskFragment,
@@ -214,6 +214,10 @@ async fn apply_toolchain(
         inject = true;
     }
 
+    let toolchain_config = app_context
+        .toolchain_registry
+        .create_merged_config(&toolchain.id, &project_config);
+
     // Hash dependencies from manifest
     if let Some(deps_root) = deps_root
         && apply_toolchain_dependencies(
@@ -221,6 +225,7 @@ async fn apply_toolchain(
             &toolchain,
             &deps_root,
             &project,
+            &toolchain_config,
             &mut fingerprint,
         )
         .await?
@@ -234,9 +239,7 @@ async fn apply_toolchain(
             context: app_context.toolchain_registry.create_context(),
             project,
             task,
-            toolchain_config: app_context
-                .toolchain_registry
-                .create_merged_config(&toolchain.id, &project_config),
+            toolchain_config,
         })
         .await?;
 
@@ -248,6 +251,16 @@ async fn apply_toolchain(
     Ok(if inject { Some(fingerprint) } else { None })
 }
 
+/// The dependencies root of a toolchain for a project.
+struct DependenciesRoot {
+    path: PathBuf,
+
+    /// The configuration that the root's lockfile and manifest are parsed
+    /// with, which is the root's own (from the project at the root), or the
+    /// project's when it isn't a member of the root.
+    config: Arc<JsonValue>,
+}
+
 /// The dependencies root of a toolchain for a project, from where the action
 /// graph placed it: the root it's in, or the root that it located without being
 /// a member of it, which is still hashed.
@@ -256,17 +269,22 @@ fn get_dependencies_root(
     layout_graph: &LayoutGraph,
     project_id: &Id,
     toolchain_id: &Id,
-) -> Option<PathBuf> {
+) -> Option<DependenciesRoot> {
     let binding = layout_graph.binding(project_id, toolchain_id)?;
 
     match &binding.placement {
-        Placement::Root { index, .. } => Some(
-            layout_graph
-                .root(*index)
-                .root
-                .to_logical_path(&app_context.workspace_root),
-        ),
-        Placement::Outside { root } => Some(root.to_logical_path(&app_context.workspace_root)),
+        Placement::Root { index, .. } => {
+            let root = layout_graph.root(*index);
+
+            Some(DependenciesRoot {
+                path: root.root.to_logical_path(&app_context.workspace_root),
+                config: Arc::clone(&root.config),
+            })
+        }
+        Placement::Outside { root } => Some(DependenciesRoot {
+            path: root.to_logical_path(&app_context.workspace_root),
+            config: Arc::clone(&binding.config),
+        }),
         Placement::None => None,
     }
 }
@@ -274,10 +292,15 @@ fn get_dependencies_root(
 async fn apply_toolchain_dependencies(
     app_context: &AppContext,
     toolchain: &ToolchainPlugin,
-    deps_root: &Path,
+    deps_root: &DependenciesRoot,
     project: &ProjectFragment,
+    project_toolchain_config: &JsonValue,
     fingerprint: &mut TaskToolchainFingerprint,
 ) -> miette::Result<bool> {
+    let DependenciesRoot {
+        path: deps_root,
+        config: deps_root_config,
+    } = deps_root;
     let mut lock_files = vec![];
     let mut workspace_manifests = vec![];
     let mut project_manifests = vec![];
@@ -296,6 +319,7 @@ async fn apply_toolchain_dependencies(
                         context: app_context.toolchain_registry.create_context(),
                         path: toolchain.to_virtual_path(lock_path),
                         root: toolchain.to_virtual_path(deps_root),
+                        toolchain_config: deps_root_config.as_ref().to_owned(),
                     })
                     .await?,
             );
@@ -313,6 +337,7 @@ async fn apply_toolchain_dependencies(
                         context: app_context.toolchain_registry.create_context(),
                         path: toolchain.to_virtual_path(manifest_path),
                         root: toolchain.to_virtual_path(deps_root),
+                        toolchain_config: project_toolchain_config.to_owned(),
                     })
                     .await?,
             );
@@ -322,7 +347,7 @@ async fn apply_toolchain_dependencies(
     // Parse and extract workspace manifest, for the dependencies that the
     // project can inherit. A project at the root (like a workspace's root
     // package) inherits them from its own manifest, which is parsed above
-    if deps_root != project_root {
+    if *deps_root != project_root {
         for manifest_file_name in &toolchain.metadata.manifest_file_names {
             let manifest_path = deps_root.join(manifest_file_name);
 
@@ -333,6 +358,7 @@ async fn apply_toolchain_dependencies(
                             context: app_context.toolchain_registry.create_context(),
                             path: toolchain.to_virtual_path(manifest_path),
                             root: toolchain.to_virtual_path(deps_root),
+                            toolchain_config: deps_root_config.as_ref().to_owned(),
                         })
                         .await?,
                 );

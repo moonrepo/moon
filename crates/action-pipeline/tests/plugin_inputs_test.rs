@@ -1,5 +1,6 @@
 use moon_action_graph::BuildOutput;
 use moon_common::Id;
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_test_utils::WorkspaceMocker;
 use serde_json::Value;
 use starbase_sandbox::{Sandbox, create_sandbox};
@@ -23,6 +24,14 @@ fn create_mocker(sandbox: &Sandbox) -> WorkspaceMocker {
 }
 
 async fn run_installs(mocker: &WorkspaceMocker, project_ids: &[&str]) {
+    run_installs_with_changed_files(mocker, project_ids, &[]).await;
+}
+
+async fn run_installs_with_changed_files(
+    mocker: &WorkspaceMocker,
+    project_ids: &[&str],
+    changed_files: &[&str],
+) {
     let workspace_graph = mocker.mock_workspace_graph().await;
     let mut builder = mocker.create_action_graph().await;
 
@@ -30,7 +39,15 @@ async fn run_installs(mocker: &WorkspaceMocker, project_ids: &[&str]) {
         builder.install_dependencies_by_project(workspace_graph.get_project(id).unwrap());
     }
 
-    let BuildOutput { context, graph, .. } = builder.build().await.unwrap();
+    let BuildOutput {
+        mut context, graph, ..
+    } = builder.build().await.unwrap();
+
+    context.changed_files.extend(
+        changed_files
+            .iter()
+            .map(|file| WorkspaceRelativePathBuf::from(*file)),
+    );
 
     mocker
         .mock_action_pipeline()
@@ -181,6 +198,30 @@ mod plugin_inputs {
                     ("1.99.0".into(), "1.99.0".into())
                 ]
             );
+        }
+
+        // Changed manifests are parsed for the install with the root's
+        // config, which is the root project's, not their project's
+        #[tokio::test(flavor = "multi_thread")]
+        async fn parses_changed_manifests_with_the_roots_config() {
+            let sandbox = create_sandbox("shared-root");
+
+            overrides_version(&sandbox, ".");
+            overrides_version(&sandbox, "packages/b");
+            sandbox.create_file("packages/b/tc.cfg", "dep dep-a ^1.0.0\n");
+
+            run_installs_with_changed_files(
+                &create_mocker(&sandbox),
+                &["b"],
+                &["packages/b/tc.cfg"],
+            )
+            .await;
+
+            let input = get_single_input(&sandbox, "parse_manifest");
+
+            assert_eq!(input["path"], "/workspace/packages/b/tc.cfg");
+            assert_eq!(input["root"], "/workspace");
+            assert_eq!(input["toolchain_config"]["customKey"], ".");
         }
     }
 

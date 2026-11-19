@@ -109,6 +109,7 @@ pub async fn create_config_from_prompts(
     let output = toolchain
         .initialize_toolchain(InitializeToolchainInput {
             context: toolchain_registry.create_context(),
+            toolchain_config: toolchain_registry.create_config(&toolchain.id),
         })
         .await?;
 

@@ -31,6 +31,32 @@ fn create_deps_workspace() -> (Sandbox, WorkspaceMocker) {
 mod toolchain_plugin {
     use super::*;
 
+    mod register_toolchain {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn passes_the_workspace_config() {
+            let sandbox = create_empty_sandbox();
+            let mocker = WorkspaceMocker::new(sandbox.path())
+                .with_test_toolchains()
+                .update_toolchains_config(|config| {
+                    config
+                        .plugins
+                        .get_mut(&Id::raw("tc-tier1"))
+                        .unwrap()
+                        .config
+                        .insert("testDescription".into(), serde_json::json!("configured"));
+                });
+            let registry = mocker.mock_toolchain_registry();
+            let toolchain = registry.load("tc-tier1").await.unwrap();
+
+            assert_eq!(
+                toolchain.metadata.description.as_deref(),
+                Some("configured")
+            );
+        }
+    }
+
     mod guarded_funcs {
         use super::*;
 

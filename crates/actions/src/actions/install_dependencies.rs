@@ -327,6 +327,7 @@ async fn create_hash_content<'action>(
                 deps_root,
                 node,
                 manifest_file_name,
+                &input.toolchain_config,
                 &mut fingerprint,
             )
             .await?;
@@ -342,6 +343,7 @@ async fn hash_manifest_contents<'action>(
     deps_root: &Path,
     node: &'action InstallDependenciesNode,
     manifest_file_name: &str,
+    toolchain_config: &JsonValue,
     fingerprint: &mut InstallDependenciesFingerprint<'action>,
 ) -> miette::Result<()> {
     // Find all manifests in the workspace
@@ -383,6 +385,7 @@ async fn hash_manifest_contents<'action>(
     for manifest_path in manifest_paths {
         let app_context = Arc::clone(app_context);
         let toolchain = Arc::clone(toolchain);
+        let toolchain_config = toolchain_config.to_owned();
         let deps_root = deps_root.to_owned();
 
         if let Ok(rel_path) = manifest_path.relative_to(&app_context.workspace_root) {
@@ -395,6 +398,7 @@ async fn hash_manifest_contents<'action>(
                     context: app_context.toolchain_registry.create_context(),
                     path: toolchain.to_virtual_path(manifest_path),
                     root: toolchain.to_virtual_path(deps_root),
+                    toolchain_config,
                 })
                 .await
         })));

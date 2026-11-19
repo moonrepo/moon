@@ -126,6 +126,13 @@ impl MoonWasmSandbox {
 
         manifest.config.extend(config.build());
 
+        // Pass the configured settings, like moon does
+        let toolchain_config = manifest
+            .config
+            .get("moon_toolchain_config")
+            .and_then(|value| serde_json::from_str(value).ok())
+            .unwrap_or_default();
+
         // Create plugin
         let plugin = Arc::new(self.create_plugin_container(id, manifest, true));
         let metadata: RegisterToolchainOutput = plugin
@@ -133,6 +140,7 @@ impl MoonWasmSandbox {
                 "register_toolchain",
                 RegisterToolchainInput {
                     id: plugin.id.clone(),
+                    toolchain_config,
                 },
             )
             .await

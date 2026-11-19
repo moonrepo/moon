@@ -54,6 +54,12 @@ pub fn register_toolchain(
 ) -> FnResult<Json<RegisterToolchainOutput>> {
     Ok(Json(RegisterToolchainOutput {
         name: input.id.to_string(),
+        // So that tests can verify the config that's passed
+        description: input
+            .toolchain_config
+            .get("testDescription")
+            .and_then(|value| value.as_str())
+            .map(|value| value.to_owned()),
         manifest_file_names: vec!["tc.cfg".into(), "tc.root.cfg".into()],
         lock_file_names: vec!["tc.lock".into()],
         vendor_dir_name: Some("vendor".into()),

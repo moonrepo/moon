@@ -105,7 +105,7 @@ function extractNodes(data: GraphInfo) {
 
 	// v1
 	return data.nodes.map((n) => ({
-		data: { id: n.id.toString(), label: n.label, type: getActionType(n.label) },
+		data: { id: n.id.toString(), label: n.label, type: n.type ?? getActionType(n.label) },
 	}));
 }
 
@@ -240,6 +240,35 @@ export function render(element: HTMLElement, data: GraphInfo, layout: string) {
 			},
 			{
 				selector: 'node[type="sync-workspace"]',
+				style: {
+					// @ts-expect-error Types incorrect
+					'background-gradient-stop-colors': '#b7a9f9 #9a87f7 #8c75f5',
+					height: 120,
+					width: 120,
+				},
+			},
+			// Layout graph
+			{
+				selector: 'node[type="layout-project"]',
+				style: {
+					// @ts-expect-error Types incorrect
+					'background-gradient-stop-colors': '#6e58d1 #4a2ec6 #3b259e',
+				},
+			},
+			{
+				selector: 'node[type="layout-root"]',
+				style: {
+					// @ts-expect-error Types incorrect
+					'background-gradient-stop-colors': '#afe6f2 #79d5e9 #61aaba',
+					height: 90,
+					'overlay-shape': 'round-rectangle',
+					shape: 'round-rectangle',
+					'underlay-shape': 'round-rectangle',
+					width: 90,
+				},
+			},
+			{
+				selector: 'node[type="layout-workspace"]',
 				style: {
 					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#b7a9f9 #9a87f7 #8c75f5',

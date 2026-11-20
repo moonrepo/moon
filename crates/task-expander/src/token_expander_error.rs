@@ -63,6 +63,22 @@ pub enum TokenExpanderError {
     },
 
     #[diagnostic(
+        code(token_expander::parent_traversal_glob),
+        help = "Shells can't expand them, so use @files(group) instead, which returns the matching files."
+    )]
+    #[error(
+        "Token {} in task {} returned the parent traversal glob {}, which is only supported within task inputs.",
+        .token.style(Style::Symbol),
+        .target.style(Style::Label),
+        .glob.style(Style::File),
+    )]
+    ParentTraversalGlob {
+        glob: String,
+        target: String,
+        token: String,
+    },
+
+    #[diagnostic(
         code(token_expander::unknown),
         url("https://moonrepo.dev/docs/concepts/token")
     )]

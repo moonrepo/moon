@@ -50,6 +50,11 @@ files required for dependencies to install. This is typically manifests (`packag
 managers to install dependencies (otherwise they will fail), and for dependencies to be layer cached
 in Docker.
 
+These files are also copied from every [dependencies root](../../how-it-works/layout-graph) that a
+toolchain locates, even when the root isn't a project, like a package manager workspace whose
+members are projects. Like the workspace root, only the toolchain's files are copied from these
+roots, never all of their sources.
+
 An example of this skeleton using Yarn may look like the following:
 
 ```

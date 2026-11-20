@@ -133,10 +133,6 @@ impl WorkspaceGraph {
         }
 
         // No matches using the OR condition
-        if !matched_any {
-            return Ok(false);
-        }
-
-        Ok(true)
+        Ok(matched_any)
     }
 }

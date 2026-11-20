@@ -115,8 +115,8 @@ impl StorageBackend for LocalStorage {
         // 2. Sweep blobs no surviving manifest references. Blobs released by an
         //    evicted manifest are swept past the ingest grace (so the size budget
         //    is enforced), while blobs that no manifest references at all (like
-        //    hash manifests, which mark actions as having ran) live out the
-        //    lifetime, as nothing else keeps them alive.
+        //    the cached workspace graph) live out the lifetime, as nothing else
+        //    keeps them alive.
         let blob_stats = blobs
             .retain_with_released(Arc::new(keep), Arc::new(released), BLOB_GRACE, lifetime)
             .await?;
@@ -207,6 +207,21 @@ impl StorageBackend for LocalStorage {
         })
         .await
         .into_diagnostic()?
+    }
+
+    async fn touch_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<()> {
+        let blobs = Arc::clone(&self.blobs);
+
+        spawn_blocking(move || {
+            for digest in blob_digests {
+                // Refresh the blob's mtime so GC treats it as recently used, as
+                // it's swept once older than the lifetime. Best-effort, as the
+                // blob may be missing, or removed in the meantime.
+                let _ = blobs.touch(&digest);
+            }
+        })
+        .await
+        .into_diagnostic()
     }
 
     async fn find_blobs_by_prefix(&self, prefix: &str) -> miette::Result<Vec<Digest>> {

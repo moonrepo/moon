@@ -11,6 +11,11 @@ export type TaskDependencyType = 'cleanup' | 'required' | 'wait' | 'optional';
 /** A file path input. */
 export interface FileInput {
 	/**
+	 * Only use the file to determine affected status, and exclude
+	 * it from the task's hash and affected files.
+	 */
+	affectedOnly?: boolean;
+	/**
 	 * Regex pattern to match the file's contents against
 	 * when determining affected status.
 	 */
@@ -40,6 +45,11 @@ export type FileGroupInputFormat = 'static' | 'dirs' | 'envs' | 'files' | 'globs
 /** A file group input. */
 export interface FileGroupInput {
 	/**
+	 * Only use the files and globs of the group to determine affected
+	 * status, and exclude them from the task's hash and affected files.
+	 */
+	affectedOnly?: boolean;
+	/**
 	 * Format to resolve the file group into.
 	 *
 	 * @default 'static'
@@ -60,6 +70,11 @@ export interface FileGroupInput {
 /** A glob pattern input. */
 export interface GlobInput {
 	/**
+	 * Only use the glob to determine affected status, and exclude
+	 * its files from the task's hash and affected files.
+	 */
+	affectedOnly?: boolean;
+	/**
 	 * Cache the glob walking result for increased performance.
 	 *
 	 * @default true
@@ -71,6 +86,11 @@ export interface GlobInput {
 
 /** An external project input. */
 export interface ProjectInput {
+	/**
+	 * Only use the project's files to determine affected status, and
+	 * exclude them from the task's hash and affected files.
+	 */
+	affectedOnly?: boolean;
 	/**
 	 * A list of globs, relative from the project's root,
 	 * in which to determine affected status.
@@ -135,7 +155,7 @@ export interface TaskDependencyConfig {
 	 * @type {'cleanup' | 'required' | 'wait' | 'optional'}
 	 * @since 2.6.0
 	 */
-	type?: TaskDependencyType;
+	type: TaskDependencyType;
 }
 
 /** Configures another task that this task depends on. */
@@ -233,31 +253,41 @@ export type TaskArgs = null | string | string[];
 
 /** Task check configuration for conditions. */
 export interface TaskCheckConditionConfig {
-	check: 'condition';
 	/** The shell script to execute. */
 	script: string;
 }
 
 /** Task check configuration for requirements. */
 export interface TaskCheckRequirementConfig {
-	check: 'requirement';
 	/** The shell script to execute. */
 	script: string;
 }
 
+/** The fingerprinting strategy for hashing a task check. */
+export type TaskCheckFingerprint = 'exit-code' | 'stderr' | 'stdout' | boolean;
+
 /** Task check configuration for fingerprinting. */
 export interface TaskCheckFingerprintConfig {
-	check: 'fingerprint';
-	/** The content hashing strategy. */
-	hash?: boolean | 'exit-code' | 'stderr' | 'stdout';
+	/**
+	 * The content hashing strategy.
+	 *
+	 * @default true
+	 */
+	hash?: TaskCheckFingerprint;
 	/** The shell script to execute. */
 	script: string;
 }
 
 export type TaggedTaskCheck =
-	| TaskCheckConditionConfig
-	| TaskCheckRequirementConfig
-	| TaskCheckFingerprintConfig;
+	| ({
+			check: 'condition';
+	  } & TaskCheckConditionConfig)
+	| ({
+			check: 'requirement';
+	  } & TaskCheckRequirementConfig)
+	| ({
+			check: 'fingerprint';
+	  } & TaskCheckFingerprintConfig);
 
 export type TaskCheck = string | TaggedTaskCheck;
 
@@ -285,6 +315,9 @@ export interface GlobOutput {
 
 export type Output = string | FileOutput | GlobOutput;
 
+/** The pattern in which affected files will be passed to the affected task. */
+export type TaskOptionAffectedFilesPattern = 'args' | 'env' | boolean;
+
 /** Expanded information about affected files handling. */
 export interface TaskOptionAffectedFilesConfig {
 	/**
@@ -292,14 +325,18 @@ export interface TaskOptionAffectedFilesConfig {
 	 * passing to the task as arguments or environment variables. Globs
 	 * must start with `**` to match against absolute paths.
 	 */
-	filter?: string[];
+	filter: string[];
 	/**
 	 * When matching affected files, ignore the project boundary and include
 	 * workspace relative files. Otherwise, only files within the project are matched.
 	 */
 	ignoreProjectBoundary?: boolean | null;
-	/** The pattern in which affected files will be passed to the affected task. */
-	pass: boolean | 'args' | 'env';
+	/**
+	 * The pattern in which affected files will be passed to the affected task.
+	 *
+	 * @default true
+	 */
+	pass: TaskOptionAffectedFilesPattern;
 	/**
 	 * When there are no affected files after matching and filtering,
 	 * use `.` instead of an empty value.
@@ -314,14 +351,24 @@ export interface TaskOptionAffectedFilesConfig {
 	passInputsWhenNoMatch?: boolean | null;
 }
 
-export type TaskOptionAffectedFilesEntry = boolean | 'args' | 'env' | TaskOptionAffectedFilesConfig;
+export type TaskOptionAffectedFilesEntry =
+	| TaskOptionAffectedFilesPattern
+	| TaskOptionAffectedFilesConfig;
 
+/** The environment in which to apply task caching. */
+export type TaskOptionCache = 'local' | 'remote' | boolean;
+
+/** The pattern in which a task is dependent on a `.env` file. */
 export type TaskOptionEnvFile = boolean | string | string[];
 
+/** Which task environment variables override system environment variables. */
 export type TaskOptionEnvOverride = boolean | string[];
 
 /** The strategy in which to merge two configuration values. */
 export type MergeStrategy = 'append' | 'prepend' | 'preserve' | 'replace';
+
+/** How a failure of the task affects the action pipeline. */
+export type TaskOptionOnFailure = 'allow' | 'expect';
 
 /** The operating system in which to only run this task on. */
 export type TaskOperatingSystem = 'linux' | 'macos' | 'windows';
@@ -334,6 +381,9 @@ export type TaskOutputStyle = 'buffer' | 'buffer-only-failure' | 'hash' | 'none'
  * in the action pipeline.
  */
 export type TaskPriority = 'critical' | 'high' | 'normal' | 'low';
+
+/** The pattern in which to run the task automatically in CI. */
+export type TaskOptionRunInCI = 'always' | 'affected' | 'only' | 'skip' | boolean;
 
 /** A list of available shells on Unix. */
 export type TaskUnixShell =
@@ -364,16 +414,10 @@ export interface TaskOptionsConfig {
 	/** The pattern in which affected files will be passed to the task. */
 	affectedFiles?: TaskOptionAffectedFilesEntry | null;
 	/**
-	 * Allow the task to fail without failing the entire action pipeline.
-	 *
-	 * @since 1.13.0
-	 */
-	allowFailure?: boolean | null;
-	/**
 	 * Cache the `outputs` of the task for incremental builds.
 	 * Defaults to `true` if outputs are configured for the task.
 	 */
-	cache?: boolean | 'local' | 'remote' | null;
+	cache?: TaskOptionCache | null;
 	/**
 	 * A custom key to include in the cache hashing process. Can be
 	 * used to invalidate local and remote caches.
@@ -400,14 +444,6 @@ export interface TaskOptionsConfig {
 	 */
 	envOverride?: TaskOptionEnvOverride | null;
 	/**
-	 * Expect the task to fail, and fail the entire action pipeline if it
-	 * passes. Useful for checks that are known to be broken, which should
-	 * be re-enabled once fixed. The task is never cached.
-	 *
-	 * @since 2.6.0
-	 */
-	expectFailure?: boolean | null;
-	/**
 	 * Automatically infer inputs from file groups or environment variables
 	 * that were utilized within `command`, `script`, `args`, and `env`.
 	 *
@@ -432,58 +468,33 @@ export interface TaskOptionsConfig {
 	 * The default strategy to use when merging `args`, `deps`, `env`,
 	 * `inputs`, or `outputs` with an inherited task. Can be overridden
 	 * with the other field-specific merge options.
-	 *
-	 * @default 'append'
 	 */
 	merge?: MergeStrategy | null;
-	/**
-	 * The strategy to use when merging `args` with an inherited task.
-	 *
-	 * @default 'append'
-	 */
+	/** The strategy to use when merging `args` with an inherited task. */
 	mergeArgs?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `checks` with an inherited task.
 	 *
-	 * @default 'append'
 	 * @since 2.4.0
 	 */
 	mergeChecks?: MergeStrategy | null;
-	/**
-	 * The strategy to use when merging `deps` with an inherited task.
-	 *
-	 * @default 'append'
-	 */
+	/** The strategy to use when merging `deps` with an inherited task. */
 	mergeDeps?: MergeStrategy | null;
-	/**
-	 * The strategy to use when merging `env` with an inherited task.
-	 *
-	 * @default 'append'
-	 */
+	/** The strategy to use when merging `env` with an inherited task. */
 	mergeEnv?: MergeStrategy | null;
-	/**
-	 * The strategy to use when merging `inputs` with an inherited task.
-	 *
-	 * @default 'append'
-	 */
+	/** The strategy to use when merging `inputs` with an inherited task. */
 	mergeInputs?: MergeStrategy | null;
-	/**
-	 * The strategy to use when merging `outputs` with an inherited task.
-	 *
-	 * @default 'append'
-	 */
+	/** The strategy to use when merging `outputs` with an inherited task. */
 	mergeOutputs?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `tags` with an inherited task.
 	 *
-	 * @default 'append'
 	 * @since 2.3.0
 	 */
 	mergeTags?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `toolchains` with an inherited task.
 	 *
-	 * @default 'append'
 	 * @since 2.0.0
 	 */
 	mergeToolchains?: MergeStrategy | null;
@@ -494,12 +505,21 @@ export interface TaskOptionsConfig {
 	 * @since 1.24.0
 	 */
 	mutex?: string | null;
+	/**
+	 * How a failure of the task affects the action pipeline. When `allow`,
+	 * the task can fail without failing the pipeline. When `expect`, the
+	 * task must fail, and fails the pipeline if it passes, which is useful
+	 * for checks that are known to be broken, and should be re-enabled once
+	 * fixed. An expected failure is never cached.
+	 *
+	 * @since 3.0.0
+	 */
+	onFailure?: TaskOptionOnFailure | null;
 	/** The operating system in which to only run this task on. */
 	os?: TaskOperatingSystem | TaskOperatingSystem[] | null;
 	/**
 	 * The style in which task output will be printed to the console.
 	 *
-	 * @default 'buffer'
 	 * @env MOON_OUTPUT_STYLE
 	 */
 	outputStyle?: TaskOutputStyle | null;
@@ -513,8 +533,6 @@ export interface TaskOptionsConfig {
 	/**
 	 * Marks the task with a certain priority, which determines the order
 	 * in which it is ran within the action pipeline.
-	 *
-	 * @default 'normal'
 	 */
 	priority?: TaskPriority | null;
 	/**
@@ -535,7 +553,7 @@ export interface TaskOptionsConfig {
 	 * Whether to run the task in CI or not, when executing `moon ci`,
 	 * `moon check`, or `moon run`.
 	 */
-	runInCI?: boolean | 'always' | 'affected' | 'only' | 'skip' | null;
+	runInCI?: TaskOptionRunInCI | null;
 	/** Runs the task automatically when executing `moon sync`. */
 	runInSyncPhase?: boolean | null;
 	/**
@@ -548,14 +566,12 @@ export interface TaskOptionsConfig {
 	/**
 	 * The shell to run the task in when on a Unix-based machine.
 	 *
-	 * @default 'bash'
 	 * @since 1.21.0
 	 */
 	unixShell?: TaskUnixShell | null;
 	/**
 	 * The shell to run the task in when on a Windows machine.
 	 *
-	 * @default 'pwsh'
 	 * @since 1.21.0
 	 */
 	windowsShell?: TaskWindowsShell | null;
@@ -662,8 +678,6 @@ export interface TaskConfig {
 	/**
 	 * The type of task, primarily used for categorical reasons. When not provided,
 	 * will be automatically determined based on configured outputs.
-	 *
-	 * @default 'test'
 	 */
 	type?: TaskType | null;
 }
@@ -682,7 +696,7 @@ export interface InheritedTasksConfig {
 	 *
 	 * @since 2.5.0
 	 */
-	env?: Record<string, string | null>;
+	env: Record<string, string | null>;
 	/**
 	 * Extends one or many tasks configuration files.
 	 * Supports a relative file path or a secure URL.
@@ -694,17 +708,17 @@ export interface InheritedTasksConfig {
 	 * A map of group identifiers to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
 	 */
-	fileGroups?: Record<Id, Input[]>;
+	fileGroups: Record<Id, Input[]>;
 	/**
 	 * Task dependencies (`deps`) that will be automatically injected into every
 	 * task that inherits this configuration.
 	 */
-	implicitDeps?: TaskDependency[];
+	implicitDeps: TaskDependency[];
 	/**
 	 * Task inputs (`inputs`) that will be automatically injected into every
 	 * task that inherits this configuration.
 	 */
-	implicitInputs?: Input[];
+	implicitInputs: Input[];
 	/**
 	 * A map of conditions that define which projects will inherit these
 	 * tasks and configuration. If not defined, will be inherited by all projects.
@@ -722,7 +736,7 @@ export interface InheritedTasksConfig {
 	 * A map of identifiers to task objects. Tasks represent the work-unit
 	 * of a project, and can be ran in the action pipeline.
 	 */
-	tasks?: Record<Id, TaskConfig>;
+	tasks: Record<Id, TaskConfig>;
 }
 
 /** A task referenced by target, with additional parameters to pass through. */
@@ -867,8 +881,12 @@ export interface PartialTaskOptionAffectedFilesConfig {
 	 * workspace relative files. Otherwise, only files within the project are matched.
 	 */
 	ignoreProjectBoundary?: boolean | null;
-	/** The pattern in which affected files will be passed to the affected task. */
-	pass?: boolean | 'args' | 'env' | null;
+	/**
+	 * The pattern in which affected files will be passed to the affected task.
+	 *
+	 * @default true
+	 */
+	pass?: TaskOptionAffectedFilesPattern | null;
 	/**
 	 * When there are no affected files after matching and filtering,
 	 * use `.` instead of an empty value.
@@ -883,21 +901,25 @@ export interface PartialTaskOptionAffectedFilesConfig {
 	passInputsWhenNoMatch?: boolean | null;
 }
 
+export type PartialTaskOptionAffectedFilesEntry =
+	| TaskOptionAffectedFilesPattern
+	| PartialTaskOptionAffectedFilesConfig;
+
+/** The pattern in which a task is dependent on a `.env` file. */
+export type PartialTaskOptionEnvFile = boolean | string | string[];
+
+/** Which task environment variables override system environment variables. */
+export type PartialTaskOptionEnvOverride = boolean | string[];
+
 /** Options to control task inheritance, execution, and more. */
 export interface PartialTaskOptionsConfig {
 	/** The pattern in which affected files will be passed to the task. */
-	affectedFiles?: TaskOptionAffectedFilesEntry | null;
-	/**
-	 * Allow the task to fail without failing the entire action pipeline.
-	 *
-	 * @since 1.13.0
-	 */
-	allowFailure?: boolean | null;
+	affectedFiles?: PartialTaskOptionAffectedFilesEntry | null;
 	/**
 	 * Cache the `outputs` of the task for incremental builds.
 	 * Defaults to `true` if outputs are configured for the task.
 	 */
-	cache?: boolean | 'local' | 'remote' | null;
+	cache?: TaskOptionCache | null;
 	/**
 	 * A custom key to include in the cache hashing process. Can be
 	 * used to invalidate local and remote caches.
@@ -914,7 +936,7 @@ export interface PartialTaskOptionsConfig {
 	 * Loads and sets environment variables from the `.env` file(s) when
 	 * running the task.
 	 */
-	envFile?: TaskOptionEnvFile | null;
+	envFile?: PartialTaskOptionEnvFile | null;
 	/**
 	 * Override system environment variables with the task's `env`, instead
 	 * of only setting them when missing. When a list of variable names,
@@ -922,15 +944,7 @@ export interface PartialTaskOptionsConfig {
 	 *
 	 * @since 2.6.0
 	 */
-	envOverride?: TaskOptionEnvOverride | null;
-	/**
-	 * Expect the task to fail, and fail the entire action pipeline if it
-	 * passes. Useful for checks that are known to be broken, which should
-	 * be re-enabled once fixed. The task is never cached.
-	 *
-	 * @since 2.6.0
-	 */
-	expectFailure?: boolean | null;
+	envOverride?: PartialTaskOptionEnvOverride | null;
 	/**
 	 * Automatically infer inputs from file groups or environment variables
 	 * that were utilized within `command`, `script`, `args`, and `env`.
@@ -956,58 +970,33 @@ export interface PartialTaskOptionsConfig {
 	 * The default strategy to use when merging `args`, `deps`, `env`,
 	 * `inputs`, or `outputs` with an inherited task. Can be overridden
 	 * with the other field-specific merge options.
-	 *
-	 * @default 'append'
 	 */
 	merge?: MergeStrategy | null;
-	/**
-	 * The strategy to use when merging `args` with an inherited task.
-	 *
-	 * @default 'append'
-	 */
+	/** The strategy to use when merging `args` with an inherited task. */
 	mergeArgs?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `checks` with an inherited task.
 	 *
-	 * @default 'append'
 	 * @since 2.4.0
 	 */
 	mergeChecks?: MergeStrategy | null;
-	/**
-	 * The strategy to use when merging `deps` with an inherited task.
-	 *
-	 * @default 'append'
-	 */
+	/** The strategy to use when merging `deps` with an inherited task. */
 	mergeDeps?: MergeStrategy | null;
-	/**
-	 * The strategy to use when merging `env` with an inherited task.
-	 *
-	 * @default 'append'
-	 */
+	/** The strategy to use when merging `env` with an inherited task. */
 	mergeEnv?: MergeStrategy | null;
-	/**
-	 * The strategy to use when merging `inputs` with an inherited task.
-	 *
-	 * @default 'append'
-	 */
+	/** The strategy to use when merging `inputs` with an inherited task. */
 	mergeInputs?: MergeStrategy | null;
-	/**
-	 * The strategy to use when merging `outputs` with an inherited task.
-	 *
-	 * @default 'append'
-	 */
+	/** The strategy to use when merging `outputs` with an inherited task. */
 	mergeOutputs?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `tags` with an inherited task.
 	 *
-	 * @default 'append'
 	 * @since 2.3.0
 	 */
 	mergeTags?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `toolchains` with an inherited task.
 	 *
-	 * @default 'append'
 	 * @since 2.0.0
 	 */
 	mergeToolchains?: MergeStrategy | null;
@@ -1018,12 +1007,21 @@ export interface PartialTaskOptionsConfig {
 	 * @since 1.24.0
 	 */
 	mutex?: string | null;
+	/**
+	 * How a failure of the task affects the action pipeline. When `allow`,
+	 * the task can fail without failing the pipeline. When `expect`, the
+	 * task must fail, and fails the pipeline if it passes, which is useful
+	 * for checks that are known to be broken, and should be re-enabled once
+	 * fixed. An expected failure is never cached.
+	 *
+	 * @since 3.0.0
+	 */
+	onFailure?: TaskOptionOnFailure | null;
 	/** The operating system in which to only run this task on. */
 	os?: TaskOperatingSystem | TaskOperatingSystem[] | null;
 	/**
 	 * The style in which task output will be printed to the console.
 	 *
-	 * @default 'buffer'
 	 * @env MOON_OUTPUT_STYLE
 	 */
 	outputStyle?: TaskOutputStyle | null;
@@ -1037,8 +1035,6 @@ export interface PartialTaskOptionsConfig {
 	/**
 	 * Marks the task with a certain priority, which determines the order
 	 * in which it is ran within the action pipeline.
-	 *
-	 * @default 'normal'
 	 */
 	priority?: TaskPriority | null;
 	/**
@@ -1059,7 +1055,7 @@ export interface PartialTaskOptionsConfig {
 	 * Whether to run the task in CI or not, when executing `moon ci`,
 	 * `moon check`, or `moon run`.
 	 */
-	runInCI?: boolean | 'always' | 'affected' | 'only' | 'skip' | null;
+	runInCI?: TaskOptionRunInCI | null;
 	/** Runs the task automatically when executing `moon sync`. */
 	runInSyncPhase?: boolean | null;
 	/**
@@ -1072,14 +1068,12 @@ export interface PartialTaskOptionsConfig {
 	/**
 	 * The shell to run the task in when on a Unix-based machine.
 	 *
-	 * @default 'bash'
 	 * @since 1.21.0
 	 */
 	unixShell?: TaskUnixShell | null;
 	/**
 	 * The shell to run the task in when on a Windows machine.
 	 *
-	 * @default 'pwsh'
 	 * @since 1.21.0
 	 */
 	windowsShell?: TaskWindowsShell | null;
@@ -1180,8 +1174,6 @@ export interface PartialTaskConfig {
 	/**
 	 * The type of task, primarily used for categorical reasons. When not provided,
 	 * will be automatically determined based on configured outputs.
-	 *
-	 * @default 'test'
 	 */
 	type?: TaskType | null;
 }

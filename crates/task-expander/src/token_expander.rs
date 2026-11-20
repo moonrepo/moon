@@ -10,6 +10,7 @@ use moon_time::{now_millis, now_timestamp};
 use pathdiff::diff_paths;
 use regex::Regex;
 use rustc_hash::{FxHashMap, FxHashSet};
+use starbase_utils::glob::has_parent_traversal;
 use std::borrow::Cow;
 use std::env;
 use std::mem;
@@ -28,6 +29,70 @@ pub struct ExpandedResult {
     pub globs_for_output: FxHashMap<WorkspaceRelativePathBuf, TaskGlobOutput>,
     pub token: Option<String>,
     pub value: Option<String>,
+}
+
+impl ExpandedResult {
+    /// Add a file input, while an existing input for the same file that's
+    /// hashed takes precedence over one that's only used for affected status.
+    pub fn add_file_input(&mut self, file: WorkspaceRelativePathBuf, params: TaskFileInput) {
+        merge_file_input(&mut self.files_for_input, file, params);
+    }
+
+    /// Add a glob input, while an existing input for the same glob that's
+    /// hashed takes precedence over one that's only used for affected status.
+    pub fn add_glob_input(&mut self, glob: WorkspaceRelativePathBuf, params: TaskGlobInput) {
+        merge_glob_input(&mut self.globs_for_input, glob, params);
+    }
+
+    /// Add the files and globs of another result as inputs that are only
+    /// used to determine affected status.
+    fn extend_affected_only(&mut self, other: ExpandedResult) {
+        self.env.extend(other.env);
+
+        for file in other.files {
+            self.add_file_input(
+                file,
+                TaskFileInput {
+                    affected_only: true,
+                    ..Default::default()
+                },
+            );
+        }
+
+        for glob in other.globs {
+            self.add_glob_input(
+                glob,
+                TaskGlobInput {
+                    affected_only: true,
+                    ..Default::default()
+                },
+            );
+        }
+    }
+}
+
+pub(crate) fn merge_file_input(
+    files: &mut FxHashMap<WorkspaceRelativePathBuf, TaskFileInput>,
+    file: WorkspaceRelativePathBuf,
+    mut params: TaskFileInput,
+) {
+    if let Some(existing) = files.get(&file) {
+        params.affected_only &= existing.affected_only;
+    }
+
+    files.insert(file, params);
+}
+
+pub(crate) fn merge_glob_input(
+    globs: &mut FxHashMap<WorkspaceRelativePathBuf, TaskGlobInput>,
+    glob: WorkspaceRelativePathBuf,
+    mut params: TaskGlobInput,
+) {
+    if let Some(existing) = globs.get(&glob) {
+        params.affected_only &= existing.affected_only;
+    }
+
+    globs.insert(glob, params);
 }
 
 #[derive(PartialEq)]
@@ -293,7 +358,7 @@ impl<'graph> TokenExpander<'graph> {
                     );
                 }
                 Input::File(inner) => {
-                    result.files_for_input.insert(
+                    result.add_file_input(
                         self.create_path_for_task(
                             task,
                             inner.to_workspace_relative(&self.project.source),
@@ -301,37 +366,58 @@ impl<'graph> TokenExpander<'graph> {
                         TaskFileInput {
                             content: inner.content.clone(),
                             optional: inner.optional,
+                            affected_only: inner.affected_only,
                         },
                     );
                 }
                 Input::FileGroup(inner) => {
-                    self.update_result_for_file_group(
-                        self.project.get_file_group(&inner.group)?,
-                        inner.format.to_string().as_str(),
-                        &mut result,
-                    )?;
+                    let group = self.project.get_file_group(&inner.group)?;
+                    let format = inner.format.to_string();
+
+                    if inner.affected_only {
+                        let mut group_result = ExpandedResult::default();
+
+                        self.update_result_for_file_group(group, &format, &mut group_result)?;
+
+                        result.extend_affected_only(group_result);
+                    } else {
+                        self.update_result_for_file_group(group, &format, &mut result)?;
+                    }
                 }
                 Input::Glob(inner) => {
-                    result.globs_for_input.insert(
+                    result.add_glob_input(
                         self.create_path_for_task(
                             task,
                             inner.to_workspace_relative(&self.project.source),
                         )?,
-                        TaskGlobInput { cache: inner.cache },
+                        TaskGlobInput {
+                            cache: inner.cache,
+                            affected_only: inner.affected_only,
+                        },
                     );
                 }
                 Input::Project(inner) => {
                     let project = self.project_graph.get_unexpanded(&inner.project)?;
+                    let params = TaskGlobInput {
+                        affected_only: inner.affected_only,
+                        ..Default::default()
+                    };
 
                     if let Some(group_id) = &inner.group {
-                        self.update_result_for_file_group(
-                            project.get_file_group(group_id)?,
-                            "static",
-                            &mut result,
-                        )?;
+                        let group = project.get_file_group(group_id)?;
+
+                        if inner.affected_only {
+                            let mut group_result = ExpandedResult::default();
+
+                            self.update_result_for_file_group(group, "static", &mut group_result)?;
+
+                            result.extend_affected_only(group_result);
+                        } else {
+                            self.update_result_for_file_group(group, "static", &mut result)?;
+                        }
                     } else if !inner.filter.is_empty() {
                         for glob in &inner.filter {
-                            result.globs_for_input.insert(
+                            result.add_glob_input(
                                 self.create_path_for_task(
                                     task,
                                     path::expand_to_workspace_relative(
@@ -339,13 +425,13 @@ impl<'graph> TokenExpander<'graph> {
                                         glob,
                                     ),
                                 )?,
-                                TaskGlobInput::default(),
+                                params.clone(),
                             );
                         }
                     } else {
-                        result.globs_for_input.insert(
+                        result.add_glob_input(
                             self.create_path_for_task(task, project.source.join("**/*"))?,
-                            TaskGlobInput::default(),
+                            params,
                         );
                     }
                 }
@@ -573,6 +659,22 @@ impl<'graph> TokenExpander<'graph> {
                 .into());
             }
         };
+
+        // Parent traversal globs are expanded when moon globs, so they
+        // can't be passed through to commands, env vars, or outputs
+        if self.scope != TokenScope::Inputs
+            && let Some(glob) = result
+                .globs
+                .iter()
+                .find(|glob| has_parent_traversal(glob.as_str()))
+        {
+            return Err(TokenExpanderError::ParentTraversalGlob {
+                glob: glob.to_string(),
+                target: task.target.to_string(),
+                token: token.to_owned(),
+            }
+            .into());
+        }
 
         Ok(result)
     }

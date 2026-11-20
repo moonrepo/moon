@@ -60,7 +60,7 @@ impl ToolchainsConfigExt {
             let proto_id = match &config.version_from_prototools {
                 ToolchainPluginVersionFrom::Enabled(enabled) => {
                     if *enabled {
-                        id.as_str().strip_prefix("unstable_").unwrap_or(id.as_str())
+                        id.as_str().trim_prefix("unstable_")
                     } else {
                         continue;
                     }
@@ -136,8 +136,9 @@ impl ToolchainsConfigExt {
                     config.plugin = Self::get_plugin_locator(id);
                 }
                 #[cfg(debug_assertions)]
-                "tc-tier1" | "tc-tier2" | "tc-tier2-reqs" | "tc-tier2-setup-env" | "tc-tier3"
-                | "tc-tier3-reqs" | "tc-tier3-tool" => {
+                "tc-tier1" | "tc-tier2" | "tc-tier2-batch" | "tc-tier2-reqs"
+                | "tc-tier2-setup-env" | "tc-tier3" | "tc-tier3-reqs" | "tc-tier3-setup-env"
+                | "tc-tier3-tool" => {
                     use proto_core::{UnresolvedVersionSpec, warpgate::find_debug_locator};
 
                     config.plugin = Some(

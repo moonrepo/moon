@@ -1,0 +1,20 @@
+---
+source: crates/cli/tests/project_test.rs
+expression: assert.output()
+---
+About ──────────────────────────────────────────────────────
+
+  Project: b
+  Source: packages/b
+  Toolchain:
+    - tc-tier2 @ . (workspace member)
+  Language: unknown
+  Stack: unknown
+  Layer: unknown
+  Depends on: —
+
+Configuration ──────────────────────────────────────────────
+
+  Inherits from: —
+  Tags: —
+  Environment variables: —

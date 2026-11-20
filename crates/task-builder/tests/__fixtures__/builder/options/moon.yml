@@ -8,10 +8,12 @@ tasks:
   affected-env:
     options:
       affectedFiles:
+        filter: []
         pass: env
   not-affected:
     options:
       affectedFiles:
+        filter: []
         pass: false
 
   env-file:
@@ -34,11 +36,11 @@ tasks:
 
   expect-failure:
     options:
-      expectFailure: true
+      onFailure: expect
   expect-failure-cache:
     options:
       cache: true
-      expectFailure: true
+      onFailure: expect
 
   interactive:
     options:

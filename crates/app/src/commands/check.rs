@@ -3,7 +3,6 @@ use crate::prompts::select_identifiers;
 use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use iocraft::prelude::element;
-use moon_affected::{DownstreamScope, UpstreamScope};
 use moon_app_macros::{with_affected_args, with_shared_exec_args};
 use moon_common::Id;
 use moon_console::ui::{Container, Notice, SelectOption, SelectProps, StyledText, Variant};

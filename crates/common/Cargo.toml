@@ -9,7 +9,6 @@ repository = "https://github.com/moonrepo/moon"
 publish = true
 
 [dependencies]
-dirs = { workspace = true }
 miette = { workspace = true }
 relative-path = { workspace = true, features = ["serde"] }
 rustc-hash = { workspace = true }

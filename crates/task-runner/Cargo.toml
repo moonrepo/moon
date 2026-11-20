@@ -9,7 +9,6 @@ repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
-moon_api = { path = "../api" }
 moon_app_context = { path = "../app-context" }
 moon_action = { path = "../action" }
 moon_action_context = { path = "../action-context" }
@@ -22,6 +21,7 @@ moon_console = { path = "../console" }
 moon_daemon_client = { path = "../daemon-client" }
 moon_env_var = { path = "../env-var" }
 moon_hash = { path = "../hash" }
+moon_layout_graph = { path = "../layout-graph" }
 moon_manifest = { path = "../manifest" }
 moon_process = { path = "../process" }
 moon_process_augment = { path = "../process-augment" }
@@ -32,7 +32,6 @@ moon_time = { path = "../time" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
-starbase_archive = { workspace = true }
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }

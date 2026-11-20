@@ -9,7 +9,7 @@ use moon_env_var::GlobalEnvBag;
 use moon_project::Project;
 use moon_task::{Target, Task};
 use rustc_hash::{FxHashMap, FxHashSet};
-use starbase_utils::glob::GlobSet;
+use starbase_utils::glob::{GlobSet, has_parent_traversal};
 use std::path::PathBuf;
 use tracing::{debug, warn};
 
@@ -107,23 +107,31 @@ impl<'task> TaskHasher<'task> {
         let vcs_enabled = self.app_context.vcs.is_enabled();
         let workspace_root = &self.app_context.workspace_root;
 
-        if !self.task.input_files.is_empty() {
-            for file in self.task.input_files.keys() {
+        // Inputs that are only used to determine affected status are not hashed
+        for (file, params) in &self.task.input_files {
+            if !params.affected_only {
                 files.insert(file.to_logical_path(workspace_root));
             }
         }
 
-        if !self.task.input_globs.is_empty() {
+        let input_globs = self
+            .task
+            .input_globs
+            .iter()
+            .filter(|(_, params)| !params.affected_only)
+            .collect::<FxHashMap<_, _>>();
+
+        if !input_globs.is_empty() {
             let use_globs = &self.project.root == workspace_root
                 || matches!(self.hasher_config.walk_strategy, HasherWalkStrategy::Glob)
                 || !vcs_enabled;
 
             // Collect inputs by walking and globbing the file system
             if use_globs {
-                files.extend(self.task.get_input_files_with_globs(
-                    workspace_root,
-                    self.task.input_globs.iter().collect(),
-                )?);
+                files.extend(
+                    self.task
+                        .get_input_files_with_globs(workspace_root, input_globs)?,
+                );
             }
             // Collect inputs by querying VCS which is faster than globbing
             else {
@@ -137,12 +145,14 @@ impl<'task> TaskHasher<'task> {
                 }
 
                 // However that completely ignores workspace level globs,
-                // so we must still manually glob those here!
-                let workspace_globs = self
-                    .task
-                    .input_globs
-                    .iter()
-                    .filter(|(glob, _)| !glob.starts_with(&self.project.source))
+                // so we must still manually glob those here! Parent traversal
+                // globs may also match outside of the project
+                let workspace_globs = input_globs
+                    .into_iter()
+                    .filter(|(glob, _)| {
+                        !glob.starts_with(&self.project.source)
+                            || has_parent_traversal(glob.as_str())
+                    })
                     .collect::<FxHashMap<_, _>>();
 
                 if !workspace_globs.is_empty() {
@@ -208,7 +218,10 @@ impl<'task> TaskHasher<'task> {
         }
 
         // Filter inputs second
-        self.task.input_files.contains_key(workspace_relative_path)
+        self.task
+            .input_files
+            .get(workspace_relative_path)
+            .is_some_and(|params| !params.affected_only)
             || sources_globset.matches(workspace_relative_path.as_str())
     }
 
@@ -217,9 +230,12 @@ impl<'task> TaskHasher<'task> {
         inputs: FxHashSet<PathBuf>,
     ) -> miette::Result<FxHashSet<WorkspaceRelativePathBuf>> {
         let mut files = FxHashSet::default();
-        let ignore = GlobSet::new(&self.hasher_config.ignore_patterns)?;
-        let ignore_missing = GlobSet::new(&self.hasher_config.ignore_missing_patterns)?;
-        let globset = self.task.create_globset()?;
+        let ignore = GlobSet::new_cached(&self.hasher_config.ignore_patterns)?;
+        let ignore_missing = GlobSet::new_cached(&self.hasher_config.ignore_missing_patterns)?;
+        let globset = self.task.create_globset_without_affected_only()?;
+
+        // Inputs that are only used to determine affected status still filter,
+        // so that a task with only those doesn't hash every changed file
         let has_filters = !self.task.input_files.is_empty()
             || !self.task.input_globs.is_empty()
             || !self.task.output_globs.is_empty();

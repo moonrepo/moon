@@ -115,6 +115,18 @@ MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING=false moon run <project>:<task> --affect
 
 If the results differ, report it upstream — and keep the experiment disabled as a workaround.
 
+<sup>v3.0+</sup> A task is also affected when a task it depends on (via `deps`) is affected, up to
+`--affected-depth` hops (`none`, `direct`, `deep`, or a number; defaults to `deep`). If a dependent
+task was expected to run but didn't, check for a lowered `--affected-depth`. The "Tracking affected
+tasks" step always prints why each task is affected, including
+`affected by dependency task <target>` lines. Note that `--affected-depth` never adds tasks that the
+target locators didn't match; to also run dependents of the requested targets, pass
+`--dependents <DEPTH>`.
+
+<sup>v3.0+</sup> `moon ci` no longer runs the direct dependents of affected tasks by default
+(`--dependents` defaults to `none` everywhere). If a dependent outside of the requested targets used
+to run in CI, pass `--dependents direct`, or add its target to the `moon ci` command.
+
 **Check 2: Is `runInCI` blocking execution?**
 
 ```bash
@@ -242,9 +254,9 @@ override variables the task already configures (but **do** override the same var
 the shell, and beat `options.envFile` values), and when a task has multiple toolchains, the
 **first** one wins. If the wrong tool or variable wins, check the order of the task's `toolchains`.
 
-**Check 6: Is `timeout` or `allowFailure` involved?**
+**Check 6: Is `timeout` or `onFailure` involved?**
 
-Check `options.timeout` and `options.allowFailure` in the JSON output. If `allowFailure: true`, the
+Check `options.timeout` and `options.onFailure` in the JSON output. If `onFailure` is `allow`, the
 task is still marked as failed, but the pipeline continues and moon's exit code ignores it (a "Task
 … has failed, but is marked to allow failures, continuing pipeline" warning is logged) — check
 stderr at `.moon/cache/states/<project>/<task>/stderr.log`. See `config-mistakes.md` for details on
@@ -323,6 +335,12 @@ moon run <project>:<task> --force
 In v2.3, deps without outputs default to `cacheStrategy: 'ignored'`, so changes to them don't
 invalidate this task. If you expected an upstream lint/test change to bust the cache, this is why.
 See `cache-issues.md` § Dependency cache strategies.
+
+**Dependencies were skipped with `--no-dependencies`** <sup>v3.0+</sup>:
+
+`--no-dependencies` (or `graph.noDependencies` in an execution plan) doesn't insert dependency tasks
+that weren't selected themselves, so a task can consume a dependency's stale or missing outputs.
+Re-run without `--no-dependencies` to confirm.
 
 **The output is missing files:**
 

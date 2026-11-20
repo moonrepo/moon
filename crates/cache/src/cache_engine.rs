@@ -1,15 +1,13 @@
-use crate::hash_engine::HashEngine;
+use crate::file_hasher::FileHasher;
 use crate::state_engine::StateEngine;
 use crate::{merge_clean_results, resolve_path};
-use miette::IntoDiagnostic;
 use moon_cache_item::*;
-use moon_cache_storage::{CacheContext, Storage};
+use moon_cache_storage::{ActionsStorage, CacheContext, ObjectsStorage};
 use moon_common::path::{WorkspaceRelativePathBuf, encode_component};
 use moon_env_var::GlobalEnvBag;
-use moon_hash::{ContentHash, ContentHasher, Digest};
+use moon_hash::{ContentHasher, Digest};
 use moon_time::parse_duration;
 use serde::Serialize;
-use serde::de::DeserializeOwned;
 use starbase_utils::fs::{FileLock, RemoveDirContentsResult};
 use starbase_utils::{fs, json};
 use std::collections::BTreeMap;
@@ -17,23 +15,27 @@ use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 use std::time::Duration;
-use tokio::task::JoinSet;
 use tracing::{debug, instrument};
 
 #[derive(Debug)]
 pub struct CacheEngine {
+    /// A content-addressable storage with local and remote backends,
+    /// for caching action/task manifests and blobs.
+    pub actions_storage: ActionsStorage,
+
     /// The `.moon/cache` directory relative to workspace root.
     /// Contains cached items pertaining to runs and processes.
     pub cache_dir: PathBuf,
 
-    /// Manages reading and writing of content hashable items.
-    pub hash: HashEngine,
+    /// Hashes file contents, and memoizes them for the process.
+    pub file_hasher: FileHasher,
+
+    /// A key-value storage with a local backend for caching objects,
+    /// hashes, states, and more.
+    pub objects_storage: ObjectsStorage,
 
     /// Manages states of projects, tasks, tools, and more.
     pub state: StateEngine,
-
-    /// A content-addressable storage with multiple backends.
-    pub storage: Storage,
 
     /// A temporary directory for random artifacts.
     pub temp_dir: PathBuf,
@@ -66,12 +68,27 @@ impl CacheEngine {
             )?;
         }
 
-        let hash = HashEngine::new(dir)?;
+        // Remove directories from the legacy tarball-based cache, as task
+        // outputs and hash fingerprints now live in the CAS. Failures are ignored,
+        // as another process may be removing them at the same time.
+        for legacy_dir in [dir.join("hashes"), dir.join("outputs")] {
+            if legacy_dir.exists() {
+                debug!(dir = ?legacy_dir, "Removing legacy cache directory");
+
+                if let Err(error) = fs::remove_dir_all(&legacy_dir) {
+                    debug!(
+                        dir = ?legacy_dir,
+                        "Failed to remove legacy cache directory: {error}"
+                    );
+                }
+            }
+        }
 
         Ok(CacheEngine {
-            hash,
+            file_hasher: FileHasher::default(),
             state: StateEngine::new(dir)?,
-            storage: Storage::new(context.clone()),
+            actions_storage: ActionsStorage::new(context.clone()),
+            objects_storage: ObjectsStorage::new(context.clone()),
             temp_dir: dir.join("temp"),
             cache_dir: dir.to_owned(),
             mode: get_cache_mode(),
@@ -84,13 +101,6 @@ impl CacheEngine {
         let _ = self.forced_mode.write().unwrap().insert(mode);
 
         GlobalEnvBag::instance().set("MOON_CACHE", mode.to_string());
-    }
-
-    pub fn cache<T>(&self, path: impl AsRef<OsStr>) -> miette::Result<CacheItem<T>>
-    where
-        T: Default + DeserializeOwned + Serialize,
-    {
-        CacheItem::<T>::load(self.resolve_path(path))
     }
 
     #[instrument(skip(self))]
@@ -112,11 +122,10 @@ impl CacheEngine {
         };
 
         let locks_dir = self.cache_dir.join("locks");
-        let mut dirs = vec![&self.hash.hashes_dir, &self.hash.outputs_dir, &locks_dir];
+        let mut dirs = vec![&locks_dir, &self.temp_dir];
 
         if all {
             dirs.push(&self.state.states_dir);
-            dirs.push(&self.temp_dir);
         }
 
         for dir in dirs {
@@ -124,10 +133,13 @@ impl CacheEngine {
         }
 
         if all {
-            let storage_result = self.storage.clean(duration).await?;
-
-            result.files_deleted += storage_result.blobs_removed;
-            result.bytes_saved += storage_result.bytes_saved;
+            for storage_result in [
+                self.actions_storage.clean(duration).await?,
+                self.objects_storage.clean(duration).await?,
+            ] {
+                result.files_deleted += storage_result.blobs_removed;
+                result.bytes_saved += storage_result.bytes_saved;
+            }
         }
 
         debug!(
@@ -156,42 +168,7 @@ impl CacheEngine {
         root: &Path,
         files: &[WorkspaceRelativePathBuf],
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
-        debug!("Hashing {} files", files.len());
-
-        let mut map = BTreeMap::new();
-        let mut set = JoinSet::<miette::Result<(WorkspaceRelativePathBuf, Option<String>)>>::new();
-        // let mmap_threshold = self.config.cas.mmap_threshold;
-
-        for file in files {
-            let abs_file = file.to_logical_path(root);
-            let rel_file = file.clone();
-
-            if !abs_file.is_file() {
-                continue;
-            }
-
-            set.spawn_blocking(move || {
-                // File may have been deleted since we were given the path,
-                // so check existence before hashing
-                if !abs_file.exists() {
-                    return Ok((rel_file, None));
-                }
-
-                let hash = ContentHash::hash_file(&abs_file)?;
-
-                Ok((rel_file, Some(hash.to_string())))
-            });
-        }
-
-        while let Some(result) = set.join_next().await {
-            let (file, hash) = result.into_diagnostic()??;
-
-            if let Some(hash) = hash {
-                map.insert(file, hash);
-            }
-        }
-
-        Ok(map)
+        self.file_hasher.hash_files(root, files).await
     }
 
     pub fn write<K, T>(&self, path: K, data: &T) -> miette::Result<()>
@@ -225,12 +202,14 @@ impl CacheEngine {
 
         let digest = Digest::from_hasher(&mut hasher)?;
 
-        // If the hash manifest exists, then it has ran before,
-        // otherwise run and write the manifest
-        if !self.storage.has_hash_manifest(&digest).await {
+        // If the hash fingerprint exists, then it has ran before,
+        // otherwise run and write the fingerprint
+        if !self.objects_storage.has_hash_fingerprint(&digest).await {
             let result = op(digest.hash.as_str()).await?;
 
-            self.storage.store_hash_manifest_with_hasher(hasher).await?;
+            self.objects_storage
+                .store_hash_fingerprint_with_hasher(hasher)
+                .await?;
 
             return Ok(Some(result));
         }

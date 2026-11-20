@@ -11,6 +11,7 @@ use notify_debouncer_full::{
 };
 use rustc_hash::FxHashSet;
 use std::fs;
+use std::mem::DropGuard;
 use std::path::{Component, Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, LazyLock, mpsc};
@@ -94,22 +95,6 @@ fn create_file_event(workspace_root: &Path, path: &Path, kind: EventKind) -> Opt
 enum WatcherMessage {
     Events(DebounceEventResult),
     Stop,
-}
-
-/// Stops the watcher thread when dropped, so that it also stops when the
-/// watcher task is aborted, instead of receiving the shutdown signal.
-struct StopWatcherOnDrop {
-    stop: Arc<AtomicBool>,
-    tx: mpsc::Sender<WatcherMessage>,
-}
-
-impl Drop for StopWatcherOnDrop {
-    fn drop(&mut self) {
-        self.stop.store(true, Ordering::Relaxed);
-
-        // Receiver dropped — thread has already stopped
-        let _ = self.tx.send(WatcherMessage::Stop);
-    }
 }
 
 /// Owns the OS watcher, registers its watches, and broadcasts file events.
@@ -361,7 +346,14 @@ pub async fn start_file_watcher(
         .spawn(move || watcher.run(rx))
         .map_err(|error| map_notify_error(notify::Error::io(error)))?;
 
-    let _stop = StopWatcherOnDrop { stop, tx };
+    // Stop the watcher thread when dropped, so that it also stops when the
+    // watcher task is aborted, instead of receiving the shutdown signal
+    let _stop = DropGuard::new((stop, tx), |(stop, tx)| {
+        stop.store(true, Ordering::Relaxed);
+
+        // Receiver dropped — thread has already stopped
+        let _ = tx.send(WatcherMessage::Stop);
+    });
 
     let _ = shutdown_rx.recv().await;
 
@@ -441,7 +433,7 @@ mod tests {
     #[test]
     fn test_is_ignored_moon_cache() {
         assert!(is_ignored(&PathBuf::from(
-            "/workspace/.moon/cache/hashes/abc"
+            "/workspace/.moon/cache/blobs/ab/c"
         )));
     }
 

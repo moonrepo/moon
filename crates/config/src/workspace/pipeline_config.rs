@@ -1,11 +1,10 @@
-use crate::{config_enum, config_struct, is_false};
+use crate::{config_struct, config_untagged_enum};
 use moon_common::Id;
 use schematic::{Config, env};
 
-config_enum!(
+config_untagged_enum!(
     /// Toggles the state of actions within the pipeline.
     #[derive(Config)]
-    #[serde(untagged)]
     pub enum PipelineActionSwitch {
         Default,
         Enabled(bool),
@@ -67,7 +66,6 @@ config_struct!(
         pub kill_process_threshold: u32,
 
         /// Logs the task's command and arguments when running the task.
-        #[serde(default, skip_serializing_if = "is_false")]
         pub log_running_command: bool,
 
         /// Run the `SyncProject` actions in the pipeline for each owning project

@@ -1,6 +1,6 @@
-use crate::patterns::{merge_iter, merge_plugin_partials};
+use crate::merging::{merge_iter, merge_partials};
 use crate::toolchain::*;
-use crate::{config_enum, config_struct};
+use crate::{config_struct, config_untagged_enum};
 use miette::IntoDiagnostic;
 use moon_common::{Id, IdExt};
 use rustc_hash::FxHashMap;
@@ -11,10 +11,9 @@ use std::env;
 use version_spec::UnresolvedVersionSpec;
 use warpgate_api::PluginLocator;
 
-config_enum!(
+config_untagged_enum!(
     /// The strategy in which to inherit a version from `.prototools`.
     #[derive(Schematic)]
-    #[serde(untagged)]
     pub enum ToolchainPluginVersionFrom {
         Enabled(bool),
         Id(String),
@@ -102,7 +101,7 @@ config_struct!(
 
         /// Configures and integrates toolchains into the system using
         /// a unique identifier.
-        #[setting(flatten, nested, merge = merge_plugin_partials)]
+        #[setting(flatten, nested, merge = merge_partials)]
         pub plugins: FxHashMap<Id, ToolchainPluginConfig>,
     }
 );
@@ -120,6 +119,17 @@ impl ToolchainsConfig {
         self.plugins
             .get(&stable_id)
             .or_else(|| self.plugins.get(&unstable_id))
+    }
+
+    /// Return the identifier that a toolchain was configured with, which
+    /// may be its stable or unstable ("unstable_" prefixed) form.
+    pub fn get_plugin_id(&self, id: impl AsRef<str>) -> Option<&Id> {
+        let (stable_id, unstable_id) = Id::stable_and_unstable(id);
+
+        self.plugins
+            .get_key_value(&stable_id)
+            .or_else(|| self.plugins.get_key_value(&unstable_id))
+            .map(|(id, _)| id)
     }
 
     pub fn inherit_versions_from_env_vars(&mut self) -> miette::Result<()> {

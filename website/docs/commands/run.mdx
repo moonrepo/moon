@@ -48,10 +48,11 @@ behavior.
 
 ### Options
 
-Inherits all options from [`moon exec`](./exec) and pre-fills with: `--on-failure=bail`,
-`--upstream=deep`.
+Inherits all options from [`moon exec`](./exec) and pre-fills with: `--on-failure=bail`.
+Dependencies are always ran, unless `--no-dependencies` is passed.
 
-- `query` - Filter tasks based on the result of a query.
+- `query` - Filter tasks based on the result of a query. Also bounds the dependents added by
+  `--dependents` to projects that match the query.
 
 ### Configuration
 

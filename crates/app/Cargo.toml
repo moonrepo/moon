@@ -30,6 +30,7 @@ moon_exec_plan = { path = "../exec-plan" }
 moon_extension_plugin = { path = "../extension-plugin" }
 moon_feature_flags = { path = "../feature-flags" }
 moon_file_watcher = { path = "../file-watcher" }
+moon_layout_graph = { path = "../layout-graph" }
 moon_mcp = { path = "../mcp" }
 moon_pdk_api = { path = "../pdk-api" }
 moon_plugin = { path = "../plugin" }

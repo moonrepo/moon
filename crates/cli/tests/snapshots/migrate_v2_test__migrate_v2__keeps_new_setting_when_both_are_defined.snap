@@ -1,0 +1,6 @@
+---
+source: crates/cli/tests/migrate_v2_test.rs
+expression: "read_file(&sandbox, \"packages/app/moon.yml\")"
+---
+toolchains:
+  default: bun

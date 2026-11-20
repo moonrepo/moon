@@ -3,13 +3,15 @@ use crate::task_options::TaskOptions;
 use moon_common::{Id, cacheable, path::WorkspaceRelativePathBuf};
 use moon_config::{
     EnvMap, Input, Output, TaskCheck, TaskDependencyConfig, TaskOptionRunInCI, TaskPreset,
-    TaskType, is_false, schematic::RegexSetting,
+    TaskType, is_false, is_true, schematic::RegexSetting,
 };
 use moon_target::Target;
 use rustc_hash::{FxHashMap, FxHashSet};
+use scc::hash_map::Entry;
 use starbase_utils::glob::{self, GlobWalkOptions, split_patterns};
 use std::fmt;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, LazyLock};
 
 cacheable!(
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -50,6 +52,10 @@ cacheable!(
 
         #[serde(skip_serializing_if = "Option::is_none")]
         pub optional: Option<bool>,
+
+        // Only used to determine affected status, and not hashed
+        #[serde(skip_serializing_if = "is_false")]
+        pub affected_only: bool,
     }
 );
 
@@ -57,14 +63,21 @@ cacheable!(
     #[derive(Clone, Debug, Eq, PartialEq)]
     #[serde(default)]
     pub struct TaskGlobInput {
-        #[serde(skip_serializing_if = "is_false")]
+        #[serde(skip_serializing_if = "is_true")]
         pub cache: bool,
+
+        // Only used to determine affected status, and not hashed
+        #[serde(skip_serializing_if = "is_false")]
+        pub affected_only: bool,
     }
 );
 
 impl Default for TaskGlobInput {
     fn default() -> Self {
-        Self { cache: true }
+        Self {
+            cache: true,
+            affected_only: false,
+        }
     }
 }
 
@@ -72,6 +85,7 @@ cacheable!(
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
     #[serde(default)]
     pub struct TaskFileOutput {
+        #[serde(skip_serializing_if = "is_false")]
         pub optional: bool,
     }
 );
@@ -141,7 +155,9 @@ cacheable!(
 
         pub target: Target,
 
-        #[serde(skip_serializing_if = "Vec::is_empty")]
+        // Not skipped from the `Default` implementation, as it includes
+        // the system toolchain, so an empty list must stay empty
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub toolchains: Vec<Id>,
 
         #[serde(rename = "type")]
@@ -149,40 +165,104 @@ cacheable!(
     }
 );
 
+/// Compiled glob sets, cached by their patterns. Many tasks share the same
+/// globs, through inheritance or defaults, and compiling them is expensive.
+static GLOBSET_CACHE: LazyLock<scc::HashMap<String, Arc<glob::GlobSet<'static>>>> =
+    LazyLock::new(scc::HashMap::new);
+
 impl Task {
-    /// Create a globset of all input globs to match with.
-    pub fn create_globset(&self) -> miette::Result<glob::GlobSet<'_>> {
+    /// Create a globset of all input globs to match with. Compiled sets
+    /// are cached, and shared between all tasks with the same patterns.
+    pub fn create_globset(&self) -> miette::Result<Arc<glob::GlobSet<'static>>> {
+        self.create_globset_from(self.input_globs.keys())
+    }
+
+    /// Create a globset of the input globs to match with, excluding those that
+    /// are only used to determine affected status, for hashing and affected files.
+    pub fn create_globset_without_affected_only(
+        &self,
+    ) -> miette::Result<Arc<glob::GlobSet<'static>>> {
+        self.create_globset_from(
+            self.input_globs
+                .iter()
+                .filter(|(_, params)| !params.affected_only)
+                .map(|(glob, _)| glob)
+                .collect::<Vec<_>>(),
+        )
+    }
+
+    fn create_globset_from<'glob>(
+        &self,
+        input_globs: impl IntoIterator<Item = &'glob WorkspaceRelativePathBuf> + fmt::Debug,
+    ) -> miette::Result<Arc<glob::GlobSet<'static>>> {
         // Both inputs/outputs may have a mix of negated and
         // non-negated globs, so we must split them into groups
-        let (gi, ni) = split_patterns(self.input_globs.keys());
+        let (gi, ni) = split_patterns(input_globs);
         let (go, no) = split_patterns(self.output_globs.keys());
 
         // We then only match against non-negated inputs
-        let g = gi;
+        let mut expressions = gi;
 
         // While output non-negated/negated and negated inputs
         // are all considered negations (inputs and outputs
         // shouldn't overlay)
-        let mut n = vec![];
-        n.extend(go);
-        n.extend(ni);
-        n.extend(no);
+        let mut negations = vec![];
+        negations.extend(go);
+        negations.extend(ni);
+        negations.extend(no);
 
-        Ok(glob::GlobSet::new_split(g, n)?)
+        // Pattern order doesn't affect matching, so sort them
+        // for a stable key that's shared between tasks
+        expressions.sort_unstable();
+        negations.sort_unstable();
+
+        let key = format!("{}\n{}", expressions.join("\0"), negations.join("\0"));
+
+        if let Some(globset) =
+            GLOBSET_CACHE.read_sync(key.as_str(), |_, globset| Arc::clone(globset))
+        {
+            return Ok(globset);
+        }
+
+        Ok(match GLOBSET_CACHE.entry_sync(key) {
+            Entry::Occupied(entry) => Arc::clone(entry.get()),
+            Entry::Vacant(entry) => {
+                let globset = glob::GlobSet::new_split_cached(expressions, negations)?;
+
+                entry.insert_entry(Arc::clone(&globset));
+
+                globset
+            }
+        })
     }
 
-    /// Return a list of affected files filtered down from
-    /// the provided changed files list.
+    /// Return a list of affected files filtered down from the provided
+    /// changed files list. Inputs that are only used to determine
+    /// affected status are not included.
     pub fn get_affected_files(
         &self,
         workspace_root: &Path,
         changed_files: &FxHashSet<WorkspaceRelativePathBuf>,
     ) -> miette::Result<Vec<PathBuf>> {
         let mut files = vec![];
-        let globset = self.create_globset()?;
+
+        // Only compile the glob set when there are input globs, as nothing
+        // can match without them, and compiling is expensive
+        let globset = if self.input_globs.values().all(|params| params.affected_only) {
+            None
+        } else {
+            Some(self.create_globset_without_affected_only()?)
+        };
 
         for file in changed_files {
-            if self.input_files.contains_key(file) || globset.matches(file.as_str()) {
+            if self
+                .input_files
+                .get(file)
+                .is_some_and(|params| !params.affected_only)
+                || globset
+                    .as_ref()
+                    .is_some_and(|globset| globset.matches(file.as_str()))
+            {
                 files.push(file.to_logical_path(workspace_root));
             }
         }
@@ -206,11 +286,16 @@ impl Task {
         })
     }
 
-    /// Return a list of all workspace-relative input files.
+    /// Return a list of all workspace-relative input files, excluding
+    /// those that are only used to determine affected status.
     pub fn get_input_files(&self, workspace_root: &Path) -> miette::Result<Vec<PathBuf>> {
         let mut list = FxHashSet::default();
 
-        for path in self.input_files.keys() {
+        for (path, params) in &self.input_files {
+            if params.affected_only {
+                continue;
+            }
+
             let file = path.to_logical_path(workspace_root);
 
             // Detect if file actually exists
@@ -220,7 +305,13 @@ impl Task {
         }
 
         list.extend(
-            self.get_input_files_with_globs(workspace_root, self.input_globs.iter().collect())?,
+            self.get_input_files_with_globs(
+                workspace_root,
+                self.input_globs
+                    .iter()
+                    .filter(|(_, params)| !params.affected_only)
+                    .collect(),
+            )?,
         );
 
         Ok(list.into_iter().collect())

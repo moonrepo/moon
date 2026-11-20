@@ -5,7 +5,21 @@ use moon_pdk_api::*;
 pub use tc_tier2::*;
 
 #[plugin_fn]
-pub fn setup_toolchain(Json(_): Json<SetupToolchainInput>) -> FnResult<Json<SetupToolchainOutput>> {
+pub fn setup_toolchain(
+    Json(input): Json<SetupToolchainInput>,
+) -> FnResult<Json<SetupToolchainOutput>> {
+    record_input(
+        &input.context,
+        &input.toolchain_config,
+        "setup_toolchain",
+        &input
+            .configured_version
+            .as_ref()
+            .map(|version| version.to_string())
+            .unwrap_or_else(|| "global".into()),
+        json::to_value(&input)?,
+    )?;
+
     Ok(Json(SetupToolchainOutput::default()))
 }
 

@@ -1,0 +1,4 @@
+tc-tier1: {}
+tc-tier2:
+  # Locate roots from each project, instead of the working dir
+  testLocateRoots: true

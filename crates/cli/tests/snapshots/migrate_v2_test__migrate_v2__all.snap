@@ -1,0 +1,20 @@
+---
+source: crates/cli/tests/migrate_v2_test.rs
+expression: "read_file(&sandbox, \".moon/tasks/all.yml\")"
+---
+tasks:
+  lint:
+    script: eslint . && prettier --check .
+    toolchains: node
+  serve:
+    command: vite dev
+    preset: server
+  check:
+    command: tsc
+  watch:
+    command: vite build --watch
+    deps:
+    - target: ^:build
+      args:
+      - --mode
+      - production

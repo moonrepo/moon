@@ -2,6 +2,370 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- **CLI**
+  - Reworked how `moon run`, `moon exec`, `moon ci`, and `moon check` traverse the graph, by
+    splitting the previous `--upstream` and `--downstream` options into 3 independent concepts.
+    [Learn more about graph depth](https://moonrepo.dev/docs/concepts/affected#graph-depth).
+    - Added an `--affected-depth <DEPTH>` option (`-d`, `MOON_AFFECTED_DEPTH`), that controls how
+      far affected state propagates from an affected task to its dependents. Defaults to `deep`.
+      This only changes which tasks count as affected, and never adds tasks.
+    - Added a `--dependents <DEPTH>` option, that adds the dependents of every selected target as
+      primary targets. Defaults to `none`. It replaces the `--downstream` option, which has been
+      removed.
+    - Added a `--no-dependencies` option, that does not insert dependency tasks that were not
+      selected themselves. The ordering between the tasks that are in the graph is still honored.
+    - Removed the `--upstream` (and `--dependencies`) option, as dependencies are now always ran.
+      Use `--no-dependencies` instead of `--upstream none`.
+    - Removed the `-g`/`--include-relations` option (and `MOON_INCLUDE_RELATIONS`), as affected
+      state now always propagates through relations, use `--affected-depth` to limit it. The
+      "Tracking affected tasks" step now always reports tasks affected through a dependency.
+  - `moon ci` no longer runs the direct dependents of affected tasks by default, as affected
+    dependents that match the requested targets are already selected through `--affected-depth`.
+    Pass `--dependents direct` to restore the previous behavior.
+  - `moon action-graph`, `moon project-graph`, and `moon task-graph` `--dependents` now requires a
+    depth, like `--dependents deep`. For the project and task graphs, the previous flag included all
+    dependents (`deep`).
+  - `moon query affected`, `moon query projects`, and `moon query tasks` replaced `--downstream`
+    with `--dependents <DEPTH>`. `moon query projects` and `moon query tasks` replaced `--upstream`
+    with `--dependencies <DEPTH>`, while `moon query affected` no longer supports it. The
+    `--downstream` and `--upstream` options have been removed.
+  - The JSON output of `moon query affected` (and the `affected` state in the options of
+    `moon query projects|tasks`) replaced the `upstream`, `downstream`, and `projects` fields of an
+    affected task, and the `upstream` and `downstream` fields of an affected project, with a single
+    `dependencies` field, the affected dependencies that it was reached through. The
+    `@moonrepo/types` types have been updated to match.
+- **Code generation**
+  - Updated the template engine, [Tera](https://keats.github.io/tera/), to v2, which includes
+    breaking syntax changes for template files.
+    [View the Tera migration guide](https://github.com/Keats/tera/blob/master/MIGRATION.md).
+    - Macros have been replaced with components. A `{% macro %}` must be rewritten as a
+      `{% component %}`, which no longer needs an `{% import %}`, and is called like
+      `{{ <name arg="value" /> }}`.
+    - Array items must be accessed with brackets, like `list[0]`, instead of `list.0`.
+    - Some built-in filters and functions have been renamed, like `as_str` to `str`, or removed,
+      like `date`, `now`, `slugify`, `get_env`, `map`, and `filter`. The `json_encode` filter is
+      still available.
+    - Includes, parent templates, filters, and functions must now exist when a template is loaded,
+      instead of when it's rendered.
+    - Objects are now rendered as maps, like `{"key": "value"}`, instead of `[object]`, and strings
+      within arrays are now quoted.
+- **Configuration**
+  - Removed the `remote.cache.verifyIntegrity` setting. Use `cache.cas.verifyIntegrity` instead.
+  - Removed the `bitbucket-legacy` provider for the `vcs.provider` setting. Use `bitbucket` instead.
+  - Replaced the `allowFailure` and `expectFailure` task options with a single `onFailure` option,
+    that accepts `allow` or `expect`. Use `onFailure: allow` instead of `allowFailure: true`, and
+    `onFailure: expect` instead of `expectFailure: true`. The old options have been removed, and
+    fail validation. A task's `onFailure` overrides an inherited value, instead of conflicting with
+    it. The task options in `moon task --json` and the `@moonrepo/types` types have been updated to
+    match.
+  - Renamed the `generator` setting in `.moon/workspace.*` to `codegen`. Use `codegen.templates`
+    instead of `generator.templates`. The old setting has been removed, and fails validation. The
+    `GeneratorConfig` types in `@moonrepo/types` have been renamed to `CodegenConfig`.
+- **Execution plans**
+  - Replaced the `affected.includeRelations` field with `affected.depth`, the `graph.downstream`
+    field with `graph.dependents`, and the `graph.upstream` field with the new
+    `graph.noDependencies` field. The old fields have been removed, and plans that use them fail to
+    parse.
+- **Experiments**
+  - Removed the `asyncAffectedTracking` experiment, as the asynchronous affected tracker is now
+    always used, and the synchronous tracker has been removed. The setting must be removed from
+    `.moon/workspace.*`, as unknown settings fail validation, and the
+    `MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING` environment variable no longer has any effect.
+  - Removed the `asyncGraphBuilding` experiment, as the project and task graphs are now always built
+    asynchronously, and the synchronous graph builder has been removed. The setting must be removed
+    from `.moon/workspace.*`, as unknown settings fail validation, and the
+    `MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING` environment variable no longer has any effect. If it was
+    disabled to work around a dependency cycle error, the cycle must now be broken, or one of its
+    edges moved to a different dependency scope, so that it crosses the production and development
+    partitions.
+  - Removed the `casOutputsCache` experiment, as task outputs are now always stored in the local
+    content-addressable store, and the `.tar.gz` archive cache has been removed. The setting must be
+    removed from `.moon/workspace.*`, as unknown settings fail validation, and the
+    `MOON_EXPERIMENT_CAS_OUTPUTS_CACHE` environment variable no longer has any effect. The legacy
+    `.moon/cache/hashes` and `.moon/cache/outputs` directories are automatically removed.
+  - Removed the `explicitTaskOutputStyle` experiment, as a task's `outputStyle` option is now always
+    applied, including to primary targets (those passed on the command line), which previously
+    ignored it and always displayed their output. The `--output-style` option still overrides it for
+    every task. The setting must be removed from `.moon/workspace.*`, as unknown settings fail
+    validation, and the `MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE` environment variable no longer
+    has any effect.
+  - Removed the `nativeFileHashing` experiment, as files are now always hashed natively within
+    moon's task pool, and hashing files through the VCS has been removed. The setting must be
+    removed from `.moon/workspace.*`, as unknown settings fail validation, and the
+    `MOON_EXPERIMENT_NATIVE_FILE_HASHING` environment variable no longer has any effect.
+- **Projects and tasks**
+  - Fields that are the default value are now omitted when projects and tasks are serialized to
+    JSON, like in `moon project --json`, `moon task --json`, and `moon query projects|tasks`. This
+    includes most task `options` (like `cache`, `persistent`, and `runInCI`), a project's
+    `language`, `layer`, and `stack` when they're `unknown`, and empty file group lists. A missing
+    field is its default value, and the `@moonrepo/types` types have been updated to match.
+  - A project's `inherited` field, the configs it inherited from `.moon/tasks`, is now only included
+    in `moon project --json`. Other output, like `moon projects --json`, `moon query projects`, and
+    `moon project-graph --json`, includes the paths of those configs in a new `inheritedFrom` field
+    instead.
+- **Toolchains**
+  - Reworked the `define_requirements` function of the toolchain plugin API, so that each required
+    toolchain controls how it's ordered. The `requires` field is now a list of
+    `ToolchainRequirement`s, each with an `id`, and a `setup_toolchain` and `setup_environment`
+    phase (`before` or `after`), which is when the required toolchain's action runs, relative to the
+    same action of the toolchain that requires it. They default to `before` and `after`, while
+    `null` doesn't order that action. The `for_setup_environment` and `for_setup_toolchain` fields
+    have been removed, and plugins built with a previous version of the plugin API must be updated.
+  - Added an `inheritable_dependencies` field to `ParseManifestOutput` in the toolchain plugin API,
+    for the dependencies that packages in a workspace can inherit, like Cargo's
+    `[workspace.dependencies]`, which aren't dependencies of the root package itself. Inherited
+    dependencies are now only resolved from this field, of the dependencies root's manifest (or the
+    project's own manifest when it's the root), in any scope, instead of from the same scope of the
+    root manifest's dependencies. Plugins that return inherited dependencies must return the
+    versions they inherit in this field.
+
+#### 🚀 Updates
+
+- **Action graph**
+  - Graph depths (`--affected-depth`, `--dependents`, and the query `--dependencies` options) now
+    accept a number of hops, in addition to `none`, `direct`, and `deep`. For example,
+    `--affected-depth 2` only affects dependents up to 2 hops away from an affected task.
+  - The "Building action graph" step now logs the affected depth, dependents depth, and whether
+    dependencies are skipped.
+  - The `--query` option now also bounds the dependents added by `--dependents`. Dependents in
+    projects that don't match the query are no longer added, nor traversed through to reach their
+    own dependents. Explicitly selected targets and affected state are not bounded by it.
+  - The "Tracking affected tasks" step now reports how many hops away a task that was affected
+    through a dependency is, like `(2 hops away)`. Affected projects and tasks in the JSON output of
+    `moon query affected` also include a `distance` field, which is `0` when directly affected.
+  - When a toolchain's environment is setup, the environments of the toolchains that it requires
+    (from `define_requirements`, with a `setup_environment` phase) are now also setup, in the same
+    dependencies root, before or after it. For example, the Node.js package manager and Deno
+    toolchains implement `setup_environment` (like importing Yarn plugins), which never ran before,
+    as they don't locate a dependencies root (the JavaScript toolchain does). Installing
+    dependencies in the root waits for these, including the toolchains and environments that are
+    setup after the root's toolchain, like Node.js and its package manager after JavaScript.
+  - Rewrote the action graph builder, which now builds the graph in stages, instead of inserting one
+    action at a time. Building the graph is 13% to 47% faster in our benchmarks, and the graphs are
+    the same, except:
+    - Project syncs now depend on the syncs of every project they depend on, instead of only the
+      ones synced when the project was first reached. When projects depend on each other across
+      scopes (like production one way, and development the other), the production and peer
+      dependencies are kept.
+    - Errors for actions that would depend on each other now describe the whole cycle.
+  - Improved the performance of building the action graph further:
+    - Tasks that run in a toolchain no longer resolve the toolchain's setup and dependency install
+      actions for every task, only once for each toolchain and project. Building takes 57% less time
+      in our benchmarks.
+    - Serial dependencies (`runDepsInParallel: false`) no longer walk, and check for cycles and
+      existing edges, every task below them again for each ordering edge, which grew cubically with
+      the depth of the dependency chain. A chain of 1,000 serial dependencies now builds in 82ms,
+      instead of 24s.
+    - Projects in a dependencies workspace (like a JavaScript monorepo) no longer compile the
+      workspace's member globs again for every project.
+    - Dependencies roots are now located concurrently, for every toolchain and project that the
+      graph installs dependencies for, before actions are inserted, instead of one at a time while
+      inserting them. Building takes up to 18% less time with toolchains in our benchmarks. The
+      `SetupEnvironment` and `InstallDependencies` actions of a root are now identified by their
+      toolchain and root only.
+  - `moon setup` in a repository whose root is a single package (not a workspace) that's also a
+    project, now sets up the root's environment with that project's toolchain version and config,
+    like running its tasks does, instead of the workspace's.
+  - The environment setup and dependency install of a dependencies workspace whose root is also a
+    project (the root project) now run with that project's toolchain version and settings, like a
+    single project's package, instead of only the workspace's. The root project isn't passed as the
+    plugin's `project`, as the actions are for the whole workspace. Members that don't override the
+    version still run their tasks with the workspace's, which they set up on their own.
+- **Action pipeline**
+  - Reading the states of task dependencies, while hashing and running tasks, no longer takes an
+    exclusive lock, which serialized tasks running concurrently.
+- **Affected**
+  - Added an `affectedOnly` setting to file, glob, file group, and project task inputs (as an object
+    field, or a URI query). When enabled, the input is only used to determine whether the task is
+    affected, and is excluded from the task's hash and affected files, so a change to it doesn't
+    invalidate the task's cache. When a file is also hashed by another input, it's still hashed.
+    [Learn more](https://moonrepo.dev/docs/config/project#inputs).
+  - Tasks are now affected by changes to the manifests and lockfiles of their toolchains (like
+    `package.json` and `yarn.lock`), in the project root, or in any parent directory up to the
+    workspace root, like the root of a dependencies workspace. They're inherited as an
+    `affectedOnly` parent traversal glob input, like `.../{Cargo.lock,Cargo.toml}`, so they don't
+    change the task's hash. Tasks that disable their inputs (`inputs: []`) don't inherit them, and
+    toolchains can opt out with `inject_task_inputs`.
+  - Improved the performance of affected tracking.
+    - Tasks and projects that were checked while tracking, and found to not be affected, are no
+      longer checked again when building the action graph. Previously, every unaffected task had its
+      inputs matched against the changed files twice.
+    - Tasks without glob inputs no longer compile a glob set when matching changed files.
+    - Relationships are now walked once from every directly affected task and project, instead of
+      once per affected task and project. Previously, a dependency chain shared by many affected
+      tasks was re-walked for each of them, which was quadratic for deep graphs.
+    - Tasks and projects that have already been expanded are now read from the graph without
+      locking, as every relationship walk reads them.
+    - Projects are now indexed by their source directory, so that each changed file only looks up
+      its ancestor directories, instead of every project scanning every changed file.
+    - Changed files that are matched by content (the `content` input setting) are now read once,
+      instead of once for every task that matches against them.
+    - Compiled glob sets are now cached by their patterns, and shared between all tasks with the
+      same globs, which most tasks have through inheritance and defaults. Previously, every task
+      compiled its own copy, which was the single largest cost of tracking. Changed files are also
+      only matched against each distinct glob set once, instead of once per task.
+- **Cache**
+  - The `cache.unstable_sharedWorktreeCache` setting no longer requires the `casOutputsCache`
+    experiment, as task outputs are now always stored in the local content-addressable store.
+  - Hash fingerprints are now stored in their own local objects store, `.moon/cache/objects`,
+    instead of alongside task outputs. The VCS hooks, version check, and workspace graph states have
+    also moved there from `.moon/cache/states`. They always stay in the current checkout's cache
+    (even when `cache.unstable_sharedWorktreeCache` is enabled), and `moon clean` removes those
+    older than the cache lifetime.
+  - The cached workspace graph has moved from `.moon/cache/states` into the local
+    content-addressable store, `.moon/cache/blobs`, alongside task outputs. Like task outputs, a
+    cache hit marks it as used, so `moon clean` only removes graphs that haven't been used within
+    the cache lifetime.
+- **CLI**
+  - Added a `moon layout-graph` (`moon lg`) command, that serves an interactive graph of the
+    dependencies roots (like a package manager workspace) that toolchains locate, and the projects
+    that belong to each, with their role. Pass `--info` to print each root's version, files, and
+    projects instead, along with diagnostics for placements that may be unexpected: a project that
+    isn't a member of the workspace that it located, a nested workspace that an enclosing
+    workspace's members also match, and a member that overrides the workspace's version. Also
+    supports `--dot` and `--json` output, and placing a single project, like a run would.
+  - `moon project` now lists the dependencies roots that the project is a member of, for its
+    toolchains and its tasks' toolchains, with its role in each (like
+    `node @ . (workspace member)`), derived from the layout graph. With `--json`, they're included
+    in a new `dependenciesRoots` field, each with a `toolchain`, `root`, and `role`.
+  - Added a `moon migrate v3` command, that migrates the settings that have been renamed or removed
+    in v3, within `.moon/workspace.*`, `.moon/tasks/**/*`, and `moon.*` configuration files. Only
+    files that change are re-written, which strips their comments. Pkl files, execution plans, and
+    template files must be migrated manually.
+- **Configuration**
+  - Added support for parent traversal globs, with a `...` path segment, like `.../package.json`.
+    They match the path after `...` in the directory before it (the project root for project
+    relative globs), or in any parent directory up to the workspace root, but never in sibling or
+    nested directories. Supported by task inputs, file groups, and other glob settings, but not by
+    task outputs or code owners. Token functions that return globs as-is, like `@globs` and
+    `@group`, error for them outside of task inputs.
+    [Learn more](https://moonrepo.dev/docs/concepts/file-pattern#parent-traversal).
+  - Stabilized the `cache.unstable_sharedWorktreeCache` setting in `.moon/workspace.config`. Use
+    `cache.sharedWorktreeCache` instead.
+  - Stabilized the `unstable_daemon` setting in `.moon/workspace.config`. Use `daemon` instead.
+- **Daemon**
+  - The daemon has been stabilized and is now enabled by default. If you run into any issues, simply
+    set `daemon = false` in your `.moon/workspace.config`.
+- **Docker**
+  - `moon docker prune` now places the focused projects of the scaffold into the layout graph, and
+    prunes each dependencies root that they belong to, instead of locating roots itself. Unfocused
+    projects are still matched against each root's members.
+  - The `prune_docker` plugin function now receives the root project's merged toolchain config
+    (`toolchain_config`) when the dependencies root is a single project's package, instead of the
+    workspace's, like the root's other actions.
+  - When the only focused project is the root project of a dependencies workspace, the production
+    install now receives no project, like the workspace's other actions, while its toolchain config
+    is still that project's merged config.
+  - `moon docker scaffold` now copies the manifests and lockfiles of dependencies roots that aren't
+    a project, like a package manager workspace whose members are projects, into the configs
+    skeleton, and calls the `scaffold_docker` plugin function for them, without a project, like the
+    workspace root. Previously, only the roots of projects and the workspace were scaffolded, so
+    installs within Docker could not locate these roots. The sources skeleton includes the roots of
+    the focused projects and their dependencies.
+- **Hasher**
+  - Improved the performance of file hashing.
+    - File hashes are now memoized for the lifetime of the process, and reused while the file's size
+      and modification time are unchanged, so tasks that share inputs only read each file once.
+      Files modified within the last 2 seconds are never memoized, to protect against file systems
+      with coarse timestamps.
+    - Files are now hashed by a bounded set of workers that pull from a shared queue, instead of
+      spawning a blocking task per file.
+    - Each file is now stat-ed once before hashing, instead of twice, and read with a single read
+      when it fits within the hashing buffer.
+  - Hashing a task's toolchains now reads the dependencies root of each toolchain from where the
+    action graph placed it, instead of calling the toolchain's plugin to locate it again for every
+    task. Hashes are unchanged.
+  - Compiled glob sets are now cached for the lifetime of the process, and shared everywhere the
+    same patterns are matched. Compiling a glob set takes ~175-280µs, while a cached one takes
+    ~0.1µs, and previously, the `hasher.ignorePatterns` and `hasher.ignoreMissingPatterns` settings
+    were compiled for every task that was hashed, which cost ~450µs per task. The same applies to a
+    task's outputs when hydrating them from the cache, the `affectedFiles.filter` task option, and
+    the project globs that the daemon's watcher matches on every file change.
+- **Plugins**
+  - Improved the performance of calling plugins concurrently, like when building projects and their
+    tasks in parallel. Looking up a loaded plugin, and a toolchain's cached tool locations, no
+    longer takes an exclusive lock, which serialized concurrent callers, and on a busy machine could
+    stall building the workspace graph for multiple seconds.
+  - Loading the same plugin concurrently, like when the daemon reloads changed configs, now only
+    loads it once. Previously, each caller loaded and compiled its own instance of the plugin, and
+    all but one were discarded.
+- **Toolchains**
+  - Added an optional `locate_dependencies_roots` function to the toolchain plugin API, which
+    locates the dependencies roots of many projects in a single call. When a toolchain implements
+    it, every project that shares the toolchain's config is located in one call while building the
+    layout graph, instead of a call for each project, which is 37% faster for 1000 projects with a
+    test plugin. Toolchains that don't implement it still locate one root per call.
+  - Added an `inject_task_inputs` field to `RegisterToolchainOutput` in the toolchain plugin API,
+    which controls whether the toolchain's manifest and lock file names are injected as an affected
+    only input into the tasks that use it. Defaults to `true`.
+  - A project's toolchains now also include the toolchains required by those configured in
+    `toolchains.default`, and inferred from its language, instead of only those detected from its
+    files, and the toolchains that those require, and so on. Like a task's, they also include the
+    configured toolchains that require one of them, like `javascript` and its package manager for a
+    project that uses `node`. A project can still disable any of these toolchains in its
+    `toolchains` settings, with either its stable or `unstable_` identifier, and a disabled
+    toolchain doesn't add the toolchains that it requires, or that require it.
+  - A task's toolchains now include the toolchains that are required by its required toolchains, and
+    so on, and are resolved with the project's toolchain settings, instead of only the workspace's.
+    Toolchains that require one of the task's toolchains are still added, but no longer the
+    toolchains that only require one of the toolchains it requires. Tasks whose toolchains change
+    get a new hash.
+  - Required toolchains are now resolved to the identifier they were configured with, so a
+    requirement on `unstable_example`, when `example` is configured (or the reverse), sets up the
+    configured toolchain, instead of a separate one.
+  - Added support for proto v0.63's config trust. As moon already runs the workspace's tasks,
+    `.prototools` configs within the workspace are always trusted, while other local configs, like
+    one in a parent directory, must be trusted with `proto trust` before their security-sensitive
+    settings (like `[env]`, `[plugins]`, and `[tools.*]`) are applied.
+- **Workspace graph**
+  - Improved the performance of building the workspace graph.
+    - Git information (branch, revision, and repository) is now loaded concurrently in the
+      background while the graph is built, instead of one command after another once it was built.
+    - Projects and tasks are no longer cloned when finalizing the graph.
+    - Project configs are no longer formatted into tracing spans while building.
+    - Files that `inheritedBy.files` depends on are no longer checked for existence one at a time
+      when hashing the graph's cache, as missing files are already omitted from the hash.
+    - A workspace without any projects no longer locates and loads projects twice.
+    - Projects now only store the paths of the `.moon/tasks` configs that they inherited from,
+      instead of a copy of each config, which was copied again every time a project was expanded.
+      The configs are derived from these paths when required, like by `moon project`, and the paths
+      are available in a new `inheritedFrom` field.
+    - Dependency cycles are now checked once per scope partition, after all project relationships
+      have been added, instead of once for every relationship.
+    - Project configs are now loaded on a thread pool bounded to the number of CPUs, instead of on a
+      thread per project.
+  - Improved project and task graph build performance, by parsing identical task `command` and
+    `args` strings once per graph build, instead of once per task in every project that inherits
+    them.
+  - Improved project graph build performance, by locating each project's config file once, stopping
+    at the first supported extension that exists (in `yml`, `yaml`, `jsonc`, `json`, `pkl`, `hcl`,
+    `toml` order), instead of checking for every supported extension. As such, only that file is
+    loaded, instead of merging every project config file that exists in the project.
+  - Improved project graph build performance, by deriving inherited global task configs once per
+    distinct set of matched `.moon/tasks` files and sharing them across projects, instead of cloning
+    them for every project.
+  - Improved task graph build performance, by detecting dependency cycles once after all task
+    dependencies have been linked, instead of on every link, which avoids repeatedly traversing deep
+    task dependency chains.
+  - Improved project and task expansion performance when every project or task is requested, like by
+    `moon ci`, `moon check`, and `moon query`, by expanding them in parallel, with dependencies
+    expanded before their dependents. Every project and task is now returned in a deterministic
+    order, sorted by ID or target.
+  - Improved `moon query projects` performance for the `taskTag`, `taskToolchain`, and `taskType`
+    fields, by reading each project's unexpanded tasks, instead of expanding every task in the
+    workspace to match the query.
+  - Improved `moon project-graph` and `moon task-graph` performance when focused on a project or
+    task, by walking the graph by node index with a breadth-first traversal, instead of scanning
+    every node for each visited one.
+  - The graph's cache now stores a single hash fingerprint, instead of also storing an unused one
+    when plugins discovered new input files.
+  - The graph's cache file is now less than half the size, as data that's only used while building
+    the graph is no longer cached, task options are omitted when they're the default value, and
+    projects only store the paths of the configs they inherited from. It's also read without
+    stripping comments, and serialized without creating an intermediate string.
+
 #### 🐞 Fixes
 
 - Fixed an issue where development and build dependencies that inherit their version from the
@@ -9,33 +373,91 @@
   included in task hashes, as their version was only looked up in the workspace's dependencies of
   the same scope. Inherited versions are now resolved from the workspace's dependencies (like
   `[workspace.dependencies]`) whichever scope inherits them, including for a project at the root of
-  the workspace. When an inherited version can't be resolved, its locked versions are hashed
-  instead. Tasks of affected projects will have a new hash, so they will not be cached on their
-  first run after upgrading.
+  the workspace. Tasks of affected projects will have a new hash, so they will not be cached on
+  their first run after upgrading.
+- Fixed an issue where `--upstream none` would also remove the ordering edges between selected tasks
+  that depend on each other, allowing them to run concurrently or in the wrong order. Use
+  `--no-dependencies` instead, which keeps them ordered.
+  ([#2685](https://github.com/moonrepo/moon/issues/2685))
+- Fixed an issue where affected state propagating to a dependent task would also force the dependent
+  to run, even when it was not one of the requested targets. Affected depth now only changes which
+  of the requested targets are affected. ([#2686](https://github.com/moonrepo/moon/issues/2686))
+- Fixed an issue where project constraints (layers and tags) were only enforced for one of the
+  relationships between 2 projects, when a project depended on another multiple times (like by its
+  ID and an alias) with different scopes.
+- Fixed an issue where task input globs configured with `cache: false` were read back as cached when
+  deserialized from JSON, like when WASM plugins load tasks.
+- Fixed an issue where dependencies that inherit their version from the workspace (like Cargo's
+  `workspace = true`) were hashed with the wrong version, or not at all, when the workspace root is
+  also a package that declares or inherits a dependency of the same name. Their versions are now
+  hashed with `hasher.optimization: performance` too, and installing dependencies runs again when an
+  inheritable version changes.
+- Fixed an issue where the workspace graph's cache could be left in an inconsistent state if moon
+  was interrupted while saving it, which would load an outdated graph, or fail every command until
+  the cache was removed. The graph is now written atomically, and saved before the state that marks
+  it as valid, and an unreadable graph is rebuilt instead of failing.
+- Fixed an issue where duplicate project ID errors could report the existing and new project sources
+  in a different order between runs.
+- Fixed an issue where disabling dependency installs (with `pipeline.installDependencies`, or a
+  toolchain's `installDependencies` setting) would also stop the toolchain from being setup for
+  tasks, so its configured version was not installed, or added to `PATH`, before they ran.
+- Fixed an issue where projects that share a dependencies root (like members of a workspace) but
+  override a toolchain's version could run tasks before their version of the toolchain was setup,
+  when the toolchain also sets up an environment.
+- Fixed an issue where building the action graph would overflow the stack for very deep chains of
+  task or project dependencies (around 1,000 deep).
+- Fixed an issue where `moon ci --job` would run every task in a job whose share of the tasks
+  started past the end, like the last jobs when there were fewer (affected) tasks than jobs, instead
+  of running nothing.
+- Fixed an issue where `--affected --force` would not track which tasks were affected, so they were
+  missing from the run report and the affected tasks output, even though affected files were still
+  passed to them.
+- Fixed an issue where `--dependents` would run internal tasks as dependents, even though internal
+  tasks can only run as a dependency of another task. Dependents of internal tasks are still added,
+  and they run the internal task as a dependency.
+- Fixed an issue where the resolved targets of a CI job (`--job`) were listed in an arbitrary order,
+  instead of the order they were selected in.
+- Fixed an issue where `--job-total 0` would run every task, instead of erroring for an invalid job
+  index.
+- Fixed an issue where a toolchain that required an invalid toolchain ID (from its plugin's
+  `define_requirements`) would error without naming the toolchain.
+- Fixed an issue where the environment setup and dependency install of a dependencies workspace
+  (like a Cargo workspace) waited on the toolchain versions that its member projects override, but
+  ran with the workspace's version, which wasn't set up when only overriding projects were in the
+  run. They now always wait on the version that they run with (the workspace's, or its root
+  project's), and a project that overrides it sets up its own version for its tasks.
+- Fixed an issue where a member project's override of a required toolchain's version (like Node.js
+  for JavaScript) made a dependencies workspace's install wait on that version.
+- Fixed an issue where setting up a toolchain version that a project overrides passed the
+  workspace's version in the plugin's `toolchain_config` (`SetupToolchainInput`), which conflicted
+  with its `configured_version`.
+- Fixed an issue where a project's toolchain `version` override, or a toolchain disabled by a
+  project, was ignored by a task's command environment when the project referenced the toolchain by
+  its stable ID, while the workspace configured its unstable ID (or vice versa). Project toolchain
+  versions are now resolved the same way by the action graph, the task hasher, and the command
+  environment.
+- Fixed an issue where `moon docker file` could pick the default base image of a toolchain that the
+  project disabled.
+- Fixed some issues with `moon migrate v2`:
+  - The `.moon/tasks.yml` file was moved to `.moon/tasks/all.yml` with an `inheritedBy` condition
+    for a `tasks` language, so its tasks were no longer inherited by any project.
+  - A task's `local: false` setting was migrated to `preset: server`, instead of being removed.
+  - A deprecated setting overwrote the setting that replaced it, when both were defined, like
+    `platform` and `toolchain.default` in `moon.yml`.
+  - Settings were re-ordered, and `moon.yml` files in nested `node_modules` were migrated.
+  - Files that didn't require a migration were still re-written, which stripped their comments.
+- Fixed an issue where the repository slug was extracted incorrectly from Git remote URLs with
+  nested owners (like GitLab subgroups) and no `.git` suffix, or with `.git` in the repository name
+  (like `owner/owner.github.io.git`).
+- Fixed an issue where unquoting a task argument would remove too many characters when its value
+  started or ended with the quote character, like an escaped quote (`"say \"hi\""`), or nested
+  parentheses (`%(foo(bar))`).
 
-## 2.6.5
+#### ⚙️ Internal
 
-#### 🐞 Fixes
-
-- Fixed an issue where the file groups docs stated that a project-level file group overrides an
-  inherited file group of the same name. Since v2, they are merged together, with project-level
-  inputs appended last, and since v2.5, `workspace.mergeStrategies.fileGroups` can be used to
-  replace instead.
-- Fixed an issue where every `moon run` and `moon ci` failed in a Git repository without any commits
-  (after `git init`), as `HEAD` couldn't be resolved. Until the first commit, the `$vcsRevision`
-  token is empty, and there are no revisions to compare, so all uncommitted files are considered
-  changed.
-- Fixed an issue where the daemon's memory grew without bound on Linux, and it couldn't be stopped
-  with `moon daemon stop` or `SIGTERM`. Its file watcher registered a watch for every directory in
-  the workspace, including `node_modules` and VCS ignored directories, and followed symlinks, which
-  revisits the same directories through every link to them, so in a pnpm workspace the registration
-  never finished. The watcher now skips ignored directories and symlinks, and is registered on its
-  own thread, so the daemon can shut down at any time. The same symlink walk on macOS and Windows
-  has also been removed.
-- Fixed an issue where running tasks with `--affected` outside of CI, like in a VCS hook, never
-  installed dependencies, so the tasks failed in a fresh clone or worktree. Dependencies are now
-  installed when the toolchain's vendor directory (like `node_modules`) is missing or empty, but
-  continue to be skipped when it exists.
+- Updated proto to [v0.64.0](https://github.com/moonrepo/proto/releases/tag/v0.64.0).
+- Updated Rust to v1.100.0.
+- Updated dependencies.
 
 ## 2.6.4
 

@@ -1,15 +1,15 @@
 use moon_action::{Action, ActionStatus, Operation};
 use moon_app_context::AppContext;
-use moon_cache_storage::Storage;
+use moon_cache::ObjectsStorage;
 use moon_env_var::GlobalEnvBag;
 use moon_hash::{ContentHasher, Digest};
 use serde::Serialize;
 use starbase_utils::fs::FileLock;
 
-/// Holds the action's lock plus the hash manifest that records it as done.
+/// Holds the action's lock plus the hash fingerprint that records it as done.
 ///
-/// The manifest is deliberately *not* stored up front: it is written only when
-/// the caller reaches `persist_hash_manifest`, so an action that fails or is
+/// The fingerprint is deliberately *not* stored up front: it is written only when
+/// the caller reaches `persist_hash_fingerprint`, so an action that fails or is
 /// killed leaves nothing behind claiming it succeeded. (A content-addressed
 /// store has no delete, so the old write-then-remove-on-drop approach can't be
 /// expressed against it anyway.)
@@ -25,9 +25,12 @@ impl HashLock {
         &self.digest
     }
 
-    pub async fn persist_hash_manifest(&mut self, storage: &Storage) -> miette::Result<()> {
+    pub async fn persist_hash_fingerprint(
+        &mut self,
+        storage: &ObjectsStorage,
+    ) -> miette::Result<()> {
         if let Some(hasher) = self.pending.take() {
-            storage.store_hash_manifest_with_hasher(hasher).await?;
+            storage.store_hash_fingerprint_with_hasher(hasher).await?;
         }
 
         Ok(())
@@ -89,13 +92,13 @@ pub async fn create_hash_and_return_lock_if_changed(
             .cache_engine
             .create_lock(format!("{}-{}", action.get_prefix(), digest.hash))?;
 
-    // If the hash manifest exists, then it has run before. Check this after
+    // If the hash fingerprint exists, then it has run before. Check this after
     // locking so that concurrent processes wait for in-progress actions.
     if !should_force()
         && app_context
             .cache_engine
-            .storage
-            .has_hash_manifest(&digest)
+            .objects_storage
+            .has_hash_fingerprint(&digest)
             .await
     {
         return Ok(None);

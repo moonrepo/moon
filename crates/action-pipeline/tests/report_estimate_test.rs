@@ -129,6 +129,7 @@ mod estimate {
                     duration: Some(Duration::new(25, 0)),
                     node: Arc::new(ActionNode::install_dependencies(InstallDependenciesNode {
                         members: None,
+                        owner_project_id: None,
                         project_id: None,
                         root: WorkspaceRelativePathBuf::default(),
                         toolchain_id: Id::raw("system"),
@@ -204,6 +205,7 @@ mod estimate {
                     duration: Some(Duration::new(25, 0)),
                     node: Arc::new(ActionNode::install_dependencies(InstallDependenciesNode {
                         members: None,
+                        owner_project_id: None,
                         project_id: None,
                         root: WorkspaceRelativePathBuf::default(),
                         toolchain_id: Id::raw("system"),
@@ -280,6 +282,7 @@ mod estimate {
                     duration: Some(Duration::new(25, 0)),
                     node: Arc::new(ActionNode::install_dependencies(InstallDependenciesNode {
                         members: None,
+                        owner_project_id: None,
                         project_id: None,
                         root: WorkspaceRelativePathBuf::default(),
                         toolchain_id: Id::raw("system"),

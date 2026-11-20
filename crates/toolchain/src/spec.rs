@@ -1,5 +1,5 @@
 use moon_common::Id;
-use moon_config::UnresolvedVersionSpec;
+use moon_config::{ProjectConfig, ToolchainsConfig, UnresolvedVersionSpec};
 use serde::Serialize;
 use std::fmt;
 use std::hash::Hash;
@@ -67,4 +67,36 @@ impl AsRef<ToolchainSpec> for ToolchainSpec {
     fn as_ref(&self) -> &ToolchainSpec {
         self
     }
+}
+
+/// The spec of a toolchain, from the workspace's toolchains config, which is
+/// global when no version is configured, and `None` when the toolchain isn't
+/// configured. When a project's config is provided, it may override the version,
+/// or disable the toolchain, which is also `None`.
+pub fn get_toolchain_spec(
+    toolchains_config: &ToolchainsConfig,
+    toolchain_id: &Id,
+    project_config: Option<&ProjectConfig>,
+) -> Option<ToolchainSpec> {
+    if let Some(config) =
+        project_config.and_then(|config| config.toolchains.get_plugin_config(toolchain_id))
+    {
+        if !config.is_enabled() {
+            return None;
+        }
+
+        if let Some(version) = config.get_version() {
+            return Some(ToolchainSpec::new(
+                toolchain_id.to_owned(),
+                version.to_owned(),
+            ));
+        }
+    }
+
+    toolchains_config
+        .get_plugin_config(toolchain_id)
+        .map(|config| match &config.version {
+            Some(version) => ToolchainSpec::new(toolchain_id.to_owned(), version.to_owned()),
+            None => ToolchainSpec::new_global(toolchain_id.to_owned()),
+        })
 }

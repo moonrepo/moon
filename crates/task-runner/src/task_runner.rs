@@ -14,6 +14,7 @@ use moon_config::TaskDependencyType;
 use moon_console::TaskReportItem;
 use moon_daemon_client::DaemonClient;
 use moon_hash::{ContentHash, ContentHasher};
+use moon_layout_graph::LayoutGraph;
 use moon_process::ProcessError;
 use moon_project::Project;
 use moon_task::{Task, TaskCheck, TaskCheckFingerprint, TaskCheckType, TaskExpectedFailure};
@@ -32,6 +33,7 @@ pub struct TaskRunResult {
 
 pub struct TaskRunner<'task> {
     app_context: &'task Arc<AppContext>,
+    layout_graph: &'task LayoutGraph,
     project: &'task Arc<Project>,
     pub task: &'task Arc<Task>,
 
@@ -61,8 +63,11 @@ pub fn is_task_dependencies_complete(task: &Task, context: &ActionContext) -> mi
             continue;
         }
 
-        if let Some(dep_state) = context.target_states.get_sync(&dep.target) {
-            if dep_state.get().is_complete() {
+        if let Some(is_complete) = context
+            .target_states
+            .read_sync(&dep.target, |_, state| state.is_complete())
+        {
+            if is_complete {
                 continue;
             }
 
@@ -92,6 +97,7 @@ pub fn is_task_dependencies_complete(task: &Task, context: &ActionContext) -> mi
 impl<'task> TaskRunner<'task> {
     pub fn new(
         app_context: &'task Arc<AppContext>,
+        layout_graph: &'task LayoutGraph,
         project: &'task Arc<Project>,
         task: &'task Arc<Task>,
         daemon_client: Option<DaemonClient>,
@@ -104,7 +110,7 @@ impl<'task> TaskRunner<'task> {
         let mut cache = app_context
             .cache_engine
             .state
-            .load_target_state::<TaskRunCacheState>(&task.target)?;
+            .load_target_last_run::<TaskRunCacheState>(&task.target)?;
 
         if cache.data.target.is_empty() {
             cache.data.target = task.target.to_string();
@@ -122,6 +128,7 @@ impl<'task> TaskRunner<'task> {
             },
             task,
             app_context,
+            layout_graph,
             operations: OperationList::default(),
         })
     }
@@ -187,22 +194,7 @@ impl<'task> TaskRunner<'task> {
         let is_primary = context.is_primary_target(&self.task.target);
 
         self.report.output_prefix = Some(context.get_target_prefix(&self.task.target));
-        self.report.output_style = if let Some(output_style) = context.output_style {
-            // Passed on the command line, so it applies to every target
-            Some(output_style)
-        } else if is_primary
-            && !self
-                .app_context
-                .workspace_config
-                .experiments
-                .explicit_task_output_style
-        {
-            // Primary targets always display their output, unless the
-            // experiment is enabled, which honors the configured style
-            None
-        } else {
-            self.task.options.output_style
-        };
+        self.report.output_style = context.output_style.or(self.task.options.output_style);
         self.report.primary = is_primary;
 
         let result = self.internal_run(context, node).await;
@@ -348,39 +340,15 @@ impl<'task> TaskRunner<'task> {
             return Ok(None);
         }
 
-        // Check to see if a build with the provided hash has been cached locally.
-        // We only check for the archive, as the manifest is purely for local debugging!
-        let archive_file = self.app_context.cache_engine.hash.get_archive_path(hash);
-
-        if archive_file.exists() {
-            // A lifetime only constrains *when* the archive is still valid; with
-            // none configured an existing archive is always a hit.
-            let is_fresh = match cache_lifetime {
-                Some(duration) => !fs::is_stale(&archive_file, false, duration)?,
-                None => true,
-            };
-
-            if is_fresh {
-                debug!(
-                    task_target = self.task.target.as_str(),
-                    hash,
-                    archive_file = ?archive_file,
-                    "Cache hit in local cache, will reuse existing archive"
-                );
-
-                return Ok(Some(HydrateFrom::LocalArchive));
-            }
-        }
-
         // Then check the storage backends, but don't bubble up errors,
         // just treat them as cache misses
         if self.state.digest.is_valid() {
             match self
                 .app_context
                 .cache_engine
-                .storage
+                .actions_storage
                 .with_options(StorageOptions {
-                    include_local: self.state.local_cas_enabled && self.state.local_cache_readable,
+                    include_local: self.state.local_cache_readable,
                     include_remote: self.state.remote_cache_readable,
                     ..Default::default()
                 })
@@ -433,7 +401,7 @@ impl<'task> TaskRunner<'task> {
         );
 
         let cache_engine = &self.app_context.cache_engine;
-        let mut hasher = cache_engine.hash.create_hasher(node.label());
+        let mut hasher = ContentHasher::new(&node.label());
         let mut operation = Operation::hash_generation();
 
         // Hash common fields
@@ -448,16 +416,22 @@ impl<'task> TaskRunner<'task> {
         .await?;
 
         // Hash toolchain fields
-        hash_toolchain_task_contents(self.app_context, self.project, self.task, &mut hasher)
-            .await?;
+        hash_toolchain_task_contents(
+            self.app_context,
+            self.layout_graph,
+            self.project,
+            self.task,
+            &mut hasher,
+        )
+        .await?;
 
         // Hash task checks
         self.hash_checks(&mut hasher).await?;
 
         // Generate the digest and store values
         let digest = cache_engine
-            .storage
-            .store_hash_manifest_with_hasher(hasher)
+            .objects_storage
+            .store_hash_fingerprint_with_hasher(hasher)
             .await?;
 
         operation.meta.set_hash(&digest.hash);
@@ -659,7 +633,7 @@ impl<'task> TaskRunner<'task> {
 
             // Explain why the failure was not the expected one, unless it
             // was, but processes were being terminated
-            if self.task.options.expect_failure
+            if self.task.options.is_failure_expected()
                 && let Some(outcome) = code.map(TaskExpectedFailure::from_exit_code)
                 && !outcome.is_expected()
             {
@@ -939,8 +913,8 @@ impl<'task> TaskRunner<'task> {
             HydrateOutcome::Hit => {
                 debug!(task_target, "Ran cache hydration operation");
 
-                // If not using a cache manifest, we need to read the locally cached
-                // stdout/stderr log files since the command executor does not run!
+                // Reusing the previous run's outputs, so read the stdout/stderr logs
+                // persisted by that run, since the command executor does not run!
                 if let Some(output) = operation.get_exec_output_mut() {
                     output.command = Some(self.task.get_command_line());
                     output.exit_code = Some(self.cache.data.exit_code);

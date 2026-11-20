@@ -1,13 +1,9 @@
-// HashMap is required for Tera
-#![allow(clippy::disallowed_types)]
+use tera::{Kwargs, Map, State, Value};
 
-use starbase_utils::json::{JsonMap, JsonValue as Value};
-use std::collections::HashMap;
-use tera::Result;
-
-pub fn variables(args: &HashMap<String, Value>) -> Result<Value> {
-    let mut map = JsonMap::with_capacity(args.len());
-    map.extend(args.clone());
-
-    Ok(Value::Object(map))
+pub fn variables(args: Kwargs, _: &State) -> Value {
+    Value::from(
+        args.iter()
+            .map(|(key, value)| (key.clone(), value.clone()))
+            .collect::<Map>(),
+    )
 }

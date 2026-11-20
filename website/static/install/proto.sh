@@ -108,7 +108,42 @@ if [[ ! -d "$temp_dir" ]]; then
 	mkdir -p "$temp_dir"
 fi
 
-curl --fail --location --progress-bar --output "$download_file" "$download_url"
+download_headers=()
+
+# Release URLs on github.com ignore tokens, so when a token is available,
+# download the asset through the API to avoid unauthenticated rate limits.
+if [[ -n "$GITHUB_TOKEN" ]]; then
+	if [[ "$version" == "latest" ]]; then
+		release_url="https://api.github.com/repos/moonrepo/proto/releases/latest"
+	else
+		release_url="https://api.github.com/repos/moonrepo/proto/releases/tags/v$version"
+	fi
+
+	asset_url=$(
+		curl --fail --silent --location \
+			--header "Authorization: Bearer $GITHUB_TOKEN" \
+			--header "Accept: application/vnd.github+json" \
+			"$release_url" |
+			tr -d ' \r\n' | tr ',{}' '\n\n\n' |
+			awk -v name="\"name\":\"$target$ext\"" '
+				/^"url":"https:\/\/api\.github\.com\/repos\/[^"]*\/releases\/assets\/[0-9]+"$/ { url = $0 }
+				$0 == name && url != "" { print substr(url, 8, length(url) - 8); exit }
+			'
+	) || true
+
+	if [[ -n "$asset_url" ]]; then
+		download_url="$asset_url"
+		download_headers=(
+			--header "Authorization: Bearer $GITHUB_TOKEN"
+			--header "Accept: application/octet-stream"
+		)
+	else
+		echo "Unable to resolve the proto release through the GitHub API, downloading without authentication"
+	fi
+fi
+
+# curl drops the Authorization header when a redirect leaves api.github.com
+curl --fail --location --progress-bar "${download_headers[@]}" --output "$download_file" "$download_url"
 
 if [[ "$ext" == ".zip" ]]; then
 	req_archive "unzip"

@@ -50,6 +50,44 @@ if (!(Test-Path $TempDir)) {
 }
 
 $wc = New-Object Net.Webclient
+
+# Release URLs on github.com ignore tokens, so when a token is available,
+# download the asset through the API to avoid unauthenticated rate limits.
+if ($env:GITHUB_TOKEN) {
+  $ReleaseUrl = if ($Version -eq "latest") {
+    "https://api.github.com/repos/moonrepo/proto/releases/latest"
+  } else {
+    "https://api.github.com/repos/moonrepo/proto/releases/tags/v${Version}"
+  }
+
+  try {
+    $Release = Invoke-RestMethod -Uri $ReleaseUrl -UseBasicParsing -Headers @{
+      Authorization = "Bearer $($env:GITHUB_TOKEN)"
+      Accept = "application/vnd.github+json"
+    }
+    $Asset = $Release.assets | Where-Object { $_.name -eq "${Target}.zip" } | Select-Object -First 1
+
+    # The API redirects to a signed storage URL that rejects the Authorization
+    # header, so resolve the redirect here and download it without the token.
+    $Request = [Net.HttpWebRequest]::Create($Asset.url)
+    $Request.AllowAutoRedirect = $false
+    $Request.Accept = "application/octet-stream"
+    $Request.UserAgent = "proto-installer"
+    $Request.Headers.Add("Authorization", "Bearer $($env:GITHUB_TOKEN)")
+    $Response = $Request.GetResponse()
+    $AssetUrl = $Response.Headers["Location"]
+    $Response.Close()
+  } catch {
+    $AssetUrl = $null
+  }
+
+  if ($AssetUrl) {
+    $DownloadUrl = $AssetUrl
+  } else {
+    Write-Output "Unable to resolve the proto release through the GitHub API, downloading without authentication"
+  }
+}
+
 $wc.downloadFile($DownloadUrl, $DownloadFile)
 
 if ($env:PROTO_DEBUG -eq "true") {

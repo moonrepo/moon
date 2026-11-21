@@ -2,6 +2,8 @@
 title: run
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 The `proto run <tool> [version]` (or `proto r`) command will run a tool after
 [detecting a version](../detection) from the environment.
 
@@ -23,6 +25,24 @@ $ proto run bun -- run ./script.ts
 
 # When using the binary on PATH
 $ bun run ./script.ts
+```
+
+When the tool [requires other tools](../config#requires), they are added to the environment as
+well. <VersionLabel version="0.64.0" />
+
+### Self-upgrading
+
+Some tools provide a command that upgrades the tool in-place, like `bun upgrade`, which would
+conflict with proto's inventory. When ran through proto (including shims), the command will not
+execute. Instead, in an interactive terminal, proto offers to install the latest version itself,
+and pin it to the `.prototools` file that the current version was detected from (or the current
+directory). In a non-interactive terminal (like CI, or with `--json`), an error is returned that
+suggests running `proto install <tool> latest --pin`. <VersionLabel version="0.64.0" />
+
+```
+$ bun upgrade
+
+? Upgrade Bun with proto instead? (Y/n)
 ```
 
 ### Arguments

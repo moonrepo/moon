@@ -103,6 +103,23 @@ after `--`.
 $ proto install go -- --no-gobin
 ```
 
+### Re-installing
+
+If a tool has already been installed, pass `--force` to install it again. The pre-built archive and
+its checksum file are downloaded as they currently exist upstream, instead of using copies from the
+HTTP request cache, which are kept for up to 7 days. <VersionLabel version="0.64.0" />
+
+```shell
+$ proto install node 24 --force
+```
+
+### Tool requirements<VersionLabel version="0.64.0" />
+
+Tools that require other tools, either through their plugin, or the
+[`requires`](../config#requires) setting, are installed _after_ the tools they require. Each
+required tool must have a configured version (or a `PROTO_<TOOL>_VERSION` environment variable),
+otherwise the install will fail. Requirements that form a cycle are also an error.
+
 ### Arguments
 
 - One tool
@@ -112,7 +129,8 @@ $ proto install go -- --no-gobin
 
 ### Options
 
-- `--force` - Force install, even if already installed.
+- `--force` - Force install, even if already installed. Also bypasses the HTTP request cache.
+  <VersionLabel version="0.64.0" inline />
 - `--immutable-lockfile` - Error if the [lockfile](../lockfile) is missing a record or would be
   modified. Also supports the `PROTO_IMMUTABLE_LOCKFILE` environment variable.
   <VersionLabel version="0.61.0" />

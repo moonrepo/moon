@@ -364,6 +364,7 @@ const sidebars: SidebarsConfig = {
 				'proto/commands/diagnose',
 				'proto/commands/exec',
 				'proto/commands/install',
+				'proto/commands/lock',
 				'proto/commands/mcp',
 				'proto/commands/outdated',
 				'proto/commands/pin',

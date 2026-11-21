@@ -121,15 +121,38 @@ tool = "1.2.3"
 - `<major>.<minor>.<patch>-<pre>` - 1.2.3-alpha.0
 - `<major>.<minor>.<patch>-<pre>+<build>` - 1.2.3-alpha.0+nightly456
 - `<major>.<minor>.<patch>+<build>` - 1.2.3+nightly456
+- `<major>.<minor>.<patch>.<revision>` - 1.2.3.4 <VersionLabel version="0.64.0" inline />
 
 ### Guidelines
 
-- major, minor, patch - `0-9` of any length
+- major, minor, patch, revision - `0-9` of any length
 - pre, build - `a-z`, `A-Z`, `0-9`, `-`, `_`, `.`
   - Must start with a letter or number.
 - A leading `v` or `V` prefix is accepted and ignored (`v1.2.3`).
 
 > [Learn more about this format!](https://semver.org/#backusnaur-form-grammar-for-valid-semver-versions)
+
+### Revisions<VersionLabel version="0.64.0" />
+
+Some tools publish versions with a 4th number, known as a revision, for example, Java's `18.0.2.1`.
+Revisions are supported in versions, requirements, and ranges, and work as you'd expect, with a few
+nuances worth knowing:
+
+- A version without a revision matches and orders like a revision of 0, but is _not_ equal to one,
+  so `1.2.3` and `1.2.3.0` both remain as written.
+- A requirement without a revision matches any revision. For example, `=18.0.2`, `~18.0.2`, and
+  `<=18.0.2` all match `18.0.2.1`, while `>18.0.2` does not.
+- A fully-qualified version like `18.0.2` is still resolved exactly. To resolve the latest revision,
+  use `~18.0.2` or `18.0.2.*` instead.
+- A caret requirement with a major, minor, and patch of 0 locks the revision, for example,
+  `^0.0.0.4` only matches `0.0.0.4`, while `^0.0.3` matches `0.0.3.7`.
+
+```toml title=".prototools"
+# The latest revision of 18.0.2, like 18.0.2.1
+java = "~18.0.2"
+```
+
+> [Calendar versions](#calendar-versions) do not support a revision.
 
 ## Calendar versions<VersionLabel version="0.37.0" />
 
@@ -226,14 +249,14 @@ tool-c = ">=2000-10"
 
 ### Guidelines
 
-- op - `=`, `>`, `>=`, `<=`, `<`, `~`, `^`
+- op - `=`, `!=` <VersionLabel version="0.64.0" inline />, `>`, `>=`, `<=`, `<`, `~`, `^`
   - If omitted, defaults to `~` when a partial version is provided (i.e. allow the minimum specified
     version component to increase)
   - If a full version is provided, defaults to `^` (i.e. allow any newer version that is nominally
     compatible)
   - To specify an _exact_ version, use the `=` operator explicitly.
 - pattern
-  - Dot-separated semver, with optional minor and patch numbers.
+  - Dot-separated semver, with optional minor, patch, and [revision](#revisions) numbers.
   - Dash-separated calver, with optional month and day numbers.
   - Numbers may be a wildcard (`*`, `x`, `X`) to match any value, for example `1.x` or `2024-2-*`.
   - May be prefixed with a [version scope](#version-scopes).
@@ -241,3 +264,19 @@ tool-c = ">=2000-10"
 
 For example, if you want to use `npm` 11.6.2 but 11.6.3 has an issue, use:
 `npm = "^11.6.4 || =11.6.2"`
+
+### Excluding versions<VersionLabel version="0.64.0" />
+
+The `!=` (not equal) operator matches every version _except_ the one defined. On its own, that's
+not very useful, so it's typically combined with other requirements in an AND range, to skip over a
+broken release.
+
+```toml title=".prototools"
+# Any 11.x from 11.6, except for 11.6.3
+npm = ">=11.6, <12, !=11.6.3"
+```
+
+- A partial version excludes every version with the defined parts. For example, `!=1.2` excludes
+  both `1.2.0` and `1.2.9`.
+- Unlike other requirements, a `!=` requirement never allows pre-releases to match, even when it
+  excludes a pre-release.

@@ -8,8 +8,8 @@
   workspace, like `serde = { workspace = true }` under `[dev-dependencies]` in Cargo, were not
   included in task hashes, as their version was only looked up in the workspace's dependencies of
   the same scope. Inherited versions are now resolved from the workspace's dependencies (like
-  `[workspace.dependencies]`) whichever scope inherits them, including for a project at the root
-  of the workspace. When an inherited version can't be resolved, its locked versions are hashed
+  `[workspace.dependencies]`) whichever scope inherits them, including for a project at the root of
+  the workspace. When an inherited version can't be resolved, its locked versions are hashed
   instead. Tasks of affected projects will have a new hash, so they will not be cached on their
   first run after upgrading.
 

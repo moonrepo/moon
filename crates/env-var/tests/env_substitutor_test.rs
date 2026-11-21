@@ -194,4 +194,18 @@ mod env_substitutor {
 
         assert_eq!(sub.substitute("$SOURCE"), "");
     }
+
+    #[test]
+    fn does_not_consume_env_prefix_chars_as_namespace() {
+        let mut envs = FxHashMap::default();
+        envs.insert("ENVIRONMENT".to_owned(), Some("production".to_owned()));
+        envs.insert("ENVVAR".to_owned(), Some("value".to_owned()));
+
+        let mut sub = EnvSubstitutor::default().with_local_vars(&envs);
+
+        assert_eq!(sub.substitute("$ENVIRONMENT"), "production");
+        assert_eq!(sub.substitute("${ENVIRONMENT}"), "production");
+        assert_eq!(sub.substitute("$ENVVAR"), "value");
+        assert_eq!(sub.substitute("${ENVVAR}"), "value");
+    }
 }

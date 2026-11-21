@@ -4,6 +4,7 @@ toc_max_heading_level: 6
 ---
 
 import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <HeaderLabel text="2 min" />
 
@@ -66,6 +67,20 @@ more.
   }
 }
 ```
+
+Plain version files, like `.nvmrc` or `.python-version`, use the first line with content. Blank
+lines and comments (everything after a `#` or `//`) are skipped, so the following works with the
+built-in tools. Files without a version are skipped, instead of failing detection. <VersionLabel version="0.64.0" />
+
+```text title=".nvmrc"
+# Keep in sync with the Dockerfile!
+24 # LTS
+```
+
+Some tools also define a precedence between their own files, even when a file doesn't define a
+version. For example, uv ignores the `[tool.uv]` table in `pyproject.toml` when a `uv.toml` exists
+in the same directory, so a `uv.toml` without a `required-version` stops detection within that
+directory. Parent directories are still checked. <VersionLabel version="0.64.0" />
 
 #### 4. Version is defined globally
 

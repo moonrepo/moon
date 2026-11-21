@@ -65,9 +65,16 @@ Configuration ──────────────────────
   Settings: —
 ```
 
+Tools with a [backend](../../tool-spec#backends) are also supported, by prefixing the ID with the
+backend, for example, `proto plugin info asdf:golang`. <VersionLabel version="0.64.0" />
+
+The plugin section also displays tools that are [required](../../config#requires), whether a local
+WASM file replaced the built-in plugin (in debug builds), and plugin overrides that were ignored
+because their configuration file has not been [trusted](../../config#trust). <VersionLabel version="0.64.0" />
+
 ### Arguments
 
-- `<id>` - ID of tool.
+- `<id>` - ID of tool, optionally prefixed with a backend.
 
 ### Options
 

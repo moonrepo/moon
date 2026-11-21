@@ -166,6 +166,47 @@ if env.home_dir.join(some_path).exists() {
 }
 ```
 
+#### Host details
+
+Machines with the same platform can still differ in ways that matter when choosing a build to
+download. The `details` field (proto v0.64+) provides details about the host machine that further
+distinguish it from others, so that plugins don't need to execute commands to detect them:
+
+- `x64_level` - The x86-64 microarchitecture level (1 to 4), on x64. Each level supports the
+  instructions of the levels below it, for example, AVX2 is level 3.
+- `arm_version` - The version of the ARM architecture (for example, 6 or 7), on 32-bit ARM.
+- `distro` - The Linux distribution, from `/etc/os-release`, on Linux. Provides the `id` (for
+  example, `ubuntu`), the `id_like` list of distributions it's derived from (for example, `rhel`,
+  `centos`, and `fedora` on Rocky Linux), and the `version_id` (for example, `24.04`).
+
+```rust
+if let Some(distro) = env.details.as_ref().and_then(|details| details.distro.as_ref()) {
+    if distro.id == "ubuntu" || distro.id_like.iter().any(|id| id == "debian") {
+        // Debian based
+    }
+}
+```
+
+The `details` field is `None` with older versions of proto, and when the plugin is targeting a
+platform other than the machine it's running on, so plugins must always fall back to a default.
+
+#### Foreign platforms
+
+In some situations, like when locking tools for other platforms with
+[`proto lock --platform`](/docs/proto/commands/lock), the plugin targets a platform other than the
+machine it's running on. When this happens, the `foreign` field (proto v0.64+) is true, and the
+`arch`, `os`, and `libc` fields describe the targeted platform.
+
+However, executed commands (including functions like `command_exists`) and environment variables
+still reflect the machine, so plugins should not use them to inspect the platform when `foreign`
+is true.
+
+```rust
+if !env.foreign && command_exists(&env, "ldd") {
+    // Inspect the machine
+}
+```
+
 ### Host functions & macros
 
 WASM is pretty powerful but it can't do everything since it's sandboxed. To work around this, we
@@ -180,12 +221,19 @@ provide a mechanism known as host functions, which are functions that are implem
   variables.
 - [`get_env_var`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.host_env.html) - Get an
   environment variable value from the host environment.
+- [`get_env_vars`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/fn.get_host_env_vars.html) - Get
+  multiple environment variable values from the host environment. <sup>proto v0.64+</sup>
 - [`host_log`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.host_log.html) - Log an
   stdout, stderr, or tracing message to the host's terminal.
 - [`send_request`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.send_request.html) -
   Requests a URL on the host machine using a Rust-based HTTP client (not WASM).
 - [`set_env_var`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.host_env.html) - Set an
   environment variable to the host environment.
+- [`set_env_vars`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/fn.set_host_env_vars.html) - Set
+  multiple environment variables to the host environment. <sup>proto v0.64+</sup>
+
+proto also provides the `load_tool_versions` host function (proto v0.64+), for loading versions
+from Git tags or a JSON index. [Learn more](/docs/proto/wasm-plugin#from-a-json-index).
 
 > Before proto v0.60, `from_virtual_path` and `to_virtual_path` host functions were also available
 > for converting between virtual and real paths. These have been removed (but are still available
@@ -260,6 +308,23 @@ set_host_env_var("ENV_VAR", "value")?;
 let value = get_host_env_var("ENV_VAR")?;
 ```
 
+To read or write multiple variables with a single host function call, use the
+[`get_host_env_vars`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/fn.get_host_env_vars.html)
+and
+[`set_host_env_vars`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/fn.set_host_env_vars.html)
+functions (proto v0.64+). Unlike `get_host_env_var`, variables that are not set are omitted from the
+returned map, so a variable that is set to an empty value can be told apart from one that is not
+set. Like `set_host_env_var`, setting `PATH` appends to the current value, instead of overwriting
+it.
+
+```rust
+// Set multiple values
+set_host_env_vars([("ENV_VAR", "value"), ("OTHER_VAR", "value")])?;
+
+// Get multiple values (returns a map)
+let vars = get_host_env_vars(["ENV_VAR", "OTHER_VAR"])?;
+```
+
 Additionally, the
 [`add_host_paths`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/fn.add_host_paths.html) function
 can be used to append paths to the `PATH` environment variable.
@@ -299,6 +364,14 @@ exec(ExecCommandInput {
     args: vec!["install".into()],
     ..ExecCommandInput::default()
 })?;
+```
+
+A command that exits with a non-zero code is _not_ an error, and the exit code is returned in the
+output. To return an error instead, which includes the exit code and the captured stderr, enable the
+`error_on_nonzero` field (proto v0.64+) when using `exec`.
+
+```rust
+exec(ExecCommandInput::pipe("git", ["--version"]).error_on_nonzero(true))?;
 ```
 
 #### Downloading files
@@ -351,6 +424,23 @@ To simplify the handling of requests -> responses, we also provide the
 
 ```rust
 let json: T = fetch_json("https://some.com/url/to/fetch.json")?;
+```
+
+These functions return an error when the response has a non-2xx status code (like 404 or 500), or an
+empty body. To handle the status yourself, use the
+[`fetch`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/fn.fetch.html) function with the
+`error_on_failure` field (proto v0.64+) disabled, which returns the response instead.
+
+```rust
+let response = fetch(SendRequestInput {
+    url: "https://some.com/url/to/fetch.json".into(),
+    error_on_failure: false,
+    ..SendRequestInput::default()
+})?;
+
+if response.status == 404 {
+    // Not found!
+}
 ```
 
 Requests are sent with the `GET` method by default. To send a `POST` request instead, set the

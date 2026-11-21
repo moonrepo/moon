@@ -36,6 +36,10 @@ download and install proto.
 The install location can be customized with the `PROTO_HOME` environment variable. If not provided,
 the default location is `~/.proto`.
 
+Set `PROTO_GITHUB_TOKEN` to authenticate release downloads through the GitHub API and avoid
+unauthenticated rate limits. The installers use `GITHUB_TOKEN` when `PROTO_GITHUB_TOKEN` is unset or
+empty.
+
 :::
 
 ### Linux, macOS, WSL

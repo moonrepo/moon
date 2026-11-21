@@ -109,10 +109,11 @@ if [[ ! -d "$temp_dir" ]]; then
 fi
 
 download_headers=()
+github_token="${PROTO_GITHUB_TOKEN:-$GITHUB_TOKEN}"
 
 # Release URLs on github.com ignore tokens, so when a token is available,
 # download the asset through the API to avoid unauthenticated rate limits.
-if [[ -n "$GITHUB_TOKEN" ]]; then
+if [[ -n "$github_token" ]]; then
 	if [[ "$version" == "latest" ]]; then
 		release_url="https://api.github.com/repos/moonrepo/proto/releases/latest"
 	else
@@ -121,7 +122,7 @@ if [[ -n "$GITHUB_TOKEN" ]]; then
 
 	asset_url=$(
 		curl --fail --silent --location \
-			--header "Authorization: Bearer $GITHUB_TOKEN" \
+			--header "Authorization: Bearer $github_token" \
 			--header "Accept: application/vnd.github+json" \
 			"$release_url" |
 			tr -d ' \r\n' | tr ',{}' '\n\n\n' |
@@ -134,7 +135,7 @@ if [[ -n "$GITHUB_TOKEN" ]]; then
 	if [[ -n "$asset_url" ]]; then
 		download_url="$asset_url"
 		download_headers=(
-			--header "Authorization: Bearer $GITHUB_TOKEN"
+			--header "Authorization: Bearer $github_token"
 			--header "Accept: application/octet-stream"
 		)
 	else

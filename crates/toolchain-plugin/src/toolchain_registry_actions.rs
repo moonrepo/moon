@@ -15,7 +15,9 @@ use moon_toolchain::DependenciesWorkspace;
 use proto_core::UnresolvedVersionSpec;
 use proto_pdk_api::ActivateEnvironmentOutput;
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 // These implementations aggregate the call results from all toolchains
 // that were requested to be executed into a better/different format
@@ -250,19 +252,11 @@ impl ToolchainRegistry {
             .define_requirements_many(candidate_ids, &input_factory)
             .await?
         {
-            let mut required = vec![];
-
-            for requirement in result.output.requires {
-                // An invalid identifier can't be a configured toolchain, and is
-                // reported, naming this toolchain, when the action graph sets it up
-                if let Ok(require_id) = Id::new(requirement.id) {
-                    let require_id = self.resolve_toolchain_id(require_id);
-
-                    if !excluded.contains(&require_id) {
-                        required.push(require_id);
-                    }
-                }
-            }
+            let required = self
+                .resolve_requirement_ids(result.output)
+                .into_iter()
+                .filter(|require_id| !excluded.contains(require_id))
+                .collect::<Vec<_>>();
 
             requirements.push((result.id, required));
         }
@@ -288,6 +282,63 @@ impl ToolchainRegistry {
         }
 
         Ok(expanded.into_iter().collect())
+    }
+
+    /// Load the toolchains, and the configured toolchains that they require, and
+    /// that those require, and so on, each loaded once. The provided toolchains
+    /// are first and in order, followed by the toolchains that they require, in
+    /// the order that they're required. Requirements on toolchains that aren't
+    /// configured are skipped, like those with an invalid identifier.
+    pub async fn load_with_requirements<InFn>(
+        &self,
+        ids: Vec<Id>,
+        input_factory: InFn,
+    ) -> miette::Result<Vec<Arc<ToolchainPlugin>>>
+    where
+        InFn: Fn(&ToolchainPlugin) -> DefineRequirementsInput,
+    {
+        let mut seen = FxHashSet::default();
+        let mut toolchains = vec![];
+        let mut queue = ids
+            .into_iter()
+            .map(|id| self.resolve_toolchain_id(id))
+            .collect::<VecDeque<_>>();
+
+        while let Some(id) = queue.pop_front() {
+            if !seen.insert(id.clone()) {
+                continue;
+            }
+
+            let toolchain = self.load(&id).await?;
+            let output = toolchain
+                .define_requirements(input_factory(&toolchain))
+                .await?;
+
+            for require_id in self.resolve_requirement_ids(output) {
+                if !seen.contains(&require_id)
+                    && self.config_data.get_plugin_config(&require_id).is_some()
+                {
+                    queue.push_back(require_id);
+                }
+            }
+
+            toolchains.push(toolchain);
+        }
+
+        Ok(toolchains)
+    }
+
+    /// The identifiers of the toolchains that a toolchain requires, resolved to
+    /// how they were configured. An invalid identifier can't be a configured
+    /// toolchain, so it's skipped, and reported (naming the toolchain that
+    /// requires it) when the action graph sets it up.
+    fn resolve_requirement_ids(&self, output: DefineRequirementsOutput) -> Vec<Id> {
+        output
+            .requires
+            .into_iter()
+            .filter_map(|requirement| Id::new(requirement.id).ok())
+            .map(|id| self.resolve_toolchain_id(id))
+            .collect()
     }
 
     /// Resolve the identifier to how the toolchain was configured, which may be

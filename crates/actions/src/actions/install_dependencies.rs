@@ -7,11 +7,13 @@ use moon_action::{Action, ActionStatus, InstallDependenciesNode, Operation};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::path::PathExt;
-use moon_common::{color, is_ci, path::WorkspaceRelativePathBuf};
+use moon_common::{Id, color, is_ci, path::WorkspaceRelativePathBuf};
 use moon_env_var::GlobalEnvBag;
 use moon_hash::fingerprint;
-use moon_pdk_api::{InstallDependenciesInput, ManifestDependency, ParseManifestInput};
-use moon_project::ProjectFragment;
+use moon_pdk_api::{
+    DefineRequirementsInput, InstallDependenciesInput, ManifestDependency, ParseManifestInput,
+};
+use moon_project::{Project, ProjectFragment};
 use moon_toolchain_plugin::ToolchainPlugin;
 use moon_workspace_graph::WorkspaceGraph;
 use starbase_utils::{
@@ -26,10 +28,12 @@ use tracing::{debug, instrument, warn};
 fingerprint!(
     struct InstallDependenciesFingerprint<'action> {
         action_node: &'action InstallDependenciesNode,
-        lockfile_hashes: BTreeMap<WorkspaceRelativePathBuf, String>,
+        config_file_hashes: BTreeMap<WorkspaceRelativePathBuf, String>,
+        lock_file_hashes: BTreeMap<WorkspaceRelativePathBuf, String>,
         manifest_dependencies: BTreeMap<String, BTreeSet<String>>,
         manifest_paths: BTreeSet<WorkspaceRelativePathBuf>,
         project: Option<&'action ProjectFragment>,
+        required_toolchain_configs: BTreeMap<Id, JsonValue>,
         toolchain_config: &'action JsonValue,
     }
 );
@@ -183,6 +187,7 @@ pub async fn install_dependencies(
             &deps_root,
             node,
             &input,
+            config_project.as_deref(),
         )
         .await?,
         || first_install,
@@ -283,15 +288,73 @@ async fn create_hash_content<'action>(
     deps_root: &Path,
     node: &'action InstallDependenciesNode,
     input: &'action InstallDependenciesInput,
+    config_project: Option<&Project>,
 ) -> miette::Result<InstallDependenciesFingerprint<'action>> {
     let mut fingerprint = InstallDependenciesFingerprint {
         action_node: node,
-        lockfile_hashes: BTreeMap::default(),
+        config_file_hashes: BTreeMap::default(),
+        lock_file_hashes: BTreeMap::default(),
         manifest_dependencies: BTreeMap::default(),
         manifest_paths: BTreeSet::default(),
         project: input.project.as_ref(),
+        required_toolchain_configs: BTreeMap::default(),
         toolchain_config: &input.toolchain_config,
     };
+
+    // The toolchains that this toolchain requires (and that those require) may
+    // change the install, like the package manager's version and arguments for
+    // JavaScript, so their configs (resolved like this toolchain's) and config
+    // files are hashed too
+    let registry = &app_context.toolchain_registry;
+    let create_config = |id: &Id| match config_project {
+        Some(project) => registry.create_merged_config(id, &project.config),
+        None => registry.create_config(id),
+    };
+
+    let mut config_file_globs = vec![];
+
+    for required in registry
+        .load_with_requirements(vec![toolchain.id.clone()], |toolchain| {
+            DefineRequirementsInput {
+                context: registry.create_context(),
+                toolchain_config: create_config(&toolchain.id),
+            }
+        })
+        .await?
+    {
+        config_file_globs.extend(required.metadata.config_file_globs.iter().cloned());
+
+        // This toolchain's config is already hashed
+        if required.id != toolchain.id {
+            fingerprint
+                .required_toolchain_configs
+                .insert(required.id.clone(), create_config(&required.id));
+        }
+    }
+
+    // Hash the config files in the root, like `.npmrc`, `bunfig.toml`, or
+    // `.cargo/config.toml`, which may change how dependencies are installed.
+    // The walk only goes as deep as the globs do, so it doesn't walk into the
+    // vendor directory
+    config_file_globs.sort();
+    config_file_globs.dedup();
+
+    let config_paths = if config_file_globs.is_empty() {
+        vec![]
+    } else {
+        glob::walk_fast_with_options(
+            deps_root,
+            &config_file_globs,
+            GlobWalkOptions::default().files(),
+        )?
+        .into_iter()
+        .filter_map(|path| path.relative_to(&app_context.workspace_root).ok())
+        .collect::<Vec<_>>()
+    };
+
+    if !config_paths.is_empty() {
+        fingerprint.config_file_hashes = app_context.hash_files(&config_paths).await?;
+    }
 
     // Hash every lockfile that exists, as more than one can, like one that another
     // package manager left behind, so the order of the lockfile names doesn't matter
@@ -305,7 +368,7 @@ async fn create_hash_content<'action>(
         .collect::<Vec<_>>();
 
     if !lock_paths.is_empty() {
-        fingerprint.lockfile_hashes = app_context.hash_files(&lock_paths).await?;
+        fingerprint.lock_file_hashes = app_context.hash_files(&lock_paths).await?;
     }
 
     // Extract dependencies from all applicable manifests
@@ -408,12 +471,34 @@ async fn hash_manifest_contents<'action>(
         }
 
         for (name, dep) in deps {
+            let mut specifiers = vec![];
+
             if let Some(version) = dep.get_version() {
+                specifiers.push(version.to_string());
+            }
+
+            // A dependency without a version, like a local path or a Git
+            // repository, changes by where it points to instead
+            if let ManifestDependency::Config(config) = &dep {
+                if let Some(path) = &config.path {
+                    specifiers.push(format!("path:{}", path.display()));
+                }
+
+                if let Some(url) = &config.url {
+                    specifiers.push(format!("url:{url}"));
+                }
+
+                if let Some(reference) = &config.reference {
+                    specifiers.push(format!("ref:{reference}"));
+                }
+            }
+
+            if !specifiers.is_empty() {
                 fingerprint
                     .manifest_dependencies
                     .entry(name)
                     .or_default()
-                    .insert(version.to_string());
+                    .extend(specifiers);
             }
         }
     };

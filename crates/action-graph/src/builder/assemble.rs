@@ -78,10 +78,7 @@ fn parse_requirement_id(
             error: Box::new(error),
         })?;
 
-    Ok(match app_context.toolchains_config.get_plugin_id(&id) {
-        Some(configured_id) => configured_id.to_owned(),
-        None => id,
-    })
+    Ok(app_context.toolchain_registry.resolve_toolchain_id(id))
 }
 
 /// What a toolchain's install slot resolved to: the most specific node that

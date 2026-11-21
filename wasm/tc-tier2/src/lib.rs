@@ -134,8 +134,9 @@ pub fn parse_lock(Json(input): Json<ParseLockInput>) -> FnResult<Json<ParseLockO
 
 // Test manifests have a `<kind> <name> <version>` per line, so that tests can
 // hash dependencies, where the kind is `dep`, `dev-dep`, `build-dep`, or
-// `inheritable-dep`, and the version may be `inherited`. Other lines (like
-// the member globs of `tc.root.cfg`) are ignored.
+// `inheritable-dep`, and the version may be `inherited`, or a `path:<path>`
+// or `url:<url>` without a version. Other lines (like the member globs of
+// `tc.root.cfg`) are ignored.
 #[plugin_fn]
 pub fn parse_manifest(
     Json(input): Json<ParseManifestInput>,
@@ -167,6 +168,10 @@ pub fn parse_manifest(
             name.into(),
             if version == "inherited" {
                 ManifestDependency::inherited()
+            } else if let Some(path) = version.strip_prefix("path:") {
+                ManifestDependency::path(path.into())
+            } else if let Some(url) = version.strip_prefix("url:") {
+                ManifestDependency::url(url.into())
             } else {
                 ManifestDependency::new(UnresolvedVersionSpec::parse(version)?)
             },

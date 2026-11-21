@@ -460,6 +460,13 @@
   `package-lock.json` left behind by another package manager, or `requirements.txt` next to a
   `constraints.txt`. Every lockfile that exists is now hashed, which installs once more in every
   dependencies root.
+- Fixed some issues where changes that affect installing dependencies didn't install them again:
+  - The configs of the toolchains that the installing toolchain requires (and that those require),
+    like the package manager's `version` and `installArgs` for JavaScript.
+  - The toolchain's (and those it requires) config files in the dependencies root, like `.npmrc`,
+    `bunfig.toml`, `pnpm-workspace.yaml`, or `.cargo/config.toml`.
+  - Dependencies without a version, like a local path, URL, or Git repository, whose path, URL, or
+    reference changed.
 - Fixed some issues with detecting a task's toolchains from its command:
   - proto's versioned binaries, like `node-20` or `python-3.12`, were never detected.
   - Relative paths, like `bin/rails` or `./bin/rspec`, weren't detected, as the whole command was

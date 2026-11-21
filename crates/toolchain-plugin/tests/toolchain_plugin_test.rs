@@ -312,6 +312,70 @@ mod toolchain_plugin {
         }
     }
 
+    mod load_with_requirements {
+        use super::*;
+        use moon_toolchain_plugin::ToolchainRegistry;
+
+        async fn load(registry: &ToolchainRegistry, ids: &[&str]) -> Vec<String> {
+            registry
+                .load_with_requirements(ids.iter().map(Id::raw).collect(), |toolchain| {
+                    DefineRequirementsInput {
+                        context: registry.create_context(),
+                        toolchain_config: registry.create_config(&toolchain.id),
+                    }
+                })
+                .await
+                .unwrap()
+                .into_iter()
+                .map(|toolchain| toolchain.id.to_string())
+                .collect()
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn loads_without_requirements() {
+            let (_sandbox, ws) = create_workspace();
+            let registry = ws.mock_toolchain_registry();
+
+            assert_eq!(load(&registry, &["tc-tier3"]).await, ["tc-tier3"]);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn loads_requirements_after_the_provided_toolchains() {
+            let (_sandbox, ws) = create_workspace();
+            let registry = ws.mock_toolchain_registry();
+
+            assert_eq!(
+                load(&registry, &["tc-tier2-reqs", "tc-tier1"]).await,
+                ["tc-tier2-reqs", "tc-tier1", "tc-tier3"]
+            );
+        }
+
+        // Both require `tc-tier3`
+        #[tokio::test(flavor = "multi_thread")]
+        async fn loads_a_shared_requirement_once() {
+            let (_sandbox, ws) = create_workspace();
+            let registry = ws.mock_toolchain_registry();
+
+            assert_eq!(
+                load(&registry, &["tc-tier2-reqs", "tc-tier3-reqs"]).await,
+                ["tc-tier2-reqs", "tc-tier3-reqs", "tc-tier3"]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn skips_requirements_that_arent_configured() {
+            let sandbox = create_empty_sandbox();
+            let ws = WorkspaceMocker::new(sandbox.path())
+                .with_test_toolchains()
+                .update_toolchains_config(|config| {
+                    config.plugins.remove(&Id::raw("tc-tier3"));
+                });
+            let registry = ws.mock_toolchain_registry();
+
+            assert_eq!(load(&registry, &["tc-tier2-reqs"]).await, ["tc-tier2-reqs"]);
+        }
+    }
+
     mod locate_dependencies_root {
         use super::*;
 

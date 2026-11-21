@@ -54,6 +54,12 @@ pub fn register_toolchain(
 ) -> FnResult<Json<RegisterToolchainOutput>> {
     Ok(Json(RegisterToolchainOutput {
         name: input.id.to_string(),
+        // So that tests can register config files
+        config_file_globs: input
+            .toolchain_config
+            .get("testConfigFileGlobs")
+            .and_then(|value| json::from_value(value.to_owned()).ok())
+            .unwrap_or_default(),
         // So that tests can verify the config that's passed
         description: input
             .toolchain_config

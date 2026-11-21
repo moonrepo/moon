@@ -310,11 +310,11 @@ impl ToolchainRegistry {
             }
 
             let toolchain = self.load(&id).await?;
-            let output = toolchain
-                .define_requirements(input_factory(&toolchain))
-                .await?;
 
-            for require_id in self.resolve_requirement_ids(output) {
+            for require_id in self
+                .get_required_ids(&toolchain, input_factory(&toolchain))
+                .await?
+            {
                 if !seen.contains(&require_id)
                     && self.config_data.get_plugin_config(&require_id).is_some()
                 {
@@ -326,6 +326,16 @@ impl ToolchainRegistry {
         }
 
         Ok(toolchains)
+    }
+
+    /// The identifiers of the toolchains that the toolchain directly requires,
+    /// resolved to how they were configured, see `resolve_requirement_ids`.
+    async fn get_required_ids(
+        &self,
+        toolchain: &ToolchainPlugin,
+        input: DefineRequirementsInput,
+    ) -> miette::Result<Vec<Id>> {
+        Ok(self.resolve_requirement_ids(toolchain.define_requirements(input).await?))
     }
 
     /// The identifiers of the toolchains that a toolchain requires, resolved to

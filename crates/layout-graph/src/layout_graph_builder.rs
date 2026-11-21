@@ -6,7 +6,7 @@ use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
 use moon_common::Id;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
-use moon_pdk_api::LocateDependenciesRootsInput;
+use moon_pdk_api::{DefineRequirementsInput, LocateDependenciesRootsInput};
 use moon_project::Project;
 use moon_toolchain::{
     DependenciesWorkspace, DependenciesWorkspaceRole, ToolchainSpec, get_toolchain_spec,
@@ -20,13 +20,16 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tracing::debug;
 
-/// A binding whose root was located by its plugin, before it's placed.
+/// A binding whose root was located by its plugin (or inherited from a
+/// toolchain that requires it), before it's placed.
 struct ResolvedBinding {
     project: Option<Arc<Project>>,
     toolchain: Arc<ToolchainPlugin>,
     spec: ToolchainSpec,
     config: Arc<JsonValue>,
+    locates: bool,
     located: Option<(DependenciesWorkspace, Option<DependenciesWorkspaceRole>)>,
+    inherited_from: Option<Id>,
 }
 
 /// A binding to place, whose root is located first, if its toolchain is
@@ -335,6 +338,7 @@ impl LayoutGraphBuilder {
 
         let pending = self.prepare(requests).await?;
         let located = self.locate(&pending).await?;
+        let mut resolved = Vec::with_capacity(pending.len());
 
         for (binding, deps_workspace) in pending.into_iter().zip(located) {
             let located = match deps_workspace {
@@ -349,13 +353,21 @@ impl LayoutGraphBuilder {
                 None => None,
             };
 
-            self.insert(ResolvedBinding {
+            resolved.push(ResolvedBinding {
                 project: binding.project,
                 toolchain: binding.toolchain,
                 spec: binding.spec,
                 config: binding.config,
+                locates: binding.locates,
                 located,
-            })?;
+                inherited_from: None,
+            });
+        }
+
+        self.inherit_roots(&mut resolved).await?;
+
+        for binding in resolved {
+            self.insert(binding)?;
         }
 
         for (index, toolchain) in std::mem::take(&mut self.pending_capabilities) {
@@ -366,6 +378,123 @@ impl LayoutGraphBuilder {
         }
 
         Ok(())
+    }
+
+    /// A toolchain that doesn't locate a root (it doesn't implement
+    /// `locate_dependencies_root`) inherits the root of the toolchain that it
+    /// names with `inherits_root_from`, like a package manager inheriting the
+    /// root that JavaScript located, when that toolchain is placed in a root
+    /// for the same project (or the workspace), in this batch or before. A
+    /// toolchain that inherited a root can pass it on in turn.
+    async fn inherit_roots(&self, resolved: &mut [ResolvedBinding]) -> miette::Result<()> {
+        let registry = &self.app_context.toolchain_registry;
+        let mut children = vec![];
+
+        for (index, child) in resolved.iter().enumerate() {
+            if child.locates || child.located.is_some() {
+                continue;
+            }
+
+            let output = child
+                .toolchain
+                .define_requirements(DefineRequirementsInput {
+                    context: registry.create_context(),
+                    toolchain_config: child.config.as_ref().to_owned(),
+                })
+                .await?;
+
+            // An invalid identifier can't be a configured toolchain
+            if let Some(parent_id) = output
+                .inherits_root_from
+                .and_then(|id| Id::new(id).ok())
+                .map(|id| registry.resolve_toolchain_id(id))
+                .filter(|id| *id != child.spec.id)
+            {
+                children.push((index, parent_id));
+            }
+        }
+
+        // Inherited roots can be passed on, so repeat until nothing inherits one
+        loop {
+            let mut inherited = false;
+
+            for (index, parent_id) in &children {
+                if resolved[*index].located.is_some() {
+                    continue;
+                }
+
+                let Some(located) = self.find_parent_root(resolved, *index, parent_id) else {
+                    continue;
+                };
+
+                debug!(
+                    toolchain_id = resolved[*index].spec.id.as_str(),
+                    parent_toolchain_id = parent_id.as_str(),
+                    root = ?located.0.root,
+                    "Toolchain doesn't locate a dependencies root, inheriting the root of another toolchain",
+                );
+
+                let child = &mut resolved[*index];
+                child.located = Some(located);
+                child.inherited_from = Some(parent_id.to_owned());
+                inherited = true;
+            }
+
+            if !inherited {
+                break;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// The root of the parent toolchain for the same project as the child, from
+    /// this batch, otherwise from the graph, when it was placed in one.
+    fn find_parent_root(
+        &self,
+        resolved: &[ResolvedBinding],
+        child_index: usize,
+        parent_id: &Id,
+    ) -> Option<(DependenciesWorkspace, Option<DependenciesWorkspaceRole>)> {
+        let project_id = resolved[child_index]
+            .project
+            .as_ref()
+            .map(|project| &project.id);
+
+        for other in resolved {
+            if &other.spec.id == parent_id
+                && other.project.as_ref().map(|project| &project.id) == project_id
+            {
+                return match &other.located {
+                    Some((deps_workspace, Some(role))) => {
+                        Some((deps_workspace.clone(), Some(*role)))
+                    }
+                    _ => None,
+                };
+            }
+        }
+
+        let binding = match project_id {
+            Some(project_id) => self.graph.binding(project_id, parent_id),
+            None => self.graph.workspace_binding(parent_id),
+        }?;
+
+        let Placement::Root { index, role } = &binding.placement else {
+            return None;
+        };
+
+        let root = self.graph.root(*index);
+
+        Some((
+            DependenciesWorkspace {
+                root: root.root.to_logical_path(&self.app_context.workspace_root),
+                members: match &root.kind {
+                    RootKind::Workspace { members } => Some(members.to_owned()),
+                    RootKind::Package => None,
+                },
+            },
+            Some(*role),
+        ))
     }
 
     /// Load the toolchain of each request (once per toolchain), and create
@@ -599,6 +728,7 @@ impl LayoutGraphBuilder {
             config,
             files: probe_root_files(&resolved.toolchain, &deps_workspace.root, root),
             capabilities: RootCapabilities::default(),
+            inherited_from: resolved.inherited_from.clone(),
             members: vec![],
         });
 

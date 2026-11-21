@@ -390,6 +390,193 @@ mod place {
     }
 }
 
+// A toolchain that doesn't locate a root (`tc-tier3-tool`, and `tc-tier3-tool-b`
+// from the same plugin) inherits the root of the toolchain that it names, like
+// `tc-tier2-setup-env`, which locates like `tc-tier2`
+mod inherit {
+    use super::*;
+    use serde_json::{Value, json};
+
+    fn parent() -> Id {
+        Id::raw("tc-tier2-setup-env")
+    }
+
+    fn child() -> Id {
+        Id::raw("tc-tier3-tool")
+    }
+
+    fn grandchild() -> Id {
+        Id::raw("tc-tier3-tool-b")
+    }
+
+    // The toolchains that each child inherits the root of
+    async fn create_container(sandbox: &Sandbox, inherits: &[(Id, Id)]) -> Container {
+        Container::new_with(sandbox, |mocker| {
+            mocker
+                .update_toolchains_config(|config| {
+                    config
+                        .plugins
+                        .get_mut(&parent())
+                        .unwrap()
+                        .config
+                        .insert("testLocateRoots".into(), Value::Bool(true));
+                    config.plugins.entry(child()).or_default();
+                })
+                .update_toolchains_config(|config| {
+                    let plugin = config.plugins[&child()].plugin.clone();
+
+                    config.plugins.entry(grandchild()).or_default().plugin = plugin;
+
+                    for (child_id, parent_id) in inherits {
+                        config
+                            .plugins
+                            .get_mut(child_id)
+                            .unwrap()
+                            .config
+                            .insert("testInheritsRootFrom".into(), json!(parent_id));
+                    }
+                })
+        })
+        .await
+    }
+
+    async fn place(container: &Container, toolchain_ids: &[Id]) -> LayoutGraph {
+        let mut builder = container.builder();
+
+        builder
+            .place(
+                toolchain_ids
+                    .iter()
+                    .map(|id| (container.project("a"), id.to_owned())),
+            )
+            .await
+            .unwrap();
+
+        builder.build()
+    }
+
+    fn get_toolchain_root<'graph>(
+        graph: &'graph LayoutGraph,
+        toolchain_id: &Id,
+    ) -> &'graph ToolchainDependenciesRoot {
+        graph.root(graph.find_root(toolchain_id, &path("")).unwrap())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn inherits_the_root_of_the_named_toolchain() {
+        let sandbox = create_sandbox("layout");
+        let container = create_container(&sandbox, &[(child(), parent())]).await;
+        let graph = place(&container, &[parent(), child()]).await;
+
+        let binding = graph.binding(&Id::raw("a"), &child()).unwrap();
+        let parent_binding = graph.binding(&Id::raw("a"), &parent()).unwrap();
+
+        assert_eq!(
+            binding.role(),
+            Some(DependenciesWorkspaceRole::WorkspaceMember)
+        );
+        assert_ne!(binding.root_index(), parent_binding.root_index());
+
+        // Its own root, at the same path
+        let root = get_toolchain_root(&graph, &child());
+
+        assert_eq!(root.toolchain, child());
+        assert_eq!(root.inherited_from, Some(parent()));
+        assert_eq!(root.kind, get_toolchain_root(&graph, &parent()).kind);
+        assert_eq!(root.owner_project, Some(Id::raw("root")));
+        assert_eq!(root.members, ids(&["a"]));
+        assert_eq!(root.capabilities, RootCapabilities::default());
+
+        // The parent located its root itself
+        assert_eq!(get_toolchain_root(&graph, &parent()).inherited_from, None);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn doesnt_inherit_without_naming_a_toolchain() {
+        let sandbox = create_sandbox("layout");
+        let container = create_container(&sandbox, &[]).await;
+        let graph = place(&container, &[parent(), child()]).await;
+
+        assert_eq!(
+            graph.binding(&Id::raw("a"), &child()).unwrap().placement,
+            Placement::None
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn doesnt_inherit_from_a_toolchain_that_isnt_placed() {
+        let sandbox = create_sandbox("layout");
+        let container = create_container(&sandbox, &[(child(), parent())]).await;
+        let graph = place(&container, &[child()]).await;
+
+        assert_eq!(
+            graph.binding(&Id::raw("a"), &child()).unwrap().placement,
+            Placement::None
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn inherits_from_a_toolchain_placed_before() {
+        let sandbox = create_sandbox("layout");
+        let container = create_container(&sandbox, &[(child(), parent())]).await;
+        let mut builder = container.builder();
+
+        builder
+            .place([(container.project("a"), parent())])
+            .await
+            .unwrap();
+        builder
+            .place([(container.project("a"), child())])
+            .await
+            .unwrap();
+
+        let graph = builder.build();
+
+        assert_eq!(
+            get_toolchain_root(&graph, &child()).inherited_from,
+            Some(parent())
+        );
+    }
+
+    // Even when requested before the toolchain that it inherits from
+    #[tokio::test(flavor = "multi_thread")]
+    async fn inherits_from_a_toolchain_that_inherited_it() {
+        let sandbox = create_sandbox("layout");
+        let container =
+            create_container(&sandbox, &[(child(), parent()), (grandchild(), child())]).await;
+        let graph = place(&container, &[grandchild(), parent(), child()]).await;
+
+        assert_eq!(
+            get_toolchain_root(&graph, &child()).inherited_from,
+            Some(parent())
+        );
+        assert_eq!(
+            get_toolchain_root(&graph, &grandchild()).inherited_from,
+            Some(child())
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn inherits_from_the_workspace_root() {
+        let sandbox = create_sandbox("layout");
+        let container = create_container(&sandbox, &[(child(), parent())]).await;
+        let mut builder = container.builder();
+
+        builder.place_workspace([parent(), child()]).await.unwrap();
+
+        let graph = builder.build();
+
+        assert_eq!(
+            graph.workspace_binding(&child()).unwrap().role(),
+            Some(DependenciesWorkspaceRole::WorkspaceRoot)
+        );
+        assert_eq!(
+            get_toolchain_root(&graph, &child()).inherited_from,
+            Some(parent())
+        );
+    }
+}
+
 mod place_project {
     use super::*;
 

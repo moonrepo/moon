@@ -68,6 +68,15 @@ api_struct!(
     /// Output returned from the `define_requirements` function.
     #[serde(default)]
     pub struct DefineRequirementsOutput {
+        /// Identifier of the toolchain whose dependencies root this toolchain
+        /// inherits, when it doesn't locate one itself (it doesn't implement
+        /// `locate_dependencies_root`), like a package manager inheriting the
+        /// root that JavaScript located. Its actions then run in that root, for
+        /// the projects that use both toolchains. If targeting an unstable
+        /// toolchain, the identifier must be prefixed with "unstable_".
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub inherits_root_from: Option<String>,
+
         /// Other toolchains that this toolchain requires. They're added to the
         /// projects and tasks that use this toolchain, and their setup toolchain
         /// and setup environment actions are ordered against this toolchain's,
@@ -123,7 +132,9 @@ api_struct!(
 );
 
 api_struct!(
-    /// Input passed to the `locate_dependencies_root` function.
+    /// Input passed to the `locate_dependencies_root` function. A toolchain
+    /// that doesn't implement it can inherit the root of another toolchain,
+    /// with `DefineRequirementsOutput.inherits_root_from`.
     pub struct LocateDependenciesRootInput {
         /// Current moon context.
         pub context: MoonContext,

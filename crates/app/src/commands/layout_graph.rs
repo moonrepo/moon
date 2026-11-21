@@ -250,6 +250,19 @@ fn render_graph(session: &MoonSession, graph: &LayoutGraph) -> miette::Result<()
                             }),
                             RootKind::Package => None,
                         })
+                        #(root.inherited_from.as_ref().map(|toolchain_id| {
+                            element! {
+                                Entry(
+                                    name: "Inherited from",
+                                    value: element! {
+                                        StyledText(
+                                            content: toolchain_id.as_str(),
+                                            style: Style::Id
+                                        )
+                                    }.into_any()
+                                )
+                            }
+                        }))
                         Entry(
                             name: "Owner project",
                             value: element! {

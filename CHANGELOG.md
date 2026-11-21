@@ -296,6 +296,12 @@
     loads it once. Previously, each caller loaded and compiled its own instance of the plugin, and
     all but one were discarded.
 - **Toolchains**
+  - Added an `inherits_root_from` field to `DefineRequirementsOutput` in the toolchain plugin API,
+    which names the toolchain whose dependencies root a toolchain inherits, when it doesn't locate
+    one itself (it doesn't implement `locate_dependencies_root`), like Node.js and the package
+    manager inheriting the root that the JavaScript toolchain located. Its actions run in that
+    root, its manifests are hashed for tasks, and `moon layout-graph --info` shows which toolchain
+    the root was inherited from.
   - Added an optional `locate_dependencies_roots` function to the toolchain plugin API, which
     locates the dependencies roots of many projects in a single call. When a toolchain implements
     it, every project that shares the toolchain's config is located in one call while building the

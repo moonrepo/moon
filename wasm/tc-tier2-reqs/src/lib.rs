@@ -22,5 +22,6 @@ pub fn define_requirements(
                 .unwrap_or_default()
                 .then_some(RequirementPhase::Before),
         }],
+        ..Default::default()
     }))
 }

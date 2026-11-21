@@ -24,6 +24,27 @@ pub fn register_toolchain(
     }))
 }
 
+// Only require other toolchains, or inherit the root of one (as this plugin
+// doesn't locate one itself), when a test opts in via toolchain config
+#[plugin_fn]
+pub fn define_requirements(
+    Json(input): Json<DefineRequirementsInput>,
+) -> FnResult<Json<DefineRequirementsOutput>> {
+    let mut output = DefineRequirementsOutput::default();
+
+    if let Some(requires) = input.toolchain_config.get("testRequires") {
+        output.requires = json::from_value(requires.to_owned())?;
+    }
+
+    output.inherits_root_from = input
+        .toolchain_config
+        .get("testInheritsRootFrom")
+        .and_then(|value| value.as_str())
+        .map(|value| value.to_owned());
+
+    Ok(Json(output))
+}
+
 #[plugin_fn]
 pub fn register_tool(Json(input): Json<RegisterToolInput>) -> FnResult<Json<RegisterToolOutput>> {
     Ok(Json(RegisterToolOutput {

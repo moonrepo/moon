@@ -14,5 +14,6 @@ pub fn define_requirements(
             setup_toolchain: Some(RequirementPhase::Before),
             setup_environment: None,
         }],
+        ..Default::default()
     }))
 }

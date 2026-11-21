@@ -138,6 +138,53 @@ mod install_dependencies {
         }
     }
 
+    // More than one lockfile can exist, like one that another package manager
+    // left behind, and a change to any of them must install again
+    #[serial_test::serial]
+    #[tokio::test(flavor = "multi_thread")]
+    async fn installs_when_any_lockfile_changes() {
+        let sandbox = create_empty_sandbox();
+        sandbox.create_file("tc.lock", "v1");
+        sandbox.create_file("tc.extra.lock", "v1");
+        sandbox.create_file("vendor/dep/manifest", "");
+
+        let ws = WorkspaceMocker::new(sandbox.path())
+            .with_default_projects()
+            .with_test_toolchains()
+            .update_toolchains_config(|config| {
+                let plugin = config.plugins.get_mut(&Id::raw("tc-tier2")).unwrap();
+
+                plugin
+                    .config
+                    .insert("testInstallCommands".into(), JsonValue::Bool(true));
+                plugin.config.insert(
+                    "testLockFileNames".into(),
+                    starbase_utils::json::serde_json::json!(["tc.lock", "tc.extra.lock"]),
+                );
+            });
+
+        run_action(&ws).await;
+
+        // Nothing changed
+        let (_, status) = run_action(&ws).await;
+
+        assert_eq!(status, ActionStatus::Skipped);
+
+        // Only the lockfile that isn't first changed
+        sandbox.create_file("tc.extra.lock", "v2");
+
+        let (_, status) = run_action(&ws).await;
+
+        assert_eq!(
+            status,
+            if is_ci() {
+                ActionStatus::Skipped
+            } else {
+                ActionStatus::Passed
+            }
+        );
+    }
+
     mod affected {
         use super::*;
 

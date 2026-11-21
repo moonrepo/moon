@@ -61,7 +61,12 @@ pub fn register_toolchain(
             .and_then(|value| value.as_str())
             .map(|value| value.to_owned()),
         manifest_file_names: vec!["tc.cfg".into(), "tc.root.cfg".into()],
-        lock_file_names: vec!["tc.lock".into()],
+        // So that tests can register more than one lockfile
+        lock_file_names: input
+            .toolchain_config
+            .get("testLockFileNames")
+            .and_then(|value| json::from_value(value.to_owned()).ok())
+            .unwrap_or_else(|| vec!["tc.lock".into()]),
         vendor_dir_name: Some("vendor".into()),
         // Opt out, so that tests can verify toolchains that don't inject them
         inject_task_inputs: input.id != "tc-tier2-setup-env",

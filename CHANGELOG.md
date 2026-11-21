@@ -455,6 +455,11 @@
   instead of the version it was resolved to when setting up the toolchain (like `22.22.3`), which
   the task runs with. Machines that resolved different versions shared a hash, and remote cache
   entries. Tasks of toolchains configured with a partial version or an alias get a new hash.
+- Fixed an issue where installing dependencies only hashed the first of a toolchain's lockfiles that
+  exists, so a change to another lockfile didn't install again, like `pnpm-lock.yaml` next to a
+  `package-lock.json` left behind by another package manager, or `requirements.txt` next to a
+  `constraints.txt`. Every lockfile that exists is now hashed, which installs once more in every
+  dependencies root.
 - Fixed some issues with detecting a task's toolchains from its command:
   - proto's versioned binaries, like `node-20` or `python-3.12`, were never detected.
   - Relative paths, like `bin/rails` or `./bin/rspec`, weren't detected, as the whole command was

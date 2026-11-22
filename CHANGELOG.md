@@ -21,6 +21,9 @@
   `$http_proxy` or `$npm_config_*`, was treated as a file path instead of an environment variable,
   so the variable didn't affect the task hash. Token variables, like `$os` and `$projectRoot`, take
   precedence over an environment variable of the same name.
+- Fixed an issue where a command failed to run when a toolchain added a path to `PATH` that
+  contains the `PATH` separator, like the `node_modules/.bin` of a project in a `packages/a:b`
+  directory. These paths are now skipped with a warning.
 
 ## 2.6.5
 

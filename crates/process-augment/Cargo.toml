@@ -15,6 +15,7 @@ moon_task = { path = "../task" }
 moon_toolchain = { path = "../toolchain" }
 rustc-hash = { workspace = true }
 miette = { workspace = true }
+tracing = { workspace = true }
 
 [dev-dependencies]
 moon_test_utils = { path = "../test-utils" }

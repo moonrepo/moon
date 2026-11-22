@@ -325,4 +325,34 @@ mod augmented_command {
             assert!(command.paths.is_empty());
         }
     }
+
+    mod apply_paths {
+        use super::*;
+        use std::env;
+
+        // https://github.com/moonrepo/moon/issues/2818 (rqk8s7)
+        #[tokio::test(flavor = "multi_thread")]
+        async fn skips_paths_that_cant_be_joined_into_path() {
+            let (sandbox, mocker) = create_workspace();
+            let app_context = mocker.mock_app_context();
+            let bag = GlobalEnvBag::default();
+
+            let valid = sandbox.path().join("packages/a/node_modules/.bin");
+            let invalid = if cfg!(windows) {
+                sandbox.path().join("packages/a\"b/node_modules/.bin")
+            } else {
+                sandbox.path().join("packages/a:b/node_modules/.bin")
+            };
+
+            let mut command = AugmentedCommand::create(&app_context, &bag, "noop");
+            command.apply_paths(vec![invalid, valid]);
+
+            let command = command.augment();
+
+            // Separators are normalized on Windows, so compare components
+            assert_eq!(command.paths.len(), 1);
+            assert!(Path::new(&command.paths[0]).ends_with("packages/a/node_modules/.bin"));
+            assert!(env::join_paths(&command.paths).is_ok());
+        }
+    }
 }

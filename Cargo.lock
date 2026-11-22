@@ -6439,6 +6439,7 @@ dependencies = [
  "rustc-hash",
  "starbase_sandbox",
  "tokio",
+ "tracing",
 ]
 
 [[package]]

@@ -13,9 +13,11 @@ use moon_toolchain::{
     is_using_global_toolchains,
 };
 use rustc_hash::FxHashMap;
+use std::env;
 use std::ffi::{OsStr, OsString};
 use std::ops::{Deref, DerefMut};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use tracing::warn;
 
 // Order of operations:
 // - For task based commands:
@@ -32,6 +34,22 @@ use std::path::PathBuf;
 // - Toolchain executable paths
 // - proto store/shims/bin paths
 // - moon store paths
+
+/// A path that contains the `PATH` separator (`:` on Unix), or a character that
+/// can't be quoted (`"` on Windows), can't be joined into `PATH`, and would fail
+/// the entire command, so it's skipped with a warning instead.
+fn can_join_into_path(path: &Path) -> bool {
+    if env::join_paths([path]).is_ok() {
+        return true;
+    }
+
+    warn!(
+        path = ?path,
+        "Unable to add path to PATH as it contains the PATH separator, skipping",
+    );
+
+    false
+}
 
 /// Create the environment variable behavior for a task's variable (from `env`
 /// or `deps.*.env`). A value is only set when the system variable is missing,
@@ -194,7 +212,7 @@ impl<'app> AugmentedCommand<'app> {
             ))
         });
 
-        self.append_paths(paths);
+        self.append_paths(paths.into_iter().filter(|path| can_join_into_path(path)));
     }
 
     /// Inherit command augmentations (args, env, paths) from extension and toolchain plugins
@@ -437,12 +455,16 @@ impl<'app> AugmentedCommand<'app> {
             let moon = &self.context.toolchain_registry.host_data.moon_env;
             let proto = &self.context.toolchain_registry.host_data.proto_env;
 
-            self.append_paths([
-                proto.store.inventory_dir.join("proto").join(proto_version),
-                proto.store.shims_dir.clone(),
-                proto.store.bin_dir.clone(),
-                moon.store_root.join("bin"),
-            ]);
+            self.append_paths(
+                [
+                    proto.store.inventory_dir.join("proto").join(proto_version),
+                    proto.store.shims_dir.clone(),
+                    proto.store.bin_dir.clone(),
+                    moon.store_root.join("bin"),
+                ]
+                .into_iter()
+                .filter(|path| can_join_into_path(path)),
+            );
         }
     }
 }

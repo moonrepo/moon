@@ -9957,9 +9957,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_shell"
-version = "0.14.1"
+version = "0.14.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae466d726755c9899691ab616adf9911913efe0f56dcc929faccfb41af7e4b8a"
+checksum = "0903c631cbc0c2177dedee3c751319604a5409ee00d3d664ca211506ac4847ef"
 dependencies = [
  "base64 0.23.1",
  "miette 7.6.0",
@@ -10162,9 +10162,9 @@ dependencies = [
 
 [[package]]
 name = "sysinfo"
-version = "0.39.6"
+version = "0.40.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2071df9448915b71c4fe6d25deaf1c22f12bd234f01540b77312bb8e41361e6"
+checksum = "3e80749408e2d8bec0ffa303012cf4e1b3b355f4a09087b4fdf7473680f6a2de"
 dependencies = [
  "libc",
  "memchr",

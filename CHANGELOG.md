@@ -30,6 +30,10 @@
   The project's path is now escaped when it's joined with the task's input and output globs, so
   these globs, as shown by `moon task` and passed to commands by `@globs`, `@in`, and `@out`,
   contain the escaped path, like `packages/x\:y/src/**/*`.
+- Fixed an issue where a binary of a dependency with the same name as the task's shell, like a
+  `bash` or `sh` in `node_modules/.bin`, ran instead of the shell, and replaced the task's command.
+  The shell is now located using the `PATH` that moon was run with, before toolchain paths are
+  added to it. Only when it can't be found there is it located using the task's `PATH`.
 
 ## 2.6.5
 

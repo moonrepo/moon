@@ -355,4 +355,40 @@ mod augmented_command {
             assert!(env::join_paths(&command.paths).is_ok());
         }
     }
+
+    mod shell {
+        use super::*;
+        use moon_process::ShellType;
+
+        // A dependency's `bash` bin in `node_modules/.bin`, which is added to `PATH`
+        // by the JavaScript toolchain, must not replace the shell of the task.
+        // https://github.com/moonrepo/moon/issues/2818 (uqu850)
+        #[cfg(unix)]
+        #[tokio::test(flavor = "multi_thread")]
+        async fn isnt_replaced_by_a_shell_in_added_paths() {
+            use std::os::unix::fs::PermissionsExt;
+
+            let (sandbox, mocker) = create_workspace();
+            let app_context = mocker.mock_app_context();
+            let bag = GlobalEnvBag::default();
+
+            let bin_dir = sandbox.path().join("node_modules/.bin");
+            sandbox.create_file("node_modules/.bin/bash", "#!/bin/sh\necho hijacked\n");
+            fs::set_permissions(bin_dir.join("bash"), fs::Permissions::from_mode(0o755)).unwrap();
+
+            let mut command = AugmentedCommand::create(&app_context, &bag, "noop");
+            command.set_script("echo real");
+            command.set_shell(ShellType::Bash);
+            command.apply_paths(vec![bin_dir]);
+
+            let output = command
+                .augment()
+                .create_sync_command()
+                .unwrap()
+                .output()
+                .unwrap();
+
+            assert_eq!(String::from_utf8_lossy(&output.stdout), "real\n");
+        }
+    }
 }

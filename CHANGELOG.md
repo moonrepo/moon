@@ -17,6 +17,10 @@
   the cached output of the other. The same applied to environment variable inputs of toolchain
   setup and install commands. Tasks with an environment variable input that is not set will have a
   new hash, so they will not be cached on their first run after upgrading.
+- Fixed an issue where an environment variable input with lowercase characters in its name, like
+  `$http_proxy` or `$npm_config_*`, was treated as a file path instead of an environment variable,
+  so the variable didn't affect the task hash. Token variables, like `$os` and `$projectRoot`, take
+  precedence over an environment variable of the same name.
 
 ## 2.6.5
 

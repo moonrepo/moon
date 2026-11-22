@@ -13,8 +13,10 @@ macro_rules! pattern {
 
 // Environment variables
 
-pattern!(ENV_VAR_DISTINCT, "^\\$([A-Z0-9_]+)$"); // $ENV_VAR
-pattern!(ENV_VAR_GLOB_DISTINCT, "^\\$([A-Z0-9_*]+)$"); // $ENV_*
+// Variable names are case-sensitive and can be lowercase (`$http_proxy`),
+// so check for token variables (`$projectRoot`) before these!
+pattern!(ENV_VAR_DISTINCT, "^\\$([A-Za-z0-9_]+)$"); // $ENV_VAR
+pattern!(ENV_VAR_GLOB_DISTINCT, "^\\$([A-Za-z0-9_*]+)$"); // $ENV_*
 
 // Task tokens
 

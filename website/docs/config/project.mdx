@@ -1019,8 +1019,9 @@ tasks:
 
 #### Environment variables
 
-Environment variables can be used as inputs and must start with a `$`. Wildcard variables can use
-`*` to match any character.
+Environment variables can be used as inputs and must start with a `$`. Names are case-sensitive and
+can contain letters, numbers, and underscores. Wildcard variables can use `*` to match any of
+these characters.
 
 ```yaml title="moon.yml"
 tasks:
@@ -1028,7 +1029,11 @@ tasks:
     inputs:
       - '$FOO_CACHE'
       - '$FOO_*'
+      - '$npm_config_registry'
 ```
+
+A name that matches a [token variable](../concepts/token#variables), like `$os` or `$projectRoot`,
+is always treated as that token, not as an environment variable.
 
 :::caution
 

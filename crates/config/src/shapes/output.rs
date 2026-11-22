@@ -147,9 +147,11 @@ impl FromStr for Output {
             return Ok(Self::TokenFunc(value.to_owned()));
         }
 
-        // Token/environment variable
+        // Token/environment variable (tokens take precedence)
         if value.starts_with('$') {
-            if patterns::ENV_VAR_DISTINCT.is_match(value) {
+            if patterns::TOKEN_VAR_DISTINCT.is_match(value) {
+                return Ok(Self::TokenVar(value.to_owned()));
+            } else if patterns::ENV_VAR_DISTINCT.is_match(value) {
                 return Err(ParseError::new(
                     "environment variable is not supported by itself",
                 ));
@@ -157,8 +159,6 @@ impl FromStr for Output {
                 return Err(ParseError::new(
                     "environment variable globs are not supported",
                 ));
-            } else if patterns::TOKEN_VAR_DISTINCT.is_match(value) {
-                return Ok(Self::TokenVar(value.to_owned()));
             }
         }
 

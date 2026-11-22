@@ -350,14 +350,14 @@ impl FromStr for Input {
             return Ok(Self::TokenFunc(value.to_owned()));
         }
 
-        // Token/environment variable
+        // Token/environment variable (tokens take precedence)
         if let Some(var) = value.strip_prefix('$') {
-            if patterns::ENV_VAR_DISTINCT.is_match(value) {
+            if patterns::TOKEN_VAR_DISTINCT.is_match(value) {
+                return Ok(Self::TokenVar(value.to_owned()));
+            } else if patterns::ENV_VAR_DISTINCT.is_match(value) {
                 return Ok(Self::EnvVar(var.to_owned()));
             } else if patterns::ENV_VAR_GLOB_DISTINCT.is_match(value) {
                 return Ok(Self::EnvVarGlob(var.to_owned()));
-            } else if patterns::TOKEN_VAR_DISTINCT.is_match(value) {
-                return Ok(Self::TokenVar(value.to_owned()));
             }
         }
 

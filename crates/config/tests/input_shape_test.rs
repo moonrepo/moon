@@ -36,6 +36,46 @@ mod input_shape {
             );
         }
 
+        // https://github.com/moonrepo/moon/issues/2818 (f4a2p6)
+        #[test]
+        fn env_vars_lowercase() {
+            assert_eq!(
+                Input::parse("$http_proxy").unwrap(),
+                Input::EnvVar("http_proxy".into())
+            );
+            assert_eq!(
+                Input::parse("$camelCase").unwrap(),
+                Input::EnvVar("camelCase".into())
+            );
+            assert_eq!(
+                Input::parse("$__proto__").unwrap(),
+                Input::EnvVar("__proto__".into())
+            );
+            assert_eq!(
+                Input::parse("$npm_config_*").unwrap(),
+                Input::EnvVarGlob("npm_config_*".into())
+            );
+        }
+
+        #[test]
+        fn token_vars_take_precedence_over_env_vars() {
+            for token in ["$os", "$date", "$project", "$projectRoot", "$vcsBranch"] {
+                assert_eq!(Input::parse(token).unwrap(), Input::TokenVar(token.into()));
+            }
+        }
+
+        #[test]
+        fn env_vars_in_paths_are_files() {
+            assert_eq!(
+                Input::parse("$CI_ARTIFACTS/report.json").unwrap(),
+                Input::File(stub_file_input("$CI_ARTIFACTS/report.json"))
+            );
+            assert_eq!(
+                Input::parse("$http_proxy.txt").unwrap(),
+                Input::File(stub_file_input("$http_proxy.txt"))
+            );
+        }
+
         #[test]
         fn token_funcs() {
             assert_eq!(

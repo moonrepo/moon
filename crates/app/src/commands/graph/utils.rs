@@ -1,7 +1,7 @@
 use miette::IntoDiagnostic;
 use moon_common::color;
 use moon_env_var::GlobalEnvBag;
-use moon_process::ProcessRegistry;
+use moon_process::SignalListener;
 use serde::Serialize;
 use std::sync::Arc;
 use tera::{Context, Tera};
@@ -91,7 +91,7 @@ pub async fn run_server(
 
     let server_clone = server.clone();
     let handle1: JoinHandle<miette::Result<()>> = spawn(async move {
-        let mut listener = ProcessRegistry::instance().receive_signal();
+        let mut listener = SignalListener::subscribe();
 
         if listener.recv().await.is_ok() {
             server_clone.unblock();

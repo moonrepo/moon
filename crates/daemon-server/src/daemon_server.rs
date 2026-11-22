@@ -13,7 +13,7 @@ use moon_daemon_utils::lock::DaemonLock;
 use moon_file_watcher::{BoxedFileWatcher, FileEvent};
 use moon_hash::{Digest, InternalDigestExt};
 use moon_notifier::notify_webhook;
-use moon_process::ProcessRegistry;
+use moon_process::SignalListener;
 use moon_workspace_graph::WorkspaceGraph;
 use starbase_utils::fs;
 use std::env;
@@ -440,7 +440,7 @@ pub async fn start_daemon_server(
 
     // Single broadcast channel for shutdown
     let (shutdown_tx, mut shutdown_rx) = broadcast::channel::<()>(1);
-    let mut signal_rx = ProcessRegistry::instance().receive_signal();
+    let mut signal_rx = SignalListener::subscribe();
 
     // Spawn the file watcher and listener in the background
     let (event_tx, event_rx) = broadcast::channel::<FileEvent>(EVENT_CHANNEL_CAPACITY);

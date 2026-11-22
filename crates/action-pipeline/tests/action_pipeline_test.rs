@@ -1,7 +1,7 @@
 use moon_action::{Action, ActionStatus};
 use moon_action_graph::{BuildOutput, RunRequirements};
 use moon_common::Id;
-use moon_process::ProcessRegistry;
+use moon_process::ProcessSet;
 use moon_task::Target;
 use moon_test_utils::WorkspaceMocker;
 use moon_toolchain::ToolchainSpec;
@@ -920,13 +920,13 @@ mod action_pipeline {
                 }
             }
 
-            // Aborting terminates the running processes, and the process registry
-            // kills the ones it tracks once its threshold has elapsed (even those
-            // started afterwards), so the cleanup must not start until then
+            // Aborting terminates the running processes, and force kills them once
+            // the root process set's grace period has elapsed (or all that it
+            // tracks, even those started afterwards, if shut down again), so the
+            // cleanup must not start until then
             #[tokio::test(flavor = "multi_thread")]
             async fn isnt_killed_when_the_pipeline_terminates_processes() {
-                // Must be registered before anything else uses the registry
-                ProcessRegistry::register(500);
+                ProcessSet::configure_root(std::time::Duration::from_millis(500));
 
                 let sandbox = create_sandbox("pipeline");
                 let statuses = run_targets(
@@ -1050,8 +1050,7 @@ mod action_pipeline {
             // the second one does, and requires it, so both must run
             #[tokio::test(flavor = "multi_thread")]
             async fn runs_a_cleanup_that_another_cleanup_requires_when_bailing() {
-                // Must be registered before anything else uses the registry
-                ProcessRegistry::register(500);
+                ProcessSet::configure_root(std::time::Duration::from_millis(500));
 
                 let sandbox = create_sandbox("pipeline");
                 let statuses = run_targets(
@@ -1085,8 +1084,7 @@ mod action_pipeline {
             // acquires the mutex, as nothing would terminate its process
             #[tokio::test(flavor = "multi_thread")]
             async fn doesnt_run_a_task_that_was_waiting_on_a_mutex() {
-                // Must be registered before anything else uses the registry
-                ProcessRegistry::register(500);
+                ProcessSet::configure_root(std::time::Duration::from_millis(500));
 
                 let sandbox = create_sandbox("pipeline");
                 let statuses = run_targets(

@@ -18,7 +18,7 @@ use moon_app_context::AppContext;
 use moon_common::{color, is_remote, is_test_env};
 use moon_console::Level;
 use moon_daemon_client::DaemonClient;
-use moon_process::{ProcessRegistry, SignalType};
+use moon_process::{ProcessSet, SignalListener, SignalType, wait_for_running_to_shutdown};
 use moon_task_runner::is_task_dependencies_complete;
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::FxHashMap;
@@ -31,7 +31,7 @@ use tokio::task::{JoinHandle, JoinSet};
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, instrument, warn};
 
-/// Extra time to wait after the process registry's kill threshold, before
+/// Extra time to wait after the root process set's grace period, before
 /// starting new processes once running processes have been terminated.
 const TERMINATION_GRACE_PERIOD: Duration = Duration::from_millis(250);
 
@@ -218,7 +218,7 @@ impl ActionPipeline {
         let has_cleanups = !action_graph.get_cleanup_indices().is_empty();
 
         // Monitor signals and ctrl+c
-        let signal_handle = self.monitor_signals(cancel_token.clone(), Arc::clone(&abort_state));
+        let signal_handle = self.monitor_signals(cancel_token.clone());
 
         // Dispatch jobs from the graph to run actions
         let queue_handle =
@@ -227,7 +227,6 @@ impl ActionPipeline {
         // Wait and receive all results coming through
         debug!("Waiting for jobs to return results");
 
-        let process_registry = ProcessRegistry::instance();
         let mut actions = vec![];
         let mut aborted = false;
         let mut draining = false;
@@ -262,20 +261,26 @@ impl ActionPipeline {
                 break;
             };
 
-            // Only abort once, as the process registry only shuts down running
-            // processes once, and every termination is broadcast like a signal
+            // Only abort once, as shutting down running processes again while
+            // they're being shut down force kills them
             if !aborted && job_context.should_abort(&action) {
                 aborted = true;
 
-                abort_state.mark_terminated();
-                process_registry.terminate_running();
+                // Cancel before terminating, so that tasks whose process is
+                // terminated know not to attempt again
                 abort_token.cancel();
 
-                // The registry force kills its processes after the threshold, so
-                // new processes must not be started until then, and those that
-                // are still running after another threshold are no longer waited
-                // on (a threshold of 0 lets processes run to completion instead)
-                let threshold = Duration::from_millis(process_registry.threshold as u64);
+                let processes = ProcessSet::root();
+                let threshold = processes.grace();
+
+                tokio::spawn(async move {
+                    processes.shutdown(SignalType::Terminate).await;
+                });
+
+                // Processes are force killed after the grace period, so new
+                // processes must not be started until then, and those that are
+                // still running after another grace period are no longer waited
+                // on (a grace period of 0 lets processes run to completion instead)
                 let now = Instant::now();
 
                 abort_state.handle(
@@ -347,7 +352,7 @@ impl ActionPipeline {
         }
 
         // Wait for running child processes to exit
-        process_registry.wait_for_running_to_shutdown().await;
+        wait_for_running_to_shutdown().await;
 
         // Abort any running actions in progress
         if !matches!(self.status, ActionPipelineStatus::Completed) {
@@ -591,26 +596,14 @@ impl ActionPipeline {
         })))
     }
 
-    fn monitor_signals(
-        &self,
-        cancel_token: CancellationToken,
-        abort_state: Arc<AbortState>,
-    ) -> JoinHandle<SignalType> {
-        // Subscribe before spawning, so that no signals are missed, including
-        // the pipeline's own termination, which must be accounted for
-        let mut receiver = ProcessRegistry::instance().receive_signal();
+    fn monitor_signals(&self, cancel_token: CancellationToken) -> JoinHandle<SignalType> {
+        // Subscribe before spawning, so that no signals are missed
+        let mut receiver = SignalListener::subscribe();
 
         tokio::spawn(async move {
             loop {
                 match receiver.recv().await {
                     Ok(signal) => {
-                        // Aborting the pipeline terminates running processes, which is
-                        // broadcast like a signal, but isn't one, so keep listening
-                        if matches!(signal, SignalType::Terminate) && abort_state.take_terminated()
-                        {
-                            continue;
-                        }
-
                         cancel_token.cancel();
 
                         debug!("Received signal, shutting down pipeline");

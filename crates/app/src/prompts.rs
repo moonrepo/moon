@@ -6,7 +6,7 @@ use moon_console::{Console, ConsoleExt, ui::*};
 use moon_pdk_api::{
     ConditionType, InitializePluginOutput, PromptType, SettingCondition, SettingPrompt,
 };
-use moon_process::ProcessRegistry;
+use moon_process::SignalListener;
 use moon_task::Target;
 use proto_core::UnresolvedVersionSpec;
 use starbase_utils::json::{JsonMap, JsonValue};
@@ -50,7 +50,7 @@ async fn select_identifiers_internal<'a, T: Clone>(
         })
         .await?;
 
-    if let Ok(signal) = ProcessRegistry::instance().receive_signal().try_recv() {
+    if let Some(signal) = SignalListener::received() {
         std::process::exit(128 + signal.get_code());
     }
 

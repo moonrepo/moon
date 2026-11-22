@@ -6,7 +6,7 @@ use moon_blob::{BlobCleanStats, BlobInput, BlobOutput};
 use moon_common::{Id, format_error_chain};
 use moon_hash::Digest;
 use moon_manifest::TaskManifest;
-use moon_process::ProcessRegistry;
+use moon_process::SignalListener;
 use rustc_hash::FxHashSet;
 use std::fmt::Debug;
 use std::sync::Arc;
@@ -262,13 +262,12 @@ where
             )));
         }
 
-        let mut signal_receiver = ProcessRegistry::instance().receive_signal();
         let mut download_errors = vec![];
         let mut downloaded_blobs = vec![];
         let mut abort = false;
 
         while let Some(result) = set.join_next().await {
-            if signal_receiver.try_recv().is_ok() {
+            if SignalListener::received().is_some() {
                 abort = true;
                 break;
             }
@@ -366,13 +365,12 @@ async fn store_blobs_in_batches<T: StorageBackend + ?Sized>(
         )));
     }
 
-    let mut signal_receiver = ProcessRegistry::instance().receive_signal();
     let mut upload_errors = vec![];
     let mut uploaded_digests = vec![];
     let mut abort = false;
 
     while let Some(result) = set.join_next().await {
-        if signal_receiver.try_recv().is_ok() {
+        if SignalListener::received().is_some() {
             abort = true;
             break;
         }

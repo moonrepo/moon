@@ -457,6 +457,8 @@
 
 - Updated proto to [v0.64.0](https://github.com/moonrepo/proto/releases/tag/v0.64.0).
 - Updated Rust to v1.100.0.
+- Updated `starbase_process` to v0.4, which reworks how running processes are tracked, and shut
+  down when moon receives a signal.
 - Updated dependencies.
 
 ## 2.6.4

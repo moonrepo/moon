@@ -14,26 +14,26 @@
   first run after upgrading.
 - Fixed an issue where an environment variable input (`$VAR` in `inputs`) that was not set, and the
   same variable set to an empty string, produced the same task hash, so a run with one would replay
-  the cached output of the other. The same applied to environment variable inputs of toolchain
-  setup and install commands. Tasks with an environment variable input that is not set will have a
-  new hash, so they will not be cached on their first run after upgrading.
+  the cached output of the other. The same applied to environment variable inputs of toolchain setup
+  and install commands. Tasks with an environment variable input that is not set will have a new
+  hash, so they will not be cached on their first run after upgrading.
 - Fixed an issue where an environment variable input with lowercase characters in its name, like
   `$http_proxy` or `$npm_config_*`, was treated as a file path instead of an environment variable,
   so the variable didn't affect the task hash. Token variables, like `$os` and `$projectRoot`, take
   precedence over an environment variable of the same name.
-- Fixed an issue where a command failed to run when a toolchain added a path to `PATH` that
-  contains the `PATH` separator, like the `node_modules/.bin` of a project in a `packages/a:b`
-  directory. These paths are now skipped with a warning.
+- Fixed an issue where a command failed to run when a toolchain added a path to `PATH` that contains
+  the `PATH` separator, like the `node_modules/.bin` of a project in a `packages/a:b` directory.
+  These paths are now skipped with a warning.
 - Fixed an issue where a project in a directory with glob characters in its path, like
   `packages/x:y` or `packages/app (old)`, failed to run with "Failed to create glob from pattern",
-  and one like `packages/[lib]` silently matched the files of other projects instead of its own.
-  The project's path is now escaped when it's joined with the task's input and output globs, so
-  these globs, as shown by `moon task` and passed to commands by `@globs`, `@in`, and `@out`,
-  contain the escaped path, like `packages/x\:y/src/**/*`.
+  and one like `packages/[lib]` silently matched the files of other projects instead of its own. The
+  project's path is now escaped when it's joined with the task's input and output globs, so these
+  globs, as shown by `moon task` and passed to commands by `@globs`, `@in`, and `@out`, contain the
+  escaped path, like `packages/x\:y/src/**/*`.
 - Fixed an issue where a binary of a dependency with the same name as the task's shell, like a
   `bash` or `sh` in `node_modules/.bin`, ran instead of the shell, and replaced the task's command.
-  The shell is now located using the `PATH` that moon was run with, before toolchain paths are
-  added to it. Only when it can't be found there is it located using the task's `PATH`.
+  The shell is now located using the `PATH` that moon was run with, before toolchain paths are added
+  to it. Only when it can't be found there is it located using the task's `PATH`.
 - Fixed an issue where a task that failed would not hydrate from the cache on its next run, even
   though a cached result of a run that passed existed for its hash, and would run again instead.
   This applied to a failure at any hash, not just the current one, and in a read-only cache

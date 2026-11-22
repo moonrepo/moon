@@ -6,7 +6,7 @@ use moon_common::is_ci;
 use moon_common::path::PathExt;
 use moon_config::{Input, TaskOptionAffectedFilesPattern};
 use moon_env_var::{DotEnv, GlobalEnvBag};
-use moon_process::{Command, ShellType};
+use moon_process::{Command, ShellType, StdinMode};
 use moon_process_augment::{AugmentedCommand, create_task_env};
 use moon_project::Project;
 use moon_task::{Task, TaskCheck};
@@ -74,6 +74,11 @@ impl<'task> CommandBuilder<'task> {
         // We need to handle non-zero exit code's manually
         self.command.cwd(self.working_dir);
         self.command.set_error_on_nonzero(false);
+
+        // Interactive tasks read from the terminal
+        if node.is_interactive() || self.task.is_interactive() {
+            self.command.set_stdin(StdinMode::Inherit);
+        }
 
         // Order is important!
         self.inject_args(context);

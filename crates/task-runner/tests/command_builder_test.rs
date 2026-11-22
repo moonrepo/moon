@@ -8,7 +8,7 @@ use moon_affected::Affected;
 use moon_common::is_ci;
 use moon_config::*;
 use moon_env_var::GlobalEnvBag;
-use moon_process::{Command, Env, Executable};
+use moon_process::{Command, Env, Executable, StdinMode};
 use moon_task::{Target, TargetLocator, TaskOptionAffectedFiles};
 use std::env;
 use std::ffi::OsString;
@@ -1175,6 +1175,44 @@ mod command_builder {
                     "\"./routes/[id].ts\"",
                 ]
             );
+        }
+    }
+
+    mod process {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_inherit_stdin() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+            let command = container.create_command(ActionContext::default()).await;
+
+            assert_eq!(command.stdin, StdinMode::Null);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn inherits_stdin_when_task_is_interactive() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+            let command = container
+                .create_command_with_config(ActionContext::default(), |task, _| {
+                    task.options.interactive = true;
+                })
+                .await;
+
+            assert_eq!(command.stdin, StdinMode::Inherit);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn inherits_stdin_when_node_is_interactive() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+            let command = container
+                .create_command_with_config(ActionContext::default(), |_, node| {
+                    if let ActionNode::RunTask(inner) = node {
+                        inner.interactive = true;
+                    }
+                })
+                .await;
+
+            assert_eq!(command.stdin, StdinMode::Inherit);
         }
     }
 

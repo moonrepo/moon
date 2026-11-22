@@ -356,6 +356,8 @@ mod augmented_command {
         }
     }
 
+    // Relies on a `bash` shell, and a script as its replacement
+    #[cfg(unix)]
     mod shell {
         use super::*;
         use moon_process::ShellType;
@@ -363,7 +365,6 @@ mod augmented_command {
         // A dependency's `bash` bin in `node_modules/.bin`, which is added to `PATH`
         // by the JavaScript toolchain, must not replace the shell of the task.
         // https://github.com/moonrepo/moon/issues/2818 (uqu850)
-        #[cfg(unix)]
         #[tokio::test(flavor = "multi_thread")]
         async fn isnt_replaced_by_a_shell_in_added_paths() {
             use std::os::unix::fs::PermissionsExt;

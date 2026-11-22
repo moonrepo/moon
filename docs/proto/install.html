@@ -14,7 +14,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.806ad913.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.6deb06a7.js" defer="defer"></script>
 <script src="/assets/js/main.0e7fbb2c.js" defer="defer"></script>
 </head>
 <body>
@@ -34,7 +34,9 @@
 and does not require any external dependencies. For convenience, we provide the following scripts to
 download and install proto.</p>
 <div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>The install location can be customized with the <code>PROTO_HOME</code> environment variable. If not provided,
-the default location is <code>~/.proto</code>.</p></div></div>
+the default location is <code>~/.proto</code>.</p><p>Set <code>PROTO_GITHUB_TOKEN</code> to authenticate release downloads through the GitHub API and avoid
+unauthenticated rate limits. The installers use <code>GITHUB_TOKEN</code> when <code>PROTO_GITHUB_TOKEN</code> is unset or
+empty.</p></div></div>
 <h3 class="anchor anchorTargetStickyNavbar_tleR" id="linux-macos-wsl">Linux, macOS, WSL<a href="#linux-macos-wsl" class="hash-link" aria-label="Direct link to Linux, macOS, WSL" title="Direct link to Linux, macOS, WSL" translate="no">​</a></h3>
 <p>In a terminal that supports Bash, run the following command. This will download and install proto,
 then open an interactive prompt to complete the installation.</p>

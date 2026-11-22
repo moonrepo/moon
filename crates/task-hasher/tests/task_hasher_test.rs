@@ -838,4 +838,56 @@ mod task_hasher {
             );
         }
     }
+
+    mod input_env {
+        use super::*;
+        use moon_env_var::GlobalEnvBag;
+        use moon_hash::ContentHasher;
+
+        async fn serialize_input_env(name: &str, value: Option<&str>) -> String {
+            let bag = GlobalEnvBag::instance();
+
+            match value {
+                Some(value) => bag.set(name, value),
+                None => bag.remove(name),
+            };
+
+            let sandbox = create_sandbox("inputs");
+            let (wg, app) = mock_workspace(sandbox.path()).await;
+            let (vcs_config, _) = create_hasher_configs();
+            let project = wg.get_project("root").unwrap();
+
+            let mut task = wg
+                .get_task_from_project("root", "envFile")
+                .unwrap()
+                .as_ref()
+                .clone();
+            task.input_env.clear();
+            task.input_env.insert(name.into());
+
+            let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
+            let mut hasher = ContentHasher::new("test");
+            hasher.hash_content(&result.input_env).unwrap();
+            hasher.serialize().unwrap().to_owned()
+        }
+
+        // https://github.com/moonrepo/moon/issues/2818 (hjbima)
+        #[tokio::test(flavor = "multi_thread")]
+        async fn unset_and_empty_hash_differently() {
+            let unset = serialize_input_env("MOON_HASHER_INPUT_ENV_A", None).await;
+            let empty = serialize_input_env("MOON_HASHER_INPUT_ENV_A", Some("")).await;
+
+            assert_eq!(unset, r#"[{"MOON_HASHER_INPUT_ENV_A":null}]"#);
+            assert_eq!(empty, r#"[{"MOON_HASHER_INPUT_ENV_A":""}]"#);
+        }
+
+        // So that existing hashes are unchanged
+        #[tokio::test(flavor = "multi_thread")]
+        async fn set_values_serialize_as_strings() {
+            assert_eq!(
+                serialize_input_env("MOON_HASHER_INPUT_ENV_B", Some("value")).await,
+                r#"[{"MOON_HASHER_INPUT_ENV_B":"value"}]"#
+            );
+        }
+    }
 }

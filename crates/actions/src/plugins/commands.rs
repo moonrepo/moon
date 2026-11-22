@@ -28,7 +28,7 @@ fingerprint!(
         command: &'data ExecCommandInput,
 
         #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-        input_env: BTreeMap<String, String>,
+        input_env: BTreeMap<String, Option<String>>,
 
         #[serde(skip_serializing_if = "BTreeMap::is_empty")]
         input_files: BTreeMap<WorkspaceRelativePathBuf, String>,
@@ -309,10 +309,9 @@ async fn gather_cache_inputs(
     for input in inputs {
         match input {
             CacheInput::EnvVar(name) => {
-                fingerprint.input_env.insert(
-                    name.into(),
-                    GlobalEnvBag::instance().get(name).unwrap_or_default(),
-                );
+                fingerprint
+                    .input_env
+                    .insert(name.into(), GlobalEnvBag::instance().get(name));
             }
             CacheInput::FileHash(virtual_path) => {
                 if let Some(res) = get_file(virtual_path, &app_context.workspace_root) {

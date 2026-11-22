@@ -93,9 +93,7 @@ impl<'task> TaskHasher<'task> {
             let bag = GlobalEnvBag::instance();
 
             for input in &self.task.input_env {
-                self.fingerprint
-                    .input_env
-                    .insert(input, bag.get(input).unwrap_or_default());
+                self.fingerprint.input_env.insert(input, bag.get(input));
             }
         }
 

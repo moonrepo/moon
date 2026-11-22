@@ -274,6 +274,47 @@ mod command_executor {
             assert_eq!(result.attempts.len(), 4);
         }
 
+        // The task runs in a process group of its own, so the processes it
+        // started are terminated along with it
+        #[cfg(unix)]
+        #[tokio::test(flavor = "multi_thread")]
+        async fn terminates_the_processes_the_task_started() {
+            use std::process::Command;
+
+            let container = TaskRunnerContainer::new_os("runner", "spawns-grandchild").await;
+            let context = ActionContext::default();
+
+            execute_and_terminate(&container, &context, abort(&context)).await;
+
+            let pid = std::fs::read_to_string(container.sandbox.path().join("unix/grandchild.pid"))
+                .unwrap();
+            let is_running = || {
+                Command::new("kill")
+                    .args(["-0", pid.trim()])
+                    .status()
+                    .unwrap()
+                    .success()
+            };
+
+            // Give it a moment to exit and be reaped
+            for _ in 0..20 {
+                if !is_running() {
+                    break;
+                }
+
+                sleep(Duration::from_millis(100)).await;
+            }
+
+            if is_running() {
+                let _ = Command::new("kill").args(["-9", pid.trim()]).status();
+
+                panic!(
+                    "process {} started by the task is still running",
+                    pid.trim()
+                );
+            }
+        }
+
         #[cfg(unix)]
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_retry_when_a_signal_is_received() {

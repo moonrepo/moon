@@ -1182,10 +1182,12 @@ mod command_builder {
         use super::*;
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn doesnt_inherit_stdin() {
+        async fn contains_the_process_tree() {
             let container = TaskRunnerContainer::new("builder", "base").await;
             let command = container.create_command(ActionContext::default()).await;
 
+            assert!(command.contain_tree);
+            assert!(command.should_contain_tree());
             assert_eq!(command.stdin, StdinMode::Null);
         }
 
@@ -1199,6 +1201,11 @@ mod command_builder {
                 .await;
 
             assert_eq!(command.stdin, StdinMode::Inherit);
+
+            // Reading the terminal would stop a contained child
+            if cfg!(unix) {
+                assert!(!command.should_contain_tree());
+            }
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1213,6 +1220,18 @@ mod command_builder {
                 .await;
 
             assert_eq!(command.stdin, StdinMode::Inherit);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn contains_the_process_tree_of_checks() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+            let check = TaskCheck::Requirement(TaskCheckRequirementConfig {
+                script: "which cargo".into(),
+            });
+            let command = container.create_check_command(&check).await;
+
+            assert!(command.contain_tree);
+            assert_eq!(command.stdin, StdinMode::Null);
         }
     }
 

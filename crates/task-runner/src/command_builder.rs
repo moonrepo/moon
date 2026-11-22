@@ -74,8 +74,10 @@ impl<'task> CommandBuilder<'task> {
         // We need to handle non-zero exit code's manually
         self.command.cwd(self.working_dir);
         self.command.set_error_on_nonzero(false);
+        self.contain_tree();
 
-        // Interactive tasks read from the terminal
+        // Interactive tasks read from the terminal, which also means they're
+        // never contained on Unix, as they would be stopped when reading it
         if node.is_interactive() || self.task.is_interactive() {
             self.command.set_stdin(StdinMode::Inherit);
         }
@@ -109,6 +111,7 @@ impl<'task> CommandBuilder<'task> {
         // We need to handle non-zero exit code's manually
         self.command.cwd(self.working_dir);
         self.command.set_error_on_nonzero(false);
+        self.contain_tree();
 
         // Order is important!
         self.inject_shell(true);
@@ -118,6 +121,15 @@ impl<'task> CommandBuilder<'task> {
         self.command.inherit_proto();
 
         Ok(self.command.augment())
+    }
+
+    /// Run the task's process in a process group (Unix) or job object
+    /// (Windows) of its own, so that terminating it (when the pipeline is
+    /// aborted, a signal is received, or it times out) also terminates the
+    /// processes it started. Other commands, like those of plugins and VCS,
+    /// aren't contained.
+    fn contain_tree(&mut self) {
+        self.command.set_contain_tree(true);
     }
 
     #[instrument(skip_all)]

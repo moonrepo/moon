@@ -93,6 +93,31 @@ pub fn escape_glob(path: &str) -> Cow<'_, str> {
     Cow::Owned(escaped)
 }
 
+/// Unescape glob meta characters that were escaped with [`escape_glob`]. A backslash
+/// that doesn't escape a meta character is kept as-is.
+pub fn unescape_glob(path: &str) -> Cow<'_, str> {
+    if !path.contains('\\') {
+        return Cow::Borrowed(path);
+    }
+
+    let mut unescaped = String::with_capacity(path.len());
+    let mut chars = path.chars().peekable();
+
+    while let Some(ch) = chars.next() {
+        if ch == '\\'
+            && chars
+                .peek()
+                .is_some_and(|next| GLOB_META_CHARS.contains(next))
+        {
+            continue;
+        }
+
+        unescaped.push(ch);
+    }
+
+    Cow::Owned(unescaped)
+}
+
 /// Like [`expand_to_workspace_relative`], but for a glob. The project source is a literal
 /// path, so its glob meta characters are escaped, while the glob itself is kept as-is.
 pub fn expand_to_workspace_relative_glob<P: AsRef<str>>(

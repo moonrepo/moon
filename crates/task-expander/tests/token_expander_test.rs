@@ -7,12 +7,14 @@ use moon_config::{
     test_utils::*,
 };
 use moon_env_var::GlobalEnvBag;
+use moon_project::Project;
 use moon_task::{TaskFileInput, TaskGlobInput};
 use moon_task_expander::{ExpandedResult, TokenExpander};
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox, predicates::prelude::*};
 use std::borrow::Cow;
 use std::env;
+use std::path::Path;
 use utils::*;
 
 mod token_expander {
@@ -761,6 +763,61 @@ mod token_expander {
 
     mod args {
         use super::*;
+
+        fn create_lib_project(root: &Path) -> Project {
+            let mut project = create_project(root);
+            project.source = WorkspaceRelativePathBuf::from("packages/[lib]");
+            project.root = root.join("packages/[lib]");
+            project
+        }
+
+        // The project's path is escaped in globs, but not in arguments
+        // https://github.com/moonrepo/moon/issues/2818 (rqk8s7)
+        #[test]
+        fn doesnt_escape_project_source_in_paths() {
+            let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph([]);
+            let project = create_lib_project(sandbox.path());
+            let mut task = create_task();
+
+            task.inputs = vec![
+                Input::parse("src/**/*").unwrap(),
+                Input::parse("!src/**/*.snap").unwrap(),
+                Input::parse("file.txt").unwrap(),
+            ];
+            task.args = vec!["@in(0)".into(), "@in(1)".into(), "@in(2)".into()];
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project_graph, &project, &context);
+
+            assert_eq!(
+                expander.expand_args(&mut task).unwrap(),
+                vec!["src/**/*", "!src/**/*.snap", "file.txt"]
+            );
+        }
+
+        #[test]
+        fn doesnt_escape_project_source_in_paths_from_workspace_root() {
+            let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph([]);
+            let project = create_lib_project(sandbox.path());
+            let mut task = create_task();
+
+            task.inputs = vec![
+                Input::parse("src/**/*").unwrap(),
+                Input::parse("file.txt").unwrap(),
+            ];
+            task.args = vec!["@in(0)".into(), "@in(1)".into()];
+            task.options.run_from_workspace_root = true;
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project_graph, &project, &context);
+
+            assert_eq!(
+                expander.expand_args(&mut task).unwrap(),
+                vec!["packages/[lib]/src/**/*", "packages/[lib]/file.txt"]
+            );
+        }
 
         #[test]
         fn supports_meta_func() {

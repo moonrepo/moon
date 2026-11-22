@@ -790,6 +790,12 @@ impl<'graph> TokenExpander<'graph> {
             None => (path, ""),
         };
 
+        // A project's path is escaped when joined with a glob, so that moon matches
+        // it literally, but commands receive paths as they were configured, as they
+        // have their own glob syntax (and a backslash is a separator on Windows).
+        // Configured paths never contain a backslash, as they're standardized.
+        let path = WorkspaceRelativePathBuf::from(path::unescape_glob(path.as_str()).into_owned());
+
         // From workspace root to any file
         if task.options.run_from_workspace_root {
             Ok(format!("{negated}{path}"))

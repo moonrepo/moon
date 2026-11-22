@@ -1,6 +1,8 @@
 use moon_common::path::{
     RelativeFrom, WorkspaceRelativePathBuf, escape_glob, expand_to_workspace_relative_glob,
+    unescape_glob,
 };
+use std::borrow::Cow;
 
 mod escape_glob {
     use super::*;
@@ -16,6 +18,33 @@ mod escape_glob {
         assert_eq!(escape_glob("packages/[lib]"), "packages/\\[lib\\]");
         assert_eq!(escape_glob("apps/app (old)"), "apps/app \\(old\\)");
         assert_eq!(escape_glob("a{b,c}"), "a\\{b\\,c\\}");
+    }
+}
+
+mod unescape_glob {
+    use super::*;
+
+    #[test]
+    fn returns_borrowed_without_backslashes() {
+        assert!(matches!(unescape_glob("packages/lib"), Cow::Borrowed(_)));
+    }
+
+    #[test]
+    fn reverses_escape_glob() {
+        for path in [
+            "packages/x:y",
+            "packages/[lib]",
+            "apps/app (old)",
+            "a{b,c}$d?e*f<g>",
+        ] {
+            assert_eq!(unescape_glob(&escape_glob(path)), path);
+        }
+    }
+
+    #[test]
+    fn keeps_other_backslashes() {
+        assert_eq!(unescape_glob("a\\b"), "a\\b");
+        assert_eq!(unescape_glob("trailing\\"), "trailing\\");
     }
 }
 

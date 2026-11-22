@@ -543,7 +543,11 @@ export interface TaskOptionsConfig {
 	 * directly while relying on native `PATH` resolution.
 	 */
 	shell?: boolean | null;
-	/** The maximum time in seconds that a task can run before being cancelled. */
+	/**
+	 * The maximum time in seconds that a task can run before being cancelled,
+	 * up to 24 hours (86400). A value of `0` disables the timeout, which can
+	 * be used to remove an inherited timeout.
+	 */
 	timeout?: number | null;
 	/**
 	 * The shell to run the task in when on a Unix-based machine.
@@ -1067,7 +1071,11 @@ export interface PartialTaskOptionsConfig {
 	 * directly while relying on native `PATH` resolution.
 	 */
 	shell?: boolean | null;
-	/** The maximum time in seconds that a task can run before being cancelled. */
+	/**
+	 * The maximum time in seconds that a task can run before being cancelled,
+	 * up to 24 hours (86400). A value of `0` disables the timeout, which can
+	 * be used to remove an inherited timeout.
+	 */
 	timeout?: number | null;
 	/**
 	 * The shell to run the task in when on a Unix-based machine.

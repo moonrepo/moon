@@ -1766,6 +1766,45 @@ options:
             }
         }
 
+        // https://github.com/moonrepo/moon/issues/2818 (zqwwd3)
+        mod timeout {
+            use super::*;
+
+            #[test]
+            fn supports_up_to_24_hours() {
+                for value in [0, 1, 120, 86400] {
+                    let config = test_parse_config(
+                        &format!("options:\n  timeout: {value}\n"),
+                        load_config_from_code,
+                    );
+
+                    assert_eq!(config.options.timeout, Some(value));
+                }
+            }
+
+            #[test]
+            #[should_panic(expected = "a timeout of 86401 seconds is greater than the maximum")]
+            fn errors_if_greater_than_24_hours() {
+                test_parse_config("options:\n  timeout: 86401\n", load_config_from_code);
+            }
+
+            // Would be silently capped by the timer, and never fire
+            #[test]
+            #[should_panic(expected = "a timeout of 10000000000 seconds is greater than")]
+            fn errors_if_no_timer_can_hold_it() {
+                test_parse_config("options:\n  timeout: 10000000000\n", load_config_from_code);
+            }
+
+            #[test]
+            #[should_panic(expected = "a timeout of 18446744073709551615 seconds is greater")]
+            fn errors_if_max_integer() {
+                test_parse_config(
+                    "options:\n  timeout: 18446744073709551615\n",
+                    load_config_from_code,
+                );
+            }
+        }
+
         mod os {
             use super::*;
             use moon_config::TaskOperatingSystem;

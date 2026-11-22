@@ -51,6 +51,18 @@ tasks:
     options:
       retryCount: 3
 
+  timeout:
+    script: 'Start-Sleep -Seconds 10'
+    toolchain: system
+    options:
+      timeout: 1
+
+  timeout-zero:
+    script: 'Write-Output "test"'
+    toolchain: system
+    options:
+      timeout: 0
+
   create-file:
     command: 'New-Item file.txt'
     outputs:

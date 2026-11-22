@@ -38,6 +38,10 @@
   though a cached result of a run that passed existed for its hash, and would run again instead.
   This applied to a failure at any hash, not just the current one, and in a read-only cache
   (`--cache read`), it never recovered, as the result of the failed run was never replaced.
+- Fixed an issue where a task's `timeout` greater than 24 hours was never enforced, for the task and
+  its checks, and a timeout of `0` cancelled the task immediately. A `timeout` greater than 24 hours
+  (`86400`) now fails to load the configuration, and a timeout of `0` disables it, which can be used
+  to remove an inherited timeout.
 
 ## 2.6.5
 

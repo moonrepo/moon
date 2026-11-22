@@ -1214,6 +1214,39 @@ tasks:
         }
     }
 
+    // https://github.com/moonrepo/moon/issues/2818 (zqwwd3)
+    mod timeout {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn zero_removes_an_inherited_timeout() {
+            let sandbox = create_sandbox("builder");
+            sandbox.create_file(
+                "timeout/moon.yml",
+                r"
+taskOptions:
+  timeout: 600
+tasks:
+  inherits: {}
+  disables:
+    options:
+      timeout: 0
+  overrides:
+    options:
+      timeout: 30
+",
+            );
+
+            let tasks = TasksBuilderContainer::new(sandbox.path())
+                .build_tasks("timeout")
+                .await;
+
+            assert_eq!(tasks.get("inherits").unwrap().options.timeout, Some(600));
+            assert_eq!(tasks.get("disables").unwrap().options.timeout, None);
+            assert_eq!(tasks.get("overrides").unwrap().options.timeout, Some(30));
+        }
+    }
+
     mod expect_failure_conflicts {
         use super::*;
 

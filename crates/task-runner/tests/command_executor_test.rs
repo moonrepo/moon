@@ -113,6 +113,57 @@ mod command_executor {
         }
     }
 
+    // https://github.com/moonrepo/moon/issues/2818 (zqwwd3)
+    mod timeout {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn cancels_once_elapsed() {
+            let container = TaskRunnerContainer::new_os("runner", "timeout").await;
+            let context = ActionContext::default();
+            let mut item = TaskReportItem::default();
+
+            let result = container
+                .create_command_executor(&context)
+                .await
+                .execute(&context, &mut item)
+                .await
+                .unwrap();
+
+            assert_eq!(result.run_state, TargetState::Failed);
+            assert_eq!(result.attempts.len(), 1);
+            assert_eq!(result.attempts[0].status, ActionStatus::TimedOut);
+        }
+
+        // Used to cancel the task immediately, now it disables the timeout
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_cancel_with_a_timeout_of_zero() {
+            let container = TaskRunnerContainer::new_os("runner", "timeout-zero").await;
+            let context = ActionContext::default();
+            let mut item = TaskReportItem::default();
+
+            let result = container
+                .create_command_executor(&context)
+                .await
+                .execute(&context, &mut item)
+                .await
+                .unwrap();
+
+            assert_eq!(result.attempts.len(), 1);
+            assert_eq!(result.attempts[0].status, ActionStatus::Passed);
+            assert_eq!(
+                result.attempts[0]
+                    .get_exec_output()
+                    .unwrap()
+                    .stdout
+                    .as_ref()
+                    .unwrap()
+                    .trim(),
+                "test"
+            );
+        }
+    }
+
     mod expect_failure {
         use super::*;
 

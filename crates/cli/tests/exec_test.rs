@@ -2032,6 +2032,37 @@ tasks:
                 "tasks: invalid type: integer `123`",
             ));
         }
+
+        // A limit that no timer can hold must be refused, not silently ignored
+        // https://github.com/moonrepo/moon/issues/2818 (zqwwd3)
+        #[test]
+        fn errors_for_a_timeout_greater_than_24_hours() {
+            let sandbox = create_cases_sandbox();
+            let config = fs::read_file(sandbox.path().join("outputs/moon.yml")).unwrap();
+
+            sandbox.create_file(
+                "outputs/moon.yml",
+                format!(
+                    r#"{config}
+  absurdTimeout:
+    command: node
+    args: ['-e', '']
+    options:
+      timeout: 10000000000
+"#
+                ),
+            );
+
+            // Separate tokens, as the error may be wrapped on CI
+            sandbox
+                .run_bin(|cmd| {
+                    cmd.arg("exec").arg("outputs:absurdTimeout");
+                })
+                .failure()
+                .stderr(predicate::str::contains("config::validate"))
+                .stderr(predicate::str::contains("10000000000"))
+                .stderr(predicate::str::contains("86400"));
+        }
     }
 
     mod dependencies {

@@ -34,6 +34,10 @@
   `bash` or `sh` in `node_modules/.bin`, ran instead of the shell, and replaced the task's command.
   The shell is now located using the `PATH` that moon was run with, before toolchain paths are
   added to it. Only when it can't be found there is it located using the task's `PATH`.
+- Fixed an issue where a task that failed would not hydrate from the cache on its next run, even
+  though a cached result of a run that passed existed for its hash, and would run again instead.
+  This applied to a failure at any hash, not just the current one, and in a read-only cache
+  (`--cache read`), it never recovered, as the result of the failed run was never replaced.
 
 ## 2.6.5
 

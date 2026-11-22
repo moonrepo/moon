@@ -984,16 +984,6 @@ mod task_runner {
             }
 
             #[tokio::test(flavor = "multi_thread")]
-            async fn returns_none_if_non_zero_exit() {
-                let container = TaskRunnerContainer::new("runner", "base").await;
-                let mut runner = container.create_runner();
-
-                runner.cache.data.exit_code = 1;
-
-                assert!(runner.is_cached("hash123").await.unwrap().is_none());
-            }
-
-            #[tokio::test(flavor = "multi_thread")]
             async fn skips_if_glob_outputs_have_no_previous_hash() {
                 let container = TaskRunnerContainer::new("runner", "glob-outputs").await;
                 let mut runner = container.create_runner();
@@ -1270,6 +1260,110 @@ mod task_runner {
                 container
                     .seed_manifest(&runner.state.digest, TaskManifest::default())
                     .await;
+
+                assert!(runner.is_cached("hash123").await.unwrap().is_none());
+            }
+        }
+
+        // Failed runs are never archived, so a failure of the previous run must
+        // not prevent hydrating an archive of a run that passed
+        // https://github.com/moonrepo/moon/issues/2818 (dbr6wr)
+        mod previous_run_failed {
+            use super::*;
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn hydrates_archive_of_the_same_hash() {
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut runner = container.create_runner();
+
+                runner.cache.data.exit_code = 1;
+                runner.cache.data.hash = "hash123".into();
+                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
+
+                container
+                    .sandbox
+                    .create_file(".moon/cache/outputs/hash123.tar.gz", "");
+
+                assert!(matches!(
+                    runner.is_cached("hash123").await.unwrap(),
+                    Some(HydrateFrom::LocalArchive)
+                ));
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn hydrates_archive_of_another_hash() {
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut runner = container.create_runner();
+
+                runner.cache.data.exit_code = 1;
+                runner.cache.data.hash = "otherhash456".into();
+                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
+
+                container
+                    .sandbox
+                    .create_file(".moon/cache/outputs/hash123.tar.gz", "");
+
+                assert!(matches!(
+                    runner.is_cached("hash123").await.unwrap(),
+                    Some(HydrateFrom::LocalArchive)
+                ));
+            }
+
+            // A read-only cache never saves the last run, so it would never recover
+            #[tokio::test(flavor = "multi_thread")]
+            async fn hydrates_archive_when_cache_is_readonly() {
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut runner = container.create_runner();
+
+                runner.cache.data.exit_code = 1;
+                runner.cache.data.hash = "hash123".into();
+                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
+
+                container
+                    .sandbox
+                    .create_file(".moon/cache/outputs/hash123.tar.gz", "");
+
+                container
+                    .app_context
+                    .cache_engine
+                    .force_mode(CacheMode::Read);
+
+                assert!(matches!(
+                    runner.is_cached("hash123").await.unwrap(),
+                    Some(HydrateFrom::LocalArchive)
+                ));
+
+                GlobalEnvBag::instance().remove("MOON_CACHE");
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn hydrates_action_result_in_storage() {
+                let container = TaskRunnerContainer::new("runner", "outputs").await;
+                let mut runner = container.create_runner();
+
+                runner.cache.data.exit_code = 1;
+                runner.cache.data.hash = "hash123".into();
+                runner.state.local_cas_enabled = true;
+                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
+
+                container
+                    .seed_manifest(&runner.state.digest, TaskManifest::default())
+                    .await;
+
+                assert!(matches!(
+                    runner.is_cached("hash123").await.unwrap(),
+                    Some(HydrateFrom::Storage(_))
+                ));
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_reuse_previous_outputs() {
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut runner = container.create_runner();
+
+                runner.cache.data.exit_code = 1;
+                runner.cache.data.hash = "hash123".into();
+                container.sandbox.create_file("project/file.txt", "");
 
                 assert!(runner.is_cached("hash123").await.unwrap().is_none());
             }

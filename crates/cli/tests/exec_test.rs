@@ -1266,6 +1266,66 @@ tasks:
                 assert!(sandbox.path().join("outputs/both/b").exists());
             }
 
+            // A failed run is never archived, so it must not prevent hydrating
+            // the archive of a previous run that passed with the same hash
+            // https://github.com/moonrepo/moon/issues/2818 (dbr6wr)
+            #[test]
+            fn hydrates_a_passing_run_after_a_failed_run() {
+                let sandbox = create_cases_sandbox();
+                let config = fs::read_file(sandbox.path().join("outputs/moon.yml")).unwrap();
+
+                // `FAIL_FLAKY` is not an input, so all runs have the same hash
+                sandbox.create_file(
+                    "outputs/moon.yml",
+                    format!(
+                        r#"{config}
+  flaky:
+    command: node
+    args:
+      - '-e'
+      - 'if (process.env.FAIL_FLAKY) process.exit(1); require("fs").mkdirSync("flaky", {{ recursive: true }}); require("fs").writeFileSync("flaky/result.txt", "pass");'
+    outputs:
+      - 'flaky/result.txt'
+"#
+                    ),
+                );
+
+                sandbox
+                    .run_bin(|cmd| {
+                        cmd.arg("exec").arg("outputs:flaky");
+                    })
+                    .success();
+
+                let hash = extract_hash_from_run(sandbox.path(), "outputs:flaky");
+
+                sandbox
+                    .run_bin(|cmd| {
+                        cmd.arg("exec").arg("outputs:flaky").arg("--force");
+                        cmd.env("FAIL_FLAKY", "1");
+                    })
+                    .failure();
+
+                assert_eq!(extract_hash_from_run(sandbox.path(), "outputs:flaky"), hash);
+
+                fs::remove_dir_all(sandbox.path().join("outputs/flaky")).unwrap();
+
+                // A read-only cache never records the last run, so would never recover
+                sandbox
+                    .run_bin(|cmd| {
+                        cmd.arg("exec")
+                            .arg("outputs:flaky")
+                            .arg("--cache")
+                            .arg("read");
+                    })
+                    .success()
+                    .stdout(predicate::str::contains("cached"));
+
+                assert_eq!(
+                    fs::read_file(sandbox.path().join("outputs/flaky/result.txt")).unwrap(),
+                    "pass"
+                );
+            }
+
             #[test]
             fn hydrates_with_a_different_hash_cache() {
                 let sandbox = create_cases_sandbox();

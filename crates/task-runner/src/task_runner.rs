@@ -333,15 +333,9 @@ impl<'task> TaskRunner<'task> {
             return Ok(None);
         }
 
-        // If the previous run was a failure, avoid hydrating
-        if self.cache.data.exit_code > 0 {
-            debug!(
-                task_target = self.task.target.as_str(),
-                hash, "Previous run failed, avoiding hydration"
-            );
-
-            return Ok(None);
-        }
+        // A previous run that failed doesn't prevent hydration, as failed runs
+        // are never archived, so an archive for this hash is always from a run
+        // that passed. The previous run may have also been for a different hash!
 
         // Check if last run is stale
         if is_cache_stale() {

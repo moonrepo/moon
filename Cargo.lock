@@ -6192,7 +6192,7 @@ dependencies = [
  "reqwest",
  "serde",
  "starbase_utils",
- "system_env 0.11.0",
+ "system_env",
  "tokio",
  "tracing",
  "uuid",
@@ -6284,6 +6284,7 @@ dependencies = [
  "moon_console",
  "moon_env_var",
  "starbase_process",
+ "tokio",
 ]
 
 [[package]]
@@ -6459,7 +6460,7 @@ dependencies = [
  "scc",
  "starbase_args",
  "starbase_sandbox",
- "system_env 0.11.0",
+ "system_env",
  "thiserror 2.0.21",
  "tokio",
  "tracing",
@@ -6718,7 +6719,7 @@ dependencies = [
  "serde",
  "starbase_sandbox",
  "starbase_utils",
- "system_env 0.11.0",
+ "system_env",
  "tokio",
  "tracing",
 ]
@@ -7996,6 +7997,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "process-wrap"
+version = "10.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f21b97672d2dc848e7b25701ab4535618b92f4861c13cc3f7f7bed52ad3c8da"
+dependencies = [
+ "futures",
+ "indexmap",
+ "nix",
+ "tokio",
+ "windows",
+]
+
+[[package]]
 name = "prodash"
 version = "31.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8091,7 +8105,7 @@ dependencies = [
  "starbase_shell",
  "starbase_styles",
  "starbase_utils",
- "system_env 0.11.0",
+ "system_env",
  "thiserror 2.0.21",
  "tokio",
  "toml_edit",
@@ -8113,7 +8127,7 @@ dependencies = [
  "schematic",
  "serde",
  "serde_json",
- "system_env 0.11.0",
+ "system_env",
  "thiserror 2.0.21",
  "version_spec",
  "warpgate_api",
@@ -9675,20 +9689,22 @@ dependencies = [
 
 [[package]]
 name = "starbase_process"
-version = "0.2.1"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "423ccf57039df8a5613cf9a0110253d6dd31611d14f61e85540e5c3c2af3abb6"
+checksum = "9c16fc9c0fca6eff14ac8774859b760481ecfa36ff962dd488bd375cf17abb48"
 dependencies = [
  "bytes",
  "libc",
  "miette 7.6.0",
+ "parking_lot 0.13.0",
+ "process-wrap",
  "rustc-hash",
  "scc",
  "serde",
  "starbase_console",
  "starbase_shell",
  "starbase_styles",
- "system_env 0.10.7",
+ "system_env",
  "thiserror 2.0.21",
  "tokio",
  "tracing",
@@ -9916,18 +9932,6 @@ dependencies = [
  "objc2-core-foundation",
  "objc2-io-kit",
  "windows",
-]
-
-[[package]]
-name = "system_env"
-version = "0.10.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e924ec3d1a5570cccc174e17ec605aefe7ede8e233a6fcca9640d87564f8934e"
-dependencies = [
- "regex",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -10884,7 +10888,7 @@ dependencies = [
  "starbase_shell",
  "starbase_styles",
  "starbase_utils",
- "system_env 0.11.0",
+ "system_env",
  "thiserror 2.0.21",
  "tokio",
  "tracing",
@@ -10906,7 +10910,7 @@ dependencies = [
  "serde",
  "serde_json",
  "starbase_id",
- "system_env 0.11.0",
+ "system_env",
  "thiserror 2.0.21",
 ]
 

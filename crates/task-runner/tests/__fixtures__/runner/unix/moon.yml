@@ -63,6 +63,10 @@ tasks:
     options:
       timeout: 0
 
+  spawns-grandchild:
+    script: 'sleep 30 & echo $! > grandchild.pid; wait'
+    toolchain: system
+
   create-file:
     command: 'touch file.txt'
     outputs:

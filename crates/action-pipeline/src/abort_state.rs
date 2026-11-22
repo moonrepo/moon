@@ -29,14 +29,11 @@ pub struct AbortState {
     handled: CancellationToken,
 
     /// When jobs may start new processes, after running processes have been
-    /// terminated. The process registry force kills *all* of the processes it
-    /// tracks once its shutdown threshold has elapsed, including those that
-    /// were started after the termination, so cleanup jobs must wait for it.
+    /// terminated. Shutting down the root process set again while it waits out
+    /// its grace period (like a signal does) force kills *all* of the processes
+    /// it tracks, including those that were started after the termination, so
+    /// cleanup jobs must wait for it to pass.
     resume_at: OnceLock<Instant>,
-
-    /// Whether the pipeline has terminated running processes itself, which
-    /// is broadcast like an external signal, but must not be treated as one.
-    terminated: AtomicBool,
 }
 
 impl AbortState {
@@ -95,17 +92,6 @@ impl AbortState {
             .is_ok_and(|casualties| casualties.contains(&index))
     }
 
-    /// Mark that the pipeline is about to terminate running processes itself.
-    pub fn mark_terminated(&self) {
-        self.terminated.store(true, Ordering::Release);
-    }
-
-    /// Consume the termination marked by [`Self::mark_terminated`], returning
-    /// whether there was one, so that it's only accounted for once.
-    pub fn take_terminated(&self) -> bool {
-        self.terminated.swap(false, Ordering::AcqRel)
-    }
-
     /// Wait until the abort has been handled, and new processes can be started
     /// without being terminated, or until the pipeline is cancelled (a signal).
     pub async fn wait_until_resumable(&self, cancel_token: &CancellationToken) {
@@ -138,18 +124,6 @@ mod tests {
         state.handle(false, None, None);
 
         assert!(state.should_drain());
-    }
-
-    #[test]
-    fn takes_termination_once() {
-        let state = AbortState::default();
-
-        assert!(!state.take_terminated());
-
-        state.mark_terminated();
-
-        assert!(state.take_terminated());
-        assert!(!state.take_terminated());
     }
 
     #[test]

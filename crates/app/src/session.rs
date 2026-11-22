@@ -23,7 +23,7 @@ use moon_env_var::GlobalEnvBag;
 use moon_extension_plugin::*;
 use moon_layout_graph::LayoutGraphBuilder;
 use moon_plugin::MoonHostData;
-use moon_process::ProcessRegistry;
+use moon_process::{ProcessSet, SignalListener, wait_for_running_to_shutdown};
 use moon_project_graph::ProjectGraph;
 use moon_task_graph::TaskGraph;
 use moon_toolchain_plugin::*;
@@ -36,6 +36,7 @@ use std::env;
 use std::fmt;
 use std::path::PathBuf;
 use std::sync::{Arc, OnceLock};
+use std::time::Duration;
 use tokio::sync::OnceCell;
 use tokio::try_join;
 use tracing::debug;
@@ -497,7 +498,12 @@ impl AppSession for MoonSession {
         startup::register_feature_flags(&self.workspace_config)?;
 
         // Load singleton components
-        ProcessRegistry::register(self.workspace_config.pipeline.kill_process_threshold);
+        ProcessSet::configure_root(Duration::from_millis(
+            self.workspace_config.pipeline.kill_process_threshold as u64,
+        ));
+
+        // Shut down running processes on OS termination signals
+        SignalListener::start();
 
         if self.requires_workspace_configured() {
             Launchpad::register(self.moon_env.clone())?;
@@ -564,9 +570,7 @@ impl AppSession for MoonSession {
         }
 
         // Ensure all child processes have finished
-        ProcessRegistry::instance()
-            .wait_for_running_to_shutdown()
-            .await;
+        wait_for_running_to_shutdown().await;
 
         self.console.close()?;
 

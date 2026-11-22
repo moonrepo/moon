@@ -2,7 +2,7 @@ use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use miette::IntoDiagnostic;
 use moon_mcp::{SdkResult, run_mcp};
-use moon_process::ProcessRegistry;
+use moon_process::SignalListener;
 use tokio::task::JoinHandle;
 use tracing::instrument;
 
@@ -18,7 +18,7 @@ pub async fn mcp(session: MoonSession, _args: McpArgs) -> SessionResult {
         tokio::spawn(run_mcp(app_context, workspace_graph));
 
     let handle: JoinHandle<miette::Result<()>> = tokio::spawn(async move {
-        let mut listener = ProcessRegistry::instance().receive_signal();
+        let mut listener = SignalListener::subscribe();
 
         if listener.recv().await.is_ok() {
             handle_server.abort();

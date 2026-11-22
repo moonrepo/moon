@@ -13,7 +13,7 @@ use moon_daemon_utils::endpoint::{get_endpoint, get_sock_path};
 use moon_env_var::GlobalEnvBag;
 use moon_hash::Digest;
 use moon_layout_graph::{LayoutGraph, LayoutGraphBuilder};
-use moon_process::Command;
+use moon_process::{Command, SignalListener};
 use moon_project::Project;
 use moon_task::Task;
 use moon_task_runner::TaskRunState;
@@ -50,6 +50,10 @@ pub struct TaskRunnerContainer {
 
 impl TaskRunnerContainer {
     pub async fn new_for_project(fixture: &str, project_id: &str, task_id: &str) -> Self {
+        // Tasks run in a process group or job object of their own, which
+        // requires the signal listener, like the session starts it
+        SignalListener::start();
+
         let sandbox = create_sandbox(fixture);
         let mut mocker = WorkspaceMocker::new(sandbox.path())
             .load_default_configs()

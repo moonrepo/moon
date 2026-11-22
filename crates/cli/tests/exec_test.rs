@@ -3764,13 +3764,14 @@ tasks:
                 cmd.arg("exec")
                     .arg("interactive:prompt")
                     .arg("--interactive")
-                    .write_stdin("with-arg");
+                    .write_stdin("with-arg\n");
             });
 
-            // Test doesn't output the input (answer) we provide, so check for the question
+            // Interactive tasks read the input from stdin
             assert
                 .success()
-                .stdout(predicate::str::contains("Question?"));
+                .stdout(predicate::str::contains("Question?"))
+                .stdout(predicate::str::contains("Answer: with-arg"));
         }
 
         #[test]

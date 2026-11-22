@@ -176,6 +176,11 @@
 - **Action pipeline**
   - Reading the states of task dependencies, while hashing and running tasks, no longer takes an
     exclusive lock, which serialized tasks running concurrently.
+  - Tasks (and their checks) now run in a process group (Unix) or job object (Windows) of their
+    own, so that terminating a task, when the pipeline is aborted, a signal is received, or it
+    times out, also terminates the processes it started. Interactive tasks read from the terminal,
+    so they're not contained on Unix. Other processes, like those of plugins and VCS, aren't
+    contained.
 - **Affected**
   - Added an `affectedOnly` setting to file, glob, file group, and project task inputs (as an object
     field, or a URI query). When enabled, the input is only used to determine whether the task is
@@ -457,6 +462,8 @@
 
 - Updated proto to [v0.64.0](https://github.com/moonrepo/proto/releases/tag/v0.64.0).
 - Updated Rust to v1.100.0.
+- Updated `starbase_process` to v0.4, which reworks how running processes are tracked, and shut
+  down when moon receives a signal.
 - Updated dependencies.
 
 ## 2.6.6

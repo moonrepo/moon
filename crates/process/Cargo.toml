@@ -13,6 +13,7 @@ moon_common = { path = "../common" }
 moon_console = { path = "../console" }
 moon_env_var = { path = "../env-var" }
 starbase_process = { workspace = true }
+tokio = { workspace = true }
 
 [lints]
 workspace = true

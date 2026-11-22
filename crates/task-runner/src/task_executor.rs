@@ -5,11 +5,10 @@ use moon_app_context::AppContext;
 use moon_common::is_ci_env;
 use moon_config::TaskOutputStyle;
 use moon_console::TaskReportItem;
-use moon_process::{Command, Output, ProcessRegistry, SignalType, format_command_line};
+use moon_process::{Command, Output, SignalListener, format_command_line};
 use moon_project::Project;
 use moon_task::{Task, TaskExpectedFailure};
 use std::time::Duration;
-use tokio::sync::broadcast::{Receiver, error::TryRecvError};
 use tokio::task::{self, JoinHandle};
 use tokio::time::sleep;
 use tokio_util::sync::CancellationToken;
@@ -85,9 +84,11 @@ impl<'task> TaskExecutor<'task> {
         let command_line = self.command.get_command_line(false, false);
 
         // Running processes are terminated when the pipeline is aborted (or receives
-        // a signal), which fails the current attempt, so listen for this, otherwise
-        // another attempt would start a new process that is never terminated
-        let mut signal_receiver = ProcessRegistry::instance().receive_signal();
+        // a signal), which fails the current attempt, so check for this, otherwise
+        // another attempt would start a new process that is never terminated.
+        // The pipeline only terminates the processes running at the time of the
+        // abort, so a cleanup task that starts afterwards may still attempt again
+        let aborted_before = context.abort_token.is_cancelled();
 
         let execution_error: Option<miette::Report> = loop {
             let mut attempt = Operation::task_execution(&command_line);
@@ -230,8 +231,9 @@ impl<'task> TaskExecutor<'task> {
                     // Unsuccessful execution (maybe flaky), attempt again
                     else if self.attempt_index < self.attempt_total {
                         // Unless running processes are being terminated
-                        if has_received_signal(&mut signal_receiver)
+                        if SignalListener::received().is_some()
                             || context.should_stop(&self.task.target)
+                            || (!aborted_before && context.abort_token.is_cancelled())
                         {
                             debug!(
                                 task_target = self.task.target.as_str(),
@@ -376,10 +378,4 @@ impl Drop for TaskExecutor<'_> {
     fn drop(&mut self) {
         self.stop_monitoring();
     }
-}
-
-/// Whether a signal was received, or running processes were terminated
-/// (which is broadcast like a signal), since subscribing.
-fn has_received_signal(receiver: &mut Receiver<SignalType>) -> bool {
-    matches!(receiver.try_recv(), Ok(_) | Err(TryRecvError::Lagged(_)))
 }

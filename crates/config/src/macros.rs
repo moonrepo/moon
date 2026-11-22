@@ -140,11 +140,13 @@ macro_rules! generate_io_glob_methods {
                 path.starts_with('/') || path.starts_with("!/")
             }
 
+            /// The project source is escaped, as it's a literal path
+            /// that may contain glob meta characters, like `[lib]`.
             pub fn to_workspace_relative(
                 &self,
                 project_source: impl AsRef<str>,
             ) -> WorkspaceRelativePathBuf {
-                expand_to_workspace_relative(
+                moon_common::path::expand_to_workspace_relative_glob(
                     if self.is_workspace_relative() {
                         RelativeFrom::Workspace
                     } else {

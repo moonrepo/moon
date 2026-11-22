@@ -1,5 +1,6 @@
 mod utils;
 
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{
     EnvMap, Input, Output, TaskDependencyConfig, schematic::RegexSetting, test_utils::*,
 };
@@ -82,6 +83,54 @@ mod task_expander {
         assert_eq!(
             task.input_globs,
             create_glob_input_map(vec!["project/source/dir/**/*"])
+        );
+    }
+
+    // https://github.com/moonrepo/moon/issues/2818 (rqk8s7)
+    #[test]
+    fn escapes_project_source_in_globs() {
+        let sandbox = create_empty_sandbox();
+
+        // Dir has to exist!
+        sandbox.create_file("packages/[lib]/dir/file", "");
+
+        let project_graph = create_project_graph([]);
+        let mut project = create_project(sandbox.path());
+        project.source = WorkspaceRelativePathBuf::from("packages/[lib]");
+        project.root = sandbox.path().join("packages/[lib]");
+
+        let mut task = create_task();
+        task.inputs = vec![
+            Input::parse("dir").unwrap(),
+            Input::parse("src/**/*").unwrap(),
+            Input::parse("!src/**/*.snap").unwrap(),
+            Input::parse("file.txt").unwrap(),
+        ];
+        task.outputs = vec![Output::parse("dist/**/*").unwrap()];
+
+        let context = create_context(sandbox.path());
+        let task = TaskExpander::new(&project_graph, &project, &context, &EMPTY_TASK_LOOKUP)
+            .expand(&task)
+            .unwrap();
+
+        // Files are literal paths, so aren't escaped
+        assert_eq!(
+            task.input_files.keys().collect::<Vec<_>>(),
+            [&WorkspaceRelativePathBuf::from("packages/[lib]/file.txt")]
+        );
+        assert_eq!(
+            task.input_globs,
+            create_glob_input_map(vec![
+                "!packages/\\[lib\\]/src/**/*.snap",
+                "packages/\\[lib\\]/dir/**/*",
+                "packages/\\[lib\\]/src/**/*",
+            ])
+        );
+        assert_eq!(
+            task.output_globs.keys().collect::<Vec<_>>(),
+            [&WorkspaceRelativePathBuf::from(
+                "packages/\\[lib\\]/dist/**/*"
+            )]
         );
     }
 
@@ -1021,7 +1070,6 @@ mod task_expander {
 
     mod inject_deps_outputs {
         use super::*;
-        use moon_common::path::WorkspaceRelativePathBuf;
         use moon_config::TaskDependencyCacheStrategy;
         use moon_task::{TaskFileOutput, TaskGlobOutput};
 

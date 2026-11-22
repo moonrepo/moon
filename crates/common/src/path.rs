@@ -2,6 +2,7 @@ use miette::IntoDiagnostic;
 pub use relative_path::*;
 use rustc_hash::FxHasher;
 use starbase_styles::color;
+use std::borrow::Cow;
 use std::hash::Hasher;
 use std::path::{Path, PathBuf};
 
@@ -63,6 +64,55 @@ pub fn expand_to_workspace_relative<P: AsRef<str>>(
             }
         }
         RelativeFrom::Workspace => WorkspaceRelativePathBuf::from(path),
+    }
+}
+
+/// Glob meta characters, which mirror `wax::is_meta_character` (wax v0.7).
+const GLOB_META_CHARS: [char; 13] = [
+    '?', '*', '$', ':', '<', '>', '(', ')', '[', ']', '{', '}', ',',
+];
+
+/// Escape glob meta characters in a literal path, like `packages/[lib]` or `packages/x:y`,
+/// so that it only matches itself when joined with a glob. Separators must be standardized
+/// beforehand, as the escape character is a backslash.
+pub fn escape_glob(path: &str) -> Cow<'_, str> {
+    if !path.contains(GLOB_META_CHARS) {
+        return Cow::Borrowed(path);
+    }
+
+    let mut escaped = String::with_capacity(path.len() + 4);
+
+    for ch in path.chars() {
+        if GLOB_META_CHARS.contains(&ch) {
+            escaped.push('\\');
+        }
+
+        escaped.push(ch);
+    }
+
+    Cow::Owned(escaped)
+}
+
+/// Like [`expand_to_workspace_relative`], but for a glob. The project source is a literal
+/// path, so its glob meta characters are escaped, while the glob itself is kept as-is.
+pub fn expand_to_workspace_relative_glob<P: AsRef<str>>(
+    from_format: RelativeFrom,
+    glob: P,
+) -> WorkspaceRelativePathBuf {
+    let glob = standardize_separators(glob.as_ref());
+
+    match from_format {
+        RelativeFrom::Project(source) if !is_root_level_source(source) => {
+            let project_source = standardize_separators(source);
+            let project_source = escape_glob(&project_source);
+
+            if let Some(negated_glob) = glob.strip_prefix('!') {
+                WorkspaceRelativePathBuf::from(format!("!{project_source}")).join(negated_glob)
+            } else {
+                WorkspaceRelativePathBuf::from(project_source.as_ref()).join(glob)
+            }
+        }
+        _ => WorkspaceRelativePathBuf::from(glob),
     }
 }
 

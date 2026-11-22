@@ -1,6 +1,7 @@
 use crate::task_lookup::TaskLookup;
 use crate::token_expander::TokenExpander;
 use moon_common::color;
+use moon_common::path::{self, WorkspaceRelativePathBuf};
 use moon_config::{EnvMap, TaskDependencyCacheStrategy};
 use moon_env_var::*;
 use moon_graph_utils::GraphExpanderContext;
@@ -329,8 +330,11 @@ impl<'graph> TaskExpander<'graph> {
             let abs_file = file.to_path(&self.context.workspace_root);
 
             if abs_file.exists() && abs_file.is_dir() {
-                task.input_globs
-                    .insert(file.join("**/*"), TaskGlobInput::default());
+                task.input_globs.insert(
+                    WorkspaceRelativePathBuf::from(path::escape_glob(file.as_str()).as_ref())
+                        .join("**/*"),
+                    TaskGlobInput::default(),
+                );
 
                 to_remove.push(file.to_owned());
             }

@@ -335,7 +335,7 @@ impl<'graph> TokenExpander<'graph> {
                             result.globs_for_input.insert(
                                 self.create_path_for_task(
                                     task,
-                                    path::expand_to_workspace_relative(
+                                    path::expand_to_workspace_relative_glob(
                                         RelativeFrom::Project(project.source.as_str()),
                                         glob,
                                     ),
@@ -345,7 +345,13 @@ impl<'graph> TokenExpander<'graph> {
                         }
                     } else {
                         result.globs_for_input.insert(
-                            self.create_path_for_task(task, project.source.join("**/*"))?,
+                            self.create_path_for_task(
+                                task,
+                                WorkspaceRelativePathBuf::from(
+                                    path::escape_glob(project.source.as_str()).as_ref(),
+                                )
+                                .join("**/*"),
+                            )?,
                             TaskGlobInput::default(),
                         );
                     }

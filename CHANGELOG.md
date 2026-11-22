@@ -24,6 +24,12 @@
 - Fixed an issue where a command failed to run when a toolchain added a path to `PATH` that
   contains the `PATH` separator, like the `node_modules/.bin` of a project in a `packages/a:b`
   directory. These paths are now skipped with a warning.
+- Fixed an issue where a project in a directory with glob characters in its path, like
+  `packages/x:y` or `packages/app (old)`, failed to run with "Failed to create glob from pattern",
+  and one like `packages/[lib]` silently matched the files of other projects instead of its own.
+  The project's path is now escaped when it's joined with the task's input and output globs, so
+  these globs, as shown by `moon task` and passed to commands by `@globs`, `@in`, and `@out`,
+  contain the escaped path, like `packages/x\:y/src/**/*`.
 
 ## 2.6.5
 

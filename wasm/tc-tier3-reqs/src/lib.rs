@@ -13,6 +13,7 @@ pub fn define_requirements(
             id: "tc-tier3".into(),
             setup_toolchain: Some(RequirementPhase::Before),
             setup_environment: None,
+            install_dependencies: None,
         }],
         ..Default::default()
     }))

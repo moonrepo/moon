@@ -14,13 +14,14 @@ pub fn define_requirements(
             setup_toolchain: Some(RequirementPhase::Before),
             // Only require for the environment when a test opts in via toolchain
             // config, as this plugin does not implement `setup_environment` and
-            // is used to verify that an anchor action is still created
+            // is used to verify that the requirement falls through to its dependents
             setup_environment: input
                 .toolchain_config
                 .get("testRequiresForEnvironment")
                 .and_then(|value| value.as_bool())
                 .unwrap_or_default()
                 .then_some(RequirementPhase::Before),
+            install_dependencies: None,
         }],
         ..Default::default()
     }))

@@ -11,7 +11,6 @@ digraph {
     5 [ label="SetupToolchain(tc-tier3-setup-env:4.5.6)"]
     2 -> 0 [ label="required"]
     2 -> 1 [ label="required"]
-    3 -> 0 [ label="required"]
     3 -> 2 [ label="required"]
     4 -> 3 [ label="required"]
     5 -> 0 [ label="required"]

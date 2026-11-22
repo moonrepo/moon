@@ -108,11 +108,15 @@
 - **Toolchains**
   - Reworked the `define_requirements` function of the toolchain plugin API, so that each required
     toolchain controls how it's ordered. The `requires` field is now a list of
-    `ToolchainRequirement`s, each with an `id`, and a `setup_toolchain` and `setup_environment`
-    phase (`before` or `after`), which is when the required toolchain's action runs, relative to the
-    same action of the toolchain that requires it. They default to `before` and `after`, while
-    `null` doesn't order that action. The `for_setup_environment` and `for_setup_toolchain` fields
+    `ToolchainRequirement`s, each with an `id`, and a `setup_toolchain`, `setup_environment`, and
+    `install_dependencies` phase (`before` or `after`), which is when the required toolchain's
+    action runs, relative to the same action of the toolchain that requires it. An omitted or `null`
+    phase doesn't order that action. The `for_setup_environment` and `for_setup_toolchain` fields
     have been removed, and plugins built with a previous version of the plugin API must be updated.
+  - Installing dependencies no longer implicitly waits for the toolchains and environments that a
+    toolchain requires to be setup after its own (like Node.js and the package manager after
+    JavaScript). A toolchain whose install runs another toolchain must now require it with an
+    `install_dependencies` phase of `before`.
   - Added an `inheritable_dependencies` field to `ParseManifestOutput` in the toolchain plugin API,
     for the dependencies that packages in a workspace can inherit, like Cargo's
     `[workspace.dependencies]`, which aren't dependencies of the root package itself. Inherited
@@ -139,9 +143,18 @@
     (from `define_requirements`, with a `setup_environment` phase) are now also setup, in the same
     dependencies root, before or after it. For example, the Node.js package manager and Deno
     toolchains implement `setup_environment` (like importing Yarn plugins), which never ran before,
-    as they don't locate a dependencies root (the JavaScript toolchain does). Installing
-    dependencies in the root waits for these, including the toolchains and environments that are
-    setup after the root's toolchain, like Node.js and its package manager after JavaScript.
+    as they don't locate a dependencies root (the JavaScript toolchain does).
+  - Reworked how a toolchain's actions are linked. A task depends on the install dependencies action
+    of each of its toolchains, and a toolchain without an action falls through to its next one:
+    install dependencies to setup environment (in a dependencies root), setup environment to setup
+    toolchain, and setup toolchain (when it's not tier 3) to sync workspace. A toolchain that falls
+    through no longer inserts an action of its own, only to order the toolchains it requires, and
+    its dependents now wait for those directly. A setup environment action that depends on a setup
+    toolchain or another environment no longer also depends on the workspace sync directly.
+    [Learn more](https://moonrepo.dev/docs/how-it-works/action-graph#how-toolchain-actions-are-linked).
+  - The install dependencies actions of the toolchains that a toolchain requires (from
+    `define_requirements`, with an `install_dependencies` phase) now run in the same dependencies
+    root, before or after its own, like a package manager installing after its runtime.
   - Rewrote the action graph builder, which now builds the graph in stages, instead of inserting one
     action at a time. Building the graph is 13% to 47% faster in our benchmarks, and the graphs are
     the same, except:
@@ -299,9 +312,9 @@
   - Added an `inherits_root_from` field to `DefineRequirementsOutput` in the toolchain plugin API,
     which names the toolchain whose dependencies root a toolchain inherits, when it doesn't locate
     one itself (it doesn't implement `locate_dependencies_root`), like Node.js and the package
-    manager inheriting the root that the JavaScript toolchain located. Its actions run in that
-    root, its manifests are hashed for tasks, and `moon layout-graph --info` shows which toolchain
-    the root was inherited from.
+    manager inheriting the root that the JavaScript toolchain located. Its actions run in that root,
+    its manifests are hashed for tasks, and `moon layout-graph --info` shows which toolchain the
+    root was inherited from.
   - Added an optional `locate_dependencies_roots` function to the toolchain plugin API, which
     locates the dependencies roots of many projects in a single call. When a toolchain implements
     it, every project that shares the toolchain's config is located in one call while building the

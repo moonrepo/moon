@@ -35,6 +35,7 @@ pub fn define_requirements(
                 id,
                 setup_toolchain: None,
                 setup_environment: Some(RequirementPhase::Before),
+                install_dependencies: None,
             })
             .collect();
     }

@@ -223,6 +223,7 @@ mod toolchain_plugin {
                     id: "tc-tier3".into(),
                     setup_toolchain: Some(RequirementPhase::Before),
                     setup_environment: None,
+                    install_dependencies: None,
                 }]
             );
         }
@@ -249,6 +250,7 @@ mod toolchain_plugin {
                     id: "tc-tier3".into(),
                     setup_toolchain: Some(RequirementPhase::Before),
                     setup_environment: Some(RequirementPhase::Before),
+                    install_dependencies: None,
                 }]
             );
         }
@@ -275,6 +277,7 @@ mod toolchain_plugin {
                     id: "tc-tier3".into(),
                     setup_toolchain: None,
                     setup_environment: Some(RequirementPhase::Before),
+                    install_dependencies: None,
                 }]
             );
         }
@@ -291,7 +294,12 @@ mod toolchain_plugin {
                     toolchain_config: json!({
                         "testRequires": [
                             { "id": "tc-tier3" },
-                            { "id": "tc-tier1", "setup_toolchain": "after", "setup_environment": null },
+                            {
+                                "id": "tc-tier1",
+                                "setup_toolchain": "after",
+                                "setup_environment": null,
+                                "install_dependencies": "before"
+                            },
                         ],
                     }),
                 })
@@ -306,6 +314,7 @@ mod toolchain_plugin {
                         id: "tc-tier1".into(),
                         setup_toolchain: Some(RequirementPhase::After),
                         setup_environment: None,
+                        install_dependencies: Some(RequirementPhase::Before),
                     }
                 ]
             );

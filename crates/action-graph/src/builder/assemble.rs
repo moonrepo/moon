@@ -81,25 +81,104 @@ fn parse_requirement_id(
     Ok(app_context.toolchain_registry.resolve_toolchain_id(id))
 }
 
-/// What a toolchain's install slot resolved to: the most specific node that
-/// exists for its root (or its setup, without a root), and the setup of the
-/// requested version, when the root's actions run with another version.
-#[derive(Clone, Copy, Debug, Default)]
-struct InstallSlot {
-    index: Option<NodeIndex>,
-    own_toolchain: Option<NodeIndex>,
+/// What an action of a toolchain resolved to. Either the toolchain's own node,
+/// or, when the toolchain doesn't have the action (or it's disabled), the nodes
+/// that it falls through to: the toolchain's next action (install dependencies,
+/// then setup environment, then setup toolchain), and the same action of the
+/// toolchains that it requires before its own, so that the actions depending
+/// on it are still ordered after them. A fall-through never includes the
+/// workspace sync, which an action links to when it depends on nothing else.
+#[derive(Clone, Debug)]
+enum Slot {
+    Node(NodeIndex),
+    FallThrough(Vec<NodeIndex>),
 }
 
-impl InstallSlot {
-    fn new(index: Option<NodeIndex>) -> Self {
-        Self {
-            index,
-            own_toolchain: None,
+impl Default for Slot {
+    fn default() -> Self {
+        Self::FallThrough(vec![])
+    }
+}
+
+impl Slot {
+    /// Fall through to the toolchain's next action, and the same action of the
+    /// toolchains that it requires before its own.
+    fn fall_through(next: &Slot, required_before: Vec<NodeIndex>) -> Self {
+        let mut indices = next.indices().to_vec();
+
+        for index in required_before {
+            if !indices.contains(&index) {
+                indices.push(index);
+            }
+        }
+
+        Self::FallThrough(indices)
+    }
+
+    fn node(&self) -> Option<NodeIndex> {
+        match self {
+            Self::Node(index) => Some(*index),
+            Self::FallThrough(_) => None,
         }
     }
 
-    fn indices(self) -> impl Iterator<Item = NodeIndex> {
-        self.index.into_iter().chain(self.own_toolchain)
+    fn indices(&self) -> &[NodeIndex] {
+        match self {
+            Self::Node(index) => std::slice::from_ref(index),
+            Self::FallThrough(indices) => indices,
+        }
+    }
+}
+
+/// What a toolchain's install slot resolved to: the install dependencies slot
+/// in its root (or its setup, without a root), and the setup of the requested
+/// version, when the root's actions run with another version.
+#[derive(Clone, Debug, Default)]
+struct InstallSlot {
+    slot: Slot,
+    own_toolchain: Slot,
+}
+
+impl InstallSlot {
+    fn new(slot: Slot) -> Self {
+        Self {
+            slot,
+            own_toolchain: Slot::default(),
+        }
+    }
+
+    fn indices(&self) -> impl Iterator<Item = NodeIndex> + '_ {
+        self.slot
+            .indices()
+            .iter()
+            .chain(self.own_toolchain.indices())
+            .copied()
+    }
+}
+
+/// The dependencies root that a toolchain's actions run in. It's the root
+/// the toolchain was placed in, or for a required toolchain, the root of the
+/// toolchain that requires it, as required toolchains (like a package manager
+/// for JavaScript) typically don't locate a root themselves.
+#[derive(Clone, Copy)]
+struct RootScope<'a> {
+    path: &'a WorkspaceRelativePathBuf,
+    kind: &'a RootKind,
+}
+
+impl<'a> RootScope<'a> {
+    fn new(root: &'a ToolchainDependenciesRoot) -> Self {
+        Self {
+            path: &root.root,
+            kind: &root.kind,
+        }
+    }
+
+    /// Whether the project is only the owner of a dependencies workspace,
+    /// which isn't passed to the plugin, as the actions are for the whole
+    /// workspace.
+    fn owner_only(&self) -> bool {
+        matches!(self.kind, RootKind::Workspace { .. })
     }
 }
 
@@ -138,7 +217,7 @@ struct GraphAssembler<'app> {
     /// project ID, as every request for a project passes the same project (the
     /// workspace graph's), and its config decides the result.
     install_deps_indexes: FxHashMap<(ToolchainSpec, Option<Id>), InstallSlot>,
-    setup_toolchain_indexes: FxHashMap<(ToolchainSpec, Option<Id>), Option<NodeIndex>>,
+    setup_toolchain_indexes: FxHashMap<(ToolchainSpec, Option<Id>), Slot>,
 
     /// Setup and sync edges of tasks whose dependencies are being visited.
     task_edges: FxHashMap<usize, Vec<Option<NodeIndex>>>,
@@ -251,7 +330,9 @@ impl<'app> GraphAssembler<'app> {
 
                 edges.extend(
                     self.install_dependencies_by_toolchains(&project, &task.toolchains)
-                        .await?,
+                        .await?
+                        .into_iter()
+                        .map(Some),
                 );
 
                 // If no edges created, we should at minimum sync the workspace
@@ -322,7 +403,7 @@ impl<'app> GraphAssembler<'app> {
     }
 
     async fn provision(&mut self, request: ProvisionRequest) -> miette::Result<Vec<NodeIndex>> {
-        let index = match request {
+        let slot = match request {
             ProvisionRequest::InstallDependencies(spec, project) => {
                 return Ok(self
                     .install_dependencies(&spec, Some(&project))
@@ -331,12 +412,9 @@ impl<'app> GraphAssembler<'app> {
                     .collect());
             }
             ProvisionRequest::InstallDependenciesByProject(project) => {
-                return Ok(self
+                return self
                     .install_dependencies_by_toolchains(&project, &project.toolchains)
-                    .await?
-                    .into_iter()
-                    .flatten()
-                    .collect());
+                    .await;
             }
             ProvisionRequest::InstallDependenciesRoot(spec) => {
                 return Ok(self
@@ -348,33 +426,39 @@ impl<'app> GraphAssembler<'app> {
             ProvisionRequest::SetupEnvironment(spec, root, project) => {
                 Box::pin(self.internal_setup_environment(
                     &spec,
-                    &root,
+                    RootScope {
+                        path: &root,
+                        kind: &RootKind::Package,
+                    },
                     Some(&project),
-                    false,
                     FxHashSet::default(),
                 ))
                 .await?
             }
-            ProvisionRequest::SetupProto => self.setup_proto(),
+            ProvisionRequest::SetupProto => {
+                Slot::FallThrough(self.setup_proto().into_iter().collect())
+            }
             ProvisionRequest::SetupToolchain(spec, project) => {
                 self.setup_toolchain(&spec, project.as_deref()).await?
             }
             ProvisionRequest::SetupToolchainAndEnvironment(spec) => {
-                let index = self.setup_toolchain(&spec, None).await?;
+                let slot = self.setup_toolchain(&spec, None).await?;
 
-                if index.is_some() {
+                if !slot.indices().is_empty() {
                     self.setup_environment_root(&spec).await?;
                 }
 
-                index
+                slot
             }
             ProvisionRequest::SetupEnvironmentRoot(spec) => {
                 self.setup_environment_root(&spec).await?
             }
-            ProvisionRequest::SyncWorkspace => self.sync_workspace(),
+            ProvisionRequest::SyncWorkspace => {
+                Slot::FallThrough(self.sync_workspace().into_iter().collect())
+            }
         };
 
-        Ok(index.into_iter().collect())
+        Ok(slot.indices().to_vec())
     }
 
     // NODES
@@ -436,39 +520,36 @@ impl<'app> GraphAssembler<'app> {
         &mut self,
         spec: &ToolchainSpec,
         project: Option<&Project>,
-    ) -> miette::Result<Option<NodeIndex>> {
+    ) -> miette::Result<Slot> {
         let key = (spec.to_owned(), project.map(|project| project.id.clone()));
 
-        if let Some(index) = self.setup_toolchain_indexes.get(&key) {
-            return Ok(*index);
+        if let Some(slot) = self.setup_toolchain_indexes.get(&key) {
+            return Ok(slot.clone());
         }
 
-        let index =
+        let slot =
             Box::pin(self.internal_setup_toolchain(spec, project, FxHashSet::default())).await?;
 
-        self.setup_toolchain_indexes.insert(key, index);
+        self.setup_toolchain_indexes.insert(key, slot.clone());
 
-        Ok(index)
+        Ok(slot)
     }
 
+    /// Setup a toolchain, which only inserts an action for a tier 3 toolchain,
+    /// otherwise it falls through to the setup of the toolchains it requires
+    /// before it, or the workspace sync (by its dependents).
     async fn internal_setup_toolchain(
         &mut self,
         spec: &ToolchainSpec,
         project: Option<&Project>,
         mut cycle: FxHashSet<Id>,
-    ) -> miette::Result<Option<NodeIndex>> {
-        // Explicitly disabled
-        if !self.options.setup_toolchains.is_enabled(&spec.id)
-            || spec.is_system()
-            || cycle.contains(&spec.id)
-        {
-            return Ok(None);
+    ) -> miette::Result<Slot> {
+        if spec.is_system() || cycle.contains(&spec.id) {
+            return Ok(Slot::default());
         }
 
         let app_context = self.app_context;
-        let toolchain_registry = &app_context.toolchain_registry;
-        let toolchain = toolchain_registry.load(&spec.id).await?;
-        let mut required_before_edges = vec![];
+        let mut required_before = vec![];
         let mut required_after = vec![];
 
         cycle.insert(spec.id.clone());
@@ -484,14 +565,14 @@ impl<'app> GraphAssembler<'app> {
 
             match phase {
                 RequirementPhase::Before => {
-                    required_before_edges.extend(
-                        Box::pin(self.internal_setup_toolchain(
-                            &require_spec,
-                            project,
-                            cycle.clone(),
-                        ))
-                        .await?,
-                    );
+                    let slot = Box::pin(self.internal_setup_toolchain(
+                        &require_spec,
+                        project,
+                        cycle.clone(),
+                    ))
+                    .await?;
+
+                    required_before.extend_from_slice(slot.indices());
                 }
                 RequirementPhase::After => {
                     required_after.push(require_spec);
@@ -499,10 +580,10 @@ impl<'app> GraphAssembler<'app> {
             };
         }
 
-        // Toolchain does not support tier 3, and no toolchains are required to be
-        // setup before it, so there's nothing to setup, nor to setup others after
-        if !toolchain.supports_tier_3().await && required_before_edges.is_empty() {
-            return Ok(None);
+        // Toolchain does not support tier 3 (or is explicitly disabled), so
+        // there's nothing to setup, nor to setup others after
+        if !self.has_setup_toolchain(spec).await? {
+            return Ok(Slot::fall_through(&Slot::default(), required_before));
         }
 
         let mut edges = vec![self.sync_workspace()];
@@ -519,55 +600,55 @@ impl<'app> GraphAssembler<'app> {
 
         // Toolchains may require each other, so a requirement that would close
         // a cycle (when the other toolchain was reached first) is skipped
-        self.try_link_edges(index, required_before_edges);
+        self.try_link_edges(index, required_before);
         self.link_available_edges(index, edges)?;
 
         // Required toolchains that are setup after this one, like Node.js
-        // after JavaScript, so a requirement that would close a cycle is skipped
+        // after JavaScript, so a requirement that would close a cycle is skipped.
+        // One that falls through has no action to order
         for require_spec in required_after {
+            if !self.has_setup_toolchain(&require_spec).await? {
+                continue;
+            }
+
             if let Some(require_index) =
                 Box::pin(self.internal_setup_toolchain(&require_spec, project, cycle.clone()))
                     .await?
+                    .node()
             {
                 self.try_link_edge(require_index, index);
             }
         }
 
-        Ok(Some(index))
+        Ok(Slot::Node(index))
     }
 
     /// Setup the environment of a toolchain in a root, resolved with the
-    /// project's config and versions. When `owner_only` is true, the project
-    /// is the owner of a dependencies workspace, which isn't passed to the
-    /// plugin, as the environment is for the whole workspace.
+    /// project's config and versions, which only inserts an action when the
+    /// toolchain implements `setup_environment`, otherwise it falls through to
+    /// the toolchain's setup, and the environments of the toolchains it requires
+    /// before it.
     async fn internal_setup_environment(
         &mut self,
         spec: &ToolchainSpec,
-        root: &WorkspaceRelativePathBuf,
+        root: RootScope<'_>,
         project: Option<&Project>,
-        owner_only: bool,
         mut cycle: FxHashSet<Id>,
-    ) -> miette::Result<Option<NodeIndex>> {
-        // Explicitly disabled
-        if !self.options.setup_environment.is_enabled(&spec.id)
-            || spec.is_system()
-            || cycle.contains(&spec.id)
-        {
-            return Ok(None);
+    ) -> miette::Result<Slot> {
+        if spec.is_system() || cycle.contains(&spec.id) {
+            return Ok(Slot::default());
         }
 
-        let app_context = self.app_context;
-        let toolchain_registry = &app_context.toolchain_registry;
-        let toolchain = toolchain_registry.load(&spec.id).await?;
-        let mut required_env_edges = vec![];
-        let mut required_toolchain_edges = vec![];
+        let mut required_before = vec![];
         let mut required_after = vec![];
 
         cycle.insert(spec.id.clone());
 
         // Toolchain may depend on others. Required toolchains (like a package
         // manager for JavaScript) typically don't locate a dependencies root, as
-        // this toolchain does, so their environment is setup in this toolchain's root
+        // this toolchain does, so their environment is setup in this toolchain's
+        // root. One that doesn't setup an environment falls through to its
+        // toolchain, which must then be setup beforehand (like uv for Python)
         for (phase, require_spec) in self
             .get_required_specs(spec, project, |req| req.setup_environment)
             .await?
@@ -579,25 +660,15 @@ impl<'app> GraphAssembler<'app> {
 
             match phase {
                 RequirementPhase::Before => {
-                    match Box::pin(self.internal_setup_environment(
+                    let slot = Box::pin(self.internal_setup_environment(
                         &require_spec,
                         root,
                         project,
-                        owner_only,
                         cycle.clone(),
                     ))
-                    .await?
-                    {
-                        Some(env_index) => {
-                            required_env_edges.push(env_index);
-                        }
-                        // Doesn't setup an environment, so the toolchain itself
-                        // must be setup beforehand (like uv for Python)
-                        None => {
-                            required_toolchain_edges
-                                .extend(self.setup_toolchain(&require_spec, project).await?);
-                        }
-                    };
+                    .await?;
+
+                    required_before.extend_from_slice(slot.indices());
                 }
                 RequirementPhase::After => {
                     required_after.push(require_spec);
@@ -605,125 +676,65 @@ impl<'app> GraphAssembler<'app> {
             };
         }
 
-        // Toolchain does not support it, and no toolchains or environments are required
-        // to be setup before it, so there's nothing to setup, nor to setup others after
-        if !toolchain.has_func("setup_environment").await
-            && required_env_edges.is_empty()
-            && required_toolchain_edges.is_empty()
-        {
-            return Ok(None);
+        let toolchain_slot = self.setup_toolchain(spec, project).await?;
+
+        // Toolchain does not support it (or is explicitly disabled), so there's
+        // nothing to setup, nor to setup others after
+        if !self.has_setup_environment(spec).await? {
+            return Ok(Slot::fall_through(&toolchain_slot, required_before));
         }
-
-        let mut edges = required_toolchain_edges
-            .into_iter()
-            .map(Some)
-            .collect::<Vec<_>>();
-
-        edges.push(self.sync_workspace());
-        edges.push(self.setup_toolchain(spec, project).await?);
 
         // The node may already exist, but the edges must still be linked, as the
         // version is not part of its identity, so another version of the toolchain
         // (overridden by a project that shares the root) must also be setup first
-        let (project_id, owner_project_id) = split_owner_project(project, owner_only);
+        let sync_workspace_index = self.sync_workspace();
+        let (project_id, owner_project_id) = split_owner_project(project, root.owner_only());
         let index = self.get_or_insert_node(
             NodeKey::SetupEnvironment {
                 toolchain: spec.id.clone(),
-                root: root.clone(),
+                root: root.path.clone(),
             },
             || {
                 ActionNode::setup_environment(SetupEnvironmentNode {
                     owner_project_id,
                     project_id,
-                    root: root.clone(),
+                    root: root.path.clone(),
                     toolchain_id: spec.id.clone(),
                 })
             },
         );
 
-        self.link_available_edges(index, edges)?;
+        self.link_required_edges(index, toolchain_slot.indices().to_vec())?;
 
         // Required environments that are setup before this one, which may
         // require this toolchain in turn (like Python and uv), when this
         // environment was already setup, so a requirement that would close
         // a cycle is skipped
-        self.try_link_edges(index, required_env_edges);
+        self.try_link_edges(index, required_before);
+        self.link_sync_workspace_if_unlinked(index, sync_workspace_index)?;
 
         // Required environments that are setup after this one, in this root,
         // like Node.js's after npm's, so a requirement that would close a cycle
-        // is skipped
+        // is skipped. One that falls through has no action to order
         for require_spec in required_after {
+            if !self.has_setup_environment(&require_spec).await? {
+                continue;
+            }
+
             if let Some(env_index) = Box::pin(self.internal_setup_environment(
                 &require_spec,
                 root,
                 project,
-                owner_only,
                 cycle.clone(),
             ))
             .await?
+            .node()
             {
                 self.try_link_edge(env_index, index);
             }
         }
 
-        Ok(Some(index))
-    }
-
-    /// Return the setup actions of the toolchains that a toolchain requires to
-    /// be setup after its own actions, in the root, and of the toolchains that
-    /// those require to be setup after theirs, and so on. Toolchains required
-    /// to be setup before are already dependencies of these actions.
-    async fn get_required_after_edges(
-        &mut self,
-        spec: &ToolchainSpec,
-        root: &WorkspaceRelativePathBuf,
-        project: Option<&Project>,
-        owner_only: bool,
-    ) -> miette::Result<Vec<Option<NodeIndex>>> {
-        let mut edges = vec![];
-        let mut visited = FxHashSet::from_iter([spec.id.clone()]);
-        let mut queue = vec![spec.to_owned()];
-
-        while let Some(current) = queue.pop() {
-            let mut required_after = vec![];
-
-            for (phase, require_spec) in self
-                .get_required_specs(&current, project, |req| req.setup_toolchain)
-                .await?
-            {
-                if phase == RequirementPhase::After {
-                    edges.push(self.setup_toolchain(&require_spec, project).await?);
-                    required_after.push(require_spec);
-                }
-            }
-
-            for (phase, require_spec) in self
-                .get_required_specs(&current, project, |req| req.setup_environment)
-                .await?
-            {
-                if phase == RequirementPhase::After {
-                    edges.push(
-                        Box::pin(self.internal_setup_environment(
-                            &require_spec,
-                            root,
-                            project,
-                            owner_only,
-                            FxHashSet::from_iter([current.id.clone()]),
-                        ))
-                        .await?,
-                    );
-                    required_after.push(require_spec);
-                }
-            }
-
-            for require_spec in required_after {
-                if visited.insert(require_spec.id.clone()) {
-                    queue.push(require_spec);
-                }
-            }
-        }
-
-        Ok(edges)
+        Ok(Slot::Node(index))
     }
 
     /// Return the toolchains that a toolchain requires for an action, with
@@ -776,27 +787,23 @@ impl<'app> GraphAssembler<'app> {
     /// Setup the environment in the workspace root, without an associated
     /// project. This inserts no actions at all, unless the located
     /// dependencies root is the workspace root.
-    async fn setup_environment_root(
-        &mut self,
-        spec: &ToolchainSpec,
-    ) -> miette::Result<Option<NodeIndex>> {
+    async fn setup_environment_root(&mut self, spec: &ToolchainSpec) -> miette::Result<Slot> {
         // Explicitly disabled
         if !self.options.setup_environment.is_enabled(&spec.id) || spec.is_system() {
-            return Ok(None);
+            return Ok(Slot::default());
         }
 
         // Only insert actions if the dependencies root is the workspace root
         let Some(root) = self.get_workspace_root(spec) else {
-            return Ok(None);
+            return Ok(Slot::default());
         };
 
         let (root_spec, owner) = self.get_root_chain(root, spec, None)?;
 
         Box::pin(self.internal_setup_environment(
             &root_spec,
-            &root.root,
+            RootScope::new(root),
             owner.as_deref(),
-            matches!(root.kind, RootKind::Workspace { .. }),
             FxHashSet::default(),
         ))
         .await
@@ -806,15 +813,16 @@ impl<'app> GraphAssembler<'app> {
         &mut self,
         project: &Project,
         toolchains: &[Id],
-    ) -> miette::Result<Vec<Option<NodeIndex>>> {
+    ) -> miette::Result<Vec<NodeIndex>> {
         let mut indices = vec![];
 
         for toolchain_id in toolchains {
             if let Some(spec) = get_project_spec(self.app_context, toolchain_id, project) {
-                let slot = self.install_dependencies(&spec, Some(project)).await?;
-
-                indices.push(slot.index);
-                indices.push(slot.own_toolchain);
+                indices.extend(
+                    self.install_dependencies(&spec, Some(project))
+                        .await?
+                        .indices(),
+                );
             }
         }
 
@@ -822,7 +830,7 @@ impl<'app> GraphAssembler<'app> {
     }
 
     /// Resolve the "install slot" of a toolchain: install its dependencies in
-    /// the closest root, or the most specific setup action that exists.
+    /// the closest root, or the most specific action that exists.
     async fn install_dependencies(
         &mut self,
         spec: &ToolchainSpec,
@@ -835,12 +843,12 @@ impl<'app> GraphAssembler<'app> {
         let key = (spec.to_owned(), project.map(|project| project.id.clone()));
 
         if let Some(slot) = self.install_deps_indexes.get(&key) {
-            return Ok(*slot);
+            return Ok(slot.clone());
         }
 
         let slot = self.internal_install_dependencies(spec, project).await?;
 
-        self.install_deps_indexes.insert(key, slot);
+        self.install_deps_indexes.insert(key, slot.clone());
 
         Ok(slot)
     }
@@ -853,17 +861,14 @@ impl<'app> GraphAssembler<'app> {
         // If installing dependencies is disabled, we still need to ensure the
         // toolchain has been setup (and indirectly, the workspace synced), so
         // that its binaries are available to tasks
-        if !self.options.install_dependencies.is_enabled(&spec.id)
-            || self
-                .app_context
-                .toolchains_config
-                .get_plugin_config(&spec.id)
-                .is_some_and(|cfg| !cfg.install_dependencies)
-        {
+        if !self.installs_dependencies(&spec.id) {
             return Ok(InstallSlot::new(self.setup_toolchain(spec, project).await?));
         }
 
-        let sync_workspace_index = self.sync_workspace();
+        // The workspace is synced before installing, even when there's
+        // nothing to install
+        self.sync_workspace();
+
         let layout = self.layout;
 
         let binding = match project {
@@ -871,11 +876,14 @@ impl<'app> GraphAssembler<'app> {
             None => layout.workspace_binding(&spec.id),
         };
 
-        // Only insert this action if the project was placed in a root, as a
-        // toolchain without tier 2, without a located root, or that isn't a
-        // member of it, only sets up the toolchain
+        // A toolchain without tier 2, without a located root, or that isn't a
+        // member of it, has no dependencies to install nor environment to
+        // setup, so it falls through to its toolchain's setup
         let Some(Placement::Root { index, .. }) = binding.map(|binding| &binding.placement) else {
-            return Ok(InstallSlot::new(self.setup_toolchain(spec, project).await?));
+            return Ok(InstallSlot::new(
+                Box::pin(self.install_dependencies_in(spec, None, project, FxHashSet::default()))
+                    .await?,
+            ));
         };
 
         // The actions are scoped to the root, so that every project placed in
@@ -883,85 +891,153 @@ impl<'app> GraphAssembler<'app> {
         // (its owner project's, otherwise the workspace's)
         let root = layout.root(*index);
         let (root_spec, owner) = self.get_root_chain(root, spec, project)?;
-        let owner_only = matches!(root.kind, RootKind::Workspace { .. });
         let chain_project = owner.as_deref().or(match root.kind {
             RootKind::Package => project,
             RootKind::Workspace { .. } => None,
         });
 
-        let setup_toolchain_index = self.setup_toolchain(&root_spec, chain_project).await?;
-        let setup_env_index = Box::pin(self.internal_setup_environment(
+        let slot = Box::pin(self.install_dependencies_in(
             &root_spec,
-            &root.root,
+            Some(RootScope::new(root)),
             chain_project,
-            owner_only,
             FxHashSet::default(),
         ))
         .await?;
 
-        let index = if root.capabilities.install_dependencies {
-            let (project_id, owner_project_id) = split_owner_project(chain_project, owner_only);
-            let index = self.get_or_insert_node(
-                NodeKey::InstallDependencies {
-                    toolchain: spec.id.clone(),
-                    root: root.root.clone(),
-                },
-                || {
-                    ActionNode::install_dependencies(InstallDependenciesNode {
-                        members: match &root.kind {
-                            RootKind::Workspace { members } => Some(members.to_owned()),
-                            RootKind::Package => None,
-                        },
-                        owner_project_id,
-                        project_id,
-                        root: root.root.clone(),
-                        toolchain_id: spec.id.clone(),
-                    })
-                },
-            );
-
-            self.link_first_available_edge(
-                index,
-                vec![setup_env_index, setup_toolchain_index, sync_workspace_index],
-            )?;
-
-            // Toolchains that are setup after this one (like Node.js and its
-            // package manager after JavaScript) aren't dependencies of the actions
-            // above, but installing dependencies uses them, so must wait for them
-            let after_edges = self
-                .get_required_after_edges(&root_spec, &root.root, chain_project, owner_only)
-                .await?;
-
-            self.link_available_edges(index, after_edges)?;
-
-            Some(index)
-        }
-        // Otherwise pass through to setup environment
-        else if let Some(setup_env_index) = setup_env_index {
-            self.link_first_available_edge(
-                setup_env_index,
-                vec![setup_toolchain_index, sync_workspace_index],
-            )?;
-
-            Some(setup_env_index)
-        }
-        // Or fallback entirely to setup toolchain
-        else {
-            setup_toolchain_index
-        };
-
         // A project that overrides the root's version only needs its own
         // version to run its tasks, so it's linked by the requester instead
         let own_toolchain = if *spec == root_spec {
-            None
+            Slot::default()
         } else {
             self.setup_toolchain(spec, project).await?
         };
 
         Ok(InstallSlot {
-            index,
+            slot,
             own_toolchain,
         })
+    }
+
+    /// Install the dependencies of a toolchain in a root, which only inserts an
+    /// action when the toolchain implements `install_dependencies`, otherwise it
+    /// falls through to the toolchain's environment (or its setup, without a
+    /// root), and the installs of the toolchains it requires before it.
+    async fn install_dependencies_in(
+        &mut self,
+        spec: &ToolchainSpec,
+        root: Option<RootScope<'_>>,
+        project: Option<&Project>,
+        mut cycle: FxHashSet<Id>,
+    ) -> miette::Result<Slot> {
+        if spec.is_system() || cycle.contains(&spec.id) {
+            return Ok(Slot::default());
+        }
+
+        // Only the toolchain is setup when installing its dependencies is
+        // disabled, like a toolchain's own install slot
+        if !self.installs_dependencies(&spec.id) {
+            return self.setup_toolchain(spec, project).await;
+        }
+
+        let toolchain_slot = self.setup_toolchain(spec, project).await?;
+        let env_slot = match root {
+            Some(root) => {
+                Box::pin(self.internal_setup_environment(spec, root, project, FxHashSet::default()))
+                    .await?
+            }
+            None => toolchain_slot,
+        };
+
+        let mut required_before = vec![];
+        let mut required_after = vec![];
+
+        cycle.insert(spec.id.clone());
+
+        // Toolchain may depend on others, like a package manager that installs
+        // after its runtime does, in this toolchain's root
+        for (phase, require_spec) in self
+            .get_required_specs(spec, project, |req| req.install_dependencies)
+            .await?
+        {
+            if require_spec.id == spec.id || cycle.contains(&require_spec.id) {
+                continue;
+            }
+
+            match phase {
+                RequirementPhase::Before => {
+                    let slot = Box::pin(self.install_dependencies_in(
+                        &require_spec,
+                        root,
+                        project,
+                        cycle.clone(),
+                    ))
+                    .await?;
+
+                    required_before.extend_from_slice(slot.indices());
+                }
+                RequirementPhase::After => {
+                    required_after.push(require_spec);
+                }
+            };
+        }
+
+        // Toolchain does not support it, or there's no root to install in, so
+        // there's nothing to install, nor to install others after
+        let Some(root) = root else {
+            return Ok(Slot::fall_through(&env_slot, required_before));
+        };
+
+        if !self.has_install_dependencies(spec).await? {
+            return Ok(Slot::fall_through(&env_slot, required_before));
+        }
+
+        let sync_workspace_index = self.sync_workspace();
+        let (project_id, owner_project_id) = split_owner_project(project, root.owner_only());
+        let index = self.get_or_insert_node(
+            NodeKey::InstallDependencies {
+                toolchain: spec.id.clone(),
+                root: root.path.clone(),
+            },
+            || {
+                ActionNode::install_dependencies(InstallDependenciesNode {
+                    members: match root.kind {
+                        RootKind::Workspace { members } => Some(members.to_owned()),
+                        RootKind::Package => None,
+                    },
+                    owner_project_id,
+                    project_id,
+                    root: root.path.clone(),
+                    toolchain_id: spec.id.clone(),
+                })
+            },
+        );
+
+        self.link_required_edges(index, env_slot.indices().to_vec())?;
+        self.try_link_edges(index, required_before);
+        self.link_sync_workspace_if_unlinked(index, sync_workspace_index)?;
+
+        // Required installs that run after this one, in this root, so a
+        // requirement that would close a cycle is skipped. One that falls
+        // through has no action to order
+        for require_spec in required_after {
+            if !self.has_install_dependencies(&require_spec).await? {
+                continue;
+            }
+
+            if let Some(require_index) = Box::pin(self.install_dependencies_in(
+                &require_spec,
+                Some(root),
+                project,
+                cycle.clone(),
+            ))
+            .await?
+            .node()
+            {
+                self.try_link_edge(require_index, index);
+            }
+        }
+
+        Ok(Slot::Node(index))
     }
 
     /// Install dependencies in the workspace root, without an associated
@@ -971,14 +1047,7 @@ impl<'app> GraphAssembler<'app> {
         spec: &ToolchainSpec,
     ) -> miette::Result<InstallSlot> {
         // Explicitly disabled
-        if spec.is_system()
-            || !self.options.install_dependencies.is_enabled(&spec.id)
-            || self
-                .app_context
-                .toolchains_config
-                .get_plugin_config(&spec.id)
-                .is_some_and(|cfg| !cfg.install_dependencies)
-        {
+        if spec.is_system() || !self.installs_dependencies(&spec.id) {
             return Ok(InstallSlot::default());
         }
 
@@ -988,6 +1057,59 @@ impl<'app> GraphAssembler<'app> {
         }
 
         self.install_dependencies(spec, None).await
+    }
+
+    /// Whether the toolchain has its own setup toolchain action: it's tier 3,
+    /// and setting it up is enabled.
+    async fn has_setup_toolchain(&self, spec: &ToolchainSpec) -> miette::Result<bool> {
+        Ok(!spec.is_system()
+            && self.options.setup_toolchains.is_enabled(&spec.id)
+            && self
+                .app_context
+                .toolchain_registry
+                .load(&spec.id)
+                .await?
+                .supports_tier_3()
+                .await)
+    }
+
+    /// Whether the toolchain has its own setup environment action (in a
+    /// root): it implements `setup_environment`, and setting it up is enabled.
+    async fn has_setup_environment(&self, spec: &ToolchainSpec) -> miette::Result<bool> {
+        Ok(!spec.is_system()
+            && self.options.setup_environment.is_enabled(&spec.id)
+            && self
+                .app_context
+                .toolchain_registry
+                .load(&spec.id)
+                .await?
+                .has_func("setup_environment")
+                .await)
+    }
+
+    /// Whether the toolchain has its own install dependencies action (in a
+    /// root): it implements `install_dependencies`, and installing is enabled.
+    async fn has_install_dependencies(&self, spec: &ToolchainSpec) -> miette::Result<bool> {
+        Ok(!spec.is_system()
+            && self.installs_dependencies(&spec.id)
+            && self
+                .app_context
+                .toolchain_registry
+                .load(&spec.id)
+                .await?
+                .has_func("install_dependencies")
+                .await)
+    }
+
+    /// Whether installing dependencies is enabled for the toolchain, by the
+    /// builder's options and the toolchain's config.
+    fn installs_dependencies(&self, id: &Id) -> bool {
+        self.options.install_dependencies.is_enabled(id)
+            && self
+                .app_context
+                .toolchains_config
+                .get_plugin_config(id)
+                .is_none_or(|cfg| cfg.install_dependencies)
     }
 
     /// The root that the workspace was placed in for the toolchain, when the
@@ -1032,13 +1154,20 @@ impl<'app> GraphAssembler<'app> {
 
     // EDGES
 
-    fn link_first_available_edge(
+    /// Link an action that depends on no other action to the workspace sync,
+    /// as every action runs after the workspace has been synced.
+    fn link_sync_workspace_if_unlinked(
         &mut self,
         index: NodeIndex,
-        edges: Vec<Option<NodeIndex>>,
+        sync_workspace_index: Option<NodeIndex>,
     ) -> miette::Result<()> {
-        if let Some(edge) = edges.into_iter().flatten().next() {
-            self.link_required_edges(index, vec![edge])?;
+        if self
+            .graph
+            .edges_directed(index, Direction::Outgoing)
+            .next()
+            .is_none()
+        {
+            self.link_available_edges(index, vec![sync_workspace_index])?;
         }
 
         Ok(())

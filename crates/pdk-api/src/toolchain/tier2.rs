@@ -50,6 +50,11 @@ api_struct!(
         /// should this requirement also have its setup environment action run,
         /// and whether it should run before or after the parent toolchain's action.
         pub setup_environment: Option<RequirementPhase>,
+
+        /// When the install dependencies action is run for the parent toolchain,
+        /// should this requirement also have its install dependencies action run,
+        /// and whether it should run before or after the parent toolchain's action.
+        pub install_dependencies: Option<RequirementPhase>,
     }
 );
 
@@ -60,6 +65,7 @@ impl ToolchainRequirement {
             id: id.as_ref().to_owned(),
             setup_toolchain: None,
             setup_environment: None,
+            install_dependencies: None,
         }
     }
 }
@@ -78,9 +84,9 @@ api_struct!(
         pub inherits_root_from: Option<String>,
 
         /// Other toolchains that this toolchain requires. They're added to the
-        /// projects and tasks that use this toolchain, and their setup toolchain
-        /// and setup environment actions are ordered against this toolchain's,
-        /// based on each requirement's phases.
+        /// projects and tasks that use this toolchain, and their setup toolchain,
+        /// setup environment, and install dependencies actions are ordered against
+        /// this toolchain's, based on each requirement's phases.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub requires: Vec<ToolchainRequirement>,
     }

@@ -10,8 +10,6 @@ digraph {
     4 [ label="SetupEnvironment(tc-tier2-setup-env, bar)"]
     2 -> 0 [ label="required"]
     2 -> 1 [ label="required"]
-    3 -> 0 [ label="required"]
     3 -> 2 [ label="required"]
-    4 -> 0 [ label="required"]
     4 -> 3 [ label="required"]
 }

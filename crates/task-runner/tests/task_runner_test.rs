@@ -2373,6 +2373,36 @@ mod task_runner {
                 assert_eq!(runner.cache.data.hash, "hash123");
             }
 
+            // An archive is only created by a run that passed, so the exit code of
+            // a previous run that failed must not be kept, otherwise the previous
+            // outputs are never reused, and the archive is unpacked on every run
+            #[tokio::test(flavor = "multi_thread")]
+            async fn resets_the_exit_code_of_a_failed_run() {
+                let container = TaskRunnerContainer::new("runner", "outputs").await;
+                let mut runner = container.create_runner();
+
+                setup_local_state(&container, &mut runner);
+                runner.cache.data.exit_code = 1;
+
+                runner.hydrate("hash123").await.unwrap();
+
+                assert_eq!(runner.cache.data.exit_code, 0);
+                assert_eq!(
+                    runner
+                        .operations
+                        .last()
+                        .unwrap()
+                        .get_exec_output()
+                        .unwrap()
+                        .exit_code,
+                    Some(0)
+                );
+                assert!(matches!(
+                    runner.is_cached("hash123").await.unwrap(),
+                    Some(HydrateFrom::PreviousOutput)
+                ));
+            }
+
             #[tokio::test(flavor = "multi_thread")]
             async fn unpacks_archive_into_project() {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;

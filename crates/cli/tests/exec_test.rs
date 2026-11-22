@@ -18,18 +18,21 @@ fn target(task: &str) -> String {
     format!("{PROJECT_DIR}:{task}")
 }
 
-fn extract_hash_from_run(fixture: &Path, target_id: &str) -> String {
+fn extract_state_from_run(fixture: &Path, target_id: &str) -> TaskRunCacheState {
     let engine = CacheEngine::new(CacheContext::new(fixture)).unwrap();
-    let cache: TaskRunCacheState = json::read_file(
+
+    json::read_file(
         engine
             .state
             .states_dir
             .join(target_id.replace(':', "/"))
             .join("lastRun.json"),
     )
-    .unwrap();
+    .unwrap()
+}
 
-    cache.hash
+fn extract_hash_from_run(fixture: &Path, target_id: &str) -> String {
+    extract_state_from_run(fixture, target_id).hash
 }
 
 mod exec {
@@ -1324,6 +1327,20 @@ tasks:
                     fs::read_file(sandbox.path().join("outputs/flaky/result.txt")).unwrap(),
                     "pass"
                 );
+
+                // A read-only cache doesn't record the hydrated run, but a writable
+                // one does, as a pass, so its outputs are reused from now on
+                sandbox
+                    .run_bin(|cmd| {
+                        cmd.arg("exec").arg("outputs:flaky");
+                    })
+                    .success()
+                    .stdout(predicate::str::contains("cached"));
+
+                let state = extract_state_from_run(sandbox.path(), "outputs:flaky");
+
+                assert_eq!(state.exit_code, 0);
+                assert_eq!(state.hash, hash);
             }
 
             #[test]

@@ -933,11 +933,16 @@ impl<'task> TaskRunner<'task> {
             HydrateOutcome::Hit => {
                 debug!(task_target, "Ran cache hydration operation");
 
+                // Previous outputs are only reused when the last run passed, and an
+                // archive is only created by a run that passed, but the last run may
+                // have failed since, so don't replay (and keep) its exit code
+                self.cache.data.exit_code = 0;
+
                 // If not using a cache manifest, we need to read the locally cached
                 // stdout/stderr log files since the command executor does not run!
                 if let Some(output) = operation.get_exec_output_mut() {
                     output.command = Some(self.task.get_command_line());
-                    output.exit_code = Some(self.cache.data.exit_code);
+                    output.exit_code = Some(0);
 
                     let state_dir = self
                         .app_context

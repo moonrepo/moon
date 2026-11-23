@@ -14,7 +14,8 @@ to it to a `type: wait` dependency.
 
 The Environment, Cache, and Config sections were audited on 2026-11-21. The other sections (Task
 graph, Inputs, Outputs, Failures, Affected, Run report, Isolation) have not been audited yet. Fixed
-items are on the `audit-conformance-2818` branch, one commit each, until it's merged into `master`.
+items are in moonrepo/moon#2820, one commit each. The last four rows are smaller issues found while
+fixing them, which no case tests directly.
 
 | Item                                                                                                    | Cases                                                                | Status                                 |
 | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------- |
@@ -28,6 +29,10 @@ items are on the `audit-conformance-2818` branch, one commit each, until it's me
 | [Share the local cache across worktrees by default](#share-the-local-cache-across-worktrees-by-default) | `95qyl3`                                                             | Not yet decided                        |
 | [Inputs that change while a task runs](#inputs-that-change-while-a-task-runs)                           | `o2iy1u`                                                             | Not yet decided                        |
 | [Cases that only fail without a toolchain](#cases-that-only-fail-without-a-toolchain)                   | `o8neo7`, `l2ggkq`                                                   | No moon change, feedback for the suite |
+| [Empty env inputs don't mark tasks as affected](#empty-env-inputs-dont-mark-tasks-as-affected)          | Related to `hjbima`                                                  | Not yet decided                        |
+| [Env variables are substituted inside longer names](#env-variables-are-substituted-inside-longer-names) | Related to `f4a2p6`                                                  | Not yet decided                        |
+| [Token variables aren't escaped in globs](#token-variables-arent-escaped-in-globs)                      | Related to `rqk8s7`                                                  | Not yet decided                        |
+| [Env variables are substituted in project paths](#env-variables-are-substituted-in-project-paths)       | Related to `rqk8s7`                                                  | Not yet decided                        |
 
 ## Servers behind `wait` dependencies
 
@@ -164,3 +169,42 @@ with the `javascript` toolchain enabled, as it adds `node_modules/.bin` to `PATH
 `package.json`. Feedback for the suite: vendor the toolchain's WASM plugin into the sandbox and
 reference it with a `file://` locator in `.moon/toolchains.yml`. A minor polish for the plugins
 repository: the parse error shows the WASI path (`/workspace/...`) instead of the real path.
+
+## Empty env inputs don't mark tasks as affected
+
+Related to [`hjbima`](https://vznjs.github.io/vx/conformance/#hjbima), which is fixed for the hash:
+an unset env input and one set to an empty string now hash differently. The affected tracker still
+treats an empty variable as unset, and only marks a task as affected by an env input when the
+variable is set and not empty (`crates/affected/src/affected_tracker.rs:496` and
+`crates/affected/src/task_tracker.rs:59`). So setting a variable to `""` changes the task's hash,
+but doesn't make it affected. This was left as is during the audit, as treating empty as unset there
+was intentional. Decide whether the two should agree.
+
+## Env variables are substituted inside longer names
+
+Related to [`f4a2p6`](https://vznjs.github.io/vx/conformance/#f4a2p6). Env inputs can now have
+lowercase names, but substitution still uses `ENV_VAR` (`crates/env-var/src/lib.rs:24`), which
+matches `[A-Z0-9_]+` without a boundary. So in `$FOObar` it substitutes `$FOO` and keeps `bar`, and
+in `$__proto__` it substitutes `$__`. Matching the whole name, or not substituting a partial match,
+changes how args, env, inputs, and outputs are substituted everywhere, so it needs its own change
+and tests.
+
+## Token variables aren't escaped in globs
+
+Related to [`rqk8s7`](https://vznjs.github.io/vx/conformance/#rqk8s7). A task glob is kept as
+configured, alongside a form that moon walks and matches with, where the project's path is escaped.
+Token variables are replaced in both forms afterward, with their values as-is
+(`create_glob_for_task` in `crates/task-expander/src/token_expander.rs`). In a `packages/[lib]`
+project, an input of `/$projectSource/src/**/*` becomes `packages/[lib]/src/**/*` in both forms, so
+`[lib]` is a character class, and the task hashes none of its files. A fix would replace token
+variables with escaped values in the form to walk and match with. This mostly affects
+`$projectSource`, as the other path variables are absolute.
+
+## Env variables are substituted in project paths
+
+Related to [`rqk8s7`](https://vznjs.github.io/vx/conformance/#rqk8s7), and unchanged from 2.6.4. Env
+variables are replaced after the project's path is joined with a task's path, so a `$` in the
+project's path is substituted too. In a `packages/$X` project, an input of `src/**/*` becomes
+`packages//src/**/*`, and the run fails with "Failed to create glob from pattern". File paths are
+substituted the same way. A fix would replace variables in the path as configured, before joining it
+with the project's path.

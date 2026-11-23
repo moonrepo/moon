@@ -32,7 +32,7 @@ pub fn define_requirements(
         output.requires = ids
             .into_iter()
             .map(|id| ToolchainRequirement {
-                id,
+                id: Id::raw(id),
                 setup_toolchain: None,
                 setup_environment: Some(RequirementPhase::Before),
                 install_dependencies: None,

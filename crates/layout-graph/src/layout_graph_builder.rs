@@ -395,21 +395,15 @@ impl LayoutGraphBuilder {
                 continue;
             }
 
-            let output = child
-                .toolchain
-                .define_requirements(DefineRequirementsInput {
+            let output = registry
+                .define_requirements_for(&child.toolchain, |_| DefineRequirementsInput {
                     context: registry.create_context(),
                     toolchain_config: child.config.as_ref().to_owned(),
                 })
                 .await?;
 
             // An invalid identifier can't be a configured toolchain
-            if let Some(parent_id) = output
-                .inherits_root_from
-                .and_then(|id| Id::new(id).ok())
-                .map(|id| registry.resolve_toolchain_id(id))
-                .filter(|id| *id != child.spec.id)
-            {
+            if let Some(parent_id) = output.inherits_root_from.filter(|id| *id != child.spec.id) {
                 children.push((index, parent_id));
             }
         }

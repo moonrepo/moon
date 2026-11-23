@@ -10,7 +10,7 @@ pub fn define_requirements(
     Ok(Json(DefineRequirementsOutput {
         // Must be tier 3+
         requires: vec![ToolchainRequirement {
-            id: "tc-tier3".into(),
+            id: Id::raw("tc-tier3"),
             setup_toolchain: Some(RequirementPhase::Before),
             // Only require for the environment when a test opts in via toolchain
             // config, as this plugin does not implement `setup_environment` and

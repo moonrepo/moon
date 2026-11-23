@@ -63,24 +63,6 @@ enum NodeKey {
     SyncWorkspace,
 }
 
-/// Parse the ID of a toolchain that a toolchain's plugin requires, naming
-/// the toolchain when it's invalid, and resolve it to how the toolchain was
-/// configured (stable or unstable).
-fn parse_requirement_id(
-    app_context: &AppContext,
-    spec: &ToolchainSpec,
-    require_id: String,
-) -> miette::Result<Id> {
-    let id =
-        Id::new(&require_id).map_err(|error| ActionGraphError::InvalidToolchainRequirement {
-            id: spec.id.to_string(),
-            dep_id: require_id,
-            error: Box::new(error),
-        })?;
-
-    Ok(app_context.toolchain_registry.resolve_toolchain_id(id))
-}
-
 /// What an action of a toolchain resolved to. Either the toolchain's own node,
 /// or, when the toolchain doesn't have the action (or it's disabled), the nodes
 /// that it falls through to: the toolchain's next action (install dependencies,
@@ -751,8 +733,8 @@ impl<'app> GraphAssembler<'app> {
         let toolchain = toolchain_registry.load(&spec.id).await?;
         let mut specs = vec![];
 
-        let output = toolchain
-            .define_requirements(DefineRequirementsInput {
+        let output = toolchain_registry
+            .define_requirements_for(&toolchain, |toolchain| DefineRequirementsInput {
                 context: toolchain_registry.create_context(),
                 toolchain_config: match project {
                     Some(project) => {
@@ -768,12 +750,10 @@ impl<'app> GraphAssembler<'app> {
                 continue;
             };
 
-            let require_id = parse_requirement_id(app_context, spec, requirement.id)?;
-
-            let Some(require_spec) = get_spec(app_context, &require_id, project) else {
+            let Some(require_spec) = get_spec(app_context, &requirement.id, project) else {
                 return Err(ActionGraphError::MissingToolchainRequirement {
                     id: spec.id.to_string(),
-                    dep_id: require_id.to_string(),
+                    dep_id: requirement.id.to_string(),
                 }
                 .into());
             };

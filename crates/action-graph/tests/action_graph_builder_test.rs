@@ -6458,37 +6458,6 @@ mod action_graph_builder {
         use super::*;
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn errors_for_invalid_toolchain_requirement_ids() {
-            let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer::new(sandbox.path())
-                // Plugin matches based on cwd, so the project owns the root package
-                .set_working_dir(sandbox.path().join("bar"));
-
-            container.mocker = container.mocker.update_toolchains_config(|cfg| {
-                if let Some(inner) = cfg.plugins.get_mut(&Id::raw("tc-tier2-setup-env")) {
-                    inner
-                        .config
-                        .insert("testEnvRequirements".into(), serde_json::json!(["bad id!"]));
-                }
-            });
-
-            let wg = container.create_workspace_graph().await;
-            let mut builder = container.create_builder(wg.clone()).await;
-
-            builder.install_dependencies(
-                &create_tier_spec_with_name("tc-tier2-setup-env"),
-                wg.get_project("bar").unwrap(),
-            );
-
-            let error = builder.build().await.err().unwrap().to_string();
-
-            assert!(
-                error.contains("requires bad id!, which is not a valid toolchain ID"),
-                "{error}"
-            );
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
         async fn graphs_if_supported() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer::new(sandbox.path());

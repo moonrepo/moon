@@ -36,11 +36,13 @@ pub fn define_requirements(
         output.requires = json::from_value(requires.to_owned())?;
     }
 
-    output.inherits_root_from = input
+    if let Some(id) = input
         .toolchain_config
         .get("testInheritsRootFrom")
         .and_then(|value| value.as_str())
-        .map(|value| value.to_owned());
+    {
+        output.inherits_root_from = Some(Id::new(id)?);
+    }
 
     Ok(Json(output))
 }

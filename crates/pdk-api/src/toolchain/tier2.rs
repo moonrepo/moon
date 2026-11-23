@@ -1,11 +1,13 @@
 use crate::context::*;
 use crate::host::*;
 use crate::is_false;
+use moon_common::Id;
 use moon_config::{UnresolvedVersionSpec, Version, VersionSpec};
 use moon_project::ProjectFragment;
 use moon_task::TaskFragment;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
+use warpgate_api::AnyResult;
 use warpgate_api::{VirtualPath, api_enum, api_struct, api_unit_enum};
 
 api_struct!(
@@ -39,7 +41,7 @@ api_struct!(
         /// Identifier of the required toolchain. If targeting an unstable toolchain,
         /// the identifier must be prefixed with "unstable_". When the toolchain is
         /// stable, both identifiers will continue to work.
-        pub id: String,
+        pub id: Id,
 
         /// When the setup toolchain action is run for the parent toolchain,
         /// should this requirement also have its setup toolchain action run,
@@ -60,13 +62,13 @@ api_struct!(
 
 impl ToolchainRequirement {
     /// Create a requirement for the provided toolchain, with no actions.
-    pub fn new(id: impl AsRef<str>) -> Self {
-        Self {
-            id: id.as_ref().to_owned(),
+    pub fn new(id: impl AsRef<str>) -> AnyResult<Self> {
+        Ok(Self {
+            id: Id::new(id)?,
             setup_toolchain: None,
             setup_environment: None,
             install_dependencies: None,
-        }
+        })
     }
 }
 
@@ -77,11 +79,10 @@ api_struct!(
         /// Identifier of the toolchain whose dependencies root this toolchain
         /// inherits, when it doesn't locate one itself (it doesn't implement
         /// `locate_dependencies_root`), like a package manager inheriting the
-        /// root that JavaScript located. Its actions then run in that root, for
-        /// the projects that use both toolchains. If targeting an unstable
-        /// toolchain, the identifier must be prefixed with "unstable_".
+        /// root that language located. Its actions then run in that root, for
+        /// the projects that use both toolchains.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub inherits_root_from: Option<String>,
+        pub inherits_root_from: Option<Id>,
 
         /// Other toolchains that this toolchain requires. They're added to the
         /// projects and tasks that use this toolchain, and their setup toolchain,

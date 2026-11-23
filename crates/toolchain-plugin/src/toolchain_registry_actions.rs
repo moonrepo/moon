@@ -8,7 +8,7 @@ use moon_pdk_api::{
     DefineRequirementsOutput, ExtendCommandInput, ExtendCommandOutput, ExtendProjectGraphInput,
     ExtendProjectGraphOutput, ExtendTaskCommandInput, ExtendTaskScriptInput,
     ExtendTaskScriptOutput, LocateDependenciesRootInput, ScaffoldDockerInput, SyncOutput,
-    SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
+    SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput, ToolchainRequirement,
 };
 use moon_plugin::{CallOptions, CallResult};
 use moon_toolchain::DependenciesWorkspace;
@@ -24,6 +24,26 @@ use std::sync::Arc;
 // depending on the need of the call site.
 
 impl ToolchainRegistry {
+    fn handle_define_requirements(
+        &self,
+        mut output: DefineRequirementsOutput,
+    ) -> DefineRequirementsOutput {
+        output.requires = output
+            .requires
+            .into_iter()
+            .map(|requirement| ToolchainRequirement {
+                id: self.resolve_toolchain_id(requirement.id),
+                ..requirement
+            })
+            .collect();
+
+        output.inherits_root_from = output
+            .inherits_root_from
+            .map(|id| self.resolve_toolchain_id(id));
+
+        output
+    }
+
     pub async fn activate_environment_many<InFn>(
         &self,
         ids: Vec<&Id>,
@@ -143,6 +163,21 @@ impl ToolchainRegistry {
         Ok(detected.into_iter().collect())
     }
 
+    pub async fn define_requirements_for<InFn>(
+        &self,
+        toolchain: &ToolchainPlugin,
+        input_factory: InFn,
+    ) -> miette::Result<DefineRequirementsOutput>
+    where
+        InFn: Fn(&ToolchainPlugin) -> DefineRequirementsInput,
+    {
+        Ok(self.handle_define_requirements(
+            toolchain
+                .define_requirements(input_factory(toolchain))
+                .await?,
+        ))
+    }
+
     pub async fn define_requirements_many<InFn>(
         &self,
         ids: Vec<&Id>,
@@ -151,13 +186,22 @@ impl ToolchainRegistry {
     where
         InFn: Fn(&ToolchainPlugin) -> DefineRequirementsInput,
     {
-        self.call_func(
-            "define_requirements",
-            ids,
-            input_factory,
-            |toolchain, input| async move { toolchain.define_requirements(input).await },
-        )
-        .await
+        let results = self
+            .call_func(
+                "define_requirements",
+                ids,
+                input_factory,
+                |toolchain, input| async move { toolchain.define_requirements(input).await },
+            )
+            .await?;
+
+        Ok(results
+            .into_iter()
+            .map(|mut result| {
+                result.output = self.handle_define_requirements(result.output);
+                result
+            })
+            .collect())
     }
 
     pub async fn define_toolchain_config_all(
@@ -252,10 +296,12 @@ impl ToolchainRegistry {
             .define_requirements_many(candidate_ids, &input_factory)
             .await?
         {
-            let required = self
-                .resolve_requirement_ids(result.output)
+            let required = result
+                .output
+                .requires
                 .into_iter()
-                .filter(|require_id| !excluded.contains(require_id))
+                .map(|req| req.id)
+                .filter(|req_id| !excluded.contains(req_id))
                 .collect::<Vec<_>>();
 
             requirements.push((result.id, required));
@@ -311,14 +357,18 @@ impl ToolchainRegistry {
 
             let toolchain = self.load(&id).await?;
 
-            for require_id in self
-                .get_required_ids(&toolchain, input_factory(&toolchain))
+            for requirement in self
+                .define_requirements_for(&toolchain, |tc| input_factory(tc))
                 .await?
+                .requires
             {
-                if !seen.contains(&require_id)
-                    && self.config_data.get_plugin_config(&require_id).is_some()
+                if !seen.contains(&requirement.id)
+                    && self
+                        .config_data
+                        .get_plugin_config(&requirement.id)
+                        .is_some()
                 {
-                    queue.push_back(require_id);
+                    queue.push_back(requirement.id);
                 }
             }
 
@@ -326,29 +376,6 @@ impl ToolchainRegistry {
         }
 
         Ok(toolchains)
-    }
-
-    /// The identifiers of the toolchains that the toolchain directly requires,
-    /// resolved to how they were configured, see `resolve_requirement_ids`.
-    async fn get_required_ids(
-        &self,
-        toolchain: &ToolchainPlugin,
-        input: DefineRequirementsInput,
-    ) -> miette::Result<Vec<Id>> {
-        Ok(self.resolve_requirement_ids(toolchain.define_requirements(input).await?))
-    }
-
-    /// The identifiers of the toolchains that a toolchain requires, resolved to
-    /// how they were configured. An invalid identifier can't be a configured
-    /// toolchain, so it's skipped, and reported (naming the toolchain that
-    /// requires it) when the action graph sets it up.
-    fn resolve_requirement_ids(&self, output: DefineRequirementsOutput) -> Vec<Id> {
-        output
-            .requires
-            .into_iter()
-            .filter_map(|requirement| Id::new(requirement.id).ok())
-            .map(|id| self.resolve_toolchain_id(id))
-            .collect()
     }
 
     /// Resolve the identifier to how the toolchain was configured, which may be

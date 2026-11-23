@@ -150,8 +150,8 @@ mod toolchain_plugin {
             let registry = ws.mock_toolchain_registry();
             let toolchain = registry.load("tc-tier1").await.unwrap();
 
-            let output = toolchain
-                .define_requirements(DefineRequirementsInput {
+            let output = registry
+                .define_requirements_for(&toolchain, |_| DefineRequirementsInput {
                     context: registry.create_context(),
                     ..Default::default()
                 })
@@ -209,8 +209,8 @@ mod toolchain_plugin {
             let registry = ws.mock_toolchain_registry();
             let toolchain = registry.load("tc-tier2-reqs").await.unwrap();
 
-            let output = toolchain
-                .define_requirements(DefineRequirementsInput {
+            let output = registry
+                .define_requirements_for(&toolchain, |_| DefineRequirementsInput {
                     context: registry.create_context(),
                     ..Default::default()
                 })
@@ -220,7 +220,7 @@ mod toolchain_plugin {
             assert_eq!(
                 output.requires,
                 vec![ToolchainRequirement {
-                    id: "tc-tier3".into(),
+                    id: Id::raw("tc-tier3"),
                     setup_toolchain: Some(RequirementPhase::Before),
                     setup_environment: None,
                     install_dependencies: None,
@@ -234,8 +234,8 @@ mod toolchain_plugin {
             let registry = ws.mock_toolchain_registry();
             let toolchain = registry.load("tc-tier2-reqs").await.unwrap();
 
-            let output = toolchain
-                .define_requirements(DefineRequirementsInput {
+            let output = registry
+                .define_requirements_for(&toolchain, |_| DefineRequirementsInput {
                     context: registry.create_context(),
                     toolchain_config: json!({
                         "testRequiresForEnvironment": true,
@@ -247,7 +247,7 @@ mod toolchain_plugin {
             assert_eq!(
                 output.requires,
                 vec![ToolchainRequirement {
-                    id: "tc-tier3".into(),
+                    id: Id::raw("tc-tier3"),
                     setup_toolchain: Some(RequirementPhase::Before),
                     setup_environment: Some(RequirementPhase::Before),
                     install_dependencies: None,
@@ -261,8 +261,8 @@ mod toolchain_plugin {
             let registry = ws.mock_toolchain_registry();
             let toolchain = registry.load("tc-tier2-setup-env").await.unwrap();
 
-            let output = toolchain
-                .define_requirements(DefineRequirementsInput {
+            let output = registry
+                .define_requirements_for(&toolchain, |_| DefineRequirementsInput {
                     context: registry.create_context(),
                     toolchain_config: json!({
                         "testEnvRequirements": ["tc-tier3"],
@@ -274,11 +274,36 @@ mod toolchain_plugin {
             assert_eq!(
                 output.requires,
                 vec![ToolchainRequirement {
-                    id: "tc-tier3".into(),
+                    id: Id::raw("tc-tier3"),
                     setup_toolchain: None,
                     setup_environment: Some(RequirementPhase::Before),
                     install_dependencies: None,
                 }]
+            );
+        }
+
+        // Identifiers are validated when parsing the plugin's output, which
+        // names the toolchain that requires the invalid one
+        #[tokio::test(flavor = "multi_thread")]
+        async fn errors_for_invalid_requirement_ids() {
+            let (_sandbox, ws) = create_workspace();
+            let registry = ws.mock_toolchain_registry();
+            let toolchain = registry.load("tc-tier2-setup-env").await.unwrap();
+
+            let error = registry
+                .define_requirements_for(&toolchain, |_| DefineRequirementsInput {
+                    context: registry.create_context(),
+                    toolchain_config: json!({
+                        "testEnvRequirements": ["bad id!"],
+                    }),
+                })
+                .await
+                .unwrap_err()
+                .to_string();
+
+            assert!(
+                error.contains("tc-tier2-setup-env plugin function define_requirements"),
+                "{error}"
             );
         }
 
@@ -288,8 +313,8 @@ mod toolchain_plugin {
             let registry = ws.mock_toolchain_registry();
             let toolchain = registry.load("tc-tier2-setup-env").await.unwrap();
 
-            let output = toolchain
-                .define_requirements(DefineRequirementsInput {
+            let output = registry
+                .define_requirements_for(&toolchain, |_| DefineRequirementsInput {
                     context: registry.create_context(),
                     toolchain_config: json!({
                         "testRequires": [
@@ -309,9 +334,9 @@ mod toolchain_plugin {
             assert_eq!(
                 output.requires,
                 vec![
-                    ToolchainRequirement::new("tc-tier3"),
+                    ToolchainRequirement::new("tc-tier3").unwrap(),
                     ToolchainRequirement {
-                        id: "tc-tier1".into(),
+                        id: Id::raw("tc-tier1"),
                         setup_toolchain: Some(RequirementPhase::After),
                         setup_environment: None,
                         install_dependencies: Some(RequirementPhase::Before),

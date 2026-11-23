@@ -1,8 +1,14 @@
 use moon_common::path::{
-    RelativeFrom, WorkspaceRelativePathBuf, escape_glob, expand_to_workspace_relative_glob,
-    unescape_glob,
+    RelativeFrom, WorkspaceRelativeGlob, WorkspaceRelativePathBuf, escape_glob,
+    expand_to_workspace_relative_glob,
 };
-use std::borrow::Cow;
+
+fn escaped(path: &str, escaped: &str) -> WorkspaceRelativeGlob {
+    WorkspaceRelativeGlob {
+        path: path.into(),
+        escaped: Some(escaped.into()),
+    }
+}
 
 mod escape_glob {
     use super::*;
@@ -21,30 +27,43 @@ mod escape_glob {
     }
 }
 
-mod unescape_glob {
+mod workspace_relative_glob {
     use super::*;
 
     #[test]
-    fn returns_borrowed_without_backslashes() {
-        assert!(matches!(unescape_glob("packages/lib"), Cow::Borrowed(_)));
+    fn isnt_escaped_without_meta_chars() {
+        let glob = WorkspaceRelativeGlob::join("packages/lib", "src/**/*");
+
+        assert_eq!(glob, WorkspaceRelativeGlob::from("packages/lib/src/**/*"));
+        assert_eq!(glob.as_glob(), "packages/lib/src/**/*");
     }
 
     #[test]
-    fn reverses_escape_glob() {
-        for path in [
-            "packages/x:y",
-            "packages/[lib]",
-            "apps/app (old)",
-            "a{b,c}$d?e*f<g>",
-        ] {
-            assert_eq!(unescape_glob(&escape_glob(path)), path);
-        }
+    fn escapes_the_base_only() {
+        let glob = WorkspaceRelativeGlob::join("packages/[lib]", "[a-z]/*");
+
+        assert_eq!(glob.path, "packages/[lib]/[a-z]/*");
+        assert_eq!(glob.as_glob(), "packages/\\[lib\\]/[a-z]/*");
     }
 
     #[test]
-    fn keeps_other_backslashes() {
-        assert_eq!(unescape_glob("a\\b"), "a\\b");
-        assert_eq!(unescape_glob("trailing\\"), "trailing\\");
+    fn keeps_negation_at_the_start() {
+        assert_eq!(
+            WorkspaceRelativeGlob::join("packages/[lib]", "!dist/**"),
+            escaped("!packages/[lib]/dist/**", "!packages/\\[lib\\]/dist/**")
+        );
+    }
+
+    #[test]
+    fn maps_both_forms() {
+        let glob = WorkspaceRelativeGlob::join("packages/[lib]", "$name/*")
+            .map(|path| Ok::<_, ()>(path.as_str().replace("$name", "src").into()))
+            .unwrap();
+
+        assert_eq!(
+            glob,
+            escaped("packages/[lib]/src/*", "packages/\\[lib\\]/src/*")
+        );
     }
 }
 
@@ -56,11 +75,11 @@ mod expand_to_workspace_relative_glob {
     fn escapes_project_source_only() {
         assert_eq!(
             expand_to_workspace_relative_glob(RelativeFrom::Project("packages/[lib]"), "src/**/*"),
-            WorkspaceRelativePathBuf::from("packages/\\[lib\\]/src/**/*")
+            escaped("packages/[lib]/src/**/*", "packages/\\[lib\\]/src/**/*")
         );
         assert_eq!(
             expand_to_workspace_relative_glob(RelativeFrom::Project("packages/x:y"), "*.{ts,tsx}"),
-            WorkspaceRelativePathBuf::from("packages/x\\:y/*.{ts,tsx}")
+            escaped("packages/x:y/*.{ts,tsx}", "packages/x\\:y/*.{ts,tsx}")
         );
     }
 
@@ -68,7 +87,7 @@ mod expand_to_workspace_relative_glob {
     fn escapes_negated_globs() {
         assert_eq!(
             expand_to_workspace_relative_glob(RelativeFrom::Project("packages/[lib]"), "!dist/**"),
-            WorkspaceRelativePathBuf::from("!packages/\\[lib\\]/dist/**")
+            escaped("!packages/[lib]/dist/**", "!packages/\\[lib\\]/dist/**")
         );
     }
 
@@ -76,7 +95,7 @@ mod expand_to_workspace_relative_glob {
     fn standardizes_separators_before_escaping() {
         assert_eq!(
             expand_to_workspace_relative_glob(RelativeFrom::Project("packages\\[lib]"), "src\\*"),
-            WorkspaceRelativePathBuf::from("packages/\\[lib\\]/src/*")
+            escaped("packages/[lib]/src/*", "packages/\\[lib\\]/src/*")
         );
     }
 
@@ -84,11 +103,11 @@ mod expand_to_workspace_relative_glob {
     fn doesnt_prefix_root_level_or_workspace_globs() {
         assert_eq!(
             expand_to_workspace_relative_glob(RelativeFrom::Project("."), "src/**/*"),
-            WorkspaceRelativePathBuf::from("src/**/*")
+            WorkspaceRelativeGlob::from(WorkspaceRelativePathBuf::from("src/**/*"))
         );
         assert_eq!(
             expand_to_workspace_relative_glob(RelativeFrom::Workspace, "[a-z]/**/*"),
-            WorkspaceRelativePathBuf::from("[a-z]/**/*")
+            WorkspaceRelativeGlob::from("[a-z]/**/*")
         );
     }
 }

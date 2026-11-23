@@ -1,7 +1,7 @@
 use crate::task_lookup::TaskLookup;
 use crate::token_expander::TokenExpander;
 use moon_common::color;
-use moon_common::path::{self, WorkspaceRelativePathBuf};
+use moon_common::path::WorkspaceRelativeGlob;
 use moon_config::{EnvMap, TaskDependencyCacheStrategy};
 use moon_env_var::*;
 use moon_graph_utils::GraphExpanderContext;
@@ -103,8 +103,13 @@ impl<'graph> TaskExpander<'graph> {
                     });
             }
 
-            for glob in dep_task.output_globs.keys() {
-                task.input_globs.entry(glob.clone()).or_default();
+            for (glob, output) in dep_task.output_globs.iter() {
+                task.input_globs
+                    .entry(glob.clone())
+                    .or_insert_with(|| TaskGlobInput {
+                        escaped: output.escaped.clone(),
+                        ..Default::default()
+                    });
             }
         }
 
@@ -270,12 +275,8 @@ impl<'graph> TaskExpander<'graph> {
         );
 
         task.input_globs.extend(result.globs_for_input);
-        task.input_globs.extend(
-            result
-                .globs
-                .into_iter()
-                .map(|glob| (glob, TaskGlobInput::default())),
-        );
+        task.input_globs
+            .extend(result.globs.into_iter().map(TaskGlobInput::from_glob));
 
         Ok(())
     }
@@ -304,12 +305,8 @@ impl<'graph> TaskExpander<'graph> {
         );
 
         task.output_globs.extend(result.globs_for_output);
-        task.output_globs.extend(
-            result
-                .globs
-                .into_iter()
-                .map(|glob| (glob, TaskGlobOutput::default())),
-        );
+        task.output_globs
+            .extend(result.globs.into_iter().map(TaskGlobOutput::from_glob));
 
         Ok(())
     }
@@ -330,11 +327,10 @@ impl<'graph> TaskExpander<'graph> {
             let abs_file = file.to_path(&self.context.workspace_root);
 
             if abs_file.exists() && abs_file.is_dir() {
-                task.input_globs.insert(
-                    WorkspaceRelativePathBuf::from(path::escape_glob(file.as_str()).as_ref())
-                        .join("**/*"),
-                    TaskGlobInput::default(),
-                );
+                let (glob, params) =
+                    TaskGlobInput::from_glob(WorkspaceRelativeGlob::join(file.as_str(), "**/*"));
+
+                task.input_globs.insert(glob, params);
 
                 to_remove.push(file.to_owned());
             }

@@ -1,20 +1,27 @@
 use crate::file_group_error::FileGroupError;
 use common_path::common_path_all;
 use moon_common::Id;
-use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
+use moon_common::path::{PathExt, WorkspaceRelativeGlob, WorkspaceRelativePathBuf};
 use moon_config::Input;
 use serde::{Deserialize, Serialize};
 use starbase_utils::glob::{self, GlobWalkOptions};
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
-#[serde(default)]
+#[serde(default, rename_all = "camelCase")]
 pub struct FileGroup {
     pub env: Vec<String>,
 
     pub files: Vec<WorkspaceRelativePathBuf>,
 
+    /// Globs as configured.
     pub globs: Vec<WorkspaceRelativePathBuf>,
+
+    /// Globs to walk and match with, keyed by the glob as configured,
+    /// when they differ (the project source is escaped).
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub escaped_globs: BTreeMap<WorkspaceRelativePathBuf, WorkspaceRelativePathBuf>,
 
     pub id: Id,
 }
@@ -28,8 +35,29 @@ impl FileGroup {
             env: vec![],
             files: vec![],
             globs: vec![],
+            escaped_globs: BTreeMap::new(),
             id: Id::new(id)?,
         })
+    }
+
+    /// Add a glob, in both of its forms.
+    pub fn add_glob(&mut self, glob: WorkspaceRelativeGlob) {
+        if let Some(escaped) = glob.escaped {
+            self.escaped_globs.insert(glob.path.clone(), escaped);
+        }
+
+        self.globs.push(glob.path);
+    }
+
+    /// Return all globs, in both of their forms.
+    pub fn get_globs(&self) -> Vec<WorkspaceRelativeGlob> {
+        self.globs
+            .iter()
+            .map(|path| WorkspaceRelativeGlob {
+                path: path.to_owned(),
+                escaped: self.escaped_globs.get(path).cloned(),
+            })
+            .collect()
     }
 
     pub fn new_with_source<T, I>(id: T, patterns: I) -> miette::Result<FileGroup>
@@ -64,7 +92,7 @@ impl FileGroup {
                 self.files.push(file.to_workspace_relative(project_source));
             }
             Input::Glob(glob) => {
-                self.globs.push(glob.to_workspace_relative(project_source));
+                self.add_glob(glob.to_workspace_relative_glob(project_source));
             }
             Input::FileGroup(_) | Input::Project(_) => {
                 // Skip
@@ -113,13 +141,13 @@ impl FileGroup {
     }
 
     /// Return the file group as a list of file globs (as-is),
-    /// relative to the project root.
-    pub fn globs(&self) -> miette::Result<&Vec<WorkspaceRelativePathBuf>> {
+    /// relative to the workspace root.
+    pub fn globs(&self) -> miette::Result<Vec<WorkspaceRelativeGlob>> {
         if self.globs.is_empty() {
             return Err(FileGroupError::MissingGlobs(self.id.to_string()).into());
         }
 
-        Ok(&self.globs)
+        Ok(self.get_globs())
     }
 
     /// Return the file group reduced down to the lowest common directory.
@@ -194,7 +222,10 @@ impl FileGroup {
             // Glob results are absolute paths!
             for path in glob::walk_fast_with_options(
                 workspace_root,
-                &self.globs,
+                self.globs
+                    .iter()
+                    .map(|glob| self.escaped_globs.get(glob).unwrap_or(glob))
+                    .collect::<Vec<_>>(),
                 GlobWalkOptions::default().cache(),
             )? {
                 let allowed = if is_dir {
@@ -217,6 +248,9 @@ impl FileGroup {
 
 impl PartialEq for FileGroup {
     fn eq(&self, other: &Self) -> bool {
-        self.id == other.id && self.files == other.files && self.globs == other.globs
+        self.id == other.id
+            && self.files == other.files
+            && self.globs == other.globs
+            && self.escaped_globs == other.escaped_globs
     }
 }

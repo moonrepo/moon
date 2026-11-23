@@ -1,7 +1,7 @@
 mod utils;
 
 use moon_common::Id;
-use moon_common::path::{self, WorkspaceRelativePathBuf};
+use moon_common::path::{self, WorkspaceRelativeGlob, WorkspaceRelativePathBuf};
 use moon_config::{
     EnvMap, FileGroupInput, FileGroupInputFormat, Input, LanguageType, LayerType, Output,
     test_utils::*,
@@ -121,9 +121,9 @@ mod token_expander {
             assert_eq!(
                 result.globs,
                 [
-                    "project/source/*.md",
-                    "project/source/**/*.json",
-                    "!project/source/node_modules/**/*"
+                    WorkspaceRelativeGlob::from("project/source/*.md"),
+                    WorkspaceRelativeGlob::from("project/source/**/*.json"),
+                    WorkspaceRelativeGlob::from("!project/source/node_modules/**/*")
                 ]
             );
         }
@@ -159,9 +159,9 @@ mod token_expander {
             assert_eq!(
                 result.globs,
                 [
-                    "project/source/*.md",
-                    "project/source/**/*.json",
-                    "!project/source/node_modules/**/*"
+                    WorkspaceRelativeGlob::from("project/source/*.md"),
+                    WorkspaceRelativeGlob::from("project/source/**/*.json"),
+                    WorkspaceRelativeGlob::from("!project/source/node_modules/**/*")
                 ]
             );
         }
@@ -1379,9 +1379,9 @@ mod token_expander {
                         WorkspaceRelativePathBuf::from("project/source/dir/subdir")
                     ],
                     globs: vec![
-                        WorkspaceRelativePathBuf::from("project/source/*.md"),
-                        WorkspaceRelativePathBuf::from("project/source/**/*.json"),
-                        WorkspaceRelativePathBuf::from("!project/source/node_modules/**/*"),
+                        WorkspaceRelativeGlob::from("project/source/*.md"),
+                        WorkspaceRelativeGlob::from("project/source/**/*.json"),
+                        WorkspaceRelativeGlob::from("!project/source/node_modules/**/*"),
                     ],
                     ..ExpandedResult::default()
                 }
@@ -1411,9 +1411,9 @@ mod token_expander {
                         WorkspaceRelativePathBuf::from("project/source/dir/subdir")
                     ],
                     globs: vec![
-                        WorkspaceRelativePathBuf::from("project/source/*.md"),
-                        WorkspaceRelativePathBuf::from("project/source/**/*.json"),
-                        WorkspaceRelativePathBuf::from("!project/source/node_modules/**/*"),
+                        WorkspaceRelativeGlob::from("project/source/*.md"),
+                        WorkspaceRelativeGlob::from("project/source/**/*.json"),
+                        WorkspaceRelativeGlob::from("!project/source/node_modules/**/*"),
                     ],
                     ..ExpandedResult::default()
                 }
@@ -1547,9 +1547,9 @@ mod token_expander {
                 ExpandedResult {
                     files: vec![],
                     globs: vec![
-                        WorkspaceRelativePathBuf::from("project/source/*.md"),
-                        WorkspaceRelativePathBuf::from("project/source/**/*.json"),
-                        WorkspaceRelativePathBuf::from("!project/source/node_modules/**/*"),
+                        WorkspaceRelativeGlob::from("project/source/*.md"),
+                        WorkspaceRelativeGlob::from("project/source/**/*.json"),
+                        WorkspaceRelativeGlob::from("!project/source/node_modules/**/*"),
                     ],
                     ..ExpandedResult::default()
                 }
@@ -1576,9 +1576,9 @@ mod token_expander {
                 ExpandedResult {
                     files: vec![],
                     globs: vec![
-                        WorkspaceRelativePathBuf::from("project/source/*.md"),
-                        WorkspaceRelativePathBuf::from("project/source/**/*.json"),
-                        WorkspaceRelativePathBuf::from("!project/source/node_modules/**/*"),
+                        WorkspaceRelativeGlob::from("project/source/*.md"),
+                        WorkspaceRelativeGlob::from("project/source/**/*.json"),
+                        WorkspaceRelativeGlob::from("!project/source/node_modules/**/*"),
                     ],
                     ..ExpandedResult::default()
                 }
@@ -1792,9 +1792,9 @@ mod token_expander {
                         WorkspaceRelativePathBuf::from("project/source/dir/subdir")
                     ],
                     globs: vec![
-                        WorkspaceRelativePathBuf::from("project/source/*.md"),
-                        WorkspaceRelativePathBuf::from("project/source/**/*.json"),
-                        WorkspaceRelativePathBuf::from("!project/source/node_modules/**/*"),
+                        WorkspaceRelativeGlob::from("project/source/*.md"),
+                        WorkspaceRelativeGlob::from("project/source/**/*.json"),
+                        WorkspaceRelativeGlob::from("!project/source/node_modules/**/*"),
                     ],
                     ..ExpandedResult::default()
                 }
@@ -1870,9 +1870,9 @@ mod token_expander {
                 ExpandedResult {
                     files: vec![],
                     globs: vec![
-                        WorkspaceRelativePathBuf::from("project/source/*.md"),
-                        WorkspaceRelativePathBuf::from("project/source/**/*.json"),
-                        WorkspaceRelativePathBuf::from("!project/source/node_modules/**/*"),
+                        WorkspaceRelativeGlob::from("project/source/*.md"),
+                        WorkspaceRelativeGlob::from("project/source/**/*.json"),
+                        WorkspaceRelativeGlob::from("!project/source/node_modules/**/*"),
                     ],
                     ..ExpandedResult::default()
                 }

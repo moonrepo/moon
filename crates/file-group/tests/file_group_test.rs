@@ -1,7 +1,7 @@
-use moon_common::path::RelativePathBuf;
+use moon_common::path::{RelativePathBuf, WorkspaceRelativeGlob};
 use moon_config::Input;
 use moon_file_group::FileGroup;
-use starbase_sandbox::locate_fixture;
+use starbase_sandbox::{create_empty_sandbox, locate_fixture};
 
 fn file(path: &str) -> RelativePathBuf {
     RelativePathBuf::from("project").join(path)
@@ -266,7 +266,98 @@ mod file_group {
 
             assert_eq!(
                 file_group.globs().unwrap(),
-                &vec![RelativePathBuf::from("project/**/*.json")]
+                vec![WorkspaceRelativeGlob::from("project/**/*.json")]
+            );
+        }
+    }
+
+    // https://github.com/moonrepo/moon/issues/2818 (rqk8s7)
+    mod escaped_globs {
+        use super::*;
+
+        fn create_group() -> FileGroup {
+            let mut file_group = FileGroup::new("id").unwrap();
+            file_group
+                .add_many(
+                    &[
+                        Input::parse("src/*.ts").unwrap(),
+                        Input::parse("/packages/[lib]/*.md").unwrap(),
+                    ],
+                    "packages/[lib]",
+                )
+                .unwrap();
+            file_group
+        }
+
+        #[test]
+        fn keeps_globs_as_configured() {
+            let file_group = create_group();
+
+            assert_eq!(
+                file_group.globs,
+                [
+                    RelativePathBuf::from("packages/[lib]/src/*.ts"),
+                    RelativePathBuf::from("packages/[lib]/*.md")
+                ]
+            );
+        }
+
+        #[test]
+        fn only_escapes_the_project_source() {
+            let file_group = create_group();
+
+            // A workspace relative glob is used as-is
+            assert_eq!(
+                file_group.globs().unwrap(),
+                [
+                    WorkspaceRelativeGlob {
+                        path: "packages/[lib]/src/*.ts".into(),
+                        escaped: Some("packages/\\[lib\\]/src/*.ts".into()),
+                    },
+                    WorkspaceRelativeGlob::from("packages/[lib]/*.md"),
+                ]
+            );
+        }
+
+        #[test]
+        fn walks_with_the_escaped_globs() {
+            let sandbox = create_empty_sandbox();
+            sandbox.create_file("packages/[lib]/src/index.ts", "");
+            sandbox.create_file("packages/l/README.md", "");
+
+            assert_eq!(
+                create_group().files(sandbox.path(), false).unwrap(),
+                [
+                    RelativePathBuf::from("packages/[lib]/src/index.ts"),
+                    RelativePathBuf::from("packages/l/README.md")
+                ]
+            );
+        }
+
+        #[test]
+        fn are_serialized_when_set() {
+            let file_group = create_group();
+            let json = serde_json::to_string(&file_group).unwrap();
+
+            assert!(json.contains("\"escapedGlobs\""));
+            assert_eq!(
+                serde_json::from_str::<FileGroup>(&json).unwrap(),
+                file_group
+            );
+        }
+
+        #[test]
+        fn arent_serialized_when_not_set() {
+            let mut file_group = FileGroup::new("id").unwrap();
+            file_group
+                .add(&Input::parse("src/*.ts").unwrap(), "packages/lib")
+                .unwrap();
+
+            assert!(file_group.escaped_globs.is_empty());
+            assert!(
+                !serde_json::to_string(&file_group)
+                    .unwrap()
+                    .contains("escapedGlobs")
             );
         }
     }

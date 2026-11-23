@@ -27,9 +27,8 @@
 - Fixed an issue where a project in a directory with glob characters in its path, like
   `packages/x:y` or `packages/app (old)`, failed to run with "Failed to create glob from pattern",
   and one like `packages/[lib]` silently matched the files of other projects instead of its own. The
-  project's path is now escaped when it's joined with the task's input and output globs, so these
-  globs, as shown by `moon task`, contain the escaped path, like `packages/x\:y/src/**/*`. Paths
-  passed to commands by `@globs`, `@in`, and `@out` are not escaped, as before.
+  project's path is now escaped when moon walks or matches with the task's input and output globs.
+  Globs shown by `moon task`, or passed to commands by `@globs`, `@in`, and `@out`, are unchanged.
 - Fixed an issue where a binary of a dependency with the same name as the task's shell, like a
   `bash` or `sh` in `node_modules/.bin`, ran instead of the shell, and replaced the task's command.
   The shell is now located using the `PATH` that moon was run with, before toolchain paths are added

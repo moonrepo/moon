@@ -5,7 +5,7 @@ use moon_config::{
     EnvMap, Input, Output, TaskDependencyConfig, schematic::RegexSetting, test_utils::*,
 };
 use moon_env_var::GlobalEnvBag;
-use moon_task::{Target, Task, TaskFileInput, TaskGlobInput};
+use moon_task::{Target, Task, TaskFileInput, TaskGlobInput, TaskGlobOutput};
 use moon_task_expander::TaskExpander;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
@@ -118,20 +118,52 @@ mod task_expander {
             task.input_files.keys().collect::<Vec<_>>(),
             [&WorkspaceRelativePathBuf::from("packages/[lib]/file.txt")]
         );
+
+        // Globs are keyed as configured, and escaped to walk and match with
+        let escaped_input = |escaped: &str| TaskGlobInput {
+            escaped: Some(escaped.into()),
+            ..Default::default()
+        };
+
         assert_eq!(
             task.input_globs,
-            create_glob_input_map(vec![
-                "!packages/\\[lib\\]/src/**/*.snap",
-                "packages/\\[lib\\]/dir/**/*",
-                "packages/\\[lib\\]/src/**/*",
+            FxHashMap::from_iter([
+                (
+                    "!packages/[lib]/src/**/*.snap".into(),
+                    escaped_input("!packages/\\[lib\\]/src/**/*.snap")
+                ),
+                (
+                    "packages/[lib]/dir/**/*".into(),
+                    escaped_input("packages/\\[lib\\]/dir/**/*")
+                ),
+                (
+                    "packages/[lib]/src/**/*".into(),
+                    escaped_input("packages/\\[lib\\]/src/**/*")
+                ),
             ])
         );
         assert_eq!(
-            task.output_globs.keys().collect::<Vec<_>>(),
-            [&WorkspaceRelativePathBuf::from(
-                "packages/\\[lib\\]/dist/**/*"
-            )]
+            task.output_globs,
+            FxHashMap::from_iter([(
+                "packages/[lib]/dist/**/*".into(),
+                TaskGlobOutput {
+                    escaped: Some("packages/\\[lib\\]/dist/**/*".into())
+                }
+            )])
         );
+
+        let mut input_globs = task.get_input_globs();
+        input_globs.sort();
+
+        assert_eq!(
+            input_globs,
+            [
+                "!packages/\\[lib\\]/src/**/*.snap",
+                "packages/\\[lib\\]/dir/**/*",
+                "packages/\\[lib\\]/src/**/*",
+            ]
+        );
+        assert_eq!(task.get_output_globs(), ["packages/\\[lib\\]/dist/**/*"]);
     }
 
     mod expand_command {
@@ -857,12 +889,15 @@ mod task_expander {
             assert_eq!(
                 task.input_globs,
                 FxHashMap::from_iter([
-                    ("project/source/a.*".into(), TaskGlobInput { cache: true }),
+                    ("project/source/a.*".into(), TaskGlobInput::default()),
                     (
                         "project/source/dir/b.*".into(),
-                        TaskGlobInput { cache: false }
+                        TaskGlobInput {
+                            cache: false,
+                            ..Default::default()
+                        }
                     ),
-                    ("root/c.*".into(), TaskGlobInput { cache: true }),
+                    ("root/c.*".into(), TaskGlobInput::default()),
                 ])
             );
         }
@@ -1206,6 +1241,43 @@ mod task_expander {
             assert_eq!(
                 task.input_globs,
                 create_glob_input_map(vec!["other/source/dist/**/*.js"])
+            );
+        }
+
+        // https://github.com/moonrepo/moon/issues/2818 (rqk8s7)
+        #[test]
+        fn keeps_escaped_dep_glob_outputs() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let project_graph = create_project_graph([]);
+
+            let mut dep_task = task_with_outputs(&[], &[]);
+            dep_task.output_globs.insert(
+                "packages/[lib]/dist/**/*".into(),
+                TaskGlobOutput {
+                    escaped: Some("packages/\\[lib\\]/dist/**/*".into()),
+                },
+            );
+
+            let lookup = MapTaskLookup::default().with_task(dep_task);
+
+            let mut task = create_task();
+            task.deps.push(outputs_dep());
+
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project_graph, &project, &context, &lookup)
+                .inject_deps_outputs(&mut task)
+                .unwrap();
+
+            assert_eq!(
+                task.input_globs,
+                FxHashMap::from_iter([(
+                    "packages/[lib]/dist/**/*".into(),
+                    TaskGlobInput {
+                        escaped: Some("packages/\\[lib\\]/dist/**/*".into()),
+                        ..Default::default()
+                    }
+                )])
             );
         }
 

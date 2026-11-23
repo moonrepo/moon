@@ -599,6 +599,31 @@ mod task_hasher {
 
             assert_eq!(get_input_files(result.inputs), expected);
         }
+
+        // https://github.com/moonrepo/moon/issues/2818 (rqk8s7)
+        #[tokio::test(flavor = "multi_thread")]
+        async fn includes_globs_in_a_project_with_glob_chars_in_its_source() {
+            let sandbox = create_sandbox("projects");
+            sandbox.create_file(
+                "[lib]/moon.yml",
+                "id: 'bracketed'\ntasks:\n  build:\n    command: noop\n    inputs: ['src/**/*']\n",
+            );
+            sandbox.create_file("[lib]/src/index.ts", "");
+            sandbox.create_file("[lib]/src/debug.log", "");
+            sandbox.create_file(".gitignore", "*.log\n");
+            sandbox.enable_git();
+
+            let (wg, app) = mock_workspace(sandbox.path()).await;
+            let (vcs_config, _) = create_hasher_configs();
+            let project = wg.get_project("bracketed").unwrap();
+            let task = wg.get_task_from_project("bracketed", "build").unwrap();
+
+            // VCS (hashed the ignored file before the fix, as the project's globs
+            // were walked on the file system, like workspace globs)
+            let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
+
+            assert_eq!(get_input_files(result.inputs), ["[lib]/src/index.ts"]);
+        }
     }
 
     mod output_filtering {

@@ -135,7 +135,9 @@ impl<'task> TaskHasher<'task> {
                 }
 
                 // However that completely ignores workspace level globs,
-                // so we must still manually glob those here!
+                // so we must still manually glob those here! The keys are
+                // the globs as configured, so the source isn't escaped
+                // in them (`get_input_files_with_globs` walks with that)
                 let workspace_globs = self
                     .task
                     .input_globs

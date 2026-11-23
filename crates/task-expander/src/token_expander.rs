@@ -1,5 +1,5 @@
 use crate::token_expander_error::TokenExpanderError;
-use moon_common::path::{self, RelativeFrom, WorkspaceRelativePathBuf};
+use moon_common::path::{self, RelativeFrom, WorkspaceRelativeGlob, WorkspaceRelativePathBuf};
 use moon_config::{EnvMap, Input, Output, ProjectMetadataConfig, patterns};
 use moon_env_var::{EnvScanner, EnvSubstitutor, GlobalEnvBag};
 use moon_graph_utils::GraphExpanderContext;
@@ -23,7 +23,7 @@ pub struct ExpandedResult {
     pub files: Vec<WorkspaceRelativePathBuf>,
     pub files_for_input: FxHashMap<WorkspaceRelativePathBuf, TaskFileInput>,
     pub files_for_output: FxHashMap<WorkspaceRelativePathBuf, TaskFileOutput>,
-    pub globs: Vec<WorkspaceRelativePathBuf>,
+    pub globs: Vec<WorkspaceRelativeGlob>,
     pub globs_for_input: FxHashMap<WorkspaceRelativePathBuf, TaskGlobInput>,
     pub globs_for_output: FxHashMap<WorkspaceRelativePathBuf, TaskGlobOutput>,
     pub token: Option<String>,
@@ -135,7 +135,7 @@ impl<'graph> TokenExpander<'graph> {
                 }
 
                 for glob in result.globs {
-                    items.push(self.resolve_path_for_task(task, glob)?);
+                    items.push(self.resolve_path_for_task(task, glob.path)?);
                 }
 
                 if let Some(value) = result.value {
@@ -182,7 +182,7 @@ impl<'graph> TokenExpander<'graph> {
                 }
 
                 for glob in result.globs {
-                    args.push(self.resolve_path_for_task(task, glob)?);
+                    args.push(self.resolve_path_for_task(task, glob.path)?);
                 }
 
                 if let Some(value) = result.value {
@@ -230,7 +230,7 @@ impl<'graph> TokenExpander<'graph> {
                 }
 
                 for glob in result.globs {
-                    items.push(self.resolve_path_for_task(task, glob)?);
+                    items.push(self.resolve_path_for_task(task, glob.path)?);
                 }
 
                 if let Some(value) = result.value {
@@ -313,12 +313,19 @@ impl<'graph> TokenExpander<'graph> {
                     )?;
                 }
                 Input::Glob(inner) => {
+                    let glob = self.create_glob_for_task(
+                        task,
+                        inner.to_workspace_relative_glob(&self.project.source),
+                    )?;
+
+                    let (glob, params) = TaskGlobInput::from_glob(glob);
+
                     result.globs_for_input.insert(
-                        self.create_path_for_task(
-                            task,
-                            inner.to_workspace_relative(&self.project.source),
-                        )?,
-                        TaskGlobInput { cache: inner.cache },
+                        glob,
+                        TaskGlobInput {
+                            cache: inner.cache,
+                            ..params
+                        },
                     );
                 }
                 Input::Project(inner) => {
@@ -332,28 +339,27 @@ impl<'graph> TokenExpander<'graph> {
                         )?;
                     } else if !inner.filter.is_empty() {
                         for glob in &inner.filter {
-                            result.globs_for_input.insert(
-                                self.create_path_for_task(
-                                    task,
-                                    path::expand_to_workspace_relative_glob(
-                                        RelativeFrom::Project(project.source.as_str()),
-                                        glob,
-                                    ),
-                                )?,
-                                TaskGlobInput::default(),
-                            );
+                            let glob = self.create_glob_for_task(
+                                task,
+                                path::expand_to_workspace_relative_glob(
+                                    RelativeFrom::Project(project.source.as_str()),
+                                    glob,
+                                ),
+                            )?;
+
+                            let (glob, params) = TaskGlobInput::from_glob(glob);
+
+                            result.globs_for_input.insert(glob, params);
                         }
                     } else {
-                        result.globs_for_input.insert(
-                            self.create_path_for_task(
-                                task,
-                                WorkspaceRelativePathBuf::from(
-                                    path::escape_glob(project.source.as_str()).as_ref(),
-                                )
-                                .join("**/*"),
-                            )?,
-                            TaskGlobInput::default(),
-                        );
+                        let glob = self.create_glob_for_task(
+                            task,
+                            WorkspaceRelativeGlob::join(project.source.as_str(), "**/*"),
+                        )?;
+
+                        let (glob, params) = TaskGlobInput::from_glob(glob);
+
+                        result.globs_for_input.insert(glob, params);
                     }
                 }
             };
@@ -396,13 +402,14 @@ impl<'graph> TokenExpander<'graph> {
                     );
                 }
                 Output::Glob(inner) => {
-                    result.globs_for_output.insert(
-                        self.create_path_for_task(
-                            task,
-                            inner.to_workspace_relative(&self.project.source),
-                        )?,
-                        TaskGlobOutput {},
-                    );
+                    let glob = self.create_glob_for_task(
+                        task,
+                        inner.to_workspace_relative_glob(&self.project.source),
+                    )?;
+
+                    let (glob, params) = TaskGlobOutput::from_glob(glob);
+
+                    result.globs_for_output.insert(glob, params);
                 }
             };
         }
@@ -472,9 +479,9 @@ impl<'graph> TokenExpander<'graph> {
                         )?;
                     }
                     Input::Glob(inner) => {
-                        result.globs.push(self.create_path_for_task(
+                        result.globs.push(self.create_glob_for_task(
                             task,
-                            inner.to_workspace_relative(&self.project.source),
+                            inner.to_workspace_relative_glob(&self.project.source),
                         )?);
                     }
                     Input::TokenFunc(func) => {
@@ -512,9 +519,9 @@ impl<'graph> TokenExpander<'graph> {
                         )?);
                     }
                     Output::Glob(inner) => {
-                        result.globs.push(self.create_path_for_task(
+                        result.globs.push(self.create_glob_for_task(
                             task,
-                            inner.to_workspace_relative(&self.project.source),
+                            inner.to_workspace_relative_glob(&self.project.source),
                         )?);
                     }
                     Output::TokenFunc(func) => {
@@ -725,11 +732,11 @@ impl<'graph> TokenExpander<'graph> {
                     .extend(group.files(&self.context.workspace_root, loose_check)?);
             }
             "globs" => {
-                result.globs.extend(group.globs()?.to_owned());
+                result.globs.extend(group.globs()?);
             }
             "group" | "static" => {
                 result.files.extend(group.files.clone());
-                result.globs.extend(group.globs.clone());
+                result.globs.extend(group.get_globs());
 
                 if self.scope == TokenScope::Inputs {
                     result.env.extend(group.env.clone());
@@ -749,6 +756,14 @@ impl<'graph> TokenExpander<'graph> {
         Ok(WorkspaceRelativePathBuf::from(
             self.replace_variables_and_substitute(task, &task.env, path.as_str())?,
         ))
+    }
+
+    fn create_glob_for_task(
+        &self,
+        task: &Task,
+        glob: WorkspaceRelativeGlob,
+    ) -> miette::Result<WorkspaceRelativeGlob> {
+        glob.map(|path| self.create_path_for_task(task, path))
     }
 
     pub(crate) fn replace_variables_and_substitute<T: AsRef<str>>(
@@ -789,12 +804,6 @@ impl<'graph> TokenExpander<'graph> {
             Some(inner) => (WorkspaceRelativePathBuf::from(inner), "!"),
             None => (path, ""),
         };
-
-        // A project's path is escaped when joined with a glob, so that moon matches
-        // it literally, but commands receive paths as they were configured, as they
-        // have their own glob syntax (and a backslash is a separator on Windows).
-        // Configured paths never contain a backslash, as they're standardized.
-        let path = WorkspaceRelativePathBuf::from(path::unescape_glob(path.as_str()).into_owned());
 
         // From workspace root to any file
         if task.options.run_from_workspace_root {
@@ -876,7 +885,7 @@ impl<'graph> TokenExpander<'graph> {
                 result
                     .globs
                     .iter()
-                    .map(|glob| (glob.to_owned(), TaskGlobInput::default())),
+                    .map(|glob| TaskGlobInput::from_glob(glob.to_owned())),
             );
         }
     }

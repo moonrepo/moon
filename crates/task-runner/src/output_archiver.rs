@@ -318,7 +318,7 @@ impl OutputArchiver<'_> {
                 archive.add_source_file(output_file.as_str(), None);
             }
 
-            for output_glob in task.output_globs.keys() {
+            for output_glob in task.get_output_globs() {
                 archive.add_source_glob(output_glob.as_str());
             }
 

@@ -129,12 +129,13 @@ impl ToolchainsConfigExt {
                 continue;
             }
 
+            // Every built-in toolchain, so that none can be missed here
+            if let Some(locator) = Self::get_plugin_locator(id) {
+                config.plugin = Some(locator);
+                continue;
+            }
+
             match id.as_str() {
-                "bun" | "deno" | "go" | "javascript" | "node" | "npm" | "pnpm" | "rust"
-                | "system" | "typescript" | "unstable_python" | "unstable_pip"
-                | "unstable_poetry" | "unstable_uv" | "unstable_ruby" | "yarn" => {
-                    config.plugin = Self::get_plugin_locator(id);
-                }
                 #[cfg(debug_assertions)]
                 "tc-tier1" | "tc-tier2" | "tc-tier2-reqs" | "tc-tier2-setup-env" | "tc-tier3"
                 | "tc-tier3-reqs" | "tc-tier3-tool" => {

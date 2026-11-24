@@ -39,6 +39,10 @@
   (`--cache read`), it never recovered, as the result of the failed run was never replaced. When
   hydrating from a local archive, existing outputs are now removed first, so outputs left by a run
   that failed, or by a run at another hash, don't remain.
+- Fixed an issue where a task's `cacheLifetime` was not applied to results in the local CAS
+  (`experiments.casOutputsCache`) or the remote cache, so an expired result was hydrated when the
+  task's last run was recent, like after switching to another hash and back, or after a run that
+  failed. A result is now checked against the lifetime by when it was stored.
 - Fixed an issue where a task's `timeout` greater than 24 hours was never enforced, for the task and
   its checks, and a timeout of `0` cancelled the task immediately. A `timeout` greater than 24 hours
   (`86400`) now fails to load the configuration, and a timeout of `0` disables it, which can be used

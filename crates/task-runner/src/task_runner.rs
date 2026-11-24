@@ -382,6 +382,23 @@ impl<'task> TaskRunner<'task> {
                 .await
             {
                 Ok(Some(source)) => {
+                    // Like the local archive, a stored manifest is checked against
+                    // the lifetime by its own age, as the last run may be for
+                    // another hash, or may have failed. Without a timestamp, or
+                    // with one in the future, the age is unknown, so it's fresh
+                    if let Some(duration) = cache_lifetime
+                        && let Some(stored_at) = source.manifest.upload_completed_at
+                        && stored_at.elapsed().is_ok_and(|elapsed| elapsed >= duration)
+                    {
+                        debug!(
+                            task_target = self.task.target.as_str(),
+                            hash,
+                            "Cache skip, a lifetime has been configured and the cached manifest is stale, continuing run"
+                        );
+
+                        return Ok(None);
+                    }
+
                     return Ok(Some(HydrateFrom::Storage(Box::new(source))));
                 }
                 Ok(None) => {}

@@ -1371,7 +1371,7 @@ mod task_runner {
 
         mod lifetime {
             use super::*;
-            use std::time::Duration;
+            use std::time::{Duration, SystemTime};
 
             #[tokio::test(flavor = "multi_thread")]
             async fn returns_if_no_previous_run_time() {
@@ -1428,6 +1428,53 @@ mod task_runner {
 
                 // lifetime is 2 seconds
                 assert!(runner.is_cached("hash123").await.unwrap().is_none());
+            }
+
+            // The last run is recent, but for another hash, or it failed, so only
+            // the age of the stored manifest itself says whether it's stale
+            async fn is_stored_manifest_cached(stored_at: Option<SystemTime>) -> bool {
+                let container = TaskRunnerContainer::new("runner", "cache-lifetime").await;
+                let mut runner = container.create_runner();
+
+                runner.cache.data.exit_code = 1;
+                runner.cache.data.hash = "hash123".into();
+                runner.cache.data.last_run_time = now_millis();
+                runner.state.local_cas_enabled = true;
+                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
+
+                container
+                    .seed_manifest(
+                        &runner.state.digest,
+                        TaskManifest {
+                            upload_completed_at: stored_at,
+                            ..TaskManifest::default()
+                        },
+                    )
+                    .await;
+
+                matches!(
+                    runner.is_cached("hash123").await.unwrap(),
+                    Some(HydrateFrom::Storage(_))
+                )
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn returns_a_stored_manifest_within_the_ttl() {
+                assert!(is_stored_manifest_cached(Some(SystemTime::now())).await);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn misses_a_stored_manifest_passed_the_ttl() {
+                // lifetime is 2 seconds
+                assert!(
+                    !is_stored_manifest_cached(Some(SystemTime::now() - Duration::from_secs(10)))
+                        .await
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn returns_a_stored_manifest_without_a_time() {
+                assert!(is_stored_manifest_cached(None).await);
             }
         }
     }

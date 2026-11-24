@@ -481,6 +481,10 @@
     focused, so every package was installed. The names now come from the projects' manifests, using
     the toolchain's `parse_manifest`. A package without a name still installs every package, as the
     install can't be focused on it.
+- Fixed an issue where an invalid toolchain in `.moon/toolchains.yml`, like one without a value
+  (`pnpm:`), an invalid version, or an invalid ID, would load no toolchains at all, without an
+  error, so tasks ran without them. The file now fails to load, naming the invalid toolchain. The
+  same applies to extensions in `.moon/extensions.yml`, and to toolchains in a project's `moon.yml`.
 - Fixed an issue where a task's hash included its toolchain's configured version (like `~22`),
   instead of the version it was resolved to when setting up the toolchain (like `22.22.3`), which
   the task runs with. Machines that resolved different versions shared a hash, and remote cache

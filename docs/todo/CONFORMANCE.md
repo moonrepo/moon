@@ -12,10 +12,10 @@ to it to a `type: wait` dependency.
 
 ## Status
 
-The Environment, Cache, and Config sections were audited on 2026-11-21. The other sections (Task
-graph, Inputs, Outputs, Failures, Affected, Run report, Isolation) have not been audited yet. Fixed
-items are in moonrepo/moon#2820, one commit each. The last five rows are smaller issues found while
-fixing and reviewing them, which no case tests directly.
+The Environment, Cache, and Config sections were audited on 2026-11-21, and the Isolation section on
+2026-11-24. The other sections (Task graph, Inputs, Outputs, Failures, Affected, Run report) have
+not been audited yet. Fixed items are in moonrepo/moon#2820, one commit each. The last five rows are
+smaller issues found while fixing and reviewing them, which no case tests directly.
 
 | Item                                                                                                    | Cases                                                                | Status                                 |
 | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------- |
@@ -29,6 +29,7 @@ fixing and reviewing them, which no case tests directly.
 | [Share the local cache across worktrees by default](#share-the-local-cache-across-worktrees-by-default) | `95qyl3`                                                             | Not yet decided                        |
 | [Inputs that change while a task runs](#inputs-that-change-while-a-task-runs)                           | `o2iy1u`                                                             | Not yet decided                        |
 | [Cases that only fail without a toolchain](#cases-that-only-fail-without-a-toolchain)                   | `o8neo7`, `l2ggkq`                                                   | No moon change, feedback for the suite |
+| [Undeclared env variables reach the task](#undeclared-env-variables-reach-the-task)                     | `subb09`                                                             | Won't fix, by design                   |
 | [Empty env inputs don't mark tasks as affected](#empty-env-inputs-dont-mark-tasks-as-affected)          | Related to `hjbima`                                                  | Not yet decided                        |
 | [Env variables are substituted inside longer names](#env-variables-are-substituted-inside-longer-names) | Related to `f4a2p6`                                                  | Not yet decided                        |
 | [Token variables aren't escaped in globs](#token-variables-arent-escaped-in-globs)                      | Related to `rqk8s7`                                                  | Not yet decided                        |
@@ -181,6 +182,16 @@ with the `javascript` toolchain enabled, as it adds `node_modules/.bin` to `PATH
 `package.json`. Feedback for the suite: vendor the toolchain's WASM plugin into the sandbox and
 reference it with a `file://` locator in `.moon/toolchains.yml`. A minor polish for the plugins
 repository: the parse error shows the WASI path (`/workspace/...`) instead of the real path.
+
+## Undeclared env variables reach the task
+
+Case: [`subb09`](https://vznjs.github.io/vx/conformance/#subb09), the only Isolation case, which Nx
+also fails. Not a bug, and won't be changed: a task runs with moon's whole environment, plus the
+variables that moon, its toolchains, and the task's `env` and `envFile` set. An env input, like
+`$API_SECRET`, only adds the variable to the task's hash, and so does a variable that the command
+substitutes, with `inferInputs`. Removing undeclared variables, like Turborepo's strict env mode,
+would break the many tasks that rely on tokens, CI variables, or tool settings from the environment,
+until they declare them. Feedback for the suite: mark the case as not applicable to moon.
 
 ## Empty env inputs don't mark tasks as affected
 

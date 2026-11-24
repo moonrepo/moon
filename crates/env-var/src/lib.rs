@@ -19,15 +19,18 @@ use std::sync::LazyLock;
 // $env. = Nu
 // $ENV. = Murex
 
+// A name must contain a letter or number, as `$_` is set by Bash to the program
+// it runs, and `$__proto__` would substitute `$__`. Keep in sync with `moon_config`!
 // $ENV_VAR
 pub static ENV_VAR: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new("(?:\\$(?P<namespace>E:|env::|env:|env\\.|ENV\\.)?(?P<name>[A-Z0-9_]+))").unwrap()
+    Regex::new("(?:\\$(?P<namespace>E:|env::|env:|env\\.|ENV\\.)?(?P<name>_*[A-Z0-9][A-Z0-9_]*))")
+        .unwrap()
 });
 
 // ${ENV_VAR}
 pub static ENV_VAR_BRACKETS: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(
-        "(?:\\$\\{(?P<namespace>E:|env::|env:|env\\.|ENV\\.)?(?P<name>[A-Z0-9_]+)(?P<flag>!|\\?|:-|:\\+|-|\\+|:)?(?P<fallback>[^}]*)?\\})",
+        "(?:\\$\\{(?P<namespace>E:|env::|env:|env\\.|ENV\\.)?(?P<name>_*[A-Z0-9][A-Z0-9_]*)(?P<flag>!|\\?|:-|:\\+|-|\\+|:)?(?P<fallback>[^}]*)?\\})",
     )
     .unwrap()
 });

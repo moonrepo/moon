@@ -22,6 +22,10 @@
 - Fixed an issue where the task `inputs` docs didn't state that the name of an environment variable
   input must be uppercase. An input with lowercase letters in its name, like `$http_proxy`, is a
   file path.
+- Fixed an issue where an environment variable name of only underscores, like `$_` or `$__`, was
+  substituted, so a path like `$__proto__.txt` became `proto__.txt`, and one like `$_x` used the
+  value of `$_`, which Bash sets to the path of the program it runs. A name must now contain a
+  letter or number, and other names are kept as-is.
 - Fixed an issue where a command failed to run when a toolchain added a path to `PATH` that can't be
   joined into it, like the `node_modules/.bin` of a project in a `packages/a:b` directory on Unix
   (as `:` is the `PATH` separator), or a path with a `"` on Windows. These paths are now skipped

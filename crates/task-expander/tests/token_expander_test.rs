@@ -2007,6 +2007,37 @@ mod token_expander {
                 }
             );
         }
+
+        // https://github.com/moonrepo/moon/issues/2818 (f4a2p6)
+        #[test]
+        fn doesnt_convert_env_variables_of_only_underscores() {
+            let sandbox = create_sandbox("file-group");
+            let project_graph = create_project_graph([]);
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.env.insert("_".into(), Some("moon".into()));
+            task.env.insert("__".into(), Some("underscores".into()));
+
+            task.outputs = vec![
+                Output::File(stub_file_output("$__proto__.txt")),
+                Output::File(stub_file_output("$_x/file.txt")),
+            ];
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project_graph, &project, &context);
+
+            assert_eq!(
+                expander.expand_outputs(&task).unwrap(),
+                ExpandedResult {
+                    files_for_output: create_file_output_map(vec![
+                        "project/source/$__proto__.txt",
+                        "project/source/$_x/file.txt",
+                    ]),
+                    ..ExpandedResult::default()
+                }
+            );
+        }
     }
 
     mod script {

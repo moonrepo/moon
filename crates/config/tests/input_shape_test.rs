@@ -36,6 +36,21 @@ mod input_shape {
             );
         }
 
+        // https://github.com/moonrepo/moon/issues/2818 (f4a2p6)
+        #[test]
+        fn env_vars_require_a_letter_or_number() {
+            assert_eq!(Input::parse("$_FOO").unwrap(), Input::EnvVar("_FOO".into()));
+            assert_eq!(Input::parse("$__1").unwrap(), Input::EnvVar("__1".into()));
+            assert_eq!(
+                Input::parse("$__").unwrap(),
+                Input::File(stub_file_input("$__"))
+            );
+            assert_eq!(
+                Input::parse("$__proto__").unwrap(),
+                Input::File(stub_file_input("$__proto__"))
+            );
+        }
+
         #[test]
         fn token_funcs() {
             assert_eq!(

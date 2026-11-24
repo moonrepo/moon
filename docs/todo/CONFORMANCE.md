@@ -195,9 +195,10 @@ was intentional. Decide whether the two should agree.
 ## Env variables are substituted inside longer names
 
 Related to [`f4a2p6`](https://vznjs.github.io/vx/conformance/#f4a2p6). Substitution uses `ENV_VAR`
-(`crates/env-var/src/lib.rs:24`), which matches `[A-Z0-9_]+` without a boundary. So in `$FOObar` it
-substitutes `$FOO` and keeps `bar`, and in a `$__proto__` file input it substitutes `$__`, giving
-`proto__`. The same regex infers env inputs from a command (`inferInputs`, `EnvScanner` in
+(`crates/env-var/src/lib.rs`), which matches a name without a boundary. So in `$FOObar` it
+substitutes `$FOO` and keeps `bar`, and in a `$Foo` file input it substitutes `$F`, giving `oo`. A
+name of only underscores is no longer substituted, so `$__proto__` is kept as-is. The same regex
+infers env inputs from a command (`inferInputs`, `EnvScanner` in
 `crates/env-var/src/env_scanner.rs`), so `$FOObar` in a command infers `$FOO`. Matching the whole
 name, or not substituting a partial match, changes how args, env, inputs, and outputs are
 substituted everywhere, so it needs its own change and tests.

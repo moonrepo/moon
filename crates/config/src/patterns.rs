@@ -13,8 +13,9 @@ macro_rules! pattern {
 
 // Environment variables
 
-pattern!(ENV_VAR_DISTINCT, "^\\$([A-Z0-9_]+)$"); // $ENV_VAR
-pattern!(ENV_VAR_GLOB_DISTINCT, "^\\$([A-Z0-9_*]+)$"); // $ENV_*
+// A name must contain a letter or number, like in `moon_env_var`
+pattern!(ENV_VAR_DISTINCT, "^\\$(_*[A-Z0-9][A-Z0-9_]*)$"); // $ENV_VAR
+pattern!(ENV_VAR_GLOB_DISTINCT, "^\\$([A-Z0-9_]*\\*[A-Z0-9_*]*)$"); // $ENV_*
 
 // Task tokens
 

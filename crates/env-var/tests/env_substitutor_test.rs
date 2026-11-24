@@ -208,4 +208,45 @@ mod env_substitutor {
         assert_eq!(sub.substitute("$ENVVAR"), "value");
         assert_eq!(sub.substitute("${ENVVAR}"), "value");
     }
+
+    // `$_` is set by Bash to the program it runs
+    // https://github.com/moonrepo/moon/issues/2818 (f4a2p6)
+    #[test]
+    fn requires_a_letter_or_number_in_names() {
+        let global = GlobalEnvBag::default();
+        global.set("_", "/bin/moon");
+        global.set("__", "underscores");
+        global.set("_FOO", "foo");
+        global.set("__FOO", "foo");
+        global.set("_1", "one");
+
+        let mut sub = EnvSubstitutor::default().with_global_vars(&global);
+
+        assert_eq!(sub.substitute("$_"), "$_");
+        assert_eq!(sub.substitute("${_}"), "${_}");
+        assert_eq!(sub.substitute("$__"), "$__");
+        assert_eq!(sub.substitute("${__:-x}"), "${__:-x}");
+        assert_eq!(sub.substitute("$__proto__"), "$__proto__");
+        assert_eq!(sub.substitute("$_x/file.txt"), "$_x/file.txt");
+
+        assert_eq!(sub.substitute("$_FOO"), "foo");
+        assert_eq!(sub.substitute("${__FOO}"), "foo");
+        assert_eq!(sub.substitute("$_1"), "one");
+    }
+}
+
+mod env_scanner {
+    use super::*;
+
+    // https://github.com/moonrepo/moon/issues/2818 (f4a2p6)
+    #[test]
+    fn requires_a_letter_or_number_in_names() {
+        let mut scanner = EnvScanner::default();
+        scanner.scan("$_ ${__} $__proto__ $_x $_FOO ${__BAR}");
+
+        let mut found = scanner.found.into_iter().collect::<Vec<_>>();
+        found.sort();
+
+        assert_eq!(found, vec!["_FOO", "__BAR"]);
+    }
 }

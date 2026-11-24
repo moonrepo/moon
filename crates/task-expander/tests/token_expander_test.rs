@@ -1325,40 +1325,6 @@ mod token_expander {
             bag.remove("BAR_ONE");
         }
 
-        // https://github.com/moonrepo/moon/issues/2818
-        #[test]
-        fn supports_lowercase_env_var_glob() {
-            let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph([]);
-            let project = create_project(sandbox.path());
-            let mut task = create_task();
-
-            task.inputs = vec![Input::EnvVarGlob("expander_lower_*".into())];
-
-            let bag = GlobalEnvBag::instance();
-            bag.set("expander_lower_one", "1");
-            bag.set("expander_lower_Two", "2");
-            bag.set("EXPANDER_LOWER_THREE", "3");
-
-            let context = create_context(sandbox.path());
-            let mut expander = TokenExpander::new(&project_graph, &project, &context);
-
-            let mut result = expander.expand_inputs(&task).unwrap();
-            result.env.sort();
-
-            assert_eq!(
-                result,
-                ExpandedResult {
-                    env: vec!["expander_lower_Two".into(), "expander_lower_one".into()],
-                    ..ExpandedResult::default()
-                }
-            );
-
-            bag.remove("expander_lower_one");
-            bag.remove("expander_lower_Two");
-            bag.remove("EXPANDER_LOWER_THREE");
-        }
-
         #[test]
         fn supports_group_func() {
             let sandbox = create_sandbox("file-group");

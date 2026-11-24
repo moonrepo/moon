@@ -273,26 +273,6 @@ mod output_shape {
         }
 
         #[test]
-        #[should_panic(expected = "environment variable is not supported by itself")]
-        fn errors_for_env_vars() {
-            Output::parse("$VAR").unwrap();
-        }
-
-        #[test]
-        #[should_panic(expected = "environment variable is not supported by itself")]
-        fn errors_for_lowercase_env_vars() {
-            Output::parse("$http_proxy").unwrap();
-        }
-
-        #[test]
-        fn token_vars_take_precedence_over_env_vars() {
-            assert_eq!(
-                Output::parse("$projectRoot").unwrap(),
-                Output::TokenVar("$projectRoot".into())
-            );
-        }
-
-        #[test]
         #[should_panic(expected = "output protocol `unknown://` is not supported")]
         fn errors_for_unknown_protocol() {
             Output::parse("unknown://test").unwrap();

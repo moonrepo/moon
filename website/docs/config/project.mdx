@@ -1019,9 +1019,10 @@ tasks:
 
 #### Environment variables
 
-Environment variables can be used as inputs and must start with a `$`. Names are case-sensitive and
-can contain letters, numbers, and underscores. Wildcard variables can use `*` to match any of
-these characters.
+Environment variables can be used as inputs and must start with a `$`. Names must be uppercase, and
+can only contain letters, numbers, and underscores. Wildcard variables can use `*` to match any of
+these characters. A name with lowercase letters, like `$http_proxy`, is not an environment variable,
+and is treated as a file path instead.
 
 ```yaml title="moon.yml"
 tasks:
@@ -1029,11 +1030,7 @@ tasks:
     inputs:
       - '$FOO_CACHE'
       - '$FOO_*'
-      - '$npm_config_registry'
 ```
-
-A name that matches a [token variable](../concepts/token#variables), like `$os` or `$projectRoot`,
-is always treated as that token, not as an environment variable.
 
 :::caution
 

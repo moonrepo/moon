@@ -17,10 +17,9 @@
   the cached output of the other. The same applied to environment variable inputs of toolchain setup
   and install commands. Tasks with an environment variable input that is not set will have a new
   hash, so they will not be cached on their first run after upgrading.
-- Fixed an issue where an environment variable input with lowercase characters in its name, like
-  `$http_proxy` or `$npm_config_*`, was treated as a file path instead of an environment variable,
-  so the variable didn't affect the task hash. Token variables, like `$os` and `$projectRoot`, take
-  precedence over an environment variable of the same name.
+- Fixed an issue where the task `inputs` docs didn't state that the name of an environment variable
+  input must be uppercase. An input with lowercase letters in its name, like `$http_proxy`, is a
+  file path.
 - Fixed an issue where a command failed to run when a toolchain added a path to `PATH` that contains
   the `PATH` separator, like the `node_modules/.bin` of a project in a `packages/a:b` directory.
   These paths are now skipped with a warning.

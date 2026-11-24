@@ -20,7 +20,7 @@ fixing them, which no case tests directly.
 | Item                                                                                                    | Cases                                                                | Status                                 |
 | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------- |
 | Unset and empty env inputs hash the same                                                                | `hjbima`                                                             | Fixed                                  |
-| Env inputs with lowercase names are file inputs                                                         | `f4a2p6`                                                             | Fixed                                  |
+| [Env inputs with lowercase names are file inputs](#env-inputs-with-lowercase-names-are-file-inputs)     | `f4a2p6`                                                             | Won't fix, names must be uppercase     |
 | Glob characters in a project's path, and `PATH` separators                                              | `rqk8s7`                                                             | Fixed (starbase_utils v0.14.13)        |
 | A dependency's `bash` or `sh` bin replaces the task's shell                                             | `uqu850` (shell part)                                                | Fixed (starbase_shell v0.14.5)         |
 | A failed run blocks hydrating a cached pass                                                             | `dbr6wr`                                                             | Fixed                                  |
@@ -33,6 +33,17 @@ fixing them, which no case tests directly.
 | [Env variables are substituted inside longer names](#env-variables-are-substituted-inside-longer-names) | Related to `f4a2p6`                                                  | Not yet decided                        |
 | [Token variables aren't escaped in globs](#token-variables-arent-escaped-in-globs)                      | Related to `rqk8s7`                                                  | Not yet decided                        |
 | [Env variables are substituted in project paths](#env-variables-are-substituted-in-project-paths)       | Related to `rqk8s7`                                                  | Not yet decided                        |
+
+## Env inputs with lowercase names are file inputs
+
+Case: [`f4a2p6`](https://vznjs.github.io/vx/conformance/#f4a2p6). An env input's name must be
+uppercase (`[A-Z0-9_]`, `crates/config/src/patterns.rs`), the convention for environment variables,
+so `$__proto__` is a file input, and the case's variable never keys the task. Lowercase names were
+supported for a while during the audit, but that also made a bare lowercase output, like `$foo`,
+fail to parse instead of being a file, so it was reverted. The docs now say that names must be
+uppercase, and that a lowercase name is a file path. A separate `env` field, or an `{ env: '...' }`
+input, like other tools use, would avoid parsing names out of paths, and could be considered for a
+major release.
 
 ## Servers behind `wait` dependencies
 
@@ -182,12 +193,11 @@ was intentional. Decide whether the two should agree.
 
 ## Env variables are substituted inside longer names
 
-Related to [`f4a2p6`](https://vznjs.github.io/vx/conformance/#f4a2p6). Env inputs can now have
-lowercase names, but substitution still uses `ENV_VAR` (`crates/env-var/src/lib.rs:24`), which
-matches `[A-Z0-9_]+` without a boundary. So in `$FOObar` it substitutes `$FOO` and keeps `bar`, and
-in `$__proto__` it substitutes `$__`. Matching the whole name, or not substituting a partial match,
-changes how args, env, inputs, and outputs are substituted everywhere, so it needs its own change
-and tests.
+Related to [`f4a2p6`](https://vznjs.github.io/vx/conformance/#f4a2p6). Substitution uses `ENV_VAR`
+(`crates/env-var/src/lib.rs:24`), which matches `[A-Z0-9_]+` without a boundary. So in `$FOObar` it
+substitutes `$FOO` and keeps `bar`, and in a `$__proto__` file input it substitutes `$__`, giving
+`proto__`. Matching the whole name, or not substituting a partial match, changes how args, env,
+inputs, and outputs are substituted everywhere, so it needs its own change and tests.
 
 ## Token variables aren't escaped in globs
 

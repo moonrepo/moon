@@ -265,10 +265,9 @@ impl<'graph> TokenExpander<'graph> {
                     result.env.push(var.to_owned());
                 }
                 Input::EnvVarGlob(var_glob) => {
-                    let pattern = Regex::new(
-                        format!("^{}$", var_glob.replace('*', "[A-Za-z0-9_]+")).as_str(),
-                    )
-                    .unwrap();
+                    let pattern =
+                        Regex::new(format!("^{}$", var_glob.replace('*', "[A-Z0-9_]+")).as_str())
+                            .unwrap();
 
                     bag.list(|var_name, _| {
                         if let Some(var_name) = var_name.to_str()

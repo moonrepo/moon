@@ -16,7 +16,9 @@
   same variable set to an empty string, produced the same task hash, so a run with one would replay
   the cached output of the other. The same applied to environment variable inputs of toolchain setup
   and install commands. Tasks with an environment variable input that is not set will have a new
-  hash, so they will not be cached on their first run after upgrading.
+  hash, so they will not be cached on their first run after upgrading. A result cached by an earlier
+  version while the variable was not set may still be used when it's set to an empty string, until
+  the result expires from the cache.
 - Fixed an issue where the task `inputs` docs didn't state that the name of an environment variable
   input must be uppercase. An input with lowercase letters in its name, like `$http_proxy`, is a
   file path.

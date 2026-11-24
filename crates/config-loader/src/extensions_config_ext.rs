@@ -48,10 +48,13 @@ impl ExtensionsConfigExt {
                 continue;
             }
 
+            // Every built-in extension, so that none can be missed here
+            if let Some(locator) = Self::get_plugin_locator(id) {
+                config.plugin = Some(locator);
+                continue;
+            }
+
             match id.as_str() {
-                "download" | "migrate-nx" | "migrate-turborepo" | "unpack" => {
-                    config.plugin = Self::get_plugin_locator(id);
-                }
                 #[cfg(debug_assertions)]
                 "ext-sync" | "ext-task" => {
                     use proto_core::warpgate::find_debug_locator;

@@ -25,6 +25,22 @@ the WASM plugin.
 $ moon toolchain add custom https://example.com/path/to/plugin.wasm
 ```
 
+### Needed toolchains<VersionLabel version="3.0.0" />
+
+A toolchain may need other toolchains to work, like Bun, Deno, and Node.js, whose dependencies are
+installed by the JavaScript toolchain. A toolchain needs the toolchain whose dependencies root it
+inherits, and each toolchain it requires, and those need theirs in turn. Each one that isn't
+configured is added first, with its own prompts.
+
+```shell
+$ moon toolchain add bun
+# Adds `javascript`, then `bun`
+```
+
+A prompt with the toolchain as an option defaults to it, like the JavaScript toolchain's
+`packageManager` when it's added for Bun. Only built-in toolchains are added this way. A third-party
+toolchain that's needed is reported, so it can be added with its plugin locator.
+
 ### Arguments
 
 - `<id>` - ID of the toolchain to use.

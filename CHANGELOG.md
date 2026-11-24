@@ -251,6 +251,12 @@
     in v3, within `.moon/workspace.*`, `.moon/tasks/**/*`, and `moon.*` configuration files. Only
     files that change are re-written, which strips their comments. Pkl files, execution plans, and
     template files must be migrated manually.
+  - `moon toolchain add` now also adds the toolchains that the toolchain needs, which aren't
+    configured, before it: the toolchain whose dependencies root it inherits, and each toolchain it
+    requires, recursively. Like JavaScript for Bun, Deno, or Node.js, as it installs their
+    dependencies, which nothing did with only `bun:` configured. A select prompt with the toolchain
+    as an option defaults to it, like JavaScript's `packageManager` when it's added for Bun. A
+    needed third-party toolchain is reported instead, as it needs a plugin locator.
 - **Configuration**
   - Added support for parent traversal globs, with a `...` path segment, like `.../package.json`.
     They match the path after `...` in the directory before it (the project root for project

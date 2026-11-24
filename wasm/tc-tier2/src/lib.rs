@@ -5,6 +5,28 @@ use std::fs;
 
 pub use tc_tier1::*;
 
+// Only called by `moon toolchain add`, which defaults a select prompt to the
+// toolchain that this one is added for, when it's one of the options
+#[plugin_fn]
+pub fn initialize_toolchain(
+    Json(_): Json<InitializeToolchainInput>,
+) -> FnResult<Json<InitializeToolchainOutput>> {
+    Ok(Json(InitializeToolchainOutput {
+        prompts: vec![SettingPrompt::new(
+            "testAddedFor",
+            "Which toolchain is this added for?",
+            PromptType::Select {
+                default_index: 0,
+                options: vec![
+                    json::Value::String("none".into()),
+                    json::Value::String("tc-tier3-tool".into()),
+                ],
+            },
+        )],
+        ..Default::default()
+    }))
+}
+
 fn is_testing_deps_workspace(path: &VirtualPath) -> bool {
     let outer = path.to_real_path().unwrap().unwrap();
 

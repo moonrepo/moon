@@ -2,7 +2,7 @@ use super::find_debug_locator_with_fallback as locate;
 use moon_common::Id;
 use moon_common::color;
 use moon_config::{ToolchainPluginVersionFrom, ToolchainsConfig};
-use proto_core::{DataLocator, PluginLocator, ProtoConfig, ToolContext};
+use proto_core::{DataLocator, PluginLocator, ProtoConfig, ToolContext, UnresolvedVersionSpec};
 use schematic::{ConfigError, Path, PathSegment, ValidateError, ValidatorError};
 use tracing::debug;
 
@@ -135,43 +135,59 @@ impl ToolchainsConfigExt {
                 continue;
             }
 
-            match id.as_str() {
-                #[cfg(debug_assertions)]
-                "tc-tier1" | "tc-tier2" | "tc-tier2-batch" | "tc-tier2-reqs"
-                | "tc-tier2-setup-env" | "tc-tier3" | "tc-tier3-reqs" | "tc-tier3-setup-env"
-                | "tc-tier3-tool" => {
-                    use proto_core::{UnresolvedVersionSpec, warpgate::find_debug_locator};
+            // And every test toolchain, in development builds
+            if let Some(locator) = Self::get_test_plugin_locator(id) {
+                config.plugin = Some(locator);
 
-                    config.plugin = Some(
-                        find_debug_locator(&id.replace("-", "_"))
-                            .expect("Development plugins missing, build with `just build-wasm`!"),
-                    );
+                if id.contains("tc-tier3") {
+                    config.version = UnresolvedVersionSpec::parse("1.2.3").ok();
+                }
 
-                    if id.contains("tc-tier3") {
-                        config.version = UnresolvedVersionSpec::parse("1.2.3").ok();
-                    }
-                }
-                other => {
-                    return Err(ConfigError::Validator {
-                        location: ".moon/toolchains.*".into(),
-                        error: Box::new(ValidatorError {
-                            errors: vec![ValidateError {
-                                message:
-                                    "a locator is required for plugins; accepts file paths and URLs"
-                                        .into(),
-                                path: Path::new(vec![
-                                    PathSegment::Key(other.to_string()),
-                                    PathSegment::Key("plugin".into()),
-                                ]),
-                            }],
-                        }),
-                        help: None,
-                    }
-                    .into());
-                }
-            };
+                continue;
+            }
+
+            return Err(ConfigError::Validator {
+                location: ".moon/toolchains.*".into(),
+                error: Box::new(ValidatorError {
+                    errors: vec![ValidateError {
+                        message: "a locator is required for plugins; accepts file paths and URLs"
+                            .into(),
+                        path: Path::new(vec![
+                            PathSegment::Key(id.to_string()),
+                            PathSegment::Key("plugin".into()),
+                        ]),
+                    }],
+                }),
+                help: None,
+            }
+            .into());
         }
 
         Ok(())
+    }
+
+    /// Locate the plugin of a toolchain that can be configured without one,
+    /// as it's built-in, or a test toolchain in development builds.
+    pub fn locate_plugin(id: &Id) -> Option<PluginLocator> {
+        Self::get_plugin_locator(id).or_else(|| Self::get_test_plugin_locator(id))
+    }
+
+    #[cfg(debug_assertions)]
+    fn get_test_plugin_locator(id: &Id) -> Option<PluginLocator> {
+        use proto_core::warpgate::find_debug_locator;
+
+        match id.as_str() {
+            "tc-tier1" | "tc-tier2" | "tc-tier2-batch" | "tc-tier2-reqs" | "tc-tier2-setup-env"
+            | "tc-tier3" | "tc-tier3-reqs" | "tc-tier3-setup-env" | "tc-tier3-tool" => Some(
+                find_debug_locator(&id.replace("-", "_"))
+                    .expect("Development plugins missing, build with `just build-wasm`!"),
+            ),
+            _ => None,
+        }
+    }
+
+    #[cfg(not(debug_assertions))]
+    fn get_test_plugin_locator(_id: &Id) -> Option<PluginLocator> {
+        None
     }
 }

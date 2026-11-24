@@ -356,17 +356,16 @@ mod augmented_command {
         }
     }
 
-    // Relies on a `bash` shell, and a script as its replacement
+    // Relies on a `bash` and `sh` shell, and a script as their replacement
     #[cfg(unix)]
     mod shell {
         use super::*;
         use moon_process::ShellType;
 
-        // A dependency's `bash` bin in `node_modules/.bin`, which is added to `PATH`
-        // by the JavaScript toolchain, must not replace the shell of the task.
+        // A dependency's `bash` or `sh` bin in `node_modules/.bin`, which is added
+        // to `PATH` by the JavaScript toolchain, must not replace the shell of the task.
         // https://github.com/moonrepo/moon/issues/2818 (uqu850)
-        #[tokio::test(flavor = "multi_thread")]
-        async fn isnt_replaced_by_a_shell_in_added_paths() {
+        async fn assert_isnt_replaced_by_a_shell_in_added_paths(shell: ShellType) {
             use std::os::unix::fs::PermissionsExt;
 
             let (sandbox, mocker) = create_workspace();
@@ -374,12 +373,19 @@ mod augmented_command {
             let bag = GlobalEnvBag::default();
 
             let bin_dir = sandbox.path().join("node_modules/.bin");
-            sandbox.create_file("node_modules/.bin/bash", "#!/bin/sh\necho hijacked\n");
-            fs::set_permissions(bin_dir.join("bash"), fs::Permissions::from_mode(0o755)).unwrap();
+            sandbox.create_file(
+                format!("node_modules/.bin/{shell}"),
+                "#!/bin/sh\necho hijacked\n",
+            );
+            fs::set_permissions(
+                bin_dir.join(shell.to_string()),
+                fs::Permissions::from_mode(0o755),
+            )
+            .unwrap();
 
             let mut command = AugmentedCommand::create(&app_context, &bag, "noop");
             command.set_script("echo real");
-            command.set_shell(ShellType::Bash);
+            command.set_shell(shell);
             command.apply_paths(vec![bin_dir]);
 
             let output = command
@@ -390,6 +396,17 @@ mod augmented_command {
                 .unwrap();
 
             assert_eq!(String::from_utf8_lossy(&output.stdout), "real\n");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn isnt_replaced_by_a_bash_in_added_paths() {
+            assert_isnt_replaced_by_a_shell_in_added_paths(ShellType::Bash).await;
+        }
+
+        // The shell of the suite's case
+        #[tokio::test(flavor = "multi_thread")]
+        async fn isnt_replaced_by_a_sh_in_added_paths() {
+            assert_isnt_replaced_by_a_shell_in_added_paths(ShellType::Sh).await;
         }
     }
 }

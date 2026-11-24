@@ -22,9 +22,10 @@
 - Fixed an issue where the task `inputs` docs didn't state that the name of an environment variable
   input must be uppercase. An input with lowercase letters in its name, like `$http_proxy`, is a
   file path.
-- Fixed an issue where a command failed to run when a toolchain added a path to `PATH` that contains
-  the `PATH` separator, like the `node_modules/.bin` of a project in a `packages/a:b` directory.
-  These paths are now skipped with a warning.
+- Fixed an issue where a command failed to run when a toolchain added a path to `PATH` that can't be
+  joined into it, like the `node_modules/.bin` of a project in a `packages/a:b` directory on Unix
+  (as `:` is the `PATH` separator), or a path with a `"` on Windows. These paths are now skipped
+  with a warning. On Windows, a path with a `;` continues to be quoted and kept.
 - Fixed an issue where a project in a directory with glob characters in its path, like
   `packages/x:y` or `packages/app (old)`, failed to run with "Failed to create glob from pattern",
   and one like `packages/[lib]` silently matched the files of other projects instead of its own. The

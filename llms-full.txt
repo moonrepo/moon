@@ -5872,8 +5872,11 @@ tasks:
 
 #### Environment variables
 
-Environment variables can be used as inputs and must start with a `$`. Wildcard variables can use
-`*` to match any character.
+Environment variables can be used as inputs and must start with a `$`. Names must be uppercase, can
+only contain letters, numbers, and underscores, and must contain at least one letter or number.
+Wildcard variables can use `*` to match any of these characters. A name with lowercase letters, like
+`$http_proxy`, or of only underscores, like `$__`, is not an environment variable, and is treated as
+a file path instead.
 
 ```yaml title="moon.yml"
 tasks:
@@ -6885,7 +6888,8 @@ tasks:
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#timeout" />
 
 The maximum time in seconds that the task is allowed to run, before it is force cancelled. If not
-defined, will run indefinitely.
+defined, will run indefinitely. The maximum is 1 week (`604800`), and a larger value fails to load
+the configuration.
 
 ```yaml title="moon.yml" {5}
 tasks:
@@ -6893,6 +6897,19 @@ tasks:
     # ...
     options:
       timeout: 120
+```
+
+A value of `0` disables the timeout, which can be used to remove a timeout inherited from
+[`taskOptions`](#taskoptions) or global tasks.
+
+```yaml title="moon.yml" {7}
+taskOptions:
+  timeout: 600
+
+tasks:
+  dev:
+    options:
+      timeout: 0
 ```
 
 #### `unixShell`<VersionLabel version="1.21.0" />

@@ -1831,7 +1831,7 @@
         },
         "timeout": {
           "title": "timeout",
-          "description": "The maximum time in seconds that a task can run before being cancelled, up to 24 hours (86400). A value of 0 disables the timeout, which can be used to remove an inherited timeout.",
+          "description": "The maximum time in seconds that a task can run before being cancelled, up to 1 week (604800). A value of 0 disables the timeout, which can be used to remove an inherited timeout.",
           "anyOf": [
             {
               "type": "number"
@@ -1840,7 +1840,7 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "The maximum time in seconds that a task can run before being cancelled, up to 24 hours (86400). A value of `0` disables the timeout, which can be used to remove an inherited timeout."
+          "markdownDescription": "The maximum time in seconds that a task can run before being cancelled, up to 1 week (604800). A value of `0` disables the timeout, which can be used to remove an inherited timeout."
         },
         "unixShell": {
           "title": "unixShell",

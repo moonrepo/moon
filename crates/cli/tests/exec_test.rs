@@ -2094,7 +2094,7 @@ tasks:
         // A limit that no timer can hold must be refused, not silently ignored
         // https://github.com/moonrepo/moon/issues/2818 (zqwwd3)
         #[test]
-        fn errors_for_a_timeout_greater_than_24_hours() {
+        fn errors_for_a_timeout_greater_than_1_week() {
             let sandbox = create_cases_sandbox();
             let config = fs::read_file(sandbox.path().join("outputs/moon.yml")).unwrap();
 
@@ -2119,7 +2119,7 @@ tasks:
                 .failure()
                 .stderr(predicate::str::contains("config::validate"))
                 .stderr(predicate::str::contains("10000000000"))
-                .stderr(predicate::str::contains("86400"));
+                .stderr(predicate::str::contains("604800"));
         }
     }
 

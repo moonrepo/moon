@@ -32,13 +32,13 @@ mod monitor_timeout {
         assert!(token.is_cancelled());
     }
 
-    // The timeout used to race a sleep of a day, which won when they were equal
+    // The timeout used to race a sleep of a day, so a longer one never fired
     #[tokio::test(start_paused = true)]
-    async fn cancels_at_the_maximum_of_24_hours() {
+    async fn cancels_at_the_maximum_of_1_week() {
         let token = CancellationToken::new();
-        let handle = monitor_timeout(Some(86400), token.clone()).unwrap();
+        let handle = monitor_timeout(Some(604800), token.clone()).unwrap();
 
-        sleep(Duration::from_secs(86399)).await;
+        sleep(Duration::from_secs(604799)).await;
 
         assert!(!token.is_cancelled());
 

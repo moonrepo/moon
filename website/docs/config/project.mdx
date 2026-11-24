@@ -2034,8 +2034,8 @@ tasks:
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#timeout" />
 
 The maximum time in seconds that the task is allowed to run, before it is force cancelled. If not
-defined, will run indefinitely. The maximum is 24 hours (`86400`), and a larger value fails to
-load the configuration, as the task would never be cancelled when expected.
+defined, will run indefinitely. The maximum is 1 week (`604800`), and a larger value fails to load
+the configuration.
 
 ```yaml title="moon.yml" {5}
 tasks:

@@ -545,7 +545,7 @@ export interface TaskOptionsConfig {
 	shell?: boolean | null;
 	/**
 	 * The maximum time in seconds that a task can run before being cancelled,
-	 * up to 24 hours (86400). A value of `0` disables the timeout, which can
+	 * up to 1 week (604800). A value of `0` disables the timeout, which can
 	 * be used to remove an inherited timeout.
 	 */
 	timeout?: number | null;
@@ -1073,7 +1073,7 @@ export interface PartialTaskOptionsConfig {
 	shell?: boolean | null;
 	/**
 	 * The maximum time in seconds that a task can run before being cancelled,
-	 * up to 24 hours (86400). A value of `0` disables the timeout, which can
+	 * up to 1 week (604800). A value of `0` disables the timeout, which can
 	 * be used to remove an inherited timeout.
 	 */
 	timeout?: number | null;

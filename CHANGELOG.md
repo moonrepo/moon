@@ -45,9 +45,9 @@
   task's last run was recent, like after switching to another hash and back, or after a run that
   failed. A result is now checked against the lifetime by when it was stored.
 - Fixed an issue where a task's `timeout` greater than 24 hours was never enforced, for the task and
-  its checks, and a timeout of `0` cancelled the task immediately. A `timeout` greater than 24 hours
-  (`86400`) now fails to load the configuration, and a timeout of `0` disables it, which can be used
-  to remove an inherited timeout.
+  its checks, and a timeout of `0` cancelled the task immediately. A `timeout` can now be up to 1
+  week (`604800`), and a greater value fails to load the configuration. A timeout of `0` disables
+  it, which can be used to remove an inherited timeout.
 
 ## 2.6.5
 

@@ -51,6 +51,18 @@ tasks:
     options:
       retryCount: 3
 
+  timeout:
+    script: 'sleep 10'
+    toolchain: system
+    options:
+      timeout: 1
+
+  timeout-zero:
+    script: 'echo "test"'
+    toolchain: system
+    options:
+      timeout: 0
+
   create-file:
     command: 'touch file.txt'
     outputs:

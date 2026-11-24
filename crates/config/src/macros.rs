@@ -140,11 +140,30 @@ macro_rules! generate_io_glob_methods {
                 path.starts_with('/') || path.starts_with("!/")
             }
 
+            /// Return the glob as configured, prefixed with the project source.
+            /// Use [`Self::to_workspace_relative_glob`] to walk or match with it.
             pub fn to_workspace_relative(
                 &self,
                 project_source: impl AsRef<str>,
             ) -> WorkspaceRelativePathBuf {
                 expand_to_workspace_relative(
+                    if self.is_workspace_relative() {
+                        RelativeFrom::Workspace
+                    } else {
+                        RelativeFrom::Project(project_source.as_ref())
+                    },
+                    self.get_path(),
+                )
+            }
+
+            /// Return the glob prefixed with the project source, both as configured,
+            /// and with the project source escaped to walk and match with, as it's a
+            /// literal path that may contain glob meta characters, like `[lib]`.
+            pub fn to_workspace_relative_glob(
+                &self,
+                project_source: impl AsRef<str>,
+            ) -> moon_common::path::WorkspaceRelativeGlob {
+                moon_common::path::expand_to_workspace_relative_glob(
                     if self.is_workspace_relative() {
                         RelativeFrom::Workspace
                     } else {

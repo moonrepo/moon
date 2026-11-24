@@ -16,6 +16,49 @@
   ("unstable_nub.plugin: a locator is required for plugins"), unlike every other built-in toolchain.
   This includes the `unstable_nub: {}` that the docs show, and the config that
   `moon toolchain add unstable_nub` writes.
+- Fixed an issue where an environment variable input (`$VAR` in `inputs`) that was not set, and the
+  same variable set to an empty string, produced the same task hash, so a run with one would replay
+  the cached output of the other. The same applied to environment variable inputs of toolchain setup
+  and install commands. Tasks with an environment variable input that is not set will have a new
+  hash, so they will not be cached on their first run after upgrading. A result cached by an earlier
+  version while the variable was not set may still be used when it's set to an empty string, until
+  the result expires from the cache.
+- Fixed an issue where the task `inputs` docs didn't state that the name of an environment variable
+  input must be uppercase. An input with lowercase letters in its name, like `$http_proxy`, is a
+  file path.
+- Fixed an issue where an environment variable name of only underscores, like `$_` or `$__`, was
+  substituted, so a path like `$__proto__.txt` became `proto__.txt`, and one like `$_x` used the
+  value of `$_`, which Bash sets to the path of the program it runs. A name must now contain a
+  letter or number, and other names are kept as-is.
+- Fixed an issue where a command failed to run when a toolchain added a path to `PATH` that can't be
+  joined into it, like the `node_modules/.bin` of a project in a `packages/a:b` directory on Unix
+  (as `:` is the `PATH` separator), or a path with a `"` on Windows. These paths are now skipped
+  with a warning. On Windows, a path with a `;` continues to be quoted and kept.
+- Fixed an issue where a project in a directory with glob characters in its path, like
+  `packages/x:y` or `packages/app (old)`, failed to run with "Failed to create glob from pattern",
+  and one like `packages/[lib]` silently matched the files of other projects instead of its own. The
+  project's path is now escaped when moon walks or matches with the task's input and output globs.
+  Globs shown by `moon task`, or passed to commands by `@globs`, `@in`, and `@out`, are unchanged.
+- Fixed an issue where a binary of a dependency with the same name as the task's shell, like a
+  `bash` or `sh` in `node_modules/.bin`, ran instead of the shell, and replaced the task's command.
+  The shell is now located using the `PATH` that moon was run with, before toolchain paths are added
+  to it, and never within a `node_modules` directory, which a package manager adds to it when
+  running moon from a script. Only when it can't be found there is it located using the task's
+  `PATH`.
+- Fixed an issue where a task that failed would not hydrate from the cache on its next run, even
+  though a cached result of a run that passed existed for its hash, and would run again instead.
+  This applied to a failure at any hash, not just the current one, and in a read-only cache
+  (`--cache read`), it never recovered, as the result of the failed run was never replaced. When
+  hydrating from a local archive, existing outputs are now removed first, so outputs left by a run
+  that failed, or by a run at another hash, don't remain.
+- Fixed an issue where a task's `cacheLifetime` was not applied to results in the local CAS
+  (`experiments.casOutputsCache`) or the remote cache, so an expired result was hydrated when the
+  task's last run was recent, like after switching to another hash and back, or after a run that
+  failed. A result is now checked against the lifetime by when it was stored.
+- Fixed an issue where a task's `timeout` greater than 24 hours was never enforced, for the task and
+  its checks, and a timeout of `0` cancelled the task immediately. A `timeout` can now be up to 1
+  week (`604800`), and a greater value fails to load the configuration. A timeout of `0` disables
+  it, which can be used to remove an inherited timeout.
 
 ## 2.6.5
 

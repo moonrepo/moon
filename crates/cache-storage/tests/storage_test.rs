@@ -394,6 +394,31 @@ mod storage {
     }
 
     #[tokio::test]
+    async fn records_when_a_manifest_with_no_blobs_was_stored() {
+        // A task's cache lifetime is checked against this time
+        let mut storage = create_storage();
+        storage.add_local_backend(MemoryBackend::new("mem"));
+
+        let action = digest('a', 0);
+
+        storage
+            .archive_task_manifest(&action, TaskManifest::default())
+            .await
+            .unwrap();
+        storage.wait_for_background_tasks().await.unwrap();
+
+        let manifest = storage
+            .load_task_manifest(&action)
+            .await
+            .unwrap()
+            .unwrap()
+            .manifest;
+
+        assert!(manifest.upload_started_at.is_some());
+        assert!(manifest.upload_completed_at.is_some());
+    }
+
+    #[tokio::test]
     async fn archives_the_manifests_digest_source() {
         // The action digest addresses the fingerprint hash manifest. The caller
         // supplies it as the manifest's `digest_source`, and it must be uploaded

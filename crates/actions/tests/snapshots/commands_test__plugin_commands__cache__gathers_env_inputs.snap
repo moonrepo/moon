@@ -14,8 +14,9 @@ expression: "json::format(&data, true).unwrap()"
       "stream": false
     },
     "inputEnv": {
+      "EMPTY": "",
       "EXISTS": "value",
-      "MISSING": ""
+      "MISSING": null
     }
   }
 ]

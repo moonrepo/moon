@@ -1,18 +1,20 @@
 mod utils;
 
 use moon_common::Id;
-use moon_common::path::{self, WorkspaceRelativePathBuf};
+use moon_common::path::{self, WorkspaceRelativeGlob, WorkspaceRelativePathBuf};
 use moon_config::{
     EnvMap, FileGroupInput, FileGroupInputFormat, Input, LanguageType, LayerType, Output,
     test_utils::*,
 };
 use moon_env_var::GlobalEnvBag;
+use moon_project::Project;
 use moon_task::{TaskFileInput, TaskGlobInput};
 use moon_task_expander::{ExpandedResult, TokenExpander};
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox, predicates::prelude::*};
 use std::borrow::Cow;
 use std::env;
+use std::path::Path;
 use utils::*;
 
 mod token_expander {
@@ -119,9 +121,9 @@ mod token_expander {
             assert_eq!(
                 result.globs,
                 [
-                    "project/source/*.md",
-                    "project/source/**/*.json",
-                    "!project/source/node_modules/**/*"
+                    WorkspaceRelativeGlob::from("project/source/*.md"),
+                    WorkspaceRelativeGlob::from("project/source/**/*.json"),
+                    WorkspaceRelativeGlob::from("!project/source/node_modules/**/*")
                 ]
             );
         }
@@ -157,9 +159,9 @@ mod token_expander {
             assert_eq!(
                 result.globs,
                 [
-                    "project/source/*.md",
-                    "project/source/**/*.json",
-                    "!project/source/node_modules/**/*"
+                    WorkspaceRelativeGlob::from("project/source/*.md"),
+                    WorkspaceRelativeGlob::from("project/source/**/*.json"),
+                    WorkspaceRelativeGlob::from("!project/source/node_modules/**/*")
                 ]
             );
         }
@@ -762,6 +764,61 @@ mod token_expander {
     mod args {
         use super::*;
 
+        fn create_lib_project(root: &Path) -> Project {
+            let mut project = create_project(root);
+            project.source = WorkspaceRelativePathBuf::from("packages/[lib]");
+            project.root = root.join("packages/[lib]");
+            project
+        }
+
+        // The project's path is escaped in globs, but not in arguments
+        // https://github.com/moonrepo/moon/issues/2818 (rqk8s7)
+        #[test]
+        fn doesnt_escape_project_source_in_paths() {
+            let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph([]);
+            let project = create_lib_project(sandbox.path());
+            let mut task = create_task();
+
+            task.inputs = vec![
+                Input::parse("src/**/*").unwrap(),
+                Input::parse("!src/**/*.snap").unwrap(),
+                Input::parse("file.txt").unwrap(),
+            ];
+            task.args = vec!["@in(0)".into(), "@in(1)".into(), "@in(2)".into()];
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project_graph, &project, &context);
+
+            assert_eq!(
+                expander.expand_args(&mut task).unwrap(),
+                vec!["src/**/*", "!src/**/*.snap", "file.txt"]
+            );
+        }
+
+        #[test]
+        fn doesnt_escape_project_source_in_paths_from_workspace_root() {
+            let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph([]);
+            let project = create_lib_project(sandbox.path());
+            let mut task = create_task();
+
+            task.inputs = vec![
+                Input::parse("src/**/*").unwrap(),
+                Input::parse("file.txt").unwrap(),
+            ];
+            task.args = vec!["@in(0)".into(), "@in(1)".into()];
+            task.options.run_from_workspace_root = true;
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project_graph, &project, &context);
+
+            assert_eq!(
+                expander.expand_args(&mut task).unwrap(),
+                vec!["packages/[lib]/src/**/*", "packages/[lib]/file.txt"]
+            );
+        }
+
         #[test]
         fn supports_meta_func() {
             let sandbox = create_empty_sandbox();
@@ -1288,9 +1345,9 @@ mod token_expander {
                         WorkspaceRelativePathBuf::from("project/source/dir/subdir")
                     ],
                     globs: vec![
-                        WorkspaceRelativePathBuf::from("project/source/*.md"),
-                        WorkspaceRelativePathBuf::from("project/source/**/*.json"),
-                        WorkspaceRelativePathBuf::from("!project/source/node_modules/**/*"),
+                        WorkspaceRelativeGlob::from("project/source/*.md"),
+                        WorkspaceRelativeGlob::from("project/source/**/*.json"),
+                        WorkspaceRelativeGlob::from("!project/source/node_modules/**/*"),
                     ],
                     ..ExpandedResult::default()
                 }
@@ -1320,9 +1377,9 @@ mod token_expander {
                         WorkspaceRelativePathBuf::from("project/source/dir/subdir")
                     ],
                     globs: vec![
-                        WorkspaceRelativePathBuf::from("project/source/*.md"),
-                        WorkspaceRelativePathBuf::from("project/source/**/*.json"),
-                        WorkspaceRelativePathBuf::from("!project/source/node_modules/**/*"),
+                        WorkspaceRelativeGlob::from("project/source/*.md"),
+                        WorkspaceRelativeGlob::from("project/source/**/*.json"),
+                        WorkspaceRelativeGlob::from("!project/source/node_modules/**/*"),
                     ],
                     ..ExpandedResult::default()
                 }
@@ -1456,9 +1513,9 @@ mod token_expander {
                 ExpandedResult {
                     files: vec![],
                     globs: vec![
-                        WorkspaceRelativePathBuf::from("project/source/*.md"),
-                        WorkspaceRelativePathBuf::from("project/source/**/*.json"),
-                        WorkspaceRelativePathBuf::from("!project/source/node_modules/**/*"),
+                        WorkspaceRelativeGlob::from("project/source/*.md"),
+                        WorkspaceRelativeGlob::from("project/source/**/*.json"),
+                        WorkspaceRelativeGlob::from("!project/source/node_modules/**/*"),
                     ],
                     ..ExpandedResult::default()
                 }
@@ -1485,9 +1542,9 @@ mod token_expander {
                 ExpandedResult {
                     files: vec![],
                     globs: vec![
-                        WorkspaceRelativePathBuf::from("project/source/*.md"),
-                        WorkspaceRelativePathBuf::from("project/source/**/*.json"),
-                        WorkspaceRelativePathBuf::from("!project/source/node_modules/**/*"),
+                        WorkspaceRelativeGlob::from("project/source/*.md"),
+                        WorkspaceRelativeGlob::from("project/source/**/*.json"),
+                        WorkspaceRelativeGlob::from("!project/source/node_modules/**/*"),
                     ],
                     ..ExpandedResult::default()
                 }
@@ -1701,9 +1758,9 @@ mod token_expander {
                         WorkspaceRelativePathBuf::from("project/source/dir/subdir")
                     ],
                     globs: vec![
-                        WorkspaceRelativePathBuf::from("project/source/*.md"),
-                        WorkspaceRelativePathBuf::from("project/source/**/*.json"),
-                        WorkspaceRelativePathBuf::from("!project/source/node_modules/**/*"),
+                        WorkspaceRelativeGlob::from("project/source/*.md"),
+                        WorkspaceRelativeGlob::from("project/source/**/*.json"),
+                        WorkspaceRelativeGlob::from("!project/source/node_modules/**/*"),
                     ],
                     ..ExpandedResult::default()
                 }
@@ -1779,9 +1836,9 @@ mod token_expander {
                 ExpandedResult {
                     files: vec![],
                     globs: vec![
-                        WorkspaceRelativePathBuf::from("project/source/*.md"),
-                        WorkspaceRelativePathBuf::from("project/source/**/*.json"),
-                        WorkspaceRelativePathBuf::from("!project/source/node_modules/**/*"),
+                        WorkspaceRelativeGlob::from("project/source/*.md"),
+                        WorkspaceRelativeGlob::from("project/source/**/*.json"),
+                        WorkspaceRelativeGlob::from("!project/source/node_modules/**/*"),
                     ],
                     ..ExpandedResult::default()
                 }
@@ -1945,6 +2002,37 @@ mod token_expander {
                     globs_for_output: create_glob_output_map(vec![
                         "project/source/bar/files/**/*",
                         "cache/bar/files/**/*",
+                    ]),
+                    ..ExpandedResult::default()
+                }
+            );
+        }
+
+        // https://github.com/moonrepo/moon/issues/2818 (f4a2p6)
+        #[test]
+        fn doesnt_convert_env_variables_of_only_underscores() {
+            let sandbox = create_sandbox("file-group");
+            let project_graph = create_project_graph([]);
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.env.insert("_".into(), Some("moon".into()));
+            task.env.insert("__".into(), Some("underscores".into()));
+
+            task.outputs = vec![
+                Output::File(stub_file_output("$__proto__.txt")),
+                Output::File(stub_file_output("$_x/file.txt")),
+            ];
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project_graph, &project, &context);
+
+            assert_eq!(
+                expander.expand_outputs(&task).unwrap(),
+                ExpandedResult {
+                    files_for_output: create_file_output_map(vec![
+                        "project/source/$__proto__.txt",
+                        "project/source/$_x/file.txt",
                     ]),
                     ..ExpandedResult::default()
                 }

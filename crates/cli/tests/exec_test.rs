@@ -18,18 +18,21 @@ fn target(task: &str) -> String {
     format!("{PROJECT_DIR}:{task}")
 }
 
-fn extract_hash_from_run(fixture: &Path, target_id: &str) -> String {
+fn extract_state_from_run(fixture: &Path, target_id: &str) -> TaskRunCacheState {
     let engine = CacheEngine::new(CacheContext::new(fixture)).unwrap();
-    let cache: TaskRunCacheState = json::read_file(
+
+    json::read_file(
         engine
             .state
             .states_dir
             .join(target_id.replace(':', "/"))
             .join("lastRun.json"),
     )
-    .unwrap();
+    .unwrap()
+}
 
-    cache.hash
+fn extract_hash_from_run(fixture: &Path, target_id: &str) -> String {
+    extract_state_from_run(fixture, target_id).hash
 }
 
 mod exec {
@@ -573,6 +576,47 @@ tasks:
 
     mod shell {
         use super::*;
+
+        // A package manager adds `node_modules/.bin` to `PATH` when running
+        // moon from a script, but a dependency's `bash` or `sh` in it must
+        // not become the shell of a task
+        #[cfg(unix)]
+        #[test]
+        fn doesnt_locate_the_shell_in_node_modules() {
+            use std::os::unix::fs::PermissionsExt;
+
+            let sandbox = create_pipeline_sandbox();
+            let bin_dir = sandbox.path().join("node_modules/.bin");
+
+            for name in ["bash", "sh"] {
+                sandbox.create_file(
+                    format!("node_modules/.bin/{name}"),
+                    "#!/bin/sh\necho hijacked\n",
+                );
+
+                std::fs::set_permissions(
+                    bin_dir.join(name),
+                    std::fs::Permissions::from_mode(0o755),
+                )
+                .unwrap();
+            }
+
+            let path = std::env::join_paths(
+                std::iter::once(bin_dir)
+                    .chain(std::env::split_paths(&std::env::var_os("PATH").unwrap())),
+            )
+            .unwrap();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg(target("syntaxVar"));
+                cmd.env("PATH", path);
+            });
+
+            assert
+                .success()
+                .stdout(predicate::str::contains("in substituted-value quotes"))
+                .stdout(predicate::str::contains("hijacked").not());
+        }
 
         #[test]
         fn can_run_with_no_shell() {
@@ -1202,6 +1246,50 @@ tasks:
 
                 assert_eq!(hash1, hash2);
             }
+
+            // Only runs that pass are archived, so hydrating never replays a
+            // failure, even when the last run of the task failed
+            // https://github.com/moonrepo/moon/issues/2818 (dbr6wr)
+            #[test]
+            fn doesnt_archive_a_failed_run_that_allows_failure() {
+                let sandbox = create_cases_sandbox();
+                let config = fs::read_file(sandbox.path().join("outputs/moon.yml")).unwrap();
+
+                sandbox.create_file(
+                    "outputs/moon.yml",
+                    format!(
+                        r#"{config}
+  allowedFailure:
+    command: node
+    args:
+      - '-e'
+      - 'require("fs").writeFileSync("allowed.txt", "fail"); process.exit(1);'
+    outputs:
+      - 'allowed.txt'
+    options:
+      allowFailure: true
+"#
+                    ),
+                );
+
+                for _ in 0..2 {
+                    sandbox
+                        .run_bin(|cmd| {
+                            cmd.arg("exec").arg("outputs:allowedFailure");
+                        })
+                        .success()
+                        .stdout(predicate::str::contains("cached").not());
+                }
+
+                let hash = extract_hash_from_run(sandbox.path(), "outputs:allowedFailure");
+
+                assert!(
+                    !sandbox
+                        .path()
+                        .join(format!(".moon/cache/outputs/{hash}.tar.gz"))
+                        .exists()
+                );
+            }
         }
 
         mod hydrate {
@@ -1264,6 +1352,80 @@ tasks:
                 // Outputs should come back
                 assert!(sandbox.path().join("outputs/both/a").exists());
                 assert!(sandbox.path().join("outputs/both/b").exists());
+            }
+
+            // A failed run is never archived, so it must not prevent hydrating
+            // the archive of a previous run that passed with the same hash
+            // https://github.com/moonrepo/moon/issues/2818 (dbr6wr)
+            #[test]
+            fn hydrates_a_passing_run_after_a_failed_run() {
+                let sandbox = create_cases_sandbox();
+                let config = fs::read_file(sandbox.path().join("outputs/moon.yml")).unwrap();
+
+                // `FAIL_FLAKY` is not an input, so all runs have the same hash
+                sandbox.create_file(
+                    "outputs/moon.yml",
+                    format!(
+                        r#"{config}
+  flaky:
+    command: node
+    args:
+      - '-e'
+      - 'const fs = require("fs"); fs.mkdirSync("flaky", {{ recursive: true }}); if (process.env.FAIL_FLAKY) {{ fs.writeFileSync("flaky/result.txt", "fail"); fs.writeFileSync("flaky/partial.txt", "fail"); process.exit(1); }} fs.writeFileSync("flaky/result.txt", "pass");'
+    outputs:
+      - 'flaky/**/*'
+"#
+                    ),
+                );
+
+                sandbox
+                    .run_bin(|cmd| {
+                        cmd.arg("exec").arg("outputs:flaky");
+                    })
+                    .success();
+
+                let hash = extract_hash_from_run(sandbox.path(), "outputs:flaky");
+
+                sandbox
+                    .run_bin(|cmd| {
+                        cmd.arg("exec").arg("outputs:flaky").arg("--force");
+                        cmd.env("FAIL_FLAKY", "1");
+                    })
+                    .failure();
+
+                assert_eq!(extract_hash_from_run(sandbox.path(), "outputs:flaky"), hash);
+
+                // A read-only cache never records the last run, so would never recover
+                sandbox
+                    .run_bin(|cmd| {
+                        cmd.arg("exec")
+                            .arg("outputs:flaky")
+                            .arg("--cache")
+                            .arg("read");
+                    })
+                    .success()
+                    .stdout(predicate::str::contains("cached"));
+
+                // The outputs of the failed run are replaced, not merged
+                assert_eq!(
+                    fs::read_file(sandbox.path().join("outputs/flaky/result.txt")).unwrap(),
+                    "pass"
+                );
+                assert!(!sandbox.path().join("outputs/flaky/partial.txt").exists());
+
+                // A read-only cache doesn't record the hydrated run, but a writable
+                // one does, as a pass, so its outputs are reused from now on
+                sandbox
+                    .run_bin(|cmd| {
+                        cmd.arg("exec").arg("outputs:flaky");
+                    })
+                    .success()
+                    .stdout(predicate::str::contains("cached"));
+
+                let state = extract_state_from_run(sandbox.path(), "outputs:flaky");
+
+                assert_eq!(state.exit_code, 0);
+                assert_eq!(state.hash, hash);
             }
 
             #[test]
@@ -1422,6 +1584,185 @@ tasks:
             // Both strategies collect the same inputs, and `.moon/workspace.yml`
             // is not an implicit input, so changing `walk_strategy` is a cache hit
             assert_eq!(hash_vcs, hash_glob);
+        }
+
+        // https://github.com/moonrepo/moon/issues/2818 (hjbima)
+        #[test]
+        fn hashes_an_unset_env_input_differently_than_an_empty_one() {
+            let sandbox = create_cases_sandbox();
+            let config = fs::read_file(sandbox.path().join("outputs/moon.yml")).unwrap();
+
+            sandbox.create_file(
+                "outputs/moon.yml",
+                format!(
+                    r#"{config}
+  envInput:
+    command: node
+    args:
+      - '-e'
+      - 'const fs = require("fs"); fs.mkdirSync("env", {{ recursive: true }}); fs.writeFileSync("env/mode.txt", process.env.MODE_2818 ?? "unset");'
+    inputs:
+      - '$MODE_2818'
+    outputs:
+      - 'env/**/*'
+"#
+                ),
+            );
+
+            let run = |mode: Option<&str>| {
+                sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("outputs:envInput");
+
+                    match mode {
+                        Some(value) => cmd.env("MODE_2818", value),
+                        None => cmd.env_remove("MODE_2818"),
+                    };
+                })
+            };
+            let read_mode = || fs::read_file(sandbox.path().join("outputs/env/mode.txt")).unwrap();
+
+            run(None).success();
+
+            let unset_hash = extract_hash_from_run(sandbox.path(), "outputs:envInput");
+
+            assert_eq!(read_mode(), "unset");
+
+            // Used to replay the output of the unset run
+            run(Some(""))
+                .success()
+                .stdout(predicate::str::contains("cached").not());
+
+            let empty_hash = extract_hash_from_run(sandbox.path(), "outputs:envInput");
+
+            assert_eq!(read_mode(), "");
+            assert_ne!(unset_hash, empty_hash);
+
+            // Each is then hydrated from its own result
+            run(None)
+                .success()
+                .stdout(predicate::str::contains("cached"));
+
+            assert_eq!(read_mode(), "unset");
+
+            run(Some(""))
+                .success()
+                .stdout(predicate::str::contains("cached"));
+
+            assert_eq!(read_mode(), "");
+        }
+    }
+
+    // https://github.com/moonrepo/moon/issues/2818 (rqk8s7)
+    mod glob_chars_in_project_paths {
+        use super::*;
+        use moon_config::PartialWorkspaceProjects;
+        use moon_test_utils::{MoonSandbox, create_empty_moon_sandbox};
+
+        // A `:` can't be in a file name on Windows
+        fn get_projects() -> Vec<(&'static str, &'static str)> {
+            let mut projects = vec![
+                // A character class that matches `l` (its sibling)
+                ("lib", "packages/[lib]"),
+                ("l", "packages/l"),
+                ("old", "packages/app (old)"),
+            ];
+
+            if cfg!(unix) {
+                projects.push(("xy", "packages/x:y"));
+            }
+
+            projects
+        }
+
+        fn create_glob_chars_sandbox() -> MoonSandbox {
+            let sandbox = create_empty_moon_sandbox();
+
+            // Sources can't contain glob characters, but globs can match them
+            sandbox.update_workspace_config(|config| {
+                config.projects = Some(PartialWorkspaceProjects::Globs(vec!["packages/*".into()]));
+            });
+
+            for (id, source) in get_projects() {
+                sandbox.create_file(format!("{source}/src/a.txt"), id);
+                sandbox.create_file(
+                    format!("{source}/moon.yml"),
+                    format!(
+                        r#"id: '{id}'
+tasks:
+  build:
+    command: node
+    args:
+      - '-e'
+      - 'const fs = require("fs"); fs.mkdirSync("dist", {{ recursive: true }}); fs.copyFileSync("src/a.txt", "dist/out.txt");'
+    inputs:
+      - 'src/**/*'
+    outputs:
+      - 'dist/**/*'
+"#
+                    ),
+                );
+            }
+
+            sandbox.enable_git();
+            sandbox
+        }
+
+        #[test]
+        fn runs_and_hydrates_tasks() {
+            let sandbox = create_glob_chars_sandbox();
+
+            for (id, source) in get_projects() {
+                let target = format!("{id}:build");
+                let out_file = sandbox.path().join(source).join("dist/out.txt");
+
+                sandbox
+                    .run_bin(|cmd| {
+                        cmd.arg("exec").arg(&target);
+                    })
+                    .success();
+
+                assert_eq!(fs::read_file(&out_file).unwrap(), id);
+
+                // Hydrates from the archive, which must hold the project's own outputs
+                fs::remove_dir_all(sandbox.path().join(source).join("dist")).unwrap();
+
+                sandbox
+                    .run_bin(|cmd| {
+                        cmd.arg("exec").arg(&target);
+                    })
+                    .success()
+                    .stdout(predicate::str::contains("cached"));
+
+                assert_eq!(fs::read_file(&out_file).unwrap(), id);
+            }
+        }
+
+        #[test]
+        fn only_hashes_the_files_of_its_own_project() {
+            let sandbox = create_glob_chars_sandbox();
+            let run = || {
+                sandbox
+                    .run_bin(|cmd| {
+                        cmd.arg("exec").arg("lib:build");
+                    })
+                    .success();
+
+                extract_hash_from_run(sandbox.path(), "lib:build")
+            };
+
+            let hash1 = run();
+
+            sandbox.create_file("packages/l/src/a.txt", "changed");
+
+            let hash2 = run();
+
+            assert_eq!(hash1, hash2);
+
+            sandbox.create_file("packages/[lib]/src/a.txt", "changed");
+
+            let hash3 = run();
+
+            assert_ne!(hash1, hash3);
         }
     }
 
@@ -1971,6 +2312,37 @@ tasks:
             assert.failure().stderr(predicate::str::contains(
                 "tasks: invalid type: integer `123`",
             ));
+        }
+
+        // A limit that no timer can hold must be refused, not silently ignored
+        // https://github.com/moonrepo/moon/issues/2818 (zqwwd3)
+        #[test]
+        fn errors_for_a_timeout_greater_than_1_week() {
+            let sandbox = create_cases_sandbox();
+            let config = fs::read_file(sandbox.path().join("outputs/moon.yml")).unwrap();
+
+            sandbox.create_file(
+                "outputs/moon.yml",
+                format!(
+                    r#"{config}
+  absurdTimeout:
+    command: node
+    args: ['-e', '']
+    options:
+      timeout: 10000000000
+"#
+                ),
+            );
+
+            // Separate tokens, as the error may be wrapped on CI
+            sandbox
+                .run_bin(|cmd| {
+                    cmd.arg("exec").arg("outputs:absurdTimeout");
+                })
+                .failure()
+                .stderr(predicate::str::contains("config::validate"))
+                .stderr(predicate::str::contains("10000000000"))
+                .stderr(predicate::str::contains("604800"));
         }
     }
 

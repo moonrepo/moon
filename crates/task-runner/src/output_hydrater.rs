@@ -52,7 +52,7 @@ impl OutputHydrater<'_> {
         daemon_client: Option<DaemonClient>,
     ) -> miette::Result<OutputHydrater<'task>> {
         Ok(OutputHydrater {
-            task_output_globset: GlobSet::new_owned(task.output_globs.keys())?,
+            task_output_globset: GlobSet::new_owned(task.get_output_globs())?,
             task,
             app_context,
             daemon_client,
@@ -208,6 +208,11 @@ impl OutputHydrater<'_> {
             return Ok(HydrateOutcome::Skipped);
         }
 
+        // Delete existing outputs first (like when hydrating from storage), so
+        // that files the archive doesn't contain don't remain, like the partial
+        // outputs of a run that failed, or those of a run at another hash
+        self.delete_existing_outputs()?;
+
         // Clone values to run in a blocking thread
         let app_context = Arc::clone(self.app_context);
         let task = Arc::clone(self.task);
@@ -221,7 +226,7 @@ impl OutputHydrater<'_> {
                 archive.add_source_file(output_file.as_str(), None);
             }
 
-            for output_glob in task.output_globs.keys() {
+            for output_glob in task.get_output_globs() {
                 archive.add_source_glob(output_glob.as_str());
             }
 

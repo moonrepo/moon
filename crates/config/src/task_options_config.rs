@@ -30,6 +30,24 @@ fn validate_env_override<C>(
     Ok(())
 }
 
+/// The maximum time in seconds that a task can run (1 week).
+pub const MAX_TASK_TIMEOUT: u64 = 604_800;
+
+fn validate_timeout<C>(
+    value: &u64,
+    _options: &PartialTaskOptionsConfig,
+    _ctx: &C,
+    _finalize: bool,
+) -> Result<(), ValidateError> {
+    if *value > MAX_TASK_TIMEOUT {
+        return Err(ValidateError::new(format!(
+            "a timeout of {value} seconds is greater than the maximum of {MAX_TASK_TIMEOUT} seconds (1 week)"
+        )));
+    }
+
+    Ok(())
+}
+
 fn validate_interactive<C>(
     enabled: &bool,
     options: &PartialTaskOptionsConfig,
@@ -482,7 +500,10 @@ config_struct!(
         #[serde(skip_serializing_if = "Option::is_none")]
         pub shell: Option<bool>,
 
-        /// The maximum time in seconds that a task can run before being cancelled.
+        /// The maximum time in seconds that a task can run before being cancelled,
+        /// up to 1 week (604800). A value of `0` disables the timeout, which can
+        /// be used to remove an inherited timeout.
+        #[setting(validate = validate_timeout)]
         #[serde(skip_serializing_if = "Option::is_none")]
         pub timeout: Option<u64>,
 

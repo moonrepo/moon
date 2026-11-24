@@ -2,6 +2,7 @@ use miette::IntoDiagnostic;
 pub use relative_path::*;
 use rustc_hash::FxHasher;
 use starbase_styles::color;
+use std::borrow::Cow;
 use std::hash::Hasher;
 use std::path::{Path, PathBuf};
 
@@ -63,6 +64,118 @@ pub fn expand_to_workspace_relative<P: AsRef<str>>(
             }
         }
         RelativeFrom::Workspace => WorkspaceRelativePathBuf::from(path),
+    }
+}
+
+/// Glob meta characters, which mirror `wax::is_meta_character` (wax v0.7).
+const GLOB_META_CHARS: [char; 13] = [
+    '?', '*', '$', ':', '<', '>', '(', ')', '[', ']', '{', '}', ',',
+];
+
+/// Escape glob meta characters in a literal path, like `packages/[lib]` or `packages/x:y`,
+/// so that it only matches itself when joined with a glob. Separators must be standardized
+/// beforehand, as the escape character is a backslash.
+pub fn escape_glob(path: &str) -> Cow<'_, str> {
+    if !path.contains(GLOB_META_CHARS) {
+        return Cow::Borrowed(path);
+    }
+
+    let mut escaped = String::with_capacity(path.len() + 4);
+
+    for ch in path.chars() {
+        if GLOB_META_CHARS.contains(&ch) {
+            escaped.push('\\');
+        }
+
+        escaped.push(ch);
+    }
+
+    Cow::Owned(escaped)
+}
+
+/// A workspace relative glob, in both the form it was configured, and the form to walk
+/// and match with. They differ when the glob is joined onto a literal path that contains
+/// glob meta characters, like a project's source of `packages/[lib]`, as that path is
+/// escaped (`packages/\[lib\]`) so that it only matches itself.
+#[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
+pub struct WorkspaceRelativeGlob {
+    /// The glob as configured, to display, compare with paths, and pass to
+    /// commands, as they have their own glob syntax (and a backslash is a
+    /// path separator on Windows).
+    pub path: WorkspaceRelativePathBuf,
+
+    /// The glob to walk and match with, when it differs from `path`.
+    pub escaped: Option<WorkspaceRelativePathBuf>,
+}
+
+impl WorkspaceRelativeGlob {
+    /// Join a glob (which may be negated) onto a literal path, like a project's source.
+    /// Separators must be standardized beforehand.
+    pub fn join(base: &str, glob: &str) -> Self {
+        let (negated, glob) = match glob.strip_prefix('!') {
+            Some(inner) => ("!", inner),
+            None => ("", glob),
+        };
+        let join =
+            |base: &str| WorkspaceRelativePathBuf::from(format!("{negated}{base}")).join(glob);
+
+        Self {
+            path: join(base),
+            escaped: match escape_glob(base) {
+                Cow::Borrowed(_) => None,
+                Cow::Owned(escaped_base) => Some(join(&escaped_base)),
+            },
+        }
+    }
+
+    /// Return the glob to walk and match with.
+    pub fn as_glob(&self) -> &WorkspaceRelativePathBuf {
+        self.escaped.as_ref().unwrap_or(&self.path)
+    }
+
+    /// Map both forms of the glob, like substituting variables.
+    pub fn map<E>(
+        self,
+        mut op: impl FnMut(WorkspaceRelativePathBuf) -> Result<WorkspaceRelativePathBuf, E>,
+    ) -> Result<Self, E> {
+        Ok(Self {
+            path: op(self.path)?,
+            escaped: self.escaped.map(op).transpose()?,
+        })
+    }
+}
+
+/// A glob that's not joined onto a literal path, so is used as-is.
+impl From<WorkspaceRelativePathBuf> for WorkspaceRelativeGlob {
+    fn from(path: WorkspaceRelativePathBuf) -> Self {
+        Self {
+            path,
+            escaped: None,
+        }
+    }
+}
+
+/// A glob that's not joined onto a literal path, so is used as-is.
+impl From<&str> for WorkspaceRelativeGlob {
+    fn from(path: &str) -> Self {
+        Self::from(WorkspaceRelativePathBuf::from(path))
+    }
+}
+
+/// Like [`expand_to_workspace_relative`], but for a glob. The project source is a literal
+/// path, so its glob meta characters are escaped in the form to walk and match with,
+/// while the glob itself is kept as-is.
+pub fn expand_to_workspace_relative_glob<P: AsRef<str>>(
+    from_format: RelativeFrom,
+    glob: P,
+) -> WorkspaceRelativeGlob {
+    let glob = standardize_separators(glob.as_ref());
+
+    match from_format {
+        RelativeFrom::Project(source) if !is_root_level_source(source) => {
+            WorkspaceRelativeGlob::join(&standardize_separators(source), &glob)
+        }
+        _ => WorkspaceRelativeGlob::from(WorkspaceRelativePathBuf::from(glob)),
     }
 }
 

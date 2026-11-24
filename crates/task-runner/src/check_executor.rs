@@ -1,11 +1,9 @@
+use crate::timeout_monitor::monitor_timeout;
 use moon_action::{ActionStatus, Operation};
 use moon_app_context::AppContext;
 use moon_process::{Command, Output};
 use moon_task::{Task, TaskCheck};
 use std::sync::Arc;
-use std::time::Duration;
-use tokio::task::JoinHandle;
-use tokio::time::{sleep, timeout};
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, instrument};
 
@@ -41,7 +39,7 @@ impl CheckExecutor {
         );
 
         let timeout_token = CancellationToken::new();
-        let timeout_handle = self.monitor_timeout(self.task.options.timeout, timeout_token.clone());
+        let timeout_handle = monitor_timeout(self.task.options.timeout, timeout_token.clone());
 
         let attempt_result = tokio::select! {
             // Run conditions in order!
@@ -129,25 +127,5 @@ impl CheckExecutor {
                 })
             }
         }
-    }
-
-    fn monitor_timeout(
-        &self,
-        duration: Option<u64>,
-        timeout_token: CancellationToken,
-    ) -> Option<JoinHandle<()>> {
-        duration.map(|duration| {
-            tokio::spawn(async move {
-                if timeout(
-                    Duration::from_secs(duration),
-                    sleep(Duration::from_secs(86400)), // 1 day
-                )
-                .await
-                .is_err()
-                {
-                    timeout_token.cancel();
-                }
-            })
-        })
     }
 }

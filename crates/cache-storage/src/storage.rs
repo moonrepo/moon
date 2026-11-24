@@ -681,21 +681,23 @@ async fn persist_task_manifest_in_backend(
 ) -> miette::Result<()> {
     let blob_inputs = manifest.collect_blob_inputs(&workspace_root);
 
+    // Always record when the manifest was stored, even without blobs,
+    // as a task's cache lifetime is checked against it
+    manifest.upload_started_at = Some(SystemTime::now());
+
     // Before we store the manifest, we should ensure all associated blobs are stored.
     // This ensures we don't end up with dangling manifests that reference missing blobs.
     if !blob_inputs.is_empty() {
-        manifest.upload_started_at = Some(SystemTime::now());
-
         let stored = Arc::clone(&backend)
             .store_blobs_batched(digest.clone(), blob_inputs)
             .await?;
-
-        manifest.upload_completed_at = Some(SystemTime::now());
 
         if !stored.success {
             return Ok(());
         }
     }
+
+    manifest.upload_completed_at = Some(SystemTime::now());
 
     if backend.get_capabilities().store_task_manifests {
         if let Err(error) = backend.store_task_manifest(digest.clone(), manifest).await {

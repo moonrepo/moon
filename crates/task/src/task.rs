@@ -1,6 +1,7 @@
 use crate::task_arg::TaskArg;
 use crate::task_options::TaskOptions;
-use moon_common::{Id, cacheable, path::WorkspaceRelativePathBuf};
+use moon_common::path::{WorkspaceRelativeGlob, WorkspaceRelativePathBuf};
+use moon_common::{Id, cacheable};
 use moon_config::{
     EnvMap, Input, Output, TaskCheck, TaskDependencyConfig, TaskOptionRunInCI, TaskPreset,
     TaskType, is_false, schematic::RegexSetting,
@@ -59,12 +60,42 @@ cacheable!(
     pub struct TaskGlobInput {
         #[serde(skip_serializing_if = "is_false")]
         pub cache: bool,
+
+        /// The glob to walk and match with, when it differs from the glob as
+        /// configured (the key), as the project source is escaped. Not serialized,
+        /// as tasks are only cached before they're expanded.
+        #[serde(skip)]
+        pub escaped: Option<WorkspaceRelativePathBuf>,
     }
 );
 
+impl TaskGlobInput {
+    /// Split a glob into its key (the glob as configured), and default params.
+    pub fn from_glob(glob: WorkspaceRelativeGlob) -> (WorkspaceRelativePathBuf, Self) {
+        (
+            glob.path,
+            Self {
+                escaped: glob.escaped,
+                ..Default::default()
+            },
+        )
+    }
+
+    /// Return the glob to walk and match with.
+    pub fn get_glob<'glob>(
+        &'glob self,
+        glob: &'glob WorkspaceRelativePathBuf,
+    ) -> &'glob WorkspaceRelativePathBuf {
+        self.escaped.as_ref().unwrap_or(glob)
+    }
+}
+
 impl Default for TaskGlobInput {
     fn default() -> Self {
-        Self { cache: true }
+        Self {
+            cache: true,
+            escaped: None,
+        }
     }
 }
 
@@ -79,8 +110,34 @@ cacheable!(
 cacheable!(
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
     #[serde(default)]
-    pub struct TaskGlobOutput {}
+    pub struct TaskGlobOutput {
+        /// The glob to walk and match with, when it differs from the glob as
+        /// configured (the key), as the project source is escaped. Not serialized,
+        /// as tasks are only cached before they're expanded.
+        #[serde(skip)]
+        pub escaped: Option<WorkspaceRelativePathBuf>,
+    }
 );
+
+impl TaskGlobOutput {
+    /// Split a glob into its key (the glob as configured), and default params.
+    pub fn from_glob(glob: WorkspaceRelativeGlob) -> (WorkspaceRelativePathBuf, Self) {
+        (
+            glob.path,
+            Self {
+                escaped: glob.escaped,
+            },
+        )
+    }
+
+    /// Return the glob to walk and match with.
+    pub fn get_glob<'glob>(
+        &'glob self,
+        glob: &'glob WorkspaceRelativePathBuf,
+    ) -> &'glob WorkspaceRelativePathBuf {
+        self.escaped.as_ref().unwrap_or(glob)
+    }
+}
 
 cacheable!(
     #[derive(Clone, Debug, Eq, PartialEq)]
@@ -114,6 +171,8 @@ cacheable!(
         #[serde(skip_serializing_if = "FxHashMap::is_empty")]
         pub input_files: FxHashMap<WorkspaceRelativePathBuf, TaskFileInput>,
 
+        /// Keyed by the glob as configured, use [`Task::get_input_globs`]
+        /// to walk and match with.
         #[serde(skip_serializing_if = "FxHashMap::is_empty")]
         pub input_globs: FxHashMap<WorkspaceRelativePathBuf, TaskGlobInput>,
 
@@ -125,6 +184,8 @@ cacheable!(
         #[serde(skip_serializing_if = "FxHashMap::is_empty")]
         pub output_files: FxHashMap<WorkspaceRelativePathBuf, TaskFileOutput>,
 
+        /// Keyed by the glob as configured, use [`Task::get_output_globs`]
+        /// to walk and match with.
         #[serde(skip_serializing_if = "FxHashMap::is_empty")]
         pub output_globs: FxHashMap<WorkspaceRelativePathBuf, TaskGlobOutput>,
 
@@ -150,12 +211,28 @@ cacheable!(
 );
 
 impl Task {
+    /// Return the input globs to walk and match with.
+    pub fn get_input_globs(&self) -> Vec<&WorkspaceRelativePathBuf> {
+        self.input_globs
+            .iter()
+            .map(|(glob, params)| params.get_glob(glob))
+            .collect()
+    }
+
+    /// Return the output globs to walk and match with.
+    pub fn get_output_globs(&self) -> Vec<&WorkspaceRelativePathBuf> {
+        self.output_globs
+            .iter()
+            .map(|(glob, params)| params.get_glob(glob))
+            .collect()
+    }
+
     /// Create a globset of all input globs to match with.
     pub fn create_globset(&self) -> miette::Result<glob::GlobSet<'_>> {
         // Both inputs/outputs may have a mix of negated and
         // non-negated globs, so we must split them into groups
-        let (gi, ni) = split_patterns(self.input_globs.keys());
-        let (go, no) = split_patterns(self.output_globs.keys());
+        let (gi, ni) = split_patterns(self.get_input_globs());
+        let (go, no) = split_patterns(self.get_output_globs());
 
         // We then only match against non-negated inputs
         let g = gi;
@@ -239,9 +316,9 @@ impl Task {
 
         for (glob, params) in globs {
             if params.cache {
-                cached_globs.push(glob);
+                cached_globs.push(params.get_glob(glob));
             } else {
-                non_cached_globs.push(glob);
+                non_cached_globs.push(params.get_glob(glob));
             }
         }
 
@@ -285,7 +362,7 @@ impl Task {
         if !self.output_globs.is_empty() {
             list.extend(glob::walk_fast_with_options(
                 workspace_root,
-                self.output_globs.keys(),
+                self.get_output_globs(),
                 GlobWalkOptions::default().files(),
             )?);
         }

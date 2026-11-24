@@ -8,6 +8,7 @@ mod run_state;
 pub mod task_executor;
 mod task_runner;
 mod task_runner_error;
+pub mod timeout_monitor;
 
 pub use run_state::*;
 pub use task_runner::*;

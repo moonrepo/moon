@@ -454,6 +454,7 @@ mod plugin_commands {
 
             let bag = GlobalEnvBag::instance();
             bag.set("EXISTS", "value");
+            bag.set("EMPTY", "");
 
             exec_plugin_command(
                 ctx,
@@ -461,6 +462,7 @@ mod plugin_commands {
                     .cache(CacheStrategy::Hash)
                     .inputs(vec![
                         CacheInput::EnvVar("EXISTS".into()),
+                        CacheInput::EnvVar("EMPTY".into()),
                         CacheInput::EnvVar("MISSING".into()),
                     ]),
                 &ExecCommandOptions::default(),
@@ -469,6 +471,7 @@ mod plugin_commands {
             .unwrap();
 
             bag.remove("EXISTS");
+            bag.remove("EMPTY");
 
             let hashes = get_hashes(sandbox.path());
             let data: json::JsonValue = json::read_file(&hashes[0]).unwrap();

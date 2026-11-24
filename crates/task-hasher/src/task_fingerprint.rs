@@ -32,8 +32,9 @@ fingerprint!(
         // Input files and globs mapped to a unique hash
         pub inputs: BTreeMap<WorkspaceRelativePathBuf, String>,
 
-        // Input environment variables
-        pub input_env: BTreeMap<&'task str, String>,
+        // Input environment variables (`None` when not set,
+        // which is different than set to an empty string)
+        pub input_env: BTreeMap<&'task str, Option<String>>,
 
         // Relative output paths
         pub outputs: Vec<&'task Output>,

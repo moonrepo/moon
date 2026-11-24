@@ -834,8 +834,9 @@ impl<'proj> TasksBuilder<'proj> {
                 state.shell_disabled = !shell;
             }
 
+            // A timeout of 0 disables it, and removes an inherited timeout
             if let Some(timeout) = &config.timeout {
-                options.timeout = Some(*timeout);
+                options.timeout = if *timeout == 0 { None } else { Some(*timeout) };
             }
 
             if let Some(unix_shell) = &config.unix_shell {

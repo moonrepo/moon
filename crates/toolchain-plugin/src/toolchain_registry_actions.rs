@@ -331,10 +331,13 @@ impl ToolchainRegistry {
     }
 
     /// Load the toolchains, and the configured toolchains that they require, and
-    /// that those require, and so on, each loaded once. The provided toolchains
-    /// are first and in order, followed by the toolchains that they require, in
-    /// the order that they're required. Requirements on toolchains that aren't
-    /// configured are skipped, like those with an invalid identifier.
+    /// that those require, and so on, each loaded once. Each toolchain is before
+    /// the toolchains that it requires, like npm before Node.js, so that a caller
+    /// can give it precedence over them, like for `PATH`. Otherwise the provided
+    /// toolchains are first and in order, followed by the toolchains that they
+    /// require, in the order that they're required, where a toolchain that
+    /// requires another is moved up to before it. Requirements on toolchains that
+    /// aren't configured are skipped, like those with an invalid identifier.
     pub async fn load_with_requirements<InFn>(
         &self,
         ids: Vec<Id>,
@@ -344,7 +347,7 @@ impl ToolchainRegistry {
         InFn: Fn(&ToolchainPlugin) -> DefineRequirementsInput,
     {
         let mut seen = FxHashSet::default();
-        let mut toolchains = vec![];
+        let mut loaded = vec![];
         let mut queue = ids
             .into_iter()
             .map(|id| self.resolve_toolchain_id(id))
@@ -356,23 +359,59 @@ impl ToolchainRegistry {
             }
 
             let toolchain = self.load(&id).await?;
+            let mut required = vec![];
 
             for requirement in self
                 .define_requirements_for(&toolchain, |tc| input_factory(tc))
                 .await?
                 .requires
             {
-                if !seen.contains(&requirement.id)
-                    && self
-                        .config_data
-                        .get_plugin_config(&requirement.id)
-                        .is_some()
+                if self
+                    .config_data
+                    .get_plugin_config(&requirement.id)
+                    .is_some()
                 {
-                    queue.push_back(requirement.id);
+                    if !seen.contains(&requirement.id) {
+                        queue.push_back(requirement.id.clone());
+                    }
+
+                    required.push(requirement.id);
                 }
             }
 
-            toolchains.push(toolchain);
+            loaded.push((toolchain, required));
+        }
+
+        // Place the toolchains that require a toolchain before it, in their
+        // own order, and each only once, which also breaks cycles
+        fn place(
+            index: usize,
+            loaded: &[(Arc<ToolchainPlugin>, Vec<Id>)],
+            placed: &mut [bool],
+            toolchains: &mut Vec<Arc<ToolchainPlugin>>,
+        ) {
+            if placed[index] {
+                return;
+            }
+
+            placed[index] = true;
+
+            let id = &loaded[index].0.id;
+
+            for (dependent, (_, required)) in loaded.iter().enumerate() {
+                if required.contains(id) {
+                    place(dependent, loaded, placed, toolchains);
+                }
+            }
+
+            toolchains.push(Arc::clone(&loaded[index].0));
+        }
+
+        let mut placed = vec![false; loaded.len()];
+        let mut toolchains = Vec::with_capacity(loaded.len());
+
+        for index in 0..loaded.len() {
+            place(index, &loaded, &mut placed, &mut toolchains);
         }
 
         Ok(toolchains)

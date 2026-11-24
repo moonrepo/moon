@@ -491,6 +491,11 @@
   (`pnpm:`), an invalid version, or an invalid ID, would load no toolchains at all, without an
   error, so tasks ran without them. The file now fails to load, naming the invalid toolchain. The
   same applies to extensions in `.moon/extensions.yml`, and to toolchains in a project's `moon.yml`.
+- Fixed an issue where a task's command found the executables of a toolchain's requirement before
+  the toolchain's own, as toolchain paths followed the task's toolchain order, like `[node, npm]`.
+  In a task that runs `node`, `npm` was the npm that Node.js bundles, not the configured one, and
+  with Corepack enabled, `yarn` and `pnpm` were its shims. A toolchain's paths (and its activated
+  environment) are now before those of the toolchains it requires.
 - Fixed an issue where a task's hash included its toolchain's configured version (like `~22`),
   instead of the version it was resolved to when setting up the toolchain (like `22.22.3`), which
   the task runs with. Machines that resolved different versions shared a hash, and remote cache

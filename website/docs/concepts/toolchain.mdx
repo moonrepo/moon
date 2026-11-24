@@ -24,7 +24,8 @@ and install them if they're missing.
 
 When running a task (or a toolchain operation, like installing dependencies), moon prepends the
 executables of each toolchain that the task runs against to `PATH`, so that the correct version of
-each tool is used.
+each tool is used. A toolchain's executables are before those of the toolchains it requires, like
+npm's before Node.js's, so that the configured npm is used instead of the one Node.js bundles.
 
 ### Environment activation<VersionLabel version="2.6.0" />
 
@@ -39,7 +40,8 @@ prepend additional paths to `PATH`.
 - Variables that are already configured for the command, like a task's
   [`env`](../config/project#env-1), or those injected by toolchain plugins, are never overridden.
 - When a task runs against multiple [toolchains](../config/project#toolchains), the first
-  configured toolchain takes precedence for both variables and paths.
+  configured toolchain takes precedence for both variables and paths, except that a toolchain takes
+  precedence over the toolchains it requires.
 - Environments are not activated when [forcing globals](#force-disabling).
 
 To check whether a toolchain supports this, run [`moon toolchain info`](../commands/toolchain/info)

@@ -2,14 +2,17 @@ use super::{DockerManifest, MANIFEST_NAME, docker_error::AppDockerError};
 use crate::session::{MoonSession, SessionResult};
 use miette::IntoDiagnostic;
 use moon_actions::plugins::{ExecCommandOptions, exec_plugin_command};
+use moon_async_utils::run_pooled_tasks;
 use moon_layout_graph::{RootIndex, RootKind, ToolchainDependenciesRoot};
-use moon_pdk_api::{InstallDependenciesInput, PruneDockerInput};
+use moon_pdk_api::{InstallDependenciesInput, ParseManifestInput, PruneDockerInput};
 use moon_project::Project;
 use moon_toolchain::DependenciesWorkspace;
 use moon_toolchain_plugin::{ToolchainPlugin, ToolchainRegistry};
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::FxHashMap;
 use starbase_utils::json;
+use std::collections::VecDeque;
+use std::path::Path;
 use std::sync::Arc;
 use tokio::task::JoinSet;
 use tracing::{debug, instrument};
@@ -201,10 +204,12 @@ impl PruneWorkflow {
                     let output = toolchain
                         .install_dependencies(InstallDependenciesInput {
                             context: toolchain_registry.create_context(),
-                            packages: get_install_packages_for_projects(
-                                &prune_root.projects,
-                                &toolchain.id,
-                            ),
+                            packages: get_install_packages(
+                                &toolchain_registry,
+                                &toolchain,
+                                &prune_root,
+                            )
+                            .await?,
                             production: true,
                             project: prune_root
                                 .owner
@@ -248,19 +253,100 @@ impl PruneWorkflow {
     }
 }
 
-fn get_install_packages_for_projects(projects: &[Arc<Project>], toolchain_id: &str) -> Vec<String> {
-    projects
+/// The package names of the focused projects, which focus the install on them.
+/// The project at the root (its owner) is left out, as it isn't a member of the
+/// workspace (npm rejects it), and the root's dependencies are installed anyway.
+/// When a focused member's package has no name, the install can't be focused on
+/// it, so no packages are returned, and every package is installed. Manifests
+/// are parsed concurrently, as a root may have many focused projects.
+async fn get_install_packages(
+    registry: &Arc<ToolchainRegistry>,
+    toolchain: &Arc<ToolchainPlugin>,
+    prune_root: &PruneRoot,
+) -> miette::Result<Vec<String>> {
+    let members = prune_root
+        .projects
         .iter()
-        .flat_map(|project| {
-            project.aliases.iter().filter_map(|alias| {
-                if alias.plugin == toolchain_id {
-                    Some(alias.alias.clone())
-                } else {
-                    None
-                }
+        .filter(|project| prune_root.root.owner_project.as_ref() != Some(&project.id))
+        .map(Arc::clone)
+        .collect::<VecDeque<_>>();
+    let mut packages = vec![];
+    let mut unnamed = None;
+
+    run_pooled_tasks(
+        members,
+        |project| {
+            let registry = Arc::clone(registry);
+            let toolchain = Arc::clone(toolchain);
+            let root = prune_root.workspace.root.clone();
+
+            Ok(async move {
+                let name = get_package_name(&registry, &toolchain, &root, &project).await?;
+
+                Ok((project, name))
             })
-        })
-        .collect()
+        },
+        // Outputs are in the order of the focused projects
+        |(project, name)| {
+            match name {
+                Some(name) => {
+                    if !packages.contains(&name) {
+                        packages.push(name);
+                    }
+                }
+                None => {
+                    unnamed.get_or_insert(project);
+                }
+            };
+
+            Ok(())
+        },
+    )
+    .await?;
+
+    if let Some(project) = unnamed {
+        debug!(
+            project_id = project.id.as_str(),
+            deps_root = prune_root.root.root.as_str(),
+            "Package has no name, so the install can't be focused on it, installing all packages",
+        );
+
+        return Ok(vec![]);
+    }
+
+    Ok(packages)
+}
+
+/// The name of a project's package, from the first of its manifests that has one,
+/// parsed with the project's config, like hashing a task does.
+async fn get_package_name(
+    registry: &ToolchainRegistry,
+    toolchain: &ToolchainPlugin,
+    root: &Path,
+    project: &Project,
+) -> miette::Result<Option<String>> {
+    for manifest_file_name in &toolchain.metadata.manifest_file_names {
+        let manifest_path = project.root.join(manifest_file_name);
+
+        if !manifest_path.exists() {
+            continue;
+        }
+
+        let output = toolchain
+            .parse_manifest(ParseManifestInput {
+                context: registry.create_context(),
+                path: toolchain.to_virtual_path(manifest_path),
+                root: toolchain.to_virtual_path(root),
+                toolchain_config: registry.create_merged_config(&toolchain.id, &project.config),
+            })
+            .await?;
+
+        if output.name.is_some() {
+            return Ok(output.name);
+        }
+    }
+
+    Ok(None)
 }
 
 #[instrument(skip_all)]
@@ -289,67 +375,4 @@ pub async fn prune(session: MoonSession) -> SessionResult {
     workflow.prune().await?;
 
     Ok(None)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use moon_common::Id;
-    use moon_project::ProjectAlias;
-
-    fn create_project(id: &str, aliases: Vec<ProjectAlias>) -> Arc<Project> {
-        Arc::new(Project {
-            id: Id::raw(id),
-            aliases,
-            ..Project::default()
-        })
-    }
-
-    #[test]
-    fn uses_matching_toolchain_aliases_as_install_packages() {
-        let projects = vec![create_project(
-            "app",
-            vec![
-                ProjectAlias {
-                    alias: "@scope/app".into(),
-                    plugin: Id::raw("javascript"),
-                },
-                ProjectAlias {
-                    alias: "py-app".into(),
-                    plugin: Id::raw("python"),
-                },
-            ],
-        )];
-
-        assert_eq!(
-            get_install_packages_for_projects(&projects, "javascript"),
-            ["@scope/app"]
-        );
-    }
-
-    #[test]
-    fn uses_same_id_aliases_as_install_packages() {
-        let projects = vec![create_project(
-            "app",
-            vec![ProjectAlias {
-                alias: "app".into(),
-                plugin: Id::raw("javascript"),
-            }],
-        )];
-
-        assert_eq!(
-            get_install_packages_for_projects(&projects, "javascript"),
-            ["app"]
-        );
-    }
-
-    #[test]
-    fn preserves_empty_packages_without_aliases() {
-        let projects = vec![create_project("app", vec![])];
-
-        assert_eq!(
-            get_install_packages_for_projects(&projects, "javascript"),
-            Vec::<String>::new()
-        );
-    }
 }

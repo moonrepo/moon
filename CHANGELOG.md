@@ -315,6 +315,8 @@
     manager inheriting the root that the JavaScript toolchain located. Its actions run in that root,
     its manifests are hashed for tasks, and `moon layout-graph --info` shows which toolchain the
     root was inherited from.
+  - Added a `name` field to `ParseManifestOutput` in the toolchain plugin API, for the package's
+    name, which `moon docker prune` focuses the production install on.
   - Added an optional `locate_dependencies_roots` function to the toolchain plugin API, which
     locates the dependencies roots of many projects in a single call. When a toolchain implements
     it, every project that shares the toolchain's config is located in one call while building the
@@ -470,6 +472,15 @@
   `scratch` image, instead of the configured or toolchain's default image, and use the project's
   first task as both the build and start task, when neither was configured. It now uses the same
   defaults as `--defaults`.
+- Fixed some issues where `moon docker prune` focused its production install on the aliases of the
+  focused projects, instead of their package names:
+  - A project at the dependencies root was passed as a package, which npm rejects as a workspace, so
+    it failed in every single-package npm repository ("No workspaces found"). It's now left out, as
+    the root's dependencies are always installed.
+  - With `inheritAliases: false`, or an alias that conflicts with another project, nothing was
+    focused, so every package was installed. The names now come from the projects' manifests, using
+    the toolchain's `parse_manifest`. A package without a name still installs every package, as the
+    install can't be focused on it.
 - Fixed an issue where a task's hash included its toolchain's configured version (like `~22`),
   instead of the version it was resolved to when setting up the toolchain (like `22.22.3`), which
   the task runs with. Machines that resolved different versions shared a hash, and remote cache

@@ -213,7 +213,9 @@ api_struct!(
         /// Current moon context.
         pub context: MoonContext,
 
-        /// List of packages to only install dependencies for.
+        /// List of packages to only install dependencies for, by the name
+        /// that `parse_manifest` returned for each. The package at the root
+        /// is never included, as it's not a member of the workspace.
         pub packages: Vec<String>,
 
         /// Only install production dependencies.
@@ -298,6 +300,11 @@ api_struct!(
         /// resolve inherited dependencies.
         #[serde(skip_serializing_if = "BTreeMap::is_empty")]
         pub inheritable_dependencies: BTreeMap<String, ManifestDependency>,
+
+        /// Name of the package, which focuses an install on it, like
+        /// `moon docker prune` does for the focused projects.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub name: Option<String>,
 
         /// Peer dependencies.
         #[serde(skip_serializing_if = "BTreeMap::is_empty")]

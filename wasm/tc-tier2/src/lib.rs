@@ -135,8 +135,8 @@ pub fn parse_lock(Json(input): Json<ParseLockInput>) -> FnResult<Json<ParseLockO
 // Test manifests have a `<kind> <name> <version>` per line, so that tests can
 // hash dependencies, where the kind is `dep`, `dev-dep`, `build-dep`, or
 // `inheritable-dep`, and the version may be `inherited`, or a `path:<path>`
-// or `url:<url>` without a version. Other lines (like the member globs of
-// `tc.root.cfg`) are ignored.
+// or `url:<url>` without a version. A `name <name>` line is the package's
+// name. Other lines (like the member globs of `tc.root.cfg`) are ignored.
 #[plugin_fn]
 pub fn parse_manifest(
     Json(input): Json<ParseManifestInput>,
@@ -152,6 +152,11 @@ pub fn parse_manifest(
     )?;
 
     for line in fs::read_to_string(&input.path)?.lines() {
+        if let ["name", name] = line.split_whitespace().collect::<Vec<_>>()[..] {
+            output.name = Some(name.into());
+            continue;
+        }
+
         let [kind, name, version] = line.split_whitespace().collect::<Vec<_>>()[..] else {
             continue;
         };

@@ -5471,6 +5471,7 @@ dependencies = [
  "moon_api",
  "moon_app_context",
  "moon_app_macros",
+ "moon_async_utils",
  "moon_cache",
  "moon_cache_local",
  "moon_cache_remote",

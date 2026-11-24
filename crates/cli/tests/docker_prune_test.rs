@@ -221,6 +221,71 @@ mod docker_prune_layout {
         assert_eq!(read_inputs(&workdir, "install_dependencies").len(), 2);
     }
 
+    fn get_packages(install: &Value) -> Vec<&str> {
+        install["packages"]
+            .as_array()
+            .map(|packages| {
+                packages
+                    .iter()
+                    .map(|package| package.as_str().unwrap())
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
+    // By the package names that the manifests declare, which aren't aliases
+    // here, as the `tc-tier2` test plugin's aliases are invalid IDs
+    #[test]
+    fn focuses_the_install_on_package_names() {
+        let sandbox = create_moon_sandbox("docker-layout");
+        sandbox.create_file("packages/a/tc.cfg", "name @scope/a\n");
+        sandbox.create_file("packages/b/tc.cfg", "name @scope/b\n");
+
+        let workdir = scaffold_and_prune(&sandbox, &["a", "b"]);
+        let install = get_single_input(&workdir, "install_dependencies");
+
+        assert_eq!(get_packages(&install), ["@scope/a", "@scope/b"]);
+    }
+
+    // The project at the root isn't a member of the workspace (npm rejects
+    // it), and the root's dependencies are installed anyway
+    #[test]
+    fn leaves_the_root_project_out_of_the_install() {
+        let sandbox = create_moon_sandbox("docker-layout");
+        sandbox.create_file("tc.cfg", "name root\n");
+        sandbox.create_file("packages/a/tc.cfg", "name pkg-a\n");
+
+        let workdir = scaffold_and_prune(&sandbox, &["root", "a"]);
+        let install = get_single_input(&workdir, "install_dependencies");
+
+        assert_eq!(get_packages(&install), ["pkg-a"]);
+    }
+
+    // A package root's only project is at the root
+    #[test]
+    fn doesnt_focus_the_install_of_a_package() {
+        let sandbox = create_moon_sandbox("docker-layout");
+        sandbox.create_file("standalone/tc.cfg", "name standalone\n");
+
+        let workdir = scaffold_and_prune(&sandbox, &["standalone"]);
+        let install = get_single_input(&workdir, "install_dependencies");
+
+        assert_eq!(get_packages(&install), Vec::<&str>::new());
+    }
+
+    // The install can't be focused on a member without a package name, so
+    // it's not focused at all, which installs every package
+    #[test]
+    fn doesnt_focus_the_install_when_a_package_has_no_name() {
+        let sandbox = create_moon_sandbox("docker-layout");
+        sandbox.create_file("packages/a/tc.cfg", "name pkg-a\n");
+
+        let workdir = scaffold_and_prune(&sandbox, &["a", "b"]);
+        let install = get_single_input(&workdir, "install_dependencies");
+
+        assert_eq!(get_packages(&install), Vec::<&str>::new());
+    }
+
     // Not a member of the workspace that it located
     #[test]
     fn doesnt_prune_a_project_outside_of_a_root() {

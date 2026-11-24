@@ -577,6 +577,47 @@ tasks:
     mod shell {
         use super::*;
 
+        // A package manager adds `node_modules/.bin` to `PATH` when running
+        // moon from a script, but a dependency's `bash` or `sh` in it must
+        // not become the shell of a task
+        #[cfg(unix)]
+        #[test]
+        fn doesnt_locate_the_shell_in_node_modules() {
+            use std::os::unix::fs::PermissionsExt;
+
+            let sandbox = create_pipeline_sandbox();
+            let bin_dir = sandbox.path().join("node_modules/.bin");
+
+            for name in ["bash", "sh"] {
+                sandbox.create_file(
+                    format!("node_modules/.bin/{name}"),
+                    "#!/bin/sh\necho hijacked\n",
+                );
+
+                std::fs::set_permissions(
+                    bin_dir.join(name),
+                    std::fs::Permissions::from_mode(0o755),
+                )
+                .unwrap();
+            }
+
+            let path = std::env::join_paths(
+                std::iter::once(bin_dir)
+                    .chain(std::env::split_paths(&std::env::var_os("PATH").unwrap())),
+            )
+            .unwrap();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg(target("syntaxVar"));
+                cmd.env("PATH", path);
+            });
+
+            assert
+                .success()
+                .stdout(predicate::str::contains("in substituted-value quotes"))
+                .stdout(predicate::str::contains("hijacked").not());
+        }
+
         #[test]
         fn can_run_with_no_shell() {
             let sandbox = create_pipeline_sandbox();

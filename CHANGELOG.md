@@ -32,7 +32,9 @@
 - Fixed an issue where a binary of a dependency with the same name as the task's shell, like a
   `bash` or `sh` in `node_modules/.bin`, ran instead of the shell, and replaced the task's command.
   The shell is now located using the `PATH` that moon was run with, before toolchain paths are added
-  to it. Only when it can't be found there is it located using the task's `PATH`.
+  to it, and never within a `node_modules` directory, which a package manager adds to it when
+  running moon from a script. Only when it can't be found there is it located using the task's
+  `PATH`.
 - Fixed an issue where a task that failed would not hydrate from the cache on its next run, even
   though a cached result of a run that passed existed for its hash, and would run again instead.
   This applied to a failure at any hash, not just the current one, and in a read-only cache

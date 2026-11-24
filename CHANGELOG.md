@@ -12,6 +12,10 @@
   the workspace. When an inherited version can't be resolved, its locked versions are hashed
   instead. Tasks of affected projects will have a new hash, so they will not be cached on their
   first run after upgrading.
+- Fixed an issue where the `unstable_nub` toolchain failed to load without a `plugin` locator
+  ("unstable_nub.plugin: a locator is required for plugins"), unlike every other built-in toolchain.
+  This includes the `unstable_nub: {}` that the docs show, and the config that
+  `moon toolchain add unstable_nub` writes.
 - Fixed an issue where an environment variable input (`$VAR` in `inputs`) that was not set, and the
   same variable set to an empty string, produced the same task hash, so a run with one would replay
   the cached output of the other. The same applied to environment variable inputs of toolchain setup

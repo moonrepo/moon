@@ -2,7 +2,7 @@ mod utils;
 
 use httpmock::prelude::*;
 use moon_config::ToolchainsConfig;
-use moon_config_loader::ConfigLoader;
+use moon_config_loader::{ConfigLoader, ToolchainsConfigExt};
 use proto_core::{Id, ProtoConfig, ToolContext, UnresolvedVersionSpec};
 use schematic::ConfigLoader as BaseLoader;
 use serde_json::Value;
@@ -177,6 +177,39 @@ plugin:
             let cfg = config.plugins.get("plugin").unwrap();
 
             assert!(cfg.plugin.is_some());
+        }
+
+        // Including the unstable ones, like `unstable_nub`
+        #[test]
+        fn inherits_the_locator_of_builtin_toolchains() {
+            for id in ["node", "unstable_nub", "unstable_python", "yarn"] {
+                let config = test_load_config(FILENAME, &format!("{id}: {{}}\n"), |path| {
+                    load_config_from_root(path, &ProtoConfig::default())
+                });
+
+                assert_eq!(
+                    config.plugins.get(id).unwrap().plugin,
+                    ToolchainsConfigExt::get_plugin_locator(&Id::raw(id)),
+                    "{id}"
+                );
+            }
+        }
+
+        #[test]
+        fn errors_without_a_locator_for_other_toolchains() {
+            let sandbox = create_empty_sandbox();
+            sandbox.create_file(FILENAME, "custom: {}\n");
+
+            let error = load_config_from_root(sandbox.path(), &ProtoConfig::default())
+                .unwrap_err()
+                .downcast::<schematic::ConfigError>()
+                .unwrap()
+                .to_full_string();
+
+            assert!(
+                error.contains("custom.plugin: a locator is required for plugins"),
+                "{error}"
+            );
         }
 
         #[test]

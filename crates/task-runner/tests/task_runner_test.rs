@@ -2403,6 +2403,32 @@ mod task_runner {
                 ));
             }
 
+            // Like the partial outputs of a run that failed, or those of a run at
+            // another hash, as they would be reused as previous outputs
+            #[tokio::test(flavor = "multi_thread")]
+            async fn removes_existing_outputs_that_arent_in_the_archive() {
+                let container = TaskRunnerContainer::new("runner", "glob-outputs").await;
+                let mut runner = container.create_runner();
+
+                setup_local_state(&container, &mut runner);
+                container.sandbox.create_file("project/file.txt", "fail");
+                container.sandbox.create_file("project/partial.txt", "fail");
+
+                runner.hydrate("hash123").await.unwrap();
+
+                assert_eq!(
+                    fs::read_to_string(container.sandbox.path().join("project/file.txt")).unwrap(),
+                    "content"
+                );
+                assert!(
+                    !container
+                        .sandbox
+                        .path()
+                        .join("project/partial.txt")
+                        .exists()
+                );
+            }
+
             #[tokio::test(flavor = "multi_thread")]
             async fn unpacks_archive_into_project() {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;

@@ -1286,9 +1286,9 @@ tasks:
     command: node
     args:
       - '-e'
-      - 'if (process.env.FAIL_FLAKY) process.exit(1); require("fs").mkdirSync("flaky", {{ recursive: true }}); require("fs").writeFileSync("flaky/result.txt", "pass");'
+      - 'const fs = require("fs"); fs.mkdirSync("flaky", {{ recursive: true }}); if (process.env.FAIL_FLAKY) {{ fs.writeFileSync("flaky/result.txt", "fail"); fs.writeFileSync("flaky/partial.txt", "fail"); process.exit(1); }} fs.writeFileSync("flaky/result.txt", "pass");'
     outputs:
-      - 'flaky/result.txt'
+      - 'flaky/**/*'
 "#
                     ),
                 );
@@ -1310,8 +1310,6 @@ tasks:
 
                 assert_eq!(extract_hash_from_run(sandbox.path(), "outputs:flaky"), hash);
 
-                fs::remove_dir_all(sandbox.path().join("outputs/flaky")).unwrap();
-
                 // A read-only cache never records the last run, so would never recover
                 sandbox
                     .run_bin(|cmd| {
@@ -1323,10 +1321,12 @@ tasks:
                     .success()
                     .stdout(predicate::str::contains("cached"));
 
+                // The outputs of the failed run are replaced, not merged
                 assert_eq!(
                     fs::read_file(sandbox.path().join("outputs/flaky/result.txt")).unwrap(),
                     "pass"
                 );
+                assert!(!sandbox.path().join("outputs/flaky/partial.txt").exists());
 
                 // A read-only cache doesn't record the hydrated run, but a writable
                 // one does, as a pass, so its outputs are reused from now on

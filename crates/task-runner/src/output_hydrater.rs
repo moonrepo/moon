@@ -208,6 +208,11 @@ impl OutputHydrater<'_> {
             return Ok(HydrateOutcome::Skipped);
         }
 
+        // Delete existing outputs first (like when hydrating from storage), so
+        // that files the archive doesn't contain don't remain, like the partial
+        // outputs of a run that failed, or those of a run at another hash
+        self.delete_existing_outputs()?;
+
         // Clone values to run in a blocking thread
         let app_context = Arc::clone(self.app_context);
         let task = Arc::clone(self.task);

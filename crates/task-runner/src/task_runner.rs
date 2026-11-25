@@ -326,7 +326,7 @@ impl<'task> TaskRunner<'task> {
         }
 
         // A previous run that failed doesn't prevent hydration, as failed runs
-        // are never archived, so an archive for this hash is always from a run
+        // are never archived, so a manifest for this hash is always from a run
         // that passed. The previous run may have also been for a different hash!
 
         // Check if last run is stale
@@ -350,7 +350,7 @@ impl<'task> TaskRunner<'task> {
                 .await
             {
                 Ok(Some(source)) => {
-                    // Like the local archive, a stored manifest is checked against
+                    // Like the last run, a stored manifest is checked against
                     // the lifetime by its own age, as the last run may be for
                     // another hash, or may have failed. Without a timestamp, or
                     // with one in the future, the age is unknown, so it's fresh
@@ -924,16 +924,11 @@ impl<'task> TaskRunner<'task> {
             HydrateOutcome::Hit => {
                 debug!(task_target, "Ran cache hydration operation");
 
-                // Previous outputs are only reused when the last run passed, and an
-                // archive is only created by a run that passed, but the last run may
-                // have failed since, so don't replay (and keep) its exit code
-                self.cache.data.exit_code = 0;
-
-                // If not using a cache manifest, we need to read the locally cached
-                // stdout/stderr log files since the command executor does not run!
+                // Reusing the previous run's outputs, so read the stdout/stderr logs
+                // persisted by that run, since the command executor does not run!
                 if let Some(output) = operation.get_exec_output_mut() {
                     output.command = Some(self.task.get_command_line());
-                    output.exit_code = Some(0);
+                    output.exit_code = Some(self.cache.data.exit_code);
 
                     let state_dir = self
                         .app_context

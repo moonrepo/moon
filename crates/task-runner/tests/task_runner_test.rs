@@ -1252,78 +1252,12 @@ mod task_runner {
             use super::*;
 
             #[tokio::test(flavor = "multi_thread")]
-            async fn hydrates_archive_of_the_same_hash() {
-                let container = TaskRunnerContainer::new("runner", "base").await;
-                let mut runner = container.create_runner();
-
-                runner.cache.data.exit_code = 1;
-                runner.cache.data.hash = "hash123".into();
-                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
-
-                container
-                    .sandbox
-                    .create_file(".moon/cache/outputs/hash123.tar.gz", "");
-
-                assert!(matches!(
-                    runner.is_cached("hash123").await.unwrap(),
-                    Some(HydrateFrom::LocalArchive)
-                ));
-            }
-
-            #[tokio::test(flavor = "multi_thread")]
-            async fn hydrates_archive_of_another_hash() {
-                let container = TaskRunnerContainer::new("runner", "base").await;
-                let mut runner = container.create_runner();
-
-                runner.cache.data.exit_code = 1;
-                runner.cache.data.hash = "otherhash456".into();
-                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
-
-                container
-                    .sandbox
-                    .create_file(".moon/cache/outputs/hash123.tar.gz", "");
-
-                assert!(matches!(
-                    runner.is_cached("hash123").await.unwrap(),
-                    Some(HydrateFrom::LocalArchive)
-                ));
-            }
-
-            // A read-only cache never saves the last run, so it would never recover
-            #[tokio::test(flavor = "multi_thread")]
-            async fn hydrates_archive_when_cache_is_readonly() {
-                let container = TaskRunnerContainer::new("runner", "base").await;
-                let mut runner = container.create_runner();
-
-                runner.cache.data.exit_code = 1;
-                runner.cache.data.hash = "hash123".into();
-                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
-
-                container
-                    .sandbox
-                    .create_file(".moon/cache/outputs/hash123.tar.gz", "");
-
-                container
-                    .app_context
-                    .cache_engine
-                    .force_mode(CacheMode::Read);
-
-                assert!(matches!(
-                    runner.is_cached("hash123").await.unwrap(),
-                    Some(HydrateFrom::LocalArchive)
-                ));
-
-                GlobalEnvBag::instance().remove("MOON_CACHE");
-            }
-
-            #[tokio::test(flavor = "multi_thread")]
-            async fn hydrates_action_result_in_storage() {
+            async fn hydrates_action_result_of_the_same_hash() {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;
                 let mut runner = container.create_runner();
 
                 runner.cache.data.exit_code = 1;
                 runner.cache.data.hash = "hash123".into();
-                runner.state.local_cas_enabled = true;
                 runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
 
                 container
@@ -1334,6 +1268,52 @@ mod task_runner {
                     runner.is_cached("hash123").await.unwrap(),
                     Some(HydrateFrom::Storage(_))
                 ));
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn hydrates_action_result_of_another_hash() {
+                let container = TaskRunnerContainer::new("runner", "outputs").await;
+                let mut runner = container.create_runner();
+
+                runner.cache.data.exit_code = 1;
+                runner.cache.data.hash = "otherhash456".into();
+                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
+
+                container
+                    .seed_manifest(&runner.state.digest, TaskManifest::default())
+                    .await;
+
+                assert!(matches!(
+                    runner.is_cached("hash123").await.unwrap(),
+                    Some(HydrateFrom::Storage(_))
+                ));
+            }
+
+            // A read-only cache never saves the last run, so it would never recover
+            #[tokio::test(flavor = "multi_thread")]
+            async fn hydrates_action_result_when_cache_is_readonly() {
+                let container = TaskRunnerContainer::new("runner", "outputs").await;
+                let mut runner = container.create_runner();
+
+                runner.cache.data.exit_code = 1;
+                runner.cache.data.hash = "hash123".into();
+                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
+
+                container
+                    .seed_manifest(&runner.state.digest, TaskManifest::default())
+                    .await;
+
+                container
+                    .app_context
+                    .cache_engine
+                    .force_mode(CacheMode::Read);
+
+                assert!(matches!(
+                    runner.is_cached("hash123").await.unwrap(),
+                    Some(HydrateFrom::Storage(_))
+                ));
+
+                GlobalEnvBag::instance().remove("MOON_CACHE");
             }
 
             #[tokio::test(flavor = "multi_thread")]
@@ -1419,7 +1399,6 @@ mod task_runner {
                 runner.cache.data.exit_code = 1;
                 runner.cache.data.hash = "hash123".into();
                 runner.cache.data.last_run_time = now_millis();
-                runner.state.local_cas_enabled = true;
                 runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
 
                 container
@@ -2424,15 +2403,15 @@ mod task_runner {
                 assert_eq!(fs::read_to_string(output_file).unwrap(), "content");
             }
 
-            // An archive is only created by a run that passed, so the exit code of
+            // A manifest is only stored by a run that passed, so the exit code of
             // a previous run that failed must not be kept, otherwise the previous
-            // outputs are never reused, and the archive is unpacked on every run
+            // outputs are never reused, and the manifest is hydrated on every run
             #[tokio::test(flavor = "multi_thread")]
             async fn resets_the_exit_code_of_a_failed_run() {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;
                 let mut runner = container.create_runner();
 
-                setup_local_state(&container, &mut runner);
+                setup_local_state(&container, &mut runner).await;
                 runner.cache.data.exit_code = 1;
 
                 runner.hydrate("hash123").await.unwrap();

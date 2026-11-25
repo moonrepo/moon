@@ -250,7 +250,7 @@ impl Task {
     /// Create a globset of all input globs to match with. Compiled sets
     /// are cached, and shared between all tasks with the same patterns.
     pub fn create_globset(&self) -> miette::Result<Arc<glob::GlobSet<'static>>> {
-        self.create_globset_from(self.input_globs.keys())
+        self.create_globset_from(self.get_input_globs())
     }
 
     /// Create a globset of the input globs to match with, excluding those that
@@ -262,7 +262,7 @@ impl Task {
             self.input_globs
                 .iter()
                 .filter(|(_, params)| !params.affected_only)
-                .map(|(glob, _)| glob)
+                .map(|(glob, params)| params.get_glob(glob))
                 .collect::<Vec<_>>(),
         )
     }

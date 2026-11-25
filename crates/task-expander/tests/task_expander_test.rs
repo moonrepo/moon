@@ -995,6 +995,31 @@ mod task_expander {
         }
 
         #[test]
+        fn marks_affected_only_project_inputs() {
+            let sandbox = create_sandbox("file-group");
+            let project_graph = create_project_graph([create_project(sandbox.path())]);
+            let project = create_project(sandbox.path());
+
+            let mut task = create_task();
+            task.inputs
+                .push(Input::parse("project://project?affectedOnly").unwrap());
+            task.inputs
+                .push(Input::parse("project://project?filter=src/**/*&affectedOnly").unwrap());
+
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project_graph, &project, &context, &EMPTY_TASK_LOOKUP)
+                .expand_inputs(&mut task)
+                .unwrap();
+
+            for glob in ["project/source/**/*", "project/source/src/**/*"] {
+                assert!(
+                    task.input_globs[&WorkspaceRelativePathBuf::from(glob)].affected_only,
+                    "{glob}"
+                );
+            }
+        }
+
+        #[test]
         fn prefers_hashed_inputs_for_the_same_path() {
             let sandbox = create_sandbox("file-group");
             let project_graph = create_project_graph([]);

@@ -1297,7 +1297,7 @@ tasks:
     outputs:
       - 'allowed.txt'
     options:
-      allowFailure: true
+      onFailure: allow
 "#
                     ),
                 );
@@ -1313,12 +1313,7 @@ tasks:
 
                 let hash = extract_hash_from_run(sandbox.path(), "outputs:allowedFailure");
 
-                assert!(
-                    !sandbox
-                        .path()
-                        .join(format!(".moon/cache/outputs/{hash}.tar.gz"))
-                        .exists()
-                );
+                assert!(!get_task_manifest_path(sandbox.path(), &hash).exists());
             }
         }
 

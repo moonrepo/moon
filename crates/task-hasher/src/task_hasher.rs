@@ -144,7 +144,9 @@ impl<'task> TaskHasher<'task> {
 
                 // However that completely ignores workspace level globs,
                 // so we must still manually glob those here! Parent traversal
-                // globs may also match outside of the project
+                // globs may also match outside of the project. The keys are
+                // the globs as configured, so the source isn't escaped in
+                // them (`get_input_files_with_globs` walks with that)
                 let workspace_globs = input_globs
                     .into_iter()
                     .filter(|(glob, _)| {

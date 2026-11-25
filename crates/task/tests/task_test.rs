@@ -173,6 +173,38 @@ mod task {
             assert!(globset.matches("src/index.ts"));
             assert!(!globset.matches("src/index.test.ts"));
         }
+
+        // A project in `packages/[lib]` has its source escaped, otherwise
+        // `[lib]` is a character class that matches `packages/l` and others
+        #[test]
+        fn matches_with_escaped_globs() {
+            let mut task = create_task(&[], &[]);
+
+            for affected_only in [false, true] {
+                let dir = if affected_only { "tests" } else { "src" };
+
+                task.input_globs.insert(
+                    WorkspaceRelativePathBuf::from(format!("packages/[lib]/{dir}/**/*")),
+                    TaskGlobInput {
+                        affected_only,
+                        escaped: Some(WorkspaceRelativePathBuf::from(format!(
+                            "packages/\\[lib\\]/{dir}/**/*"
+                        ))),
+                        ..Default::default()
+                    },
+                );
+            }
+
+            let all = task.create_globset().unwrap();
+            let globset = task.create_globset_without_affected_only().unwrap();
+
+            assert!(all.matches("packages/[lib]/src/index.ts"));
+            assert!(all.matches("packages/[lib]/tests/index.ts"));
+            assert!(!all.matches("packages/l/src/index.ts"));
+            assert!(globset.matches("packages/[lib]/src/index.ts"));
+            assert!(!globset.matches("packages/[lib]/tests/index.ts"));
+            assert!(!globset.matches("packages/l/src/index.ts"));
+        }
     }
 
     mod get_affected_files {

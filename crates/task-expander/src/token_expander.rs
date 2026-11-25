@@ -40,8 +40,10 @@ impl ExpandedResult {
 
     /// Add a glob input, while an existing input for the same glob that's
     /// hashed takes precedence over one that's only used for affected status.
-    pub fn add_glob_input(&mut self, glob: WorkspaceRelativePathBuf, params: TaskGlobInput) {
-        merge_glob_input(&mut self.globs_for_input, glob, params);
+    pub fn add_glob_input(&mut self, glob: WorkspaceRelativeGlob, mut params: TaskGlobInput) {
+        params.escaped = glob.escaped;
+
+        merge_glob_input(&mut self.globs_for_input, glob.path, params);
     }
 
     /// Add the files and globs of another result as inputs that are only
@@ -385,19 +387,15 @@ impl<'graph> TokenExpander<'graph> {
                     }
                 }
                 Input::Glob(inner) => {
-                    let glob = self.create_glob_for_task(
-                        task,
-                        inner.to_workspace_relative_glob(&self.project.source),
-                    )?;
-
-                    let (glob, params) = TaskGlobInput::from_glob(glob);
-
-                    result.globs_for_input.insert(
-                        glob,
+                    result.add_glob_input(
+                        self.create_glob_for_task(
+                            task,
+                            inner.to_workspace_relative_glob(&self.project.source),
+                        )?,
                         TaskGlobInput {
                             cache: inner.cache,
                             affected_only: inner.affected_only,
-                            ..params
+                            ..Default::default()
                         },
                     );
                 }
@@ -422,27 +420,25 @@ impl<'graph> TokenExpander<'graph> {
                         }
                     } else if !inner.filter.is_empty() {
                         for glob in &inner.filter {
-                            let glob = self.create_glob_for_task(
-                                task,
-                                path::expand_to_workspace_relative_glob(
-                                    RelativeFrom::Project(project.source.as_str()),
-                                    glob,
-                                ),
-                            )?;
-
-                            let (glob, params) = TaskGlobInput::from_glob(glob);
-
-                            result.globs_for_input.insert(glob, params);
+                            result.add_glob_input(
+                                self.create_glob_for_task(
+                                    task,
+                                    path::expand_to_workspace_relative_glob(
+                                        RelativeFrom::Project(project.source.as_str()),
+                                        glob,
+                                    ),
+                                )?,
+                                params.clone(),
+                            );
                         }
                     } else {
-                        let glob = self.create_glob_for_task(
-                            task,
-                            WorkspaceRelativeGlob::join(project.source.as_str(), "**/*"),
-                        )?;
-
-                        let (glob, params) = TaskGlobInput::from_glob(glob);
-
-                        result.globs_for_input.insert(glob, params);
+                        result.add_glob_input(
+                            self.create_glob_for_task(
+                                task,
+                                WorkspaceRelativeGlob::join(project.source.as_str(), "**/*"),
+                            )?,
+                            params,
+                        );
                     }
                 }
             };
@@ -677,10 +673,10 @@ impl<'graph> TokenExpander<'graph> {
             && let Some(glob) = result
                 .globs
                 .iter()
-                .find(|glob| has_parent_traversal(glob.as_str()))
+                .find(|glob| has_parent_traversal(glob.path.as_str()))
         {
             return Err(TokenExpanderError::ParentTraversalGlob {
-                glob: glob.to_string(),
+                glob: glob.path.to_string(),
                 target: task.target.to_string(),
                 token: token.to_owned(),
             }

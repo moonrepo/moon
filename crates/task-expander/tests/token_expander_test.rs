@@ -2304,7 +2304,7 @@ mod token_expander {
             assert_eq!(
                 expander.expand_inputs(&task).unwrap(),
                 ExpandedResult {
-                    globs: vec![WorkspaceRelativePathBuf::from(
+                    globs: vec![WorkspaceRelativeGlob::from(
                         "project/source/.../package.json"
                     )],
                     ..ExpandedResult::default()

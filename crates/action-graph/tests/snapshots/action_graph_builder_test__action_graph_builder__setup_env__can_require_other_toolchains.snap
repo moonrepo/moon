@@ -10,5 +10,4 @@ digraph {
     2 -> 0 [ label="required"]
     2 -> 1 [ label="required"]
     3 -> 2 [ label="required"]
-    3 -> 0 [ label="required"]
 }

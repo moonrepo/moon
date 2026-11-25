@@ -108,11 +108,15 @@
 - **Toolchains**
   - Reworked the `define_requirements` function of the toolchain plugin API, so that each required
     toolchain controls how it's ordered. The `requires` field is now a list of
-    `ToolchainRequirement`s, each with an `id`, and a `setup_toolchain` and `setup_environment`
-    phase (`before` or `after`), which is when the required toolchain's action runs, relative to the
-    same action of the toolchain that requires it. They default to `before` and `after`, while
-    `null` doesn't order that action. The `for_setup_environment` and `for_setup_toolchain` fields
+    `ToolchainRequirement`s, each with an `id`, and a `setup_toolchain`, `setup_environment`, and
+    `install_dependencies` phase (`before` or `after`), which is when the required toolchain's
+    action runs, relative to the same action of the toolchain that requires it. An omitted or `null`
+    phase doesn't order that action. The `for_setup_environment` and `for_setup_toolchain` fields
     have been removed, and plugins built with a previous version of the plugin API must be updated.
+  - Installing dependencies no longer implicitly waits for the toolchains and environments that a
+    toolchain requires to be setup after its own (like Node.js and the package manager after
+    JavaScript). A toolchain whose install runs another toolchain must now require it with an
+    `install_dependencies` phase of `before`.
   - Added an `inheritable_dependencies` field to `ParseManifestOutput` in the toolchain plugin API,
     for the dependencies that packages in a workspace can inherit, like Cargo's
     `[workspace.dependencies]`, which aren't dependencies of the root package itself. Inherited
@@ -139,9 +143,18 @@
     (from `define_requirements`, with a `setup_environment` phase) are now also setup, in the same
     dependencies root, before or after it. For example, the Node.js package manager and Deno
     toolchains implement `setup_environment` (like importing Yarn plugins), which never ran before,
-    as they don't locate a dependencies root (the JavaScript toolchain does). Installing
-    dependencies in the root waits for these, including the toolchains and environments that are
-    setup after the root's toolchain, like Node.js and its package manager after JavaScript.
+    as they don't locate a dependencies root (the JavaScript toolchain does).
+  - Reworked how a toolchain's actions are linked. A task depends on the install dependencies action
+    of each of its toolchains, and a toolchain without an action falls through to its next one:
+    install dependencies to setup environment (in a dependencies root), setup environment to setup
+    toolchain, and setup toolchain (when it's not tier 3) to sync workspace. A toolchain that falls
+    through no longer inserts an action of its own, only to order the toolchains it requires, and
+    its dependents now wait for those directly. A setup environment action that depends on a setup
+    toolchain or another environment no longer also depends on the workspace sync directly.
+    [Learn more](https://moonrepo.dev/docs/how-it-works/action-graph#how-toolchain-actions-are-linked).
+  - The install dependencies actions of the toolchains that a toolchain requires (from
+    `define_requirements`, with an `install_dependencies` phase) now run in the same dependencies
+    root, before or after its own, like a package manager installing after its runtime.
   - Rewrote the action graph builder, which now builds the graph in stages, instead of inserting one
     action at a time. Building the graph is 13% to 47% faster in our benchmarks, and the graphs are
     the same, except:
@@ -238,6 +251,12 @@
     in v3, within `.moon/workspace.*`, `.moon/tasks/**/*`, and `moon.*` configuration files. Only
     files that change are re-written, which strips their comments. Pkl files, execution plans, and
     template files must be migrated manually.
+  - `moon toolchain add` now also adds the toolchains that the toolchain needs, which aren't
+    configured, before it: the toolchain whose dependencies root it inherits, and each toolchain it
+    requires, recursively. Like JavaScript for Bun, Deno, or Node.js, as it installs their
+    dependencies, which nothing did with only `bun:` configured. A select prompt with the toolchain
+    as an option defaults to it, like JavaScript's `packageManager` when it's added for Bun. A
+    needed third-party toolchain is reported instead, as it needs a plugin locator.
 - **Configuration**
   - Added support for parent traversal globs, with a `...` path segment, like `.../package.json`.
     They match the path after `...` in the directory before it (the project root for project
@@ -296,6 +315,14 @@
     loads it once. Previously, each caller loaded and compiled its own instance of the plugin, and
     all but one were discarded.
 - **Toolchains**
+  - Added an `inherits_root_from` field to `DefineRequirementsOutput` in the toolchain plugin API,
+    which names the toolchain whose dependencies root a toolchain inherits, when it doesn't locate
+    one itself (it doesn't implement `locate_dependencies_root`), like Node.js and the package
+    manager inheriting the root that the JavaScript toolchain located. Its actions run in that root,
+    its manifests are hashed for tasks, and `moon layout-graph --info` shows which toolchain the
+    root was inherited from.
+  - Added a `name` field to `ParseManifestOutput` in the toolchain plugin API, for the package's
+    name, which `moon docker prune` focuses the production install on.
   - Added an optional `locate_dependencies_roots` function to the toolchain plugin API, which
     locates the dependencies roots of many projects in a single call. When a toolchain implements
     it, every project that shares the toolchain's config is located in one call while building the
@@ -304,6 +331,11 @@
   - Added an `inject_task_inputs` field to `RegisterToolchainOutput` in the toolchain plugin API,
     which controls whether the toolchain's manifest and lock file names are injected as an affected
     only input into the tasks that use it. Defaults to `true`.
+  - Added a `toolchain_config` field to `InitializeToolchainInput`, `RegisterToolchainInput`,
+    `ParseLockInput`, and `ParseManifestInput` in the toolchain plugin API, so that every toolchain
+    function receives the toolchain's configuration. A dependencies root's lockfile and manifest are
+    parsed with the root's configuration, and a project's manifest with the project's.
+    `InitializeToolchainInput` is now its own type, instead of an alias of `InitializePluginInput`.
   - A project's toolchains now also include the toolchains required by those configured in
     `toolchains.default`, and inferred from its language, instead of only those detected from its
     files, and the toolchains that those require, and so on. Like a task's, they also include the
@@ -442,6 +474,48 @@
   environment.
 - Fixed an issue where `moon docker file` could pick the default base image of a toolchain that the
   project disabled.
+- Fixed an issue where `moon docker file` without a TTY (and without `--defaults`) would use the
+  `scratch` image, instead of the configured or toolchain's default image, and use the project's
+  first task as both the build and start task, when neither was configured. It now uses the same
+  defaults as `--defaults`.
+- Fixed some issues where `moon docker prune` focused its production install on the aliases of the
+  focused projects, instead of their package names:
+  - A project at the dependencies root was passed as a package, which npm rejects as a workspace, so
+    it failed in every single-package npm repository ("No workspaces found"). It's now left out, as
+    the root's dependencies are always installed.
+  - With `inheritAliases: false`, or an alias that conflicts with another project, nothing was
+    focused, so every package was installed. The names now come from the projects' manifests, using
+    the toolchain's `parse_manifest`. A package without a name still installs every package, as the
+    install can't be focused on it.
+- Fixed an issue where an invalid toolchain in `.moon/toolchains.yml`, like one without a value
+  (`pnpm:`), an invalid version, or an invalid ID, would load no toolchains at all, without an
+  error, so tasks ran without them. The file now fails to load, naming the invalid toolchain. The
+  same applies to extensions in `.moon/extensions.yml`, and to toolchains in a project's `moon.yml`.
+- Fixed an issue where a task's command found the executables of a toolchain's requirement before
+  the toolchain's own, as toolchain paths followed the task's toolchain order, like `[node, npm]`.
+  In a task that runs `node`, `npm` was the npm that Node.js bundles, not the configured one, and
+  with Corepack enabled, `yarn` and `pnpm` were its shims. A toolchain's paths (and its activated
+  environment) are now before those of the toolchains it requires.
+- Fixed an issue where a task's hash included its toolchain's configured version (like `~22`),
+  instead of the version it was resolved to when setting up the toolchain (like `22.22.3`), which
+  the task runs with. Machines that resolved different versions shared a hash, and remote cache
+  entries. Tasks of toolchains configured with a partial version or an alias get a new hash.
+- Fixed an issue where installing dependencies only hashed the first of a toolchain's lockfiles that
+  exists, so a change to another lockfile didn't install again, like `pnpm-lock.yaml` next to a
+  `package-lock.json` left behind by another package manager, or `requirements.txt` next to a
+  `constraints.txt`. Every lockfile that exists is now hashed, which installs once more in every
+  dependencies root.
+- Fixed some issues where changes that affect installing dependencies didn't install them again:
+  - The configs of the toolchains that the installing toolchain requires (and that those require),
+    like the package manager's `version` and `installArgs` for JavaScript.
+  - The toolchain's (and those it requires) config files in the dependencies root, like `.npmrc`,
+    `bunfig.toml`, `pnpm-workspace.yaml`, or `.cargo/config.toml`.
+  - Dependencies without a version, like a local path, URL, or Git repository, whose path, URL, or
+    reference changed.
+- Fixed some issues with detecting a task's toolchains from its command:
+  - proto's versioned binaries, like `node-20` or `python-3.12`, were never detected.
+  - Relative paths, like `bin/rails` or `./bin/rspec`, weren't detected, as the whole command was
+    compared. They're now matched by their file name.
 - Fixed some issues with `moon migrate v2`:
   - The `.moon/tasks.yml` file was moved to `.moon/tasks/all.yml` with an `inheritedBy` condition
     for a `tasks` language, so its tasks were no longer inherited by any project.

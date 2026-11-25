@@ -8,20 +8,42 @@ use moon_pdk_api::{
     DefineRequirementsOutput, ExtendCommandInput, ExtendCommandOutput, ExtendProjectGraphInput,
     ExtendProjectGraphOutput, ExtendTaskCommandInput, ExtendTaskScriptInput,
     ExtendTaskScriptOutput, LocateDependenciesRootInput, ScaffoldDockerInput, SyncOutput,
-    SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
+    SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput, ToolchainRequirement,
 };
 use moon_plugin::{CallOptions, CallResult};
 use moon_toolchain::DependenciesWorkspace;
 use proto_core::UnresolvedVersionSpec;
 use proto_pdk_api::ActivateEnvironmentOutput;
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 // These implementations aggregate the call results from all toolchains
 // that were requested to be executed into a better/different format
 // depending on the need of the call site.
 
 impl ToolchainRegistry {
+    fn handle_define_requirements(
+        &self,
+        mut output: DefineRequirementsOutput,
+    ) -> DefineRequirementsOutput {
+        output.requires = output
+            .requires
+            .into_iter()
+            .map(|requirement| ToolchainRequirement {
+                id: self.resolve_toolchain_id(requirement.id),
+                ..requirement
+            })
+            .collect();
+
+        output.inherits_root_from = output
+            .inherits_root_from
+            .map(|id| self.resolve_toolchain_id(id));
+
+        output
+    }
+
     pub async fn activate_environment_many<InFn>(
         &self,
         ids: Vec<&Id>,
@@ -141,6 +163,21 @@ impl ToolchainRegistry {
         Ok(detected.into_iter().collect())
     }
 
+    pub async fn define_requirements_for<InFn>(
+        &self,
+        toolchain: &ToolchainPlugin,
+        input_factory: InFn,
+    ) -> miette::Result<DefineRequirementsOutput>
+    where
+        InFn: Fn(&ToolchainPlugin) -> DefineRequirementsInput,
+    {
+        Ok(self.handle_define_requirements(
+            toolchain
+                .define_requirements(input_factory(toolchain))
+                .await?,
+        ))
+    }
+
     pub async fn define_requirements_many<InFn>(
         &self,
         ids: Vec<&Id>,
@@ -149,13 +186,22 @@ impl ToolchainRegistry {
     where
         InFn: Fn(&ToolchainPlugin) -> DefineRequirementsInput,
     {
-        self.call_func(
-            "define_requirements",
-            ids,
-            input_factory,
-            |toolchain, input| async move { toolchain.define_requirements(input).await },
-        )
-        .await
+        let results = self
+            .call_func(
+                "define_requirements",
+                ids,
+                input_factory,
+                |toolchain, input| async move { toolchain.define_requirements(input).await },
+            )
+            .await?;
+
+        Ok(results
+            .into_iter()
+            .map(|mut result| {
+                result.output = self.handle_define_requirements(result.output);
+                result
+            })
+            .collect())
     }
 
     pub async fn define_toolchain_config_all(
@@ -250,19 +296,13 @@ impl ToolchainRegistry {
             .define_requirements_many(candidate_ids, &input_factory)
             .await?
         {
-            let mut required = vec![];
-
-            for requirement in result.output.requires {
-                // An invalid identifier can't be a configured toolchain, and is
-                // reported, naming this toolchain, when the action graph sets it up
-                if let Ok(require_id) = Id::new(requirement.id) {
-                    let require_id = self.resolve_toolchain_id(require_id);
-
-                    if !excluded.contains(&require_id) {
-                        required.push(require_id);
-                    }
-                }
-            }
+            let required = result
+                .output
+                .requires
+                .into_iter()
+                .map(|req| req.id)
+                .filter(|req_id| !excluded.contains(req_id))
+                .collect::<Vec<_>>();
 
             requirements.push((result.id, required));
         }
@@ -288,6 +328,93 @@ impl ToolchainRegistry {
         }
 
         Ok(expanded.into_iter().collect())
+    }
+
+    /// Load the toolchains, and the configured toolchains that they require, and
+    /// that those require, and so on, each loaded once. Each toolchain is before
+    /// the toolchains that it requires, like npm before Node.js, so that a caller
+    /// can give it precedence over them, like for `PATH`. Otherwise the provided
+    /// toolchains are first and in order, followed by the toolchains that they
+    /// require, in the order that they're required, where a toolchain that
+    /// requires another is moved up to before it. Requirements on toolchains that
+    /// aren't configured are skipped, like those with an invalid identifier.
+    pub async fn load_with_requirements<InFn>(
+        &self,
+        ids: Vec<Id>,
+        input_factory: InFn,
+    ) -> miette::Result<Vec<Arc<ToolchainPlugin>>>
+    where
+        InFn: Fn(&ToolchainPlugin) -> DefineRequirementsInput,
+    {
+        let mut seen = FxHashSet::default();
+        let mut loaded = vec![];
+        let mut queue = ids
+            .into_iter()
+            .map(|id| self.resolve_toolchain_id(id))
+            .collect::<VecDeque<_>>();
+
+        while let Some(id) = queue.pop_front() {
+            if !seen.insert(id.clone()) {
+                continue;
+            }
+
+            let toolchain = self.load(&id).await?;
+            let mut required = vec![];
+
+            for requirement in self
+                .define_requirements_for(&toolchain, |tc| input_factory(tc))
+                .await?
+                .requires
+            {
+                if self
+                    .config_data
+                    .get_plugin_config(&requirement.id)
+                    .is_some()
+                {
+                    if !seen.contains(&requirement.id) {
+                        queue.push_back(requirement.id.clone());
+                    }
+
+                    required.push(requirement.id);
+                }
+            }
+
+            loaded.push((toolchain, required));
+        }
+
+        // Place the toolchains that require a toolchain before it, in their
+        // own order, and each only once, which also breaks cycles
+        fn place(
+            index: usize,
+            loaded: &[(Arc<ToolchainPlugin>, Vec<Id>)],
+            placed: &mut [bool],
+            toolchains: &mut Vec<Arc<ToolchainPlugin>>,
+        ) {
+            if placed[index] {
+                return;
+            }
+
+            placed[index] = true;
+
+            let id = &loaded[index].0.id;
+
+            for (dependent, (_, required)) in loaded.iter().enumerate() {
+                if required.contains(id) {
+                    place(dependent, loaded, placed, toolchains);
+                }
+            }
+
+            toolchains.push(Arc::clone(&loaded[index].0));
+        }
+
+        let mut placed = vec![false; loaded.len()];
+        let mut toolchains = Vec::with_capacity(loaded.len());
+
+        for index in 0..loaded.len() {
+            place(index, &loaded, &mut placed, &mut toolchains);
+        }
+
+        Ok(toolchains)
     }
 
     /// Resolve the identifier to how the toolchain was configured, which may be

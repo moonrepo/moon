@@ -1,7 +1,7 @@
 #![allow(unused_assignments)]
 
 use miette::Diagnostic;
-use moon_common::{IdError, Style, Stylize};
+use moon_common::{Style, Stylize};
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
@@ -18,19 +18,6 @@ pub enum ActionGraphError {
         "An invalid job index was provided. Received {index} but the total number of jobs is {total}."
     )]
     InvalidJobIndex { index: usize, total: usize },
-
-    #[diagnostic(code(action_graph::invalid_toolchain_requirement))]
-    #[error(
-        "Toolchain {} requires {}, which is not a valid toolchain ID.",
-        .id.style(Style::Id),
-        .dep_id.style(Style::Id),
-    )]
-    InvalidToolchainRequirement {
-        id: String,
-        dep_id: String,
-        #[source]
-        error: Box<IdError>,
-    },
 
     #[diagnostic(code(action_graph::exec_plan::invalid_jobs))]
     #[error(

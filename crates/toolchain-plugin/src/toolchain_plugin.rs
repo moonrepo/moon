@@ -18,7 +18,7 @@ use proto_core::reporter::ProtoConsole;
 use proto_core::utils::log::LogWriter;
 use proto_core::{
     PluginLocator, PluginType as ProtoPluginType, Tool, ToolContext, ToolSpec,
-    UnresolvedVersionSpec, locate_plugin,
+    UnresolvedVersionSpec, VersionSpec, locate_plugin,
 };
 use proto_pdk_api::{ActivateEnvironmentInput, ActivateEnvironmentOutput, InstallStrategy};
 use starbase_utils::glob::{self, GlobSet};
@@ -43,6 +43,7 @@ pub struct ToolchainPlugin {
 
     globals_cache: scc::HashMap<UnresolvedVersionSpec, Option<PathBuf>>,
     locations_cache: scc::HashMap<UnresolvedVersionSpec, (ToolSpec, LocatorResponse)>,
+    resolved_versions_cache: scc::HashMap<UnresolvedVersionSpec, VersionSpec>,
 }
 
 #[async_trait]
@@ -55,6 +56,7 @@ impl Plugin for ToolchainPlugin {
                 "register_toolchain",
                 RegisterToolchainInput {
                     id: registration.id.clone(),
+                    toolchain_config: registration.config,
                 },
             )
             .await?;
@@ -78,6 +80,7 @@ impl Plugin for ToolchainPlugin {
             locator: registration.locator,
             globals_cache: scc::HashMap::new(),
             locations_cache: scc::HashMap::new(),
+            resolved_versions_cache: scc::HashMap::new(),
             setup: AtomicBool::new(false),
             metadata,
             plugin,
@@ -256,6 +259,15 @@ impl ToolchainPlugin {
         Ok(paths.into_iter().collect())
     }
 
+    pub async fn get_resolved_version(
+        &self,
+        version: &UnresolvedVersionSpec,
+    ) -> Option<VersionSpec> {
+        self.resolved_versions_cache
+            .read_async(version, |_, resolved| resolved.to_owned())
+            .await
+    }
+
     #[instrument(skip(self))]
     pub async fn activate_environment(
         &self,
@@ -337,8 +349,9 @@ impl ToolchainPlugin {
         Ok(output)
     }
 
+    // Private as it needs to go through the registry!
     #[instrument(skip(self))]
-    pub async fn define_requirements(
+    pub(crate) async fn define_requirements(
         &self,
         input: DefineRequirementsInput,
     ) -> miette::Result<DefineRequirementsOutput> {
@@ -389,18 +402,32 @@ impl ToolchainPlugin {
 
     #[instrument(skip(self))]
     pub fn detect_task_usage(&self, command: &String) -> miette::Result<bool> {
-        if self.metadata.exe_names.contains(command) {
+        // Match a relative path, like `bin/rails` or `./bin/rspec`, by its
+        // file name, while an absolute path is never a toolchain's executable
+        let name = if command.contains(['/', '\\']) {
+            if command.starts_with(['/', '\\']) || Path::new(command).is_absolute() {
+                return Ok(false);
+            }
+
+            command.rsplit(['/', '\\']).next().unwrap_or_default()
+        } else {
+            command.as_str()
+        };
+
+        let is_exe_name = |name: &str| self.metadata.exe_names.iter().any(|exe| exe == name);
+
+        if is_exe_name(name) {
             return Ok(true);
         }
 
-        // Support proto binaries like `node-20.1` or `python-3`
-        for exe in &self.metadata.exe_names {
-            if let Some((name, version)) = exe.split_once('-')
-                && name == exe
-                && version.chars().all(|ch| ch.is_ascii_digit() || ch == '.')
-            {
-                return Ok(true);
-            }
+        // Support proto's versioned binaries, like `node-20.1` or `python-3`,
+        // splitting on the last hyphen, as executable names may contain them
+        if let Some((name, version)) = name.rsplit_once('-')
+            && version.starts_with(|ch: char| ch.is_ascii_digit())
+            && version.chars().all(|ch| ch.is_ascii_digit() || ch == '.')
+            && is_exe_name(name)
+        {
+            return Ok(true);
         }
 
         Ok(false)
@@ -775,9 +802,16 @@ impl ToolchainPlugin {
                     Linker::link(&tool, &spec, false).await?;
                 }
 
-                // Track used at so that proto's auto-clean doesn't remove it
-                if let Some(version) = &spec.version {
-                    tool.inventory.create_product(version).track_used_at()?;
+                if let Some(resolved_version) = &spec.version {
+                    // Track used at so that proto's auto-clean doesn't remove it
+                    tool.inventory
+                        .create_product(resolved_version)
+                        .track_used_at()?;
+
+                    // Remember what the version resolved to, as tasks run with it
+                    self.resolved_versions_cache
+                        .upsert_async(version.to_owned(), resolved_version.to_owned())
+                        .await;
                 }
 
                 self.setup.store(true, Ordering::Relaxed);

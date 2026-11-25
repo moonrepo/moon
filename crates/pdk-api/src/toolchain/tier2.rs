@@ -1,11 +1,13 @@
 use crate::context::*;
 use crate::host::*;
 use crate::is_false;
+use moon_common::Id;
 use moon_config::{UnresolvedVersionSpec, Version, VersionSpec};
 use moon_project::ProjectFragment;
 use moon_task::TaskFragment;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
+use warpgate_api::AnyResult;
 use warpgate_api::{VirtualPath, api_enum, api_struct, api_unit_enum};
 
 api_struct!(
@@ -39,7 +41,7 @@ api_struct!(
         /// Identifier of the required toolchain. If targeting an unstable toolchain,
         /// the identifier must be prefixed with "unstable_". When the toolchain is
         /// stable, both identifiers will continue to work.
-        pub id: String,
+        pub id: Id,
 
         /// When the setup toolchain action is run for the parent toolchain,
         /// should this requirement also have its setup toolchain action run,
@@ -50,17 +52,23 @@ api_struct!(
         /// should this requirement also have its setup environment action run,
         /// and whether it should run before or after the parent toolchain's action.
         pub setup_environment: Option<RequirementPhase>,
+
+        /// When the install dependencies action is run for the parent toolchain,
+        /// should this requirement also have its install dependencies action run,
+        /// and whether it should run before or after the parent toolchain's action.
+        pub install_dependencies: Option<RequirementPhase>,
     }
 );
 
 impl ToolchainRequirement {
     /// Create a requirement for the provided toolchain, with no actions.
-    pub fn new(id: impl AsRef<str>) -> Self {
-        Self {
-            id: id.as_ref().to_owned(),
+    pub fn new(id: impl AsRef<str>) -> AnyResult<Self> {
+        Ok(Self {
+            id: Id::new(id)?,
             setup_toolchain: None,
             setup_environment: None,
-        }
+            install_dependencies: None,
+        })
     }
 }
 
@@ -68,10 +76,18 @@ api_struct!(
     /// Output returned from the `define_requirements` function.
     #[serde(default)]
     pub struct DefineRequirementsOutput {
+        /// Identifier of the toolchain whose dependencies root this toolchain
+        /// inherits, when it doesn't locate one itself (it doesn't implement
+        /// `locate_dependencies_root`), like a package manager inheriting the
+        /// root that language located. Its actions then run in that root, for
+        /// the projects that use both toolchains.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub inherits_root_from: Option<Id>,
+
         /// Other toolchains that this toolchain requires. They're added to the
-        /// projects and tasks that use this toolchain, and their setup toolchain
-        /// and setup environment actions are ordered against this toolchain's,
-        /// based on each requirement's phases.
+        /// projects and tasks that use this toolchain, and their setup toolchain,
+        /// setup environment, and install dependencies actions are ordered against
+        /// this toolchain's, based on each requirement's phases.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub requires: Vec<ToolchainRequirement>,
     }
@@ -123,7 +139,9 @@ api_struct!(
 );
 
 api_struct!(
-    /// Input passed to the `locate_dependencies_root` function.
+    /// Input passed to the `locate_dependencies_root` function. A toolchain
+    /// that doesn't implement it can inherit the root of another toolchain,
+    /// with `DefineRequirementsOutput.inherits_root_from`.
     pub struct LocateDependenciesRootInput {
         /// Current moon context.
         pub context: MoonContext,
@@ -195,7 +213,9 @@ api_struct!(
         /// Current moon context.
         pub context: MoonContext,
 
-        /// List of packages to only install dependencies for.
+        /// List of packages to only install dependencies for, by the name
+        /// that `parse_manifest` returned for each. The package at the root
+        /// is never included, as it's not a member of the workspace.
         pub packages: Vec<String>,
 
         /// Only install production dependencies.
@@ -250,6 +270,12 @@ api_struct!(
         /// Virtual path to the dependencies root. This is where
         /// the lockfile and root manifest should exist.
         pub root: VirtualPath,
+
+        /// Workspace and project merged toolchain configuration,
+        /// with the latter taking precedence. When hashing a task, its
+        /// project's manifest is parsed with that project's, otherwise
+        /// it's the dependencies root's (see `ParseLockInput`).
+        pub toolchain_config: serde_json::Value,
     }
 );
 
@@ -274,6 +300,11 @@ api_struct!(
         /// resolve inherited dependencies.
         #[serde(skip_serializing_if = "BTreeMap::is_empty")]
         pub inheritable_dependencies: BTreeMap<String, ManifestDependency>,
+
+        /// Name of the package, which focuses an install on it, like
+        /// `moon docker prune` does for the focused projects.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub name: Option<String>,
 
         /// Peer dependencies.
         #[serde(skip_serializing_if = "BTreeMap::is_empty")]
@@ -392,6 +423,12 @@ api_struct!(
         /// Virtual path to the dependencies root. This is where
         /// the lockfile and root manifest should exist.
         pub root: VirtualPath,
+
+        /// The dependencies root's toolchain configuration: the workspace's
+        /// merged with the project's at the root (if there is one), with the
+        /// latter taking precedence. When hashing a task whose project located
+        /// the root without being a member of it, it's that project's.
+        pub toolchain_config: serde_json::Value,
     }
 );
 

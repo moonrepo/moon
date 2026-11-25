@@ -24,6 +24,50 @@ pub fn register_toolchain(
     }))
 }
 
+// Only called by `moon toolchain add`, so that it adds the toolchains this
+// one needs: the one it inherits the root of, and those it requires
+#[plugin_fn]
+pub fn initialize_toolchain(
+    Json(_): Json<InitializeToolchainInput>,
+) -> FnResult<Json<InitializeToolchainOutput>> {
+    Ok(Json(InitializeToolchainOutput {
+        default_settings: FxHashMap::from_iter([
+            (
+                "testInheritsRootFrom".into(),
+                json::Value::String("tc-tier2".into()),
+            ),
+            (
+                "testRequires".into(),
+                json::json!([{ "id": "tc-tier2-reqs" }]),
+            ),
+        ]),
+        ..Default::default()
+    }))
+}
+
+// Only require other toolchains, or inherit the root of one (as this plugin
+// doesn't locate one itself), when a test opts in via toolchain config
+#[plugin_fn]
+pub fn define_requirements(
+    Json(input): Json<DefineRequirementsInput>,
+) -> FnResult<Json<DefineRequirementsOutput>> {
+    let mut output = DefineRequirementsOutput::default();
+
+    if let Some(requires) = input.toolchain_config.get("testRequires") {
+        output.requires = json::from_value(requires.to_owned())?;
+    }
+
+    if let Some(id) = input
+        .toolchain_config
+        .get("testInheritsRootFrom")
+        .and_then(|value| value.as_str())
+    {
+        output.inherits_root_from = Some(Id::new(id)?);
+    }
+
+    Ok(Json(output))
+}
+
 #[plugin_fn]
 pub fn register_tool(Json(input): Json<RegisterToolInput>) -> FnResult<Json<RegisterToolOutput>> {
     Ok(Json(RegisterToolOutput {

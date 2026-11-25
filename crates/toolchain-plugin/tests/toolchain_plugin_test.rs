@@ -31,6 +31,92 @@ fn create_deps_workspace() -> (Sandbox, WorkspaceMocker) {
 mod toolchain_plugin {
     use super::*;
 
+    mod register_toolchain {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn passes_the_workspace_config() {
+            let sandbox = create_empty_sandbox();
+            let mocker = WorkspaceMocker::new(sandbox.path())
+                .with_test_toolchains()
+                .update_toolchains_config(|config| {
+                    config
+                        .plugins
+                        .get_mut(&Id::raw("tc-tier1"))
+                        .unwrap()
+                        .config
+                        .insert("testDescription".into(), serde_json::json!("configured"));
+                });
+            let registry = mocker.mock_toolchain_registry();
+            let toolchain = registry.load("tc-tier1").await.unwrap();
+
+            assert_eq!(
+                toolchain.metadata.description.as_deref(),
+                Some("configured")
+            );
+        }
+    }
+
+    mod detect_task_usage {
+        use super::*;
+
+        // The `tc-tier3-tool` test toolchain's executable is `tc-tool`
+        async fn detects(command: &str) -> bool {
+            let sandbox = create_empty_sandbox();
+            let registry = WorkspaceMocker::new(sandbox.path())
+                .with_test_toolchains()
+                .update_toolchains_config(|config| {
+                    config.plugins.entry(Id::raw("tc-tier3-tool")).or_default();
+                })
+                .mock_toolchain_registry();
+            let toolchain = registry.load("tc-tier3-tool").await.unwrap();
+
+            toolchain.detect_task_usage(&command.to_owned()).unwrap()
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn matches_exe_names() {
+            assert!(detects("tc-tool").await);
+            assert!(!detects("tc").await);
+            assert!(!detects("tc-tool-extra").await);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn matches_versioned_binaries() {
+            for command in ["tc-tool-1", "tc-tool-1.2", "tc-tool-1.2.3"] {
+                assert!(detects(command).await, "{command}");
+            }
+
+            for command in ["tc-tool-", "tc-tool-.1", "tc-tool-1a", "tc-1.2"] {
+                assert!(!detects(command).await, "{command}");
+            }
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn matches_relative_paths_by_file_name() {
+            for command in [
+                "bin/tc-tool",
+                "./bin/tc-tool",
+                "../tc-tool",
+                "bin\\tc-tool",
+                "./bin/tc-tool-1.2",
+            ] {
+                assert!(detects(command).await, "{command}");
+            }
+
+            for command in ["bin/other", "bin/", "tc-tool/other"] {
+                assert!(!detects(command).await, "{command}");
+            }
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_match_absolute_paths() {
+            for command in ["/usr/bin/tc-tool", "\\bin\\tc-tool"] {
+                assert!(!detects(command).await, "{command}");
+            }
+        }
+    }
+
     mod guarded_funcs {
         use super::*;
 
@@ -64,8 +150,8 @@ mod toolchain_plugin {
             let registry = ws.mock_toolchain_registry();
             let toolchain = registry.load("tc-tier1").await.unwrap();
 
-            let output = toolchain
-                .define_requirements(DefineRequirementsInput {
+            let output = registry
+                .define_requirements_for(&toolchain, |_| DefineRequirementsInput {
                     context: registry.create_context(),
                     ..Default::default()
                 })
@@ -123,8 +209,8 @@ mod toolchain_plugin {
             let registry = ws.mock_toolchain_registry();
             let toolchain = registry.load("tc-tier2-reqs").await.unwrap();
 
-            let output = toolchain
-                .define_requirements(DefineRequirementsInput {
+            let output = registry
+                .define_requirements_for(&toolchain, |_| DefineRequirementsInput {
                     context: registry.create_context(),
                     ..Default::default()
                 })
@@ -134,9 +220,10 @@ mod toolchain_plugin {
             assert_eq!(
                 output.requires,
                 vec![ToolchainRequirement {
-                    id: "tc-tier3".into(),
+                    id: Id::raw("tc-tier3"),
                     setup_toolchain: Some(RequirementPhase::Before),
                     setup_environment: None,
+                    install_dependencies: None,
                 }]
             );
         }
@@ -147,8 +234,8 @@ mod toolchain_plugin {
             let registry = ws.mock_toolchain_registry();
             let toolchain = registry.load("tc-tier2-reqs").await.unwrap();
 
-            let output = toolchain
-                .define_requirements(DefineRequirementsInput {
+            let output = registry
+                .define_requirements_for(&toolchain, |_| DefineRequirementsInput {
                     context: registry.create_context(),
                     toolchain_config: json!({
                         "testRequiresForEnvironment": true,
@@ -160,9 +247,10 @@ mod toolchain_plugin {
             assert_eq!(
                 output.requires,
                 vec![ToolchainRequirement {
-                    id: "tc-tier3".into(),
+                    id: Id::raw("tc-tier3"),
                     setup_toolchain: Some(RequirementPhase::Before),
                     setup_environment: Some(RequirementPhase::Before),
+                    install_dependencies: None,
                 }]
             );
         }
@@ -173,8 +261,8 @@ mod toolchain_plugin {
             let registry = ws.mock_toolchain_registry();
             let toolchain = registry.load("tc-tier2-setup-env").await.unwrap();
 
-            let output = toolchain
-                .define_requirements(DefineRequirementsInput {
+            let output = registry
+                .define_requirements_for(&toolchain, |_| DefineRequirementsInput {
                     context: registry.create_context(),
                     toolchain_config: json!({
                         "testEnvRequirements": ["tc-tier3"],
@@ -186,10 +274,36 @@ mod toolchain_plugin {
             assert_eq!(
                 output.requires,
                 vec![ToolchainRequirement {
-                    id: "tc-tier3".into(),
+                    id: Id::raw("tc-tier3"),
                     setup_toolchain: None,
                     setup_environment: Some(RequirementPhase::Before),
+                    install_dependencies: None,
                 }]
+            );
+        }
+
+        // Identifiers are validated when parsing the plugin's output, which
+        // names the toolchain that requires the invalid one
+        #[tokio::test(flavor = "multi_thread")]
+        async fn errors_for_invalid_requirement_ids() {
+            let (_sandbox, ws) = create_workspace();
+            let registry = ws.mock_toolchain_registry();
+            let toolchain = registry.load("tc-tier2-setup-env").await.unwrap();
+
+            let error = registry
+                .define_requirements_for(&toolchain, |_| DefineRequirementsInput {
+                    context: registry.create_context(),
+                    toolchain_config: json!({
+                        "testEnvRequirements": ["bad id!"],
+                    }),
+                })
+                .await
+                .unwrap_err()
+                .to_string();
+
+            assert!(
+                error.contains("tc-tier2-setup-env plugin function define_requirements"),
+                "{error}"
             );
         }
 
@@ -199,13 +313,18 @@ mod toolchain_plugin {
             let registry = ws.mock_toolchain_registry();
             let toolchain = registry.load("tc-tier2-setup-env").await.unwrap();
 
-            let output = toolchain
-                .define_requirements(DefineRequirementsInput {
+            let output = registry
+                .define_requirements_for(&toolchain, |_| DefineRequirementsInput {
                     context: registry.create_context(),
                     toolchain_config: json!({
                         "testRequires": [
                             { "id": "tc-tier3" },
-                            { "id": "tc-tier1", "setup_toolchain": "after", "setup_environment": null },
+                            {
+                                "id": "tc-tier1",
+                                "setup_toolchain": "after",
+                                "setup_environment": null,
+                                "install_dependencies": "before"
+                            },
                         ],
                     }),
                 })
@@ -215,13 +334,161 @@ mod toolchain_plugin {
             assert_eq!(
                 output.requires,
                 vec![
-                    ToolchainRequirement::new("tc-tier3"),
+                    ToolchainRequirement::new("tc-tier3").unwrap(),
                     ToolchainRequirement {
-                        id: "tc-tier1".into(),
+                        id: Id::raw("tc-tier1"),
                         setup_toolchain: Some(RequirementPhase::After),
                         setup_environment: None,
+                        install_dependencies: Some(RequirementPhase::Before),
                     }
                 ]
+            );
+        }
+    }
+
+    mod load_with_requirements {
+        use super::*;
+        use moon_toolchain_plugin::ToolchainRegistry;
+
+        async fn load(registry: &ToolchainRegistry, ids: &[&str]) -> Vec<String> {
+            registry
+                .load_with_requirements(ids.iter().map(Id::raw).collect(), |toolchain| {
+                    DefineRequirementsInput {
+                        context: registry.create_context(),
+                        toolchain_config: registry.create_config(&toolchain.id),
+                    }
+                })
+                .await
+                .unwrap()
+                .into_iter()
+                .map(|toolchain| toolchain.id.to_string())
+                .collect()
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn loads_without_requirements() {
+            let (_sandbox, ws) = create_workspace();
+            let registry = ws.mock_toolchain_registry();
+
+            assert_eq!(load(&registry, &["tc-tier3"]).await, ["tc-tier3"]);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn loads_requirements_after_the_provided_toolchains() {
+            let (_sandbox, ws) = create_workspace();
+            let registry = ws.mock_toolchain_registry();
+
+            assert_eq!(
+                load(&registry, &["tc-tier2-reqs", "tc-tier1"]).await,
+                ["tc-tier2-reqs", "tc-tier1", "tc-tier3"]
+            );
+        }
+
+        // Both require `tc-tier3`
+        #[tokio::test(flavor = "multi_thread")]
+        async fn loads_a_shared_requirement_once() {
+            let (_sandbox, ws) = create_workspace();
+            let registry = ws.mock_toolchain_registry();
+
+            assert_eq!(
+                load(&registry, &["tc-tier2-reqs", "tc-tier3-reqs"]).await,
+                ["tc-tier2-reqs", "tc-tier3-reqs", "tc-tier3"]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn skips_requirements_that_arent_configured() {
+            let sandbox = create_empty_sandbox();
+            let ws = WorkspaceMocker::new(sandbox.path())
+                .with_test_toolchains()
+                .update_toolchains_config(|config| {
+                    config.plugins.remove(&Id::raw("tc-tier3"));
+                });
+            let registry = ws.mock_toolchain_registry();
+
+            assert_eq!(load(&registry, &["tc-tier2-reqs"]).await, ["tc-tier2-reqs"]);
+        }
+
+        // `tc-tier2-reqs` requires `tc-tier3`, like npm requires Node.js
+        #[tokio::test(flavor = "multi_thread")]
+        async fn moves_a_provided_toolchain_before_its_requirement() {
+            let (_sandbox, ws) = create_workspace();
+            let registry = ws.mock_toolchain_registry();
+
+            assert_eq!(
+                load(&registry, &["tc-tier1", "tc-tier3", "tc-tier2-reqs"]).await,
+                ["tc-tier1", "tc-tier2-reqs", "tc-tier3"]
+            );
+        }
+
+        // Both require `tc-tier3`
+        #[tokio::test(flavor = "multi_thread")]
+        async fn moves_each_toolchain_before_a_shared_requirement_in_order() {
+            let (_sandbox, ws) = create_workspace();
+            let registry = ws.mock_toolchain_registry();
+
+            assert_eq!(
+                load(&registry, &["tc-tier3", "tc-tier3-reqs", "tc-tier2-reqs"]).await,
+                ["tc-tier3-reqs", "tc-tier2-reqs", "tc-tier3"]
+            );
+        }
+
+        // `tc-tier3-tool` requires `tc-tier2-reqs`, which is loaded as its
+        // requirement, and requires `tc-tier3`
+        #[tokio::test(flavor = "multi_thread")]
+        async fn moves_a_toolchain_before_the_requirements_of_its_requirements() {
+            let sandbox = create_empty_sandbox();
+            let ws = WorkspaceMocker::new(sandbox.path())
+                .with_test_toolchains()
+                .update_toolchains_config(|config| {
+                    config
+                        .plugins
+                        .entry(Id::raw("tc-tier3-tool"))
+                        .or_default()
+                        .config
+                        .insert(
+                            "testRequires".into(),
+                            serde_json::json!([{ "id": "tc-tier2-reqs" }]),
+                        );
+                });
+            let registry = ws.mock_toolchain_registry();
+
+            assert_eq!(
+                load(&registry, &["tc-tier3", "tc-tier3-tool"]).await,
+                ["tc-tier3-tool", "tc-tier2-reqs", "tc-tier3"]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn loads_each_toolchain_once_when_they_require_each_other() {
+            let sandbox = create_empty_sandbox();
+            let ws = WorkspaceMocker::new(sandbox.path())
+                .with_test_toolchains()
+                .update_toolchains_config(|config| {
+                    config
+                        .plugins
+                        .entry(Id::raw("tc-tier3-tool"))
+                        .or_default()
+                        .config
+                        .insert(
+                            "testRequires".into(),
+                            serde_json::json!([{ "id": "tc-tier2-setup-env" }]),
+                        );
+                    config
+                        .plugins
+                        .entry(Id::raw("tc-tier2-setup-env"))
+                        .or_default()
+                        .config
+                        .insert(
+                            "testRequires".into(),
+                            serde_json::json!([{ "id": "tc-tier3-tool" }]),
+                        );
+                });
+            let registry = ws.mock_toolchain_registry();
+
+            assert_eq!(
+                load(&registry, &["tc-tier3-tool"]).await,
+                ["tc-tier2-setup-env", "tc-tier3-tool"]
             );
         }
     }

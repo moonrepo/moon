@@ -1,0 +1,22 @@
+---
+source: crates/cli/tests/toolchain_add_test.rs
+expression: "fs::read_to_string(sandbox.path().join(\".moon\").join(\"toolchains.yml\")).unwrap()"
+---
+
+
+tc-tier3:
+  testAddedFor: none
+
+
+tc-tier2-reqs:
+  testAddedFor: tc-tier3-tool
+
+
+tc-tier2:
+  testAddedFor: tc-tier3-tool
+
+
+tc-tier3-tool:
+  testInheritsRootFrom: tc-tier2
+  testRequires:
+  - id: tc-tier2-reqs

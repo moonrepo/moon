@@ -272,10 +272,7 @@ mod action_graph_builder {
             let mut env_deps = graph.dependencies_of(&env_node);
             env_deps.sort();
 
-            assert_eq!(
-                env_deps,
-                vec!["SetupToolchain(tc-tier3-setup-env:1.2.3)", "SyncWorkspace",]
-            );
+            assert_eq!(env_deps, vec!["SetupToolchain(tc-tier3-setup-env:1.2.3)"]);
             assert!(
                 graph
                     .get_nodes()
@@ -811,9 +808,11 @@ mod action_graph_builder {
         }
 
         // Like Node.js and its package manager being setup after JavaScript,
-        // while installing JavaScript dependencies runs the package manager
+        // while installing JavaScript dependencies runs the package manager,
+        // which doesn't install itself, so its install falls through to its
+        // environment, which is setup in this root
         #[tokio::test(flavor = "multi_thread")]
-        async fn waits_for_toolchains_required_after() {
+        async fn waits_for_installs_required_before() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer::new(sandbox.path())
                 // Plugin matches based on cwd, so the project owns the root package
@@ -832,7 +831,75 @@ mod action_graph_builder {
                         serde_json::json!([{
                             "id": "tc-tier3-setup-env",
                             "setup_toolchain": "after",
-                            "setup_environment": "after"
+                            "setup_environment": "after",
+                            "install_dependencies": "before"
+                        }]),
+                    );
+            });
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let spec = create_tier_spec_with_name("tc-tier2-setup-env");
+
+            let project = wg.get_project("bar").unwrap();
+            builder.install_dependencies(&spec, project.clone());
+
+            let graph = builder.build().await.unwrap().graph;
+
+            let install_node = |id: &str| {
+                ActionNode::install_dependencies(InstallDependenciesNode {
+                    members: None,
+                    owner_project_id: None,
+                    project_id: Some(Id::raw("bar")),
+                    root: WorkspaceRelativePathBuf::from("bar"),
+                    toolchain_id: Id::raw(id),
+                })
+            };
+
+            let mut deps = graph.dependencies_of(&install_node("tc-tier2-setup-env"));
+            deps.sort();
+
+            // The required toolchain installs in this root too, after its
+            // environment, which is setup after this toolchain's
+            assert_eq!(
+                deps,
+                vec![
+                    "InstallDependencies(tc-tier3-setup-env, bar)",
+                    "SetupEnvironment(tc-tier2-setup-env, bar)",
+                ]
+            );
+            assert_eq!(
+                graph.dependencies_of(&install_node("tc-tier3-setup-env")),
+                vec!["SetupEnvironment(tc-tier3-setup-env, bar)"]
+            );
+            assert!(graph.sort_topological().is_ok());
+        }
+
+        // A toolchain whose install uses another, which doesn't install (here,
+        // as it's disabled), like Node.js for a package manager, so it falls
+        // through to the other's toolchain setup
+        #[tokio::test(flavor = "multi_thread")]
+        async fn falls_through_to_the_setup_of_installs_required_before() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer::new(sandbox.path())
+                // Plugin matches based on cwd, so the project owns the root package
+                .set_working_dir(sandbox.path().join("bar"));
+
+            container.mocker = container.mocker.update_toolchains_config(|cfg| {
+                cfg.plugins
+                    .entry(Id::raw("tc-tier3"))
+                    .or_default()
+                    .install_dependencies = false;
+                cfg.plugins
+                    .entry(Id::raw("tc-tier2-setup-env"))
+                    .or_default()
+                    .config
+                    .insert(
+                        "testRequires".into(),
+                        serde_json::json!([{
+                            "id": "tc-tier3",
+                            "install_dependencies": "before"
                         }]),
                     );
             });
@@ -861,9 +928,82 @@ mod action_graph_builder {
                 deps,
                 vec![
                     "SetupEnvironment(tc-tier2-setup-env, bar)",
-                    "SetupEnvironment(tc-tier3-setup-env, bar)",
-                    "SetupToolchain(tc-tier3-setup-env:1.2.3)",
+                    "SetupToolchain(tc-tier3:1.2.3)",
                 ]
+            );
+        }
+
+        // Like a runtime installing after its package manager
+        #[tokio::test(flavor = "multi_thread")]
+        async fn installs_required_after() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer::new(sandbox.path())
+                // Plugin matches based on cwd, so the project owns the root package
+                .set_working_dir(sandbox.path().join("bar"));
+
+            container.mocker = container.mocker.update_toolchains_config(|cfg| {
+                cfg.plugins
+                    .entry(Id::raw("tc-tier3"))
+                    .or_default()
+                    .install_dependencies = false;
+                cfg.plugins
+                    .entry(Id::raw("tc-tier3-setup-env"))
+                    .or_default();
+                cfg.plugins
+                    .entry(Id::raw("tc-tier2-setup-env"))
+                    .or_default()
+                    .config
+                    .insert(
+                        "testRequires".into(),
+                        serde_json::json!([
+                            { "id": "tc-tier3", "install_dependencies": "after" },
+                            { "id": "tc-tier3-setup-env", "install_dependencies": "after" }
+                        ]),
+                    );
+            });
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let spec = create_tier_spec_with_name("tc-tier2-setup-env");
+
+            let project = wg.get_project("bar").unwrap();
+            builder.install_dependencies(&spec, project.clone());
+
+            let graph = builder.build().await.unwrap().graph;
+
+            let install_node = |id: &str| {
+                ActionNode::install_dependencies(InstallDependenciesNode {
+                    members: None,
+                    owner_project_id: None,
+                    project_id: Some(Id::raw("bar")),
+                    root: WorkspaceRelativePathBuf::from("bar"),
+                    toolchain_id: Id::raw(id),
+                })
+            };
+
+            let mut deps = graph.dependencies_of(&install_node("tc-tier3-setup-env"));
+            deps.sort();
+
+            assert_eq!(
+                deps,
+                vec![
+                    "InstallDependencies(tc-tier2-setup-env, bar)",
+                    "SetupEnvironment(tc-tier3-setup-env, bar)",
+                ]
+            );
+
+            // A requirement that falls through (doesn't install) has no
+            // action to order after this one, so its toolchain isn't setup
+            assert_eq!(
+                graph.dependencies_of(&install_node("tc-tier2-setup-env")),
+                vec!["SetupEnvironment(tc-tier2-setup-env, bar)"]
+            );
+            assert!(
+                !graph
+                    .get_nodes()
+                    .iter()
+                    .any(|node| node.label().starts_with("SetupToolchain(tc-tier3:"))
             );
         }
     }
@@ -6022,7 +6162,7 @@ mod action_graph_builder {
                 );
                 assert_eq!(
                     dependency_labels(&graph, &format!("SetupEnvironment({TC})")),
-                    vec![setup_toolchain("1.2.3"), "SyncWorkspace".into()]
+                    vec![setup_toolchain("1.2.3")]
                 );
             }
 
@@ -6060,7 +6200,7 @@ mod action_graph_builder {
                 );
                 assert_eq!(
                     dependency_labels(&graph, &format!("SetupEnvironment({TC})")),
-                    vec![setup_toolchain("1.2.3"), "SyncWorkspace".into()]
+                    vec![setup_toolchain("1.2.3")]
                 );
             }
 
@@ -6084,7 +6224,7 @@ mod action_graph_builder {
                 );
                 assert_eq!(
                     dependency_labels(&graph, &format!("SetupEnvironment({TC})")),
-                    vec![setup_toolchain("1.2.3"), "SyncWorkspace".into()]
+                    vec![setup_toolchain("1.2.3")]
                 );
             }
 
@@ -6104,7 +6244,7 @@ mod action_graph_builder {
                 assert!(!deps.iter().any(|dep| dep.starts_with("SetupToolchain")));
                 assert_eq!(
                     dependency_labels(&graph, &format!("SetupEnvironment({TC})")),
-                    vec![setup_toolchain("1.99.0"), "SyncWorkspace".into()]
+                    vec![setup_toolchain("1.99.0")]
                 );
             }
 
@@ -6129,13 +6269,14 @@ mod action_graph_builder {
                 );
                 assert_eq!(
                     dependency_labels(&graph, &format!("SetupEnvironment({TC})")),
-                    vec![setup_toolchain("1.99.0"), "SyncWorkspace".into()]
+                    vec![setup_toolchain("1.99.0")]
                 );
             }
 
             // Like JavaScript requiring Node.js, which `a` overrides: the
-            // root's toolchain setup requires the workspace version, while
-            // `a` sets up its own through its own `tc-tier3` toolchain
+            // root's install falls through to the workspace version's setup
+            // (the root's toolchain isn't tier 3), while `a` sets up its own
+            // through its own `tc-tier3` toolchain
             #[tokio::test(flavor = "multi_thread")]
             async fn with_overrides_of_required_toolchains() {
                 let sandbox = create_sandbox("shared-root");
@@ -6153,10 +6294,10 @@ mod action_graph_builder {
 
                 let mut container = create_container(&sandbox, "tc-tier2-reqs");
                 let graph = build_tasks(&mut container, &["a", "b"]).await;
-                let requirements = dependency_labels(&graph, "SetupToolchain(tc-tier2-reqs)");
+                let requirements = dependency_labels(&graph, "InstallDependencies(tc-tier2-reqs)");
 
-                assert!(requirements.contains(&"SetupToolchain(tc-tier3:1.2.3)".to_owned()));
-                assert!(!requirements.contains(&"SetupToolchain(tc-tier3:4.5.6)".to_owned()));
+                assert_eq!(requirements, vec!["SetupToolchain(tc-tier3:1.2.3)"]);
+                assert!(!has_node(&graph, "SetupToolchain(tc-tier2-reqs)"));
                 assert!(
                     dependency_labels(&graph, "RunTask(a:build)")
                         .contains(&"SetupToolchain(tc-tier3:4.5.6)".to_owned())
@@ -6187,7 +6328,7 @@ mod action_graph_builder {
                 assert_eq!(dependency_labels(&graph, &install), vec![env.clone()]);
                 assert_eq!(
                     dependency_labels(&graph, &env),
-                    vec![setup_toolchain("1.2.3"), "SyncWorkspace".into()]
+                    vec![setup_toolchain("1.2.3")]
                 );
             }
 
@@ -6211,7 +6352,7 @@ mod action_graph_builder {
                 assert_eq!(dependency_labels(&graph, &install), vec![env.clone()]);
                 assert_eq!(
                     dependency_labels(&graph, &env),
-                    vec![setup_toolchain("1.99.0"), "SyncWorkspace".into()]
+                    vec![setup_toolchain("1.99.0")]
                 );
                 assert!(!has_node(&graph, &setup_toolchain("1.2.3")));
             }
@@ -6236,7 +6377,7 @@ mod action_graph_builder {
                 assert!(has_node(&graph, &setup_toolchain("1.2.3")));
                 assert_eq!(
                     dependency_labels(&graph, &format!("SetupEnvironment({TC})")),
-                    vec![setup_toolchain("1.99.0"), "SyncWorkspace".into()]
+                    vec![setup_toolchain("1.99.0")]
                 );
                 assert!(graph.get_nodes().iter().any(|node| matches!(
                     node,
@@ -6315,37 +6456,6 @@ mod action_graph_builder {
 
     mod setup_env {
         use super::*;
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn errors_for_invalid_toolchain_requirement_ids() {
-            let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer::new(sandbox.path())
-                // Plugin matches based on cwd, so the project owns the root package
-                .set_working_dir(sandbox.path().join("bar"));
-
-            container.mocker = container.mocker.update_toolchains_config(|cfg| {
-                if let Some(inner) = cfg.plugins.get_mut(&Id::raw("tc-tier2-setup-env")) {
-                    inner
-                        .config
-                        .insert("testEnvRequirements".into(), serde_json::json!(["bad id!"]));
-                }
-            });
-
-            let wg = container.create_workspace_graph().await;
-            let mut builder = container.create_builder(wg.clone()).await;
-
-            builder.install_dependencies(
-                &create_tier_spec_with_name("tc-tier2-setup-env"),
-                wg.get_project("bar").unwrap(),
-            );
-
-            let error = builder.build().await.err().unwrap().to_string();
-
-            assert!(
-                error.contains("requires bad id!, which is not a valid toolchain ID"),
-                "{error}"
-            );
-        }
 
         #[tokio::test(flavor = "multi_thread")]
         async fn graphs_if_supported() {
@@ -6635,8 +6745,8 @@ mod action_graph_builder {
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
 
-            // Doesn't implement `setup_environment`, so the action is
-            // only created to anchor the required toolchains
+            // Doesn't implement `setup_environment` (nor support tier 3), so
+            // it falls through to the required toolchains, without an action
             let spec = create_tier_spec_with_name("tc-tier2-reqs");
 
             let project = wg.get_project("bar").unwrap();
@@ -6645,7 +6755,15 @@ mod action_graph_builder {
             let output = builder.build().await.unwrap();
             let graph = output.graph;
 
-            assert!(!output.report.nodes(index).is_empty());
+            assert_eq!(
+                output
+                    .report
+                    .nodes(index)
+                    .iter()
+                    .map(|index| graph.get_node_from_index(index).unwrap().label())
+                    .collect::<Vec<_>>(),
+                vec!["SetupToolchain(tc-tier3:1.2.3)"]
+            );
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -6659,29 +6777,21 @@ mod action_graph_builder {
                             create_unresolved_version(Version::new(1, 2, 3)),
                         )
                     }),
-                    ActionNode::setup_toolchain(SetupToolchainNode {
-                        toolchain: spec.clone(),
-                    }),
-                    ActionNode::setup_environment(SetupEnvironmentNode {
-                        owner_project_id: None,
-                        project_id: Some(Id::raw("bar")),
-                        root: WorkspaceRelativePathBuf::from("bar"),
-                        toolchain_id: spec.id,
-                    })
                 ]
             );
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn doesnt_graph_if_requirements_not_for_environment() {
+        async fn falls_through_to_setup_toolchain_if_no_setup_environment() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
 
-            // Has requirements, but only for `setup_toolchain`,
-            // and doesn't implement `setup_environment`
+            // Has requirements, but only for `setup_toolchain`, and doesn't
+            // implement `setup_environment`, so it falls through to its setup
+            // toolchain, which falls through to the required toolchain's
             let spec = create_tier_spec_with_name("tc-tier2-reqs");
 
             let project = wg.get_project("bar").unwrap();
@@ -6690,9 +6800,37 @@ mod action_graph_builder {
             let output = builder.build().await.unwrap();
             let graph = output.graph;
 
-            assert!(output.report.nodes(index).is_empty());
+            assert_eq!(output.report.nodes(index).len(), 1);
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_proto(create_proto_version()),
+                    ActionNode::setup_toolchain(SetupToolchainNode {
+                        toolchain: create_tier_spec_with_name("tc-tier3"),
+                    }),
+                ]
+            );
+        }
 
-            assert_snapshot!(graph.to_dot());
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_graph_if_no_setup_environment_nor_requirements() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            // Neither implements `setup_environment`, nor supports tier 3
+            let spec = create_tier_spec(2);
+
+            let project = wg.get_project("bar").unwrap();
+            let index = builder.setup_environment(&spec, &project.source, project.clone());
+
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
+
+            assert!(output.report.nodes(index).is_empty());
             assert_eq!(topo(graph), vec![]);
         }
 
@@ -6808,11 +6946,11 @@ mod action_graph_builder {
             assert_snapshot!(graph.to_dot());
             assert_eq!(
                 sorted_dependencies_of(&graph, &create_bar_env_node("tc-tier2-setup-env")),
-                vec!["SetupEnvironment(tc-tier3-setup-env, bar)", "SyncWorkspace"]
+                vec!["SetupEnvironment(tc-tier3-setup-env, bar)"]
             );
             assert_eq!(
                 sorted_dependencies_of(&graph, &create_bar_env_node("tc-tier3-setup-env")),
-                vec!["SetupToolchain(tc-tier3-setup-env:1.2.3)", "SyncWorkspace"]
+                vec!["SetupToolchain(tc-tier3-setup-env:1.2.3)"]
             );
         }
 
@@ -6851,7 +6989,6 @@ mod action_graph_builder {
                 vec![
                     "SetupEnvironment(tc-tier2-setup-env, bar)",
                     "SetupToolchain(tc-tier3-setup-env:1.2.3)",
-                    "SyncWorkspace"
                 ]
             );
         }
@@ -6883,7 +7020,7 @@ mod action_graph_builder {
 
             assert_eq!(
                 sorted_dependencies_of(&graph, &create_bar_env_node("tc-tier2-setup-env")),
-                vec!["SetupEnvironment(tc-tier3-setup-env, bar)", "SyncWorkspace"]
+                vec!["SetupEnvironment(tc-tier3-setup-env, bar)"]
             );
         }
 
@@ -6971,11 +7108,11 @@ mod action_graph_builder {
             assert!(graph.sort_topological().is_ok());
             assert_eq!(
                 sorted_dependencies_of(&graph, &create_bar_env_node("tc-tier2-setup-env")),
-                vec!["SetupEnvironment(tc-tier3-setup-env, bar)", "SyncWorkspace"]
+                vec!["SetupEnvironment(tc-tier3-setup-env, bar)"]
             );
             assert_eq!(
                 sorted_dependencies_of(&graph, &create_bar_env_node("tc-tier3-setup-env")),
-                vec!["SetupToolchain(tc-tier3-setup-env:1.2.3)", "SyncWorkspace"]
+                vec!["SetupToolchain(tc-tier3-setup-env:1.2.3)"]
             );
         }
 
@@ -7247,8 +7384,8 @@ mod action_graph_builder {
     mod setup_toolchain {
         use super::*;
 
-        // Both require `tc-tier3`, so a sibling must still link to it, even
-        // though it was already setup through the other one
+        // Both require `tc-tier3`, so a sibling that falls through must still
+        // fall through to it, even though it was already setup through the other
         #[tokio::test(flavor = "multi_thread")]
         async fn keeps_requirements_path_local_across_siblings() {
             let sandbox = create_sandbox("projects");
@@ -7258,16 +7395,26 @@ mod action_graph_builder {
                 .await;
 
             builder.setup_toolchain(&create_tier_spec_with_name("tc-tier3-reqs"), None);
-            builder.setup_toolchain(&create_tier_spec_with_name("tc-tier2-reqs"), None);
+            let index = builder.setup_toolchain(&create_tier_spec_with_name("tc-tier2-reqs"), None);
 
-            let graph = builder.build().await.unwrap().graph;
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
 
             assert!(
                 graph
                     .dependencies_of(&ActionNode::setup_toolchain(SetupToolchainNode {
-                        toolchain: create_tier_spec_with_name("tc-tier2-reqs"),
+                        toolchain: create_tier_spec_with_name("tc-tier3-reqs"),
                     }))
                     .contains(&"SetupToolchain(tc-tier3:1.2.3)".to_owned())
+            );
+            assert_eq!(
+                output
+                    .report
+                    .nodes(index)
+                    .iter()
+                    .map(|index| graph.get_node_from_index(index).unwrap().label())
+                    .collect::<Vec<_>>(),
+                vec!["SetupToolchain(tc-tier3:1.2.3)"]
             );
         }
 
@@ -7683,9 +7830,14 @@ mod action_graph_builder {
                 create_unresolved_version(Version::new(1, 2, 3)),
             );
 
-            builder.setup_toolchain(&node, None);
+            // Doesn't support tier 3, so it falls through to the required
+            // toolchain, without an action
+            let index = builder.setup_toolchain(&node, None);
 
-            let graph = builder.build().await.unwrap().graph;
+            let output = builder.build().await.unwrap();
+            let graph = output.graph;
+
+            assert_eq!(output.report.nodes(index).len(), 1);
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -7696,12 +7848,6 @@ mod action_graph_builder {
                     ActionNode::setup_toolchain(SetupToolchainNode {
                         toolchain: ToolchainSpec::new(
                             Id::raw("tc-tier3"),
-                            create_unresolved_version(Version::new(1, 2, 3)),
-                        )
-                    }),
-                    ActionNode::setup_toolchain(SetupToolchainNode {
-                        toolchain: ToolchainSpec::new(
-                            Id::raw("tc-tier2-reqs"),
                             create_unresolved_version(Version::new(1, 2, 3)),
                         )
                     }),

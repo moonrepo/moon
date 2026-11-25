@@ -202,6 +202,7 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
 
         // Combine everything into the container and register
         let plugin = Inst::new(PluginRegistration {
+            config: self.config_data.get_json_config(id).unwrap_or_default(),
             container: PluginContainer::new(stable_id.clone(), manifest, functions)?,
             locator: locator.to_owned(),
             id: id.clone(),

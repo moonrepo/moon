@@ -5471,6 +5471,7 @@ dependencies = [
  "moon_api",
  "moon_app_context",
  "moon_app_macros",
+ "moon_async_utils",
  "moon_cache",
  "moon_cache_local",
  "moon_cache_remote",
@@ -9006,9 +9007,9 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.21.2"
+version = "0.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae7c6ef19b7eeb6e0f19987dc5e54116f35d539c17e6e6cb143ca5bea4e88ec7"
+checksum = "8b9b65049e64d8ba1adea67780133e8c16c5237202484016dfe7bd53f93973d7"
 dependencies = [
  "convert_case 0.12.0",
  "garde",
@@ -9035,9 +9036,9 @@ dependencies = [
 
 [[package]]
 name = "schematic_core"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6fa203f0343f11e5525d8c774c1ab7fea750fc6a979bd1f6bcad5991727764df"
+checksum = "f451590ddc34774307928294a1acccc0c1896a95f70e1b625682620354479b59"
 dependencies = [
  "convert_case 0.12.0",
  "darling 0.24.1",
@@ -9048,9 +9049,9 @@ dependencies = [
 
 [[package]]
 name = "schematic_macros"
-version = "0.21.2"
+version = "0.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0eff66eb3b79ae4b903bc80494928645f046f5d468a4e4d291e3d469aafd5a95"
+checksum = "407b83e5f4a53bc6bd48a684bcfb0049500a9bcbd38ea6bb839d9895cda992c9"
 dependencies = [
  "quote",
  "schematic_core",
@@ -9059,9 +9060,9 @@ dependencies = [
 
 [[package]]
 name = "schematic_types"
-version = "0.13.2"
+version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f69dd5d1cb482db47f2a32f8ee3e8217f2e222cda8c9c9a44332cd746112d46e"
+checksum = "73fc1f604cc7aaf4ea87fb065053f8a14387d3273544d95c9d6f6196d0fa7c0a"
 dependencies = [
  "compact_str 0.10.0",
  "indexmap",

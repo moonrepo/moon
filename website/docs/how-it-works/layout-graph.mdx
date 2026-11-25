@@ -37,6 +37,15 @@ Multiple toolchains can locate the same directory, and they're still separate ro
 repository with both a `package.json` workspace and a Cargo workspace at its root has a JavaScript
 root and a Rust root.
 
+### Inherited roots
+
+A toolchain that doesn't locate roots itself can inherit the root of another toolchain, which it
+names in its plugin, when the project uses both. For example, the JavaScript toolchain locates the
+root, and Node.js and the package manager inherit it from JavaScript. An inherited root is still a
+separate root of its toolchain, at the same directory, with its own version, config, and files, so
+its actions run in that directory, and its manifests are hashed for the project's tasks. A root
+that was inherited can be inherited in turn.
+
 ## Actions and versions
 
 The [setup environment and install dependencies](./action-graph#install-dependencies) actions are

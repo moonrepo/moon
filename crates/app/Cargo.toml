@@ -14,6 +14,7 @@ moon_affected = { path = "../affected" }
 moon_api = { path = "../api" }
 moon_app_context = { path = "../app-context" }
 moon_app_macros = { path = "../app-macros" }
+moon_async_utils = { path = "../async-utils" }
 moon_cache = { path = "../cache" }
 moon_cache_local = { path = "../cache-local" }
 moon_cache_remote = { path = "../cache-remote" }

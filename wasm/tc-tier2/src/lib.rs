@@ -5,6 +5,28 @@ use std::fs;
 
 pub use tc_tier1::*;
 
+// Only called by `moon toolchain add`, which defaults a select prompt to the
+// toolchain that this one is added for, when it's one of the options
+#[plugin_fn]
+pub fn initialize_toolchain(
+    Json(_): Json<InitializeToolchainInput>,
+) -> FnResult<Json<InitializeToolchainOutput>> {
+    Ok(Json(InitializeToolchainOutput {
+        prompts: vec![SettingPrompt::new(
+            "testAddedFor",
+            "Which toolchain is this added for?",
+            PromptType::Select {
+                default_index: 0,
+                options: vec![
+                    json::Value::String("none".into()),
+                    json::Value::String("tc-tier3-tool".into()),
+                ],
+            },
+        )],
+        ..Default::default()
+    }))
+}
+
 fn is_testing_deps_workspace(path: &VirtualPath) -> bool {
     let outer = path.to_real_path().unwrap().unwrap();
 
@@ -106,6 +128,14 @@ pub fn locate_dependencies_root_from(
 pub fn parse_lock(Json(input): Json<ParseLockInput>) -> FnResult<Json<ParseLockOutput>> {
     let mut output = ParseLockOutput::default();
 
+    record_input(
+        &input.context,
+        &input.toolchain_config,
+        "parse_lock",
+        &input.path.to_string_lossy(),
+        json::to_value(&input)?,
+    )?;
+
     for line in fs::read_to_string(&input.path)?.lines() {
         if let Some((name, version)) = line.trim().split_once('@')
             && !name.is_empty()
@@ -126,15 +156,29 @@ pub fn parse_lock(Json(input): Json<ParseLockInput>) -> FnResult<Json<ParseLockO
 
 // Test manifests have a `<kind> <name> <version>` per line, so that tests can
 // hash dependencies, where the kind is `dep`, `dev-dep`, `build-dep`, or
-// `inheritable-dep`, and the version may be `inherited`. Other lines (like
-// the member globs of `tc.root.cfg`) are ignored.
+// `inheritable-dep`, and the version may be `inherited`, or a `path:<path>`
+// or `url:<url>` without a version. A `name <name>` line is the package's
+// name. Other lines (like the member globs of `tc.root.cfg`) are ignored.
 #[plugin_fn]
 pub fn parse_manifest(
     Json(input): Json<ParseManifestInput>,
 ) -> FnResult<Json<ParseManifestOutput>> {
     let mut output = ParseManifestOutput::default();
 
+    record_input(
+        &input.context,
+        &input.toolchain_config,
+        "parse_manifest",
+        &input.path.to_string_lossy(),
+        json::to_value(&input)?,
+    )?;
+
     for line in fs::read_to_string(&input.path)?.lines() {
+        if let ["name", name] = line.split_whitespace().collect::<Vec<_>>()[..] {
+            output.name = Some(name.into());
+            continue;
+        }
+
         let [kind, name, version] = line.split_whitespace().collect::<Vec<_>>()[..] else {
             continue;
         };
@@ -151,6 +195,10 @@ pub fn parse_manifest(
             name.into(),
             if version == "inherited" {
                 ManifestDependency::inherited()
+            } else if let Some(path) = version.strip_prefix("path:") {
+                ManifestDependency::path(path.into())
+            } else if let Some(url) = version.strip_prefix("url:") {
+                ManifestDependency::url(url.into())
             } else {
                 ManifestDependency::new(UnresolvedVersionSpec::parse(version)?)
             },

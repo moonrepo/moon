@@ -10,9 +10,11 @@ pub fn define_requirements(
     Ok(Json(DefineRequirementsOutput {
         // Must be tier 3+
         requires: vec![ToolchainRequirement {
-            id: "tc-tier3".into(),
+            id: Id::raw("tc-tier3"),
             setup_toolchain: Some(RequirementPhase::Before),
             setup_environment: None,
+            install_dependencies: None,
         }],
+        ..Default::default()
     }))
 }

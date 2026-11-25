@@ -2,8 +2,8 @@ use moon_app_context::AppContext;
 use moon_common::Id;
 use moon_env_var::GlobalEnvBag;
 use moon_pdk_api::{
-    ExecCommandInput, Extend, ExtendCommandInput, ExtendCommandOutput, ExtendTaskCommandInput,
-    ExtendTaskScriptInput, ExtendTaskScriptOutput,
+    DefineRequirementsInput, ExecCommandInput, Extend, ExtendCommandInput, ExtendCommandOutput,
+    ExtendTaskCommandInput, ExtendTaskScriptInput, ExtendTaskScriptOutput,
 };
 use moon_process::{Arg, Command, CommandExt, Env};
 use moon_project::Project;
@@ -32,6 +32,7 @@ use tracing::warn;
 // - Plugin `extend_*` injected paths
 // - Toolchain `activate_environment` injected paths
 // - Toolchain executable paths
+//   (for both, each toolchain before the toolchains it requires)
 // - proto store/shims/bin paths
 // - moon store paths
 
@@ -386,13 +387,32 @@ impl<'app> AugmentedCommand<'app> {
             return Ok(());
         }
 
-        // Follow the order of the configured toolchains, so that the
-        // first toolchain takes precedence for paths and variables
-        let ids = toolchain_ids
-            .iter()
-            .filter(|id| map.contains_key(id))
-            .collect::<Vec<_>>();
+        // Follow the order of the configured toolchains, so that the first
+        // toolchain takes precedence for paths and variables, except that a
+        // toolchain takes precedence over the toolchains it requires, like npm
+        // over the npm that Node.js bundles
         let registry = &self.context.toolchain_registry;
+        let ids = registry
+            .load_with_requirements(
+                toolchain_ids
+                    .iter()
+                    .filter(|id| map.contains_key(id))
+                    .cloned()
+                    .collect(),
+                |toolchain| DefineRequirementsInput {
+                    context: registry.create_context(),
+                    toolchain_config: match project {
+                        Some(p) => registry.create_merged_config(&toolchain.id, &p.config),
+                        None => registry.create_config(&toolchain.id),
+                    },
+                },
+            )
+            .await?
+            .into_iter()
+            // Requirements the toolchains aren't using, or without a version
+            .filter(|toolchain| map.contains_key(&toolchain.id))
+            .map(|toolchain| toolchain.id.clone())
+            .collect::<Vec<_>>();
 
         if ids.is_empty() {
             return Ok(());
@@ -400,7 +420,9 @@ impl<'app> AugmentedCommand<'app> {
 
         // Activate toolchain environments (like `JAVA_HOME`)
         for output in registry
-            .activate_environment_many(ids.clone(), |toolchain| map.get(&toolchain.id).cloned())
+            .activate_environment_many(ids.iter().collect(), |toolchain| {
+                map.get(&toolchain.id).cloned()
+            })
             .await?
         {
             for (key, value) in output.env {
@@ -416,7 +438,9 @@ impl<'app> AugmentedCommand<'app> {
 
         // Add toolchain specific paths
         let paths = registry
-            .get_command_paths(ids, |toolchain| map.get(&toolchain.id).cloned())
+            .get_command_paths(ids.iter().collect(), |toolchain| {
+                map.get(&toolchain.id).cloned()
+            })
             .await?;
 
         self.apply_paths(paths);

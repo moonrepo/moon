@@ -87,6 +87,26 @@ This action can be skipped by disabling the
 
 :::
 
+### How toolchain actions are linked<VersionLabel version="3.0.0" />
+
+A task depends on the install dependencies action of each of its toolchains, including the
+toolchains that they require. A toolchain that doesn't have an action falls through to its next
+action instead:
+
+- Install dependencies only exists when the toolchain installs dependencies, and the project is in
+  one of its [dependencies roots](./layout-graph). Otherwise it falls through to setup environment
+  when the project is in a root, or to setup toolchain.
+- Setup environment only exists when the toolchain sets up an environment, and the project is in one
+  of its roots. Otherwise it falls through to setup toolchain.
+- Setup toolchain only exists for tier 3 toolchains. Otherwise it falls through to sync workspace.
+
+A toolchain can require other toolchains, and for each of these 3 actions, choose whether the
+required toolchain's action runs before or after its own, or isn't ordered against it. For example,
+the JavaScript toolchain sets up its environment before Node.js and the package manager do, and the
+package manager sets up its environment after Node.js. A required toolchain's actions run in the
+root of the toolchain that requires it. When a toolchain falls through, the actions that depend on
+it still wait for the actions of the toolchains that it requires before its own.
+
 ### Sync project
 
 To ensure a consistently healthy project and repository, we run a process known as syncing

@@ -95,6 +95,12 @@ pub struct ToolchainDependenciesRoot {
     pub files: RootFiles,
     pub capabilities: RootCapabilities,
 
+    /// The toolchain whose root this is, when this root's toolchain doesn't
+    /// locate one itself, and inherited it from a toolchain that requires it,
+    /// like a package manager in the root that JavaScript located.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub inherited_from: Option<Id>,
+
     /// Projects placed in this root, sorted. Only complete for a full build.
     pub members: Vec<Id>,
 }

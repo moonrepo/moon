@@ -7,7 +7,7 @@ use moon_env_var::GlobalEnvBag;
 use moon_hash::{Digest, fingerprint};
 use moon_pdk_api::VirtualPath;
 use std::collections::{BTreeMap, BTreeSet};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tracing::trace;
 
@@ -59,7 +59,7 @@ fingerprint!(
         // Absolute workspace root. The graph stores absolute project and task
         // paths, so a workspace that was moved or renamed cannot reuse a graph
         // built at its previous location.
-        workspace_root: String,
+        workspace_root: PathBuf,
     }
 );
 
@@ -76,7 +76,7 @@ impl Default for WorkspaceGraphFingerprint<'_> {
             version: GlobalEnvBag::instance()
                 .get("MOON_VERSION")
                 .unwrap_or_default(),
-            workspace_root: String::default(),
+            workspace_root: PathBuf::default(),
         }
     }
 }
@@ -103,7 +103,7 @@ impl<'graph> WorkspaceGraphFingerprint<'graph> {
     }
 
     pub fn set_workspace_root(&mut self, root: &Path) {
-        self.workspace_root = root.to_string_lossy().into_owned();
+        self.workspace_root = root.to_path_buf();
     }
 
     pub fn gather_env(&mut self) {

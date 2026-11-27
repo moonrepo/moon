@@ -289,6 +289,26 @@ mod output_shape {
         fn errors_for_parent_traversal_inner() {
             Output::parse("dir/../../file.txt").unwrap();
         }
+
+        #[test]
+        #[should_panic(expected = "parent traversal globs (...) are not supported for outputs")]
+        fn errors_for_parent_traversal_glob() {
+            Output::parse(".../file.txt").unwrap();
+        }
+
+        #[test]
+        #[should_panic(expected = "parent traversal globs (...) are not supported for outputs")]
+        fn errors_for_parent_traversal_glob_protocol() {
+            Output::parse("glob://dir/.../*.txt").unwrap();
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "parent traversal globs (...) are not supported, expected a literal file path"
+        )]
+        fn errors_for_parent_traversal_file_protocol() {
+            Output::parse("file://.../file.txt").unwrap();
+        }
     }
 
     mod parse_object {
@@ -338,6 +358,12 @@ mod output_shape {
         #[should_panic] // Swallowed by enum expecting message
         fn errors_for_parent_traversal_inner() {
             let _: Output = serde_json::from_str(r#"{ "glob": "dir/../../file.*" }"#).unwrap();
+        }
+
+        #[test]
+        #[should_panic(expected = "parent traversal globs (...) are not supported for outputs")]
+        fn errors_for_parent_traversal_glob() {
+            let _: Output = serde_json::from_str(r#"{ "glob": ".../file.*" }"#).unwrap();
         }
     }
 

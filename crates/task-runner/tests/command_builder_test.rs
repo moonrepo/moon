@@ -8,7 +8,7 @@ use moon_affected::Affected;
 use moon_common::is_ci;
 use moon_config::*;
 use moon_env_var::GlobalEnvBag;
-use moon_process::{Command, Env, Executable};
+use moon_process::{Command, Env, Executable, StdinMode};
 use moon_task::{Target, TargetLocator, TaskOptionAffectedFiles};
 use std::env;
 use std::ffi::OsString;
@@ -1175,6 +1175,63 @@ mod command_builder {
                     "\"./routes/[id].ts\"",
                 ]
             );
+        }
+    }
+
+    mod process {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn contains_the_process_tree() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+            let command = container.create_command(ActionContext::default()).await;
+
+            assert!(command.contain_tree);
+            assert!(command.should_contain_tree());
+            assert_eq!(command.stdin, StdinMode::Null);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn inherits_stdin_when_task_is_interactive() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+            let command = container
+                .create_command_with_config(ActionContext::default(), |task, _| {
+                    task.options.interactive = true;
+                })
+                .await;
+
+            assert_eq!(command.stdin, StdinMode::Inherit);
+
+            // Reading the terminal would stop a contained child
+            if cfg!(unix) {
+                assert!(!command.should_contain_tree());
+            }
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn inherits_stdin_when_node_is_interactive() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+            let command = container
+                .create_command_with_config(ActionContext::default(), |_, node| {
+                    if let ActionNode::RunTask(inner) = node {
+                        inner.interactive = true;
+                    }
+                })
+                .await;
+
+            assert_eq!(command.stdin, StdinMode::Inherit);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn contains_the_process_tree_of_checks() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+            let check = TaskCheck::Requirement(TaskCheckRequirementConfig {
+                script: "which cargo".into(),
+            });
+            let command = container.create_check_command(&check).await;
+
+            assert!(command.contain_tree);
+            assert_eq!(command.stdin, StdinMode::Null);
         }
     }
 

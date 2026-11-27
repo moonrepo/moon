@@ -1,0 +1,10 @@
+---
+source: crates/cli/tests/migrate_v2_test.rs
+expression: "read_file(&sandbox, \".moon/tasks/node-application.yml\")"
+---
+tasks:
+  build:
+    command: vite build
+inheritedBy:
+  toolchain: node
+  layer: application

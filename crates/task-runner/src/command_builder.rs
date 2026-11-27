@@ -6,7 +6,7 @@ use moon_common::is_ci;
 use moon_common::path::PathExt;
 use moon_config::{Input, TaskOptionAffectedFilesPattern};
 use moon_env_var::{DotEnv, GlobalEnvBag};
-use moon_process::{Command, ShellType};
+use moon_process::{Command, ShellType, StdinMode};
 use moon_process_augment::{AugmentedCommand, create_task_env};
 use moon_project::Project;
 use moon_task::{Task, TaskCheck};
@@ -74,6 +74,13 @@ impl<'task> CommandBuilder<'task> {
         // We need to handle non-zero exit code's manually
         self.command.cwd(self.working_dir);
         self.command.set_error_on_nonzero(false);
+        self.contain_tree();
+
+        // Interactive tasks read from the terminal, which also means they're
+        // never contained on Unix, as they would be stopped when reading it
+        if node.is_interactive() || self.task.is_interactive() {
+            self.command.set_stdin(StdinMode::Inherit);
+        }
 
         // Order is important!
         self.inject_args(context);
@@ -104,6 +111,7 @@ impl<'task> CommandBuilder<'task> {
         // We need to handle non-zero exit code's manually
         self.command.cwd(self.working_dir);
         self.command.set_error_on_nonzero(false);
+        self.contain_tree();
 
         // Order is important!
         self.inject_shell(true);
@@ -113,6 +121,15 @@ impl<'task> CommandBuilder<'task> {
         self.command.inherit_proto();
 
         Ok(self.command.augment())
+    }
+
+    /// Run the task's process in a process group (Unix) or job object
+    /// (Windows) of its own, so that terminating it (when the pipeline is
+    /// aborted, a signal is received, or it times out) also terminates the
+    /// processes it started. Other commands, like those of plugins and VCS,
+    /// aren't contained.
+    fn contain_tree(&mut self) {
+        self.command.set_contain_tree(true);
     }
 
     #[instrument(skip_all)]
@@ -377,7 +394,7 @@ impl<'task> CommandBuilder<'task> {
 
         // Filter the list before converting
         if !affected_options.filter.is_empty() {
-            let globset = GlobSet::new(&affected_options.filter)?;
+            let globset = GlobSet::new_cached(&affected_options.filter)?;
 
             abs_files.retain(|abs_file| globset.matches(abs_file));
         }

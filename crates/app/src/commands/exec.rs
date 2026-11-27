@@ -9,8 +9,8 @@ use clap::{Args, ValueEnum};
 use iocraft::prelude::element;
 use moon_action::Action;
 use moon_action_context::ActionContext;
-use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, RunRequirements};
-use moon_affected::{DownstreamScope, UpstreamScope};
+use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, BuildOutput, RunRequirements};
+use moon_affected::Depth;
 use moon_app_macros::{with_affected_args, with_shared_exec_args};
 use moon_cache::CacheMode;
 use moon_common::{apply_style_tags, is_ci, is_test_env, path::WorkspaceRelativePathBuf};
@@ -463,49 +463,49 @@ impl ExecWorkflow {
 
         // Always pass changed files, even if not checking affected,
         // as it's required for plugins, contexts, and more
-        action_graph_builder.set_changed_files(changed_files)?;
+        action_graph_builder.set_changed_files(changed_files);
 
         // Only track affected if enabled
-        let upstream = self.get_upstream();
-        let downstream = self.get_downstream();
+        let affected_depth = self.get_affected_depth();
+        let dependents = self.get_dependents();
+        let no_dependencies = self.get_no_dependencies();
 
         if self.affected {
-            action_graph_builder
-                .track_affected(upstream, downstream, self.ci_env && self.ci_check)
-                .await?;
+            action_graph_builder.track_affected(affected_depth, self.ci_env && self.ci_check);
         }
 
         // Always sync workspace in CI
         if self.ci_env {
-            action_graph_builder.sync_workspace().await?;
+            action_graph_builder.sync_workspace();
         }
 
         // Insert targets into the graph
         let job = self.get_job();
         let job_total = self.get_job_total();
 
-        let partition = action_graph_builder
-            .run_tasks_with_plan(
-                &self.plan,
-                RunRequirements {
-                    ci: self.ci_env,
-                    ci_check: self.ci_check,
-                    dependencies: upstream,
-                    dependents: downstream,
-                    include_relations: self.get_include_relations(),
-                    interactive: self.args.interactive,
-                    job,
-                    job_total,
-                    // Forcing runs tasks even when not affected, but still
-                    // tracks affected files for the `affectedFiles` option.
-                    skip_affected: !self.affected || self.args.force,
-                    skip_persistent: self.args.skip_persistent,
-                },
-            )
-            .await?;
+        action_graph_builder.set_requirements(RunRequirements {
+            ci: self.ci_env,
+            ci_check: self.ci_check,
+            no_dependencies,
+            dependents,
+            interactive: self.args.interactive,
+            job,
+            job_total,
+            // Forcing runs tasks even when not affected, but still
+            // tracks affected files for the `affectedFiles` option.
+            skip_affected: !self.affected || self.args.force,
+            skip_persistent: self.args.skip_persistent,
+        });
+
+        let request = action_graph_builder.run_tasks_with_plan(&self.plan);
 
         // Build the graph
-        let (action_context, action_graph) = action_graph_builder.build();
+        let BuildOutput {
+            context: action_context,
+            graph: action_graph,
+            mut report,
+        } = action_graph_builder.build().await?;
+        let partition = report.take_partition(request).unwrap_or_default();
         let targets = self.get_targets();
 
         if let Some(index) = &job
@@ -517,6 +517,18 @@ impl ExecWorkflow {
                 "Partition size: <property>{}</property>",
                 partition.size.unwrap_or_default()
             ))?;
+        }
+
+        if self.affected {
+            self.print(format!(
+                "Affected depth: <property>{affected_depth}</property>"
+            ))?;
+        }
+
+        self.print(format!("Dependents: <property>{dependents}</property>"))?;
+
+        if no_dependencies {
+            self.print("Skipping dependencies: <property>yes</property>")?;
         }
 
         self.print(format!(
@@ -538,7 +550,7 @@ impl ExecWorkflow {
             partition.targets.len()
         ))?;
 
-        for target in partition.targets.values() {
+        for (_, target) in &partition.targets {
             self.print(format!("\t<id>{}</id>", target.as_str()))?;
         }
 
@@ -566,25 +578,19 @@ impl ExecWorkflow {
                     "\t<id>{target}</id> affected by file <file>{}</file>",
                     state.files.iter().next().unwrap()
                 ))?;
-            } else if !state.projects.is_empty() {
-                self.print(format!(
-                    "\t<id>{target}</id> affected by project <id>{}</id>",
-                    state.projects.iter().next().unwrap()
-                ))?;
-            } else if !state.upstream.is_empty() {
-                if self.get_include_relations() {
-                    self.print(format!(
-                        "\t<id>{target}</id> affected by dependency task <label>{}</label>",
-                        state.upstream.iter().next().unwrap()
-                    ))?;
-                }
-            } else if !state.downstream.is_empty() {
-                if self.get_include_relations() {
-                    self.print(format!(
-                        "\t<id>{target}</id> affected by dependent task <label>{}</label>",
-                        state.downstream.iter().next().unwrap()
-                    ))?;
-                }
+            } else if !state.dependencies.is_empty() {
+                let dependency = state.dependencies.iter().next().unwrap();
+
+                self.print(if state.distance > 1 {
+                    format!(
+                        "\t<id>{target}</id> affected by dependency task <label>{dependency}</label> (<property>{}</property> hops away)",
+                        state.distance
+                    )
+                } else {
+                    format!(
+                        "\t<id>{target}</id> affected by dependency task <label>{dependency}</label>"
+                    )
+                })?;
             } else {
                 self.print(format!("\t<id>{target}</id> affected"))?;
             }
@@ -680,12 +686,21 @@ impl ExecWorkflow {
             .or(self.args.base.clone())
     }
 
-    fn get_downstream(&self) -> DownstreamScope {
+    fn get_affected_depth(&self) -> Depth {
+        self.plan
+            .affected
+            .as_ref()
+            .and_then(|aff| aff.depth)
+            .or(self.args.affected_depth)
+            .unwrap_or(Depth::Deep)
+    }
+
+    fn get_dependents(&self) -> Depth {
         self.plan
             .graph
-            .downstream
-            .or(self.args.downstream)
-            .unwrap_or(DownstreamScope::None)
+            .dependents
+            .or(self.args.dependents)
+            .unwrap_or(Depth::NONE)
     }
 
     fn get_head(&self) -> Option<String> {
@@ -696,20 +711,19 @@ impl ExecWorkflow {
             .or(self.args.head.clone())
     }
 
-    fn get_include_relations(&self) -> bool {
-        self.plan
-            .affected
-            .as_ref()
-            .and_then(|aff| aff.include_relations)
-            .unwrap_or(self.args.include_relations)
-    }
-
     fn get_job(&self) -> Option<usize> {
         self.plan.pipeline.job.or(self.args.job)
     }
 
     fn get_job_total(&self) -> Option<usize> {
         self.plan.pipeline.job_total.or(self.args.job_total)
+    }
+
+    fn get_no_dependencies(&self) -> bool {
+        self.plan
+            .graph
+            .no_dependencies
+            .unwrap_or(self.args.no_dependencies)
     }
 
     fn get_no_actions(&self) -> bool {
@@ -741,13 +755,5 @@ impl ExecWorkflow {
             TargetsBlock::Filtered { include } => Vec::from_iter(include),
             TargetsBlock::Included(targets) => Vec::from_iter(targets),
         }
-    }
-
-    fn get_upstream(&self) -> UpstreamScope {
-        self.plan
-            .graph
-            .upstream
-            .or(self.args.upstream)
-            .unwrap_or(UpstreamScope::Deep)
     }
 }

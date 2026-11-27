@@ -2,7 +2,7 @@
 
 use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_config::{Input, TaskOptionCache};
+use moon_config::{Input, TaskOptionCache, TaskOptionOnFailure};
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::{FileGroup, Project, ProjectError};
 use moon_project_graph::{ProjectGraph, ProjectNode};
@@ -154,7 +154,7 @@ pub fn create_project_with_tasks(workspace_root: &Path, id: &str) -> Project {
         }
 
         if task_id == "test-fail" {
-            task.options.allow_failure = true;
+            task.options.on_failure = Some(TaskOptionOnFailure::Allow);
         }
 
         project.tasks.insert(task.id.clone(), task);

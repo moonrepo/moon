@@ -6,7 +6,7 @@ use moon_blob::{BlobCleanStats, BlobInput, BlobOutput};
 use moon_common::{Id, format_error_chain};
 use moon_hash::Digest;
 use moon_manifest::TaskManifest;
-use moon_process::ProcessRegistry;
+use moon_process::SignalListener;
 use rustc_hash::FxHashSet;
 use std::fmt::Debug;
 use std::sync::Arc;
@@ -155,12 +155,7 @@ where
         digest: Digest,
         mut blob_inputs: Vec<BlobInput>,
     ) -> miette::Result<StoreResult> {
-        // Outputs can share identical content, so the inputs may carry the same
-        // digest more than once. Store each unique blob a single time: this keeps
-        // the stored/missing counts consistent (the `success` check compares
-        // them) and avoids redundant uploads when many files share a blob.
-        let mut seen = FxHashSet::default();
-        blob_inputs.retain(|input| seen.insert(input.digest.clone()));
+        dedupe_blob_inputs(&mut blob_inputs);
 
         let mut result = StoreResult {
             digests: vec![],
@@ -202,68 +197,30 @@ where
         let missing_digests = FxHashSet::from_iter(missing_digests);
         blob_inputs.retain(|source| missing_digests.contains(&source.digest));
 
-        let cap = self.get_capabilities();
-        let mut set = JoinSet::new();
+        store_blobs_in_batches(self, digest, blob_inputs, result).await
+    }
 
-        // Store the blobs in batches based on the max batch size
-        for batch in create_batches(blob_inputs, cap.max_batch_total_size_bytes, |source| {
-            source.digest.size as usize
-        }) {
-            set.spawn(Box::pin(store_blobs_batch(
-                Arc::clone(&self),
-                digest.clone(),
-                batch,
-            )));
-        }
+    /// Store the blobs from the given list of blob sources in batches, like
+    /// `store_blobs_batched`, but without skipping the blobs that already exist in
+    /// the backend, so that they're replaced. This repairs a blob whose stored
+    /// content can't be read back, as its digest still exists.
+    async fn replace_blobs_batched(
+        self: Arc<Self>,
+        digest: Digest,
+        mut blob_inputs: Vec<BlobInput>,
+    ) -> miette::Result<StoreResult> {
+        dedupe_blob_inputs(&mut blob_inputs);
 
-        let mut signal_receiver = ProcessRegistry::instance().receive_signal();
-        let mut upload_errors = vec![];
-        let mut uploaded_digests = vec![];
-        let mut abort = false;
+        // Every blob is stored, so they're all treated as missing
+        let result = StoreResult {
+            digests: vec![],
+            store_count: blob_inputs.len(),
+            stored_count: 0,
+            missing_count: blob_inputs.len(),
+            success: false,
+        };
 
-        while let Some(result) = set.join_next().await {
-            if signal_receiver.try_recv().is_ok() {
-                abort = true;
-                break;
-            }
-
-            match result {
-                Ok(Ok(digests)) => {
-                    uploaded_digests.extend(digests);
-                }
-                Ok(Err(error)) => {
-                    upload_errors.push(error.to_string());
-                }
-                Err(error) => {
-                    upload_errors.push(error.to_string());
-                }
-            };
-        }
-
-        result.stored_count = uploaded_digests.len();
-        result.digests = uploaded_digests;
-
-        // If we received a shutdown signal, we should abort storing the blobs
-        if abort {
-            set.shutdown().await;
-
-            return Ok(result);
-        }
-
-        if upload_errors.is_empty() {
-            result.success = result.stored_count == result.missing_count;
-        } else {
-            warn!(
-                storage = self.get_id().as_str(),
-                hash = digest.hash.as_str(),
-                expected_count = result.missing_count,
-                actual_count = result.stored_count,
-                errors = ?upload_errors,
-                "Failed to store blobs, will skip caching the manifest",
-            );
-        }
-
-        Ok(result)
+        store_blobs_in_batches(self, digest, blob_inputs, result).await
     }
 
     /// Store the blobs from the given list of blob sources.
@@ -305,13 +262,12 @@ where
             )));
         }
 
-        let mut signal_receiver = ProcessRegistry::instance().receive_signal();
         let mut download_errors = vec![];
         let mut downloaded_blobs = vec![];
         let mut abort = false;
 
         while let Some(result) = set.join_next().await {
-            if signal_receiver.try_recv().is_ok() {
+            if SignalListener::received().is_some() {
                 abort = true;
                 break;
             }
@@ -364,6 +320,98 @@ where
         blob_digests: Vec<Digest>,
         stream: bool,
     ) -> miette::Result<Vec<BlobOutput>>;
+
+    //---------- TOUCHING BLOBS ----------//
+
+    /// Mark the blobs for the given list of blob digests as recently used, so that
+    /// garbage collection keeps them. This is for blobs that no task manifest
+    /// references (like the cached workspace graph), as a task manifest hit already
+    /// keeps its blobs alive. Missing blobs are skipped. Remote backends manage
+    /// their own eviction server-side, so this defaults to a no-op.
+    async fn touch_blobs(&self, _blob_digests: Vec<Digest>) -> miette::Result<()> {
+        Ok(())
+    }
+}
+
+/// Outputs can share identical content, so the inputs may carry the same digest
+/// more than once. Store each unique blob a single time: this keeps the
+/// stored/missing counts consistent (the `success` check compares them) and
+/// avoids redundant uploads when many files share a blob.
+fn dedupe_blob_inputs(blob_inputs: &mut Vec<BlobInput>) {
+    let mut seen = FxHashSet::default();
+    blob_inputs.retain(|input| seen.insert(input.digest.clone()));
+}
+
+/// Store the blobs in batches based on the backend's capabilities, and record
+/// the outcome in the result, where `missing_count` is the number of blobs that
+/// are expected to be stored.
+async fn store_blobs_in_batches<T: StorageBackend + ?Sized>(
+    backend: Arc<T>,
+    digest: Digest,
+    blob_inputs: Vec<BlobInput>,
+    mut result: StoreResult,
+) -> miette::Result<StoreResult> {
+    let cap = backend.get_capabilities();
+    let mut set = JoinSet::new();
+
+    // Store the blobs in batches based on the max batch size
+    for batch in create_batches(blob_inputs, cap.max_batch_total_size_bytes, |source| {
+        source.digest.size as usize
+    }) {
+        set.spawn(Box::pin(store_blobs_batch(
+            Arc::clone(&backend),
+            digest.clone(),
+            batch,
+        )));
+    }
+
+    let mut upload_errors = vec![];
+    let mut uploaded_digests = vec![];
+    let mut abort = false;
+
+    while let Some(result) = set.join_next().await {
+        if SignalListener::received().is_some() {
+            abort = true;
+            break;
+        }
+
+        match result {
+            Ok(Ok(digests)) => {
+                uploaded_digests.extend(digests);
+            }
+            Ok(Err(error)) => {
+                upload_errors.push(error.to_string());
+            }
+            Err(error) => {
+                upload_errors.push(error.to_string());
+            }
+        };
+    }
+
+    result.stored_count = uploaded_digests.len();
+    result.digests = uploaded_digests;
+
+    // If we received a shutdown signal, we should abort storing the blobs
+    if abort {
+        set.shutdown().await;
+
+        return Ok(result);
+    }
+
+    if upload_errors.is_empty() {
+        result.success = result.stored_count == result.missing_count;
+    } else {
+        warn!(
+            storage = backend.get_id().as_str(),
+            hash = digest.hash.as_str(),
+            expected_count = result.missing_count,
+            actual_count = result.stored_count,
+            errors = ?upload_errors,
+            "Failed to store blobs, will skip caching the manifest",
+        );
+    }
+
+    Ok(result)
 }
 
 fn get_digests_from_inputs(blob_inputs: &[BlobInput]) -> Vec<Digest> {

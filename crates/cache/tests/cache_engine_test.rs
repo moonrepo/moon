@@ -20,36 +20,21 @@ mod cache_engine {
     }
 
     #[test]
-    fn returns_default_if_cache_missing() {
+    fn removes_legacy_cache_dirs() {
         let sandbox = create_empty_sandbox();
-        let engine = create_engine(&sandbox);
-        let item = engine
-            .state
-            .load_state::<CommonCacheState>("state.json")
-            .unwrap();
+        sandbox.create_file(".moon/cache/hashes/abc.json", "{}");
+        sandbox.create_file(".moon/cache/outputs/abc.tar.gz", "");
+        sandbox.create_file(".moon/cache/states/project/task/lastRun.json", "{}");
 
-        assert_eq!(item.data, CommonCacheState::default());
-    }
+        create_engine(&sandbox);
 
-    #[test]
-    fn reads_cache_if_exists() {
-        let sandbox = create_empty_sandbox();
-        sandbox.create_file(
-            ".moon/cache/states/state.json",
-            r#"{ "lastHash": "abc123" }"#,
-        );
-
-        let engine = create_engine(&sandbox);
-        let item = engine
-            .state
-            .load_state::<CommonCacheState>("state.json")
-            .unwrap();
-
-        assert_eq!(
-            item.data,
-            CommonCacheState {
-                last_hash: "abc123".into()
-            }
+        assert!(!sandbox.path().join(".moon/cache/hashes").exists());
+        assert!(!sandbox.path().join(".moon/cache/outputs").exists());
+        assert!(
+            sandbox
+                .path()
+                .join(".moon/cache/states/project/task/lastRun.json")
+                .exists()
         );
     }
 
@@ -191,6 +176,94 @@ mod cache_engine {
             assert!(result.contains_key(&rel("exists.txt")));
         }
 
+        fn backdate(path: &std::path::Path, secs: u64) {
+            let modified = std::time::SystemTime::now() - std::time::Duration::from_secs(secs);
+            std::fs::File::options()
+                .write(true)
+                .open(path)
+                .unwrap()
+                .set_modified(modified)
+                .unwrap();
+        }
+
+        #[tokio::test]
+        async fn memoizes_hashes_of_settled_files() {
+            let sandbox = create_empty_sandbox();
+            sandbox.create_file("a.txt", "hello");
+            backdate(&sandbox.path().join("a.txt"), 60);
+
+            let engine = create_engine(&sandbox);
+            let files = [rel("a.txt")];
+
+            let first = engine.hash_files(sandbox.path(), &files).await.unwrap();
+
+            assert_eq!(engine.file_hasher.memoized_count(), 1);
+
+            let second = engine.hash_files(sandbox.path(), &files).await.unwrap();
+
+            assert_eq!(first, second);
+        }
+
+        #[tokio::test]
+        async fn does_not_memoize_recently_modified_files() {
+            let sandbox = create_empty_sandbox();
+            sandbox.create_file("a.txt", "hello");
+
+            let engine = create_engine(&sandbox);
+            let files = [rel("a.txt")];
+
+            engine.hash_files(sandbox.path(), &files).await.unwrap();
+
+            assert_eq!(engine.file_hasher.memoized_count(), 0);
+
+            // Same length, so only the content distinguishes them
+            sandbox.create_file("a.txt", "world");
+
+            let changed = engine.hash_files(sandbox.path(), &files).await.unwrap();
+
+            assert_eq!(
+                changed[&rel("a.txt")],
+                "486ea46224d1bb4fb680f34f7c9ad96a8f24ec88be73ea8e5a6c65260e9cb8a7"
+            );
+        }
+
+        #[tokio::test]
+        async fn rehashes_memoized_files_when_modified() {
+            let sandbox = create_empty_sandbox();
+            sandbox.create_file("a.txt", "hello");
+            backdate(&sandbox.path().join("a.txt"), 60);
+
+            let engine = create_engine(&sandbox);
+            let files = [rel("a.txt")];
+
+            let before = engine.hash_files(sandbox.path(), &files).await.unwrap();
+
+            sandbox.create_file("a.txt", "world");
+
+            let after = engine.hash_files(sandbox.path(), &files).await.unwrap();
+
+            assert_ne!(before[&rel("a.txt")], after[&rel("a.txt")]);
+        }
+
+        #[tokio::test]
+        async fn hashes_large_files_across_buffers() {
+            let sandbox = create_empty_sandbox();
+            let content = "x".repeat(64 * 1024 * 3 + 123);
+            sandbox.create_file("big.txt", &content);
+
+            let engine = create_engine(&sandbox);
+
+            let result = engine
+                .hash_files(sandbox.path(), &[rel("big.txt")])
+                .await
+                .unwrap();
+
+            assert_eq!(
+                result[&rel("big.txt")],
+                starbase_utils::hash::sha256::from_bytes(content.as_bytes())
+            );
+        }
+
         #[tokio::test]
         async fn skips_directories() {
             let sandbox = create_empty_sandbox();
@@ -229,6 +302,91 @@ mod cache_engine {
             for path in &files {
                 assert!(result.contains_key(path));
             }
+        }
+    }
+
+    mod clean_stale_cache {
+        use super::*;
+        use moon_cache_local::{LocalObjectsStorage, LocalStorage};
+        use std::path::PathBuf;
+        use std::time::{Duration, SystemTime};
+
+        fn create_engine_with_backends(sandbox: &Sandbox) -> CacheEngine {
+            let context = CacheContext::new(sandbox.path());
+            let mut engine = CacheEngine::new(context.clone()).unwrap();
+
+            engine
+                .actions_storage
+                .add_local_backend(LocalStorage::new(context.clone(), &context.cache_dir).unwrap());
+            engine
+                .objects_storage
+                .add_local_backend(LocalObjectsStorage::new(context).unwrap());
+            engine
+        }
+
+        fn object_path(sandbox: &Sandbox, digest: &Digest) -> PathBuf {
+            sandbox
+                .path()
+                .join(".moon/cache/objects")
+                .join(digest.hash.prefix())
+                .join(digest.hash.suffix())
+        }
+
+        fn backdate(path: &std::path::Path, age: Duration) {
+            let file = std::fs::OpenOptions::new().write(true).open(path).unwrap();
+            file.set_modified(SystemTime::now() - age).unwrap();
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn removes_stale_hash_fingerprints() {
+            let sandbox = create_empty_sandbox();
+            let engine = create_engine_with_backends(&sandbox);
+
+            let stale = engine
+                .objects_storage
+                .store_hash_fingerprint("task", "stale")
+                .await
+                .unwrap();
+            let fresh = engine
+                .objects_storage
+                .store_hash_fingerprint("task", "fresh")
+                .await
+                .unwrap();
+
+            backdate(
+                &object_path(&sandbox, &stale),
+                Duration::from_secs(86400 * 14),
+            );
+
+            let (files_deleted, bytes_saved) =
+                engine.clean_stale_cache("7 days", true).await.unwrap();
+
+            assert_eq!(files_deleted, 1);
+            assert_eq!(bytes_saved, stale.size as u64);
+            assert!(!engine.objects_storage.has_hash_fingerprint(&stale).await);
+            assert!(engine.objects_storage.has_hash_fingerprint(&fresh).await);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn keeps_hash_fingerprints_when_not_cleaning_all() {
+            // The cleanup that runs after a pipeline only clears stale locks.
+            let sandbox = create_empty_sandbox();
+            let engine = create_engine_with_backends(&sandbox);
+
+            let stale = engine
+                .objects_storage
+                .store_hash_fingerprint("task", "stale")
+                .await
+                .unwrap();
+
+            backdate(
+                &object_path(&sandbox, &stale),
+                Duration::from_secs(86400 * 14),
+            );
+
+            engine.clean_stale_cache("7 days", false).await.unwrap();
+
+            assert!(engine.objects_storage.has_hash_fingerprint(&stale).await);
         }
     }
 }

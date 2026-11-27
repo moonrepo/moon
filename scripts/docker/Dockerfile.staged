@@ -7,6 +7,11 @@ ENV CI=true
 # RUN npm install -g @moonrepo/cli
 COPY ./target/debug/moon /usr/bin
 
+# Install the toolchain plugins built from moonrepo/plugins, which the debug
+# binary loads before the released versions (until v3 plugins are released)
+COPY ./target/wasm32-wasip1/release/*_toolchain.wasm /plugins/wasm32-wasip1/release/
+ENV WARPGATE_PLUGINS_DIR=/plugins
+
 #### WORKSPACE
 FROM base AS workspace
 WORKDIR /app

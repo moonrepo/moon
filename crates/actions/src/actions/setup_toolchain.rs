@@ -10,6 +10,7 @@ use moon_hash::fingerprint;
 use moon_pdk_api::SetupToolchainInput;
 use moon_toolchain::is_using_global_toolchain;
 use proto_core::reporter::{ProtoReporter, ReporterFormat};
+use starbase_utils::json::JsonValue;
 use std::sync::Arc;
 use tracing::{debug, instrument};
 
@@ -93,13 +94,29 @@ pub async fn setup_toolchain(
         toolchain.metadata.name
     );
 
+    // The config's version is the workspace's, while the version being setup
+    // may be one that a project overrides (for running its tasks), so the
+    // config is aligned with it, instead of passing conflicting versions
+    let mut toolchain_config = app_context.toolchain_registry.create_config(&toolchain.id);
+
+    if let Some(config) = toolchain_config.as_object_mut() {
+        match &node.toolchain.req {
+            Some(req) => {
+                config.insert("version".into(), JsonValue::String(req.to_string()));
+            }
+            None => {
+                config.remove("version");
+            }
+        };
+    }
+
     let setup_op = Operation::setup_operation(action.get_prefix())?;
     let output = toolchain
         .setup_toolchain(
             SetupToolchainInput {
                 configured_version: node.toolchain.req.clone(),
                 context: app_context.toolchain_registry.create_context(),
-                toolchain_config: app_context.toolchain_registry.create_config(&toolchain.id),
+                toolchain_config,
                 version: None,
             },
             Some(
@@ -128,7 +145,8 @@ pub async fn setup_toolchain(
             .collect(),
     )?;
 
-    lock.persist_hash_manifest(&cache_engine.storage).await?;
+    lock.persist_hash_fingerprint(&cache_engine.objects_storage)
+        .await?;
 
     Ok(if output.installed {
         ActionStatus::Passed

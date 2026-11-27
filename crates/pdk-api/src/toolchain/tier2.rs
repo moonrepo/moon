@@ -6,7 +6,7 @@ use moon_project::ProjectFragment;
 use moon_task::TaskFragment;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
-use warpgate_api::{VirtualPath, api_enum, api_struct};
+use warpgate_api::{VirtualPath, api_enum, api_struct, api_unit_enum};
 
 api_struct!(
     /// Input passed to the `define_requirements` function.
@@ -20,25 +20,60 @@ api_struct!(
     }
 );
 
+api_unit_enum!(
+    /// When an action of a required toolchain runs, relative to the same
+    /// action of the toolchain that requires it.
+    pub enum RequirementPhase {
+        /// The required toolchain's action runs before this toolchain's.
+        #[default]
+        Before,
+        /// The required toolchain's action runs after this toolchain's.
+        After,
+    }
+);
+
+api_struct!(
+    /// A toolchain that another toolchain requires.
+    #[serde(default)]
+    pub struct ToolchainRequirement {
+        /// Identifier of the required toolchain. If targeting an unstable toolchain,
+        /// the identifier must be prefixed with "unstable_". When the toolchain is
+        /// stable, both identifiers will continue to work.
+        pub id: String,
+
+        /// When the setup toolchain action is run for the parent toolchain,
+        /// should this requirement also have its setup toolchain action run,
+        /// and whether it should run before or after the parent toolchain's action.
+        pub setup_toolchain: Option<RequirementPhase>,
+
+        /// When the setup environment action is run for the parent toolchain,
+        /// should this requirement also have its setup environment action run,
+        /// and whether it should run before or after the parent toolchain's action.
+        pub setup_environment: Option<RequirementPhase>,
+    }
+);
+
+impl ToolchainRequirement {
+    /// Create a requirement for the provided toolchain, with no actions.
+    pub fn new(id: impl AsRef<str>) -> Self {
+        Self {
+            id: id.as_ref().to_owned(),
+            setup_toolchain: None,
+            setup_environment: None,
+        }
+    }
+}
+
 api_struct!(
     /// Output returned from the `define_requirements` function.
     #[serde(default)]
     pub struct DefineRequirementsOutput {
-        /// Other toolchains that this toolchain requires and must be setup before hand.
-        /// If targeting an unstable toolchain, the identifier must be prefixed with "unstable_".
-        /// When the toolchain is stable, both identifiers will continue to work.
+        /// Other toolchains that this toolchain requires. They're added to the
+        /// projects and tasks that use this toolchain, and their setup toolchain
+        /// and setup environment actions are ordered against this toolchain's,
+        /// based on each requirement's phases.
         #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub requires: Vec<String>,
-
-        /// Apply requirements to the setup environment action. This will ensure that the
-        /// required toolchains are setup and installed before this toolchain's environment
-        /// is setup (after toolchain setup).
-        pub for_setup_environment: bool,
-
-        /// Apply requirements to the setup toolchain action. This will ensure that the
-        /// required toolchains are setup and installed before this toolchain is setup
-        /// (before environment setup).
-        pub for_setup_toolchain: bool,
+        pub requires: Vec<ToolchainRequirement>,
     }
 );
 
@@ -61,7 +96,9 @@ api_struct!(
         pub root: VirtualPath,
 
         /// Workspace and project merged toolchain configuration,
-        /// with the latter taking precedence.
+        /// with the latter taking precedence. The project is the one at
+        /// the root, which for a dependencies workspace is its root
+        /// project (if there is one), which isn't passed as `project`.
         pub toolchain_config: serde_json::Value,
     }
 );
@@ -119,6 +156,39 @@ api_struct!(
 );
 
 api_struct!(
+    /// Input passed to the `locate_dependencies_roots` function, which
+    /// locates the root of many directories in a single call, instead of
+    /// a `locate_dependencies_root` call for each. When implemented, it's
+    /// used instead of `locate_dependencies_root` for locating the roots
+    /// of projects, while `locate_dependencies_root` is still required.
+    pub struct LocateDependenciesRootsInput {
+        /// Current moon context.
+        pub context: MoonContext,
+
+        /// The starting directories in which to locate a root each.
+        /// These are typically project roots.
+        pub starting_dirs: Vec<VirtualPath>,
+
+        /// Workspace and project merged toolchain configuration, with the
+        /// latter taking precedence, which is the same for every starting
+        /// directory. Directories with different configuration are located
+        /// in separate calls.
+        pub toolchain_config: serde_json::Value,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `locate_dependencies_roots` function.
+    #[serde(default)]
+    pub struct LocateDependenciesRootsOutput {
+        /// The located root of each starting directory, in the same order
+        /// as the starting directories, and with the same length. Return
+        /// a default output for a directory without a root.
+        pub roots: Vec<LocateDependenciesRootOutput>,
+    }
+);
+
+api_struct!(
     /// Input passed to the `install_dependencies` function.
     /// Requires `locate_dependencies_root`.
     pub struct InstallDependenciesInput {
@@ -140,7 +210,9 @@ api_struct!(
         pub root: VirtualPath,
 
         /// Workspace and project merged toolchain configuration,
-        /// with the latter taking precedence.
+        /// with the latter taking precedence. The project is the one at
+        /// the root, which for a dependencies workspace is its root
+        /// project (if there is one), which isn't passed as `project`.
         pub toolchain_config: serde_json::Value,
     }
 );
@@ -196,6 +268,12 @@ api_struct!(
         /// Production dependencies.
         #[serde(skip_serializing_if = "BTreeMap::is_empty")]
         pub dependencies: BTreeMap<String, ManifestDependency>,
+
+        /// Dependencies that packages in the workspace can inherit by name.
+        /// These aren't dependencies of this package, and are used to
+        /// resolve inherited dependencies.
+        #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+        pub inheritable_dependencies: BTreeMap<String, ManifestDependency>,
 
         /// Peer dependencies.
         #[serde(skip_serializing_if = "BTreeMap::is_empty")]

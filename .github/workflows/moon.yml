@@ -7,6 +7,7 @@ on:
   pull_request:
     paths:
       - .cargo/config.toml
+      - .github/actions/build-toolchain-plugins/**
       - .github/workflows/moon.yml
       - .moon/*
       - crates/**
@@ -43,6 +44,7 @@ jobs:
       - uses: moonrepo/setup-rust@v1
         with:
           cache-base: '^(master|develop-)'
+      - uses: ./.github/actions/build-toolchain-plugins
       - run: cargo run -- --color --log debug ci --base ${{ github.base_ref || 'master' }}
         env:
           DEPOT_TOKEN: ${{ secrets.DEPOT_TOKEN }}
@@ -73,6 +75,8 @@ jobs:
         with:
           cache: false
       - run: cargo build
+      # Also copied into the images
+      - uses: ./.github/actions/build-toolchain-plugins
       - run: ./target/debug/moon --version
       # Non-staged
       - run: ./target/debug/moon docker scaffold website --log trace

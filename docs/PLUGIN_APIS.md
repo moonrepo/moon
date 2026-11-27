@@ -23,6 +23,7 @@
 - [x] `define_requirements`
 - [x] `install_dependencies`
 - [x] `locate_dependencies_root` \*
+- [x] `locate_dependencies_roots` \*
 - [x] `parse_lock`
 - [x] `parse_manifest`
 - [x] `setup_environment`

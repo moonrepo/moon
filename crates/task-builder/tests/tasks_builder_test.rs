@@ -744,16 +744,19 @@ mod tasks_builder {
                         project: "dep-b".into(),
                         filter: vec![],
                         group: Some(Id::raw("sources")),
+                        affected_only: false,
                     }),
                     Input::Project(ProjectInput {
                         project: "dep-a".into(),
                         filter: vec![],
                         group: Some(Id::raw("sources")),
+                        affected_only: false,
                     }),
                     Input::Project(ProjectInput {
                         project: "dep-c".into(),
                         filter: vec![],
                         group: Some(Id::raw("sources")),
+                        affected_only: false,
                     }),
                     Input::Glob(stub_glob_input(
                         "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
@@ -777,11 +780,13 @@ mod tasks_builder {
                         project: "dep-a".into(),
                         filter: vec![],
                         group: Some(Id::raw("sources")),
+                        affected_only: false,
                     }),
                     Input::Project(ProjectInput {
                         project: "dep-c".into(),
                         filter: vec![],
                         group: Some(Id::raw("sources")),
+                        affected_only: false,
                     }),
                     Input::Glob(stub_glob_input(
                         "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
@@ -805,6 +810,7 @@ mod tasks_builder {
                         project: "dep-a".into(),
                         filter: vec!["src/**/*".into()],
                         group: None,
+                        affected_only: false,
                     }),
                     Input::Glob(stub_glob_input(
                         "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
@@ -841,6 +847,7 @@ tasks:
                         project: "dep-a".into(),
                         filter: vec!["src/**/*".into()],
                         group: None,
+                        affected_only: false,
                     }),
                     Input::Glob(stub_glob_input(
                         "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
@@ -956,6 +963,54 @@ tasks:
             assert_eq!(task.toolchains, vec![Id::raw("rust")]);
         }
 
+        // The project's config changes the requirements, which are expanded
+        // transitively, while toolchains that only require the requirements
+        // (siblings, like `tc-tier3-reqs`) are not added
+        #[tokio::test(flavor = "multi_thread")]
+        async fn expands_requirements_with_the_project_config() {
+            let sandbox = create_sandbox("builder");
+            sandbox.create_file(
+                "reqs/moon.yml",
+                "toolchains:\n  tc-tier2-setup-env:\n    testRequires: [{ id: 'tc-tier2-reqs' }]\ntasks:\n  build:\n    command: 'build'\n    toolchains: ['tc-tier2-setup-env']\n",
+            );
+
+            let container = TasksBuilderContainer::new(sandbox.path()).with_test_toolchains();
+            let tasks = container.build_tasks("reqs").await;
+            let task = tasks.get("build").unwrap();
+
+            assert_eq!(
+                task.toolchains,
+                vec![
+                    Id::raw("tc-tier2-setup-env"),
+                    Id::raw("tc-tier2-reqs"),
+                    Id::raw("tc-tier3")
+                ]
+            );
+        }
+
+        // Like a Node.js task also using JavaScript, which requires it
+        #[tokio::test(flavor = "multi_thread")]
+        async fn adds_toolchains_that_require_the_task_toolchains() {
+            let sandbox = create_sandbox("builder");
+            sandbox.create_file(
+                "reqs/moon.yml",
+                "tasks:\n  build:\n    command: 'build'\n    toolchains: ['tc-tier3']\n",
+            );
+
+            let container = TasksBuilderContainer::new(sandbox.path()).with_test_toolchains();
+            let tasks = container.build_tasks("reqs").await;
+            let mut toolchains = tasks.get("build").unwrap().toolchains.clone();
+
+            assert_eq!(toolchains.remove(0), Id::raw("tc-tier3"));
+
+            toolchains.sort();
+
+            assert_eq!(
+                toolchains,
+                vec![Id::raw("tc-tier2-reqs"), Id::raw("tc-tier3-reqs")]
+            );
+        }
+
         #[tokio::test(flavor = "multi_thread")]
         async fn applies_to_global_inherited() {
             let sandbox = create_sandbox("builder");
@@ -966,6 +1021,165 @@ tasks:
             let task = tasks.get("global-build").unwrap();
 
             assert_eq!(task.toolchains, vec![Id::raw("rust")]);
+        }
+    }
+
+    mod toolchain_inputs {
+        use super::*;
+        use starbase_sandbox::Sandbox;
+
+        fn create_toolchain_inputs_sandbox() -> Sandbox {
+            let sandbox = create_sandbox("builder");
+            sandbox.create_file(
+                "toolchain-inputs/moon.yml",
+                r"
+tasks:
+  tier1:
+    command: noop
+    toolchain: tc-tier1
+  multiple:
+    command: noop
+    toolchains: [tc-tier1, tc-tier2]
+  with-inputs:
+    command: noop
+    toolchain: tc-tier1
+    inputs: ['src/**/*']
+  empty-inputs:
+    command: noop
+    toolchain: tc-tier1
+    inputs: []
+  system:
+    command: noop
+    toolchain: system
+  opted-out:
+    command: noop
+    toolchain: tc-tier2-setup-env
+",
+            );
+            sandbox
+        }
+
+        fn create_affected_only_input(glob: &str) -> Input {
+            Input::Glob(GlobInput {
+                glob: GlobPath::parse(glob).unwrap(),
+                cache: true,
+                affected_only: true,
+            })
+        }
+
+        fn get_affected_only_inputs(inputs: &[Input]) -> Vec<&Input> {
+            inputs
+                .iter()
+                .filter(|input| matches!(input, Input::Glob(glob) if glob.affected_only))
+                .collect()
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn injects_manifests_and_lockfiles() {
+            let sandbox = create_toolchain_inputs_sandbox();
+            let container = TasksBuilderContainer::new(sandbox.path()).with_test_toolchains();
+
+            let tasks = container.build_tasks("toolchain-inputs").await;
+            let task = tasks.get("tier1").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                [
+                    Input::Glob(stub_glob_input("**/*")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
+                    create_affected_only_input(".../{tc.cfg,tc.lock,tc.root.cfg}"),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn dedupes_names_across_toolchains() {
+            let sandbox = create_toolchain_inputs_sandbox();
+            let container = TasksBuilderContainer::new(sandbox.path()).with_test_toolchains();
+
+            let tasks = container.build_tasks("toolchain-inputs").await;
+            let task = tasks.get("multiple").unwrap();
+
+            assert!(task.toolchains.len() > 1);
+            assert_eq!(
+                get_affected_only_inputs(&task.inputs),
+                [&create_affected_only_input(
+                    ".../{tc.cfg,tc.lock,tc.root.cfg}"
+                )]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn appends_to_configured_inputs() {
+            let sandbox = create_toolchain_inputs_sandbox();
+            let container = TasksBuilderContainer::new(sandbox.path()).with_test_toolchains();
+
+            let tasks = container.build_tasks("toolchain-inputs").await;
+            let task = tasks.get("with-inputs").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                [
+                    Input::Glob(stub_glob_input("src/**/*")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/{extensions,toolchains}.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
+                    create_affected_only_input(".../{tc.cfg,tc.lock,tc.root.cfg}"),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_inject_for_empty_inputs() {
+            let sandbox = create_toolchain_inputs_sandbox();
+            let container = TasksBuilderContainer::new(sandbox.path()).with_test_toolchains();
+
+            let tasks = container.build_tasks("toolchain-inputs").await;
+            let task = tasks.get("empty-inputs").unwrap();
+
+            assert!(task.state.empty_inputs);
+            assert!(get_affected_only_inputs(&task.inputs).is_empty());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_inject_without_names() {
+            let sandbox = create_toolchain_inputs_sandbox();
+            let container = TasksBuilderContainer::new(sandbox.path()).with_test_toolchains();
+
+            let tasks = container.build_tasks("toolchain-inputs").await;
+            let task = tasks.get("system").unwrap();
+
+            assert_eq!(task.toolchains, [Id::raw("system")]);
+            assert!(get_affected_only_inputs(&task.inputs).is_empty());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_inject_for_opted_out_toolchains() {
+            let sandbox = create_toolchain_inputs_sandbox();
+            let container = TasksBuilderContainer::new(sandbox.path()).with_test_toolchains();
+
+            let tasks = container.build_tasks("toolchain-inputs").await;
+            let task = tasks.get("opted-out").unwrap();
+
+            assert_eq!(task.toolchains, [Id::raw("tc-tier2-setup-env")]);
+            assert!(get_affected_only_inputs(&task.inputs).is_empty());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn injects_for_detected_toolchains() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
+
+            let tasks = container.build_tasks("toolchains").await;
+            let task = tasks.get("rust-via-cmd").unwrap();
+
+            assert_eq!(task.toolchains, [Id::raw("rust")]);
+            assert_eq!(
+                get_affected_only_inputs(&task.inputs),
+                [&create_affected_only_input(".../{Cargo.lock,Cargo.toml}")]
+            );
         }
     }
 
@@ -984,7 +1198,7 @@ tasks:
             for id in ["expect-failure", "expect-failure-cache"] {
                 let task = tasks.get(id).unwrap();
 
-                assert!(task.options.expect_failure);
+                assert_eq!(task.options.on_failure, Some(TaskOptionOnFailure::Expect));
                 assert_eq!(task.options.cache, TaskOptionCache::Enabled(false));
             }
         }
@@ -1247,76 +1461,56 @@ tasks:
         }
     }
 
-    mod expect_failure_conflicts {
+    mod on_failure {
         use super::*;
+        use moon_task::Task;
+        use std::collections::BTreeMap;
 
         // Created on demand, as a conflict fails the entire project
-        async fn build_tasks(config: &str) {
+        async fn build_tasks(config: &str) -> BTreeMap<Id, Task> {
             let sandbox = create_sandbox("builder");
-            sandbox.create_file("expect-failure/moon.yml", config);
+            sandbox.create_file("on-failure/moon.yml", config);
 
             TasksBuilderContainer::new(sandbox.path())
-                .build_tasks("expect-failure")
-                .await;
+                .build_tasks("on-failure")
+                .await
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        #[should_panic(expected = "task_builder::options::expect_failure_conflict")]
-        async fn errors_with_allow_failure() {
-            build_tasks(
-                r"
-tasks:
-  task:
-    options:
-      allowFailure: true
-      expectFailure: true
-",
-            )
-            .await;
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        #[should_panic(expected = "task_builder::options::expect_failure_conflict")]
-        async fn errors_with_allow_failure_from_shared_options() {
-            build_tasks(
+        async fn overrides_shared_options() {
+            let tasks = build_tasks(
                 r"
 taskOptions:
-  allowFailure: true
+  onFailure: allow
 tasks:
-  task:
+  allow: {}
+  expect:
     options:
-      expectFailure: true
+      onFailure: expect
 ",
             )
             .await;
+
+            assert_eq!(
+                tasks.get("allow").unwrap().options.on_failure,
+                Some(TaskOptionOnFailure::Allow)
+            );
+            assert_eq!(
+                tasks.get("expect").unwrap().options.on_failure,
+                Some(TaskOptionOnFailure::Expect)
+            );
         }
 
         #[tokio::test(flavor = "multi_thread")]
         #[should_panic(expected = "task_builder::options::expect_failure_conflict")]
-        async fn errors_with_persistent_from_preset() {
+        async fn errors_when_expected_with_persistent_from_preset() {
             build_tasks(
                 r"
 tasks:
   task:
     preset: server
     options:
-      expectFailure: true
-",
-            )
-            .await;
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn allows_allow_failure_disabled() {
-            build_tasks(
-                r"
-taskOptions:
-  allowFailure: true
-tasks:
-  task:
-    options:
-      allowFailure: false
-      expectFailure: true
+      onFailure: expect
 ",
             )
             .await;

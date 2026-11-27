@@ -7,8 +7,8 @@ tasks:
     deps: ['c']
   c:
     command: 'c'
-    # Runs after `a`, which is currently being loaded when the
-    # lazy builder reaches this dependency
+    # Runs after `a`, so the edge is reversed (a -> c), which
+    # doesn't cycle with a -> b -> c
     deps:
       - target: 'a'
         type: 'cleanup'

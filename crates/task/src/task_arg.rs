@@ -30,7 +30,7 @@ impl TaskArg {
             ("r#'", "'#"),
         ] {
             if base_value.starts_with(start) && base_value.ends_with(end) {
-                value.push_str(base_value.trim_start_matches(start).trim_end_matches(end));
+                value.push_str(base_value.trim_prefix(start).trim_suffix(end));
                 quoted_value = Some(base_value.to_owned());
                 is_quoted = true;
                 break;

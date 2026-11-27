@@ -1,0 +1,44 @@
+[package]
+name = "moon_layout_graph"
+version = "0.0.1"
+edition = "2024"
+license = "MIT"
+description = "Layout graph of toolchain dependencies roots."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+publish = false
+
+[dependencies]
+moon_app_context = { path = "../app-context" }
+moon_common = { path = "../common" }
+moon_graph_utils = { path = "../graph-utils" }
+moon_pdk_api = { path = "../pdk-api" }
+moon_project = { path = "../project" }
+moon_toolchain = { path = "../toolchain" }
+moon_toolchain_plugin = { path = "../toolchain-plugin" }
+moon_workspace_graph = { path = "../workspace-graph" }
+futures = { workspace = true }
+indexmap = { workspace = true }
+miette = { workspace = true }
+petgraph = { workspace = true }
+rustc-hash = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+starbase_utils = { workspace = true, features = ["glob"] }
+tokio = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+moon_bench_utils = { path = "../bench-utils" }
+moon_config = { path = "../config" }
+moon_test_utils = { path = "../test-utils" }
+criterion = { workspace = true }
+starbase_sandbox = { workspace = true }
+warpgate_api = { workspace = true }
+
+[[bench]]
+name = "layout_graph_builder"
+harness = false
+
+[lints]
+workspace = true

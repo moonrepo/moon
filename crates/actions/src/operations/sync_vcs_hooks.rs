@@ -15,13 +15,13 @@ pub async fn sync_vcs_hooks(app_context: &AppContext, force: bool) -> miette::Re
     }
 
     // Force run the generator
-    if force || !generator.verify_hooks_exist()? {
+    if force || !generator.verify_hooks_exist().await? {
         generator.generate().await?;
 
         app_context
             .cache_engine
-            .storage
-            .store_hash_manifest("vcs-hooks", fingerprint)
+            .objects_storage
+            .store_hash_fingerprint("vcs-hooks", fingerprint)
             .await?;
 
         return Ok(true);

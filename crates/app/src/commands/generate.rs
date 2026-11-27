@@ -269,8 +269,7 @@ pub async fn generate(session: MoonSession, args: GenerateArgs) -> SessionResult
                                 content: format!(
                                     "<{style}>{label}</{style}> <muted>{arrow}</muted> <mutedlight>{}</mutedlight>",
                                     file.dest_path
-                                        .strip_prefix(&session.working_dir)
-                                        .unwrap_or(&file.dest_path)
+                                        .trim_prefix(&session.working_dir)
                                         .display()
                                 ),
                             )
@@ -285,8 +284,7 @@ pub async fn generate(session: MoonSession, args: GenerateArgs) -> SessionResult
                                 content: format!(
                                     "<success>created</success> <muted>--➤</muted> <mutedlight>{}</mutedlight>",
                                     asset.dest_path
-                                        .strip_prefix(&session.working_dir)
-                                        .unwrap_or(&asset.dest_path)
+                                        .trim_prefix(&session.working_dir)
                                         .display()
                                 ),
                             )
@@ -415,7 +413,7 @@ pub fn parse_args_into_variables(
             // the variable configs, so that subsequent values can overwrite
             for arg_id in matches.ids() {
                 let arg_name = arg_id.as_str();
-                let name = arg_name.strip_prefix("no-").unwrap_or(arg_name);
+                let name = arg_name.trim_prefix("no-");
 
                 let Some(cfg) = config.get(name) else {
                     continue;
@@ -443,7 +441,7 @@ pub fn parse_args_into_variables(
                             }
                         }
 
-                        vars.insert(name, &list);
+                        vars.insert(name.to_owned(), &list);
                     }
                     TemplateVariable::Boolean(_) => {
                         // Booleans always have a value when matched, so only extract
@@ -453,7 +451,7 @@ pub fn parse_args_into_variables(
                         {
                             debug!(name, value, "Setting boolean variable");
 
-                            vars.insert(name, value);
+                            vars.insert(name.to_owned(), value);
                         }
                     }
                     TemplateVariable::Enum(inner) => {
@@ -467,29 +465,29 @@ pub fn parse_args_into_variables(
                                     "Setting multiple-value enum variable"
                                 );
 
-                                vars.insert(name, &value);
+                                vars.insert(name.to_owned(), &value);
                             }
                         } else if let Some(value) = matches.get_one::<String>(arg_name) {
                             debug!(name, value, "Setting single-value enum variable");
 
-                            vars.insert(name, value);
+                            vars.insert(name.to_owned(), value);
                         }
                     }
                     TemplateVariable::Number(_) => {
                         if let Some(value) = matches.get_one::<isize>(arg_name) {
                             debug!(name, value, "Setting number variable");
 
-                            vars.insert(name, value);
+                            vars.insert(name.to_owned(), value);
                         }
                     }
                     TemplateVariable::Object(_) => {
-                        vars.insert(name, &FxHashMap::<String, JsonValue>::default());
+                        vars.insert(name.to_owned(), &FxHashMap::<String, JsonValue>::default());
                     }
                     TemplateVariable::String(_) => {
                         if let Some(value) = matches.get_one::<String>(arg_name) {
                             debug!(name, value, "Setting string variable");
 
-                            vars.insert(name, value);
+                            vars.insert(name.to_owned(), value);
                         }
                     }
                 };
@@ -501,7 +499,7 @@ pub fn parse_args_into_variables(
             // clap includes some information we don't want,
             // so let's try and strip it before adding to the error
             for line in error.to_string().lines() {
-                let line = line.strip_prefix("error:").unwrap_or(line);
+                let line = line.trim_prefix("error:");
 
                 if line.is_empty()
                     || line.starts_with("Usage:")
@@ -594,7 +592,7 @@ pub async fn gather_variables(
 
                 debug!(name, value = ?value, "Setting array variable");
 
-                context.insert(name, &value);
+                context.insert(name.to_owned(), &value);
             }
             TemplateVariable::Boolean(cfg) => {
                 let value = if skip_prompts || cfg.prompt.is_none() {
@@ -616,7 +614,7 @@ pub async fn gather_variables(
 
                 debug!(name, value, "Setting boolean variable");
 
-                context.insert(name, &value);
+                context.insert(name.to_owned(), &value);
             }
             TemplateVariable::Number(cfg) => {
                 let value = if skip_prompts || cfg.prompt.is_none() {
@@ -650,7 +648,7 @@ pub async fn gather_variables(
 
                 debug!(name, value, "Setting number variable");
 
-                context.insert(name, &value);
+                context.insert(name.to_owned(), &value);
             }
             TemplateVariable::Object(cfg) => {
                 let value = if skip_prompts || cfg.prompt.is_none() {
@@ -698,7 +696,7 @@ pub async fn gather_variables(
 
                 debug!(name, value = ?value, "Setting object variable");
 
-                context.insert(name, &value);
+                context.insert(name.to_owned(), &value);
             }
             TemplateVariable::String(cfg) => {
                 let value = if skip_prompts || cfg.prompt.is_none() {
@@ -728,7 +726,7 @@ pub async fn gather_variables(
 
                 debug!(name, value, "Setting string variable");
 
-                context.insert(name, &value);
+                context.insert(name.to_owned(), &value);
             }
             TemplateVariable::Enum(cfg) if cfg.is_multiple() => {
                 let values = cfg.get_values();
@@ -782,7 +780,7 @@ pub async fn gather_variables(
                     "Setting multiple-value enum variable"
                 );
 
-                context.insert(name, &value);
+                context.insert(name.to_owned(), &value);
             }
             TemplateVariable::Enum(cfg) if !cfg.is_multiple() => {
                 let values = cfg.get_values();
@@ -821,7 +819,7 @@ pub async fn gather_variables(
 
                 debug!(name, value, "Setting single-value enum variable");
 
-                context.insert(name, &value);
+                context.insert(name.to_owned(), &value);
             }
             _ => {
                 // Rust can't infer enum variants above correctly!

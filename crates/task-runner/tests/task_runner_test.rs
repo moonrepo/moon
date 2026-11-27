@@ -117,9 +117,14 @@ mod task_runner {
                         script: "exit 0".into(),
                     }));
                 let task = std::sync::Arc::new(task);
-                let mut runner =
-                    TaskRunner::new(&container.app_context, &container.project, &task, None)
-                        .unwrap();
+                let mut runner = TaskRunner::new(
+                    &container.app_context,
+                    &container.layout_graph,
+                    &container.project,
+                    &task,
+                    None,
+                )
+                .unwrap();
                 let node = container.create_action_node();
                 let context = ActionContext::default();
 
@@ -148,9 +153,14 @@ mod task_runner {
                         script: "exit 1".into(),
                     }));
                 let task = std::sync::Arc::new(task);
-                let mut runner =
-                    TaskRunner::new(&container.app_context, &container.project, &task, None)
-                        .unwrap();
+                let mut runner = TaskRunner::new(
+                    &container.app_context,
+                    &container.layout_graph,
+                    &container.project,
+                    &task,
+                    None,
+                )
+                .unwrap();
                 let node = container.create_action_node();
                 let context = ActionContext::default();
 
@@ -179,9 +189,14 @@ mod task_runner {
                         script: "exit 1".into(),
                     }));
                 let task = std::sync::Arc::new(task);
-                let mut runner =
-                    TaskRunner::new(&container.app_context, &container.project, &task, None)
-                        .unwrap();
+                let mut runner = TaskRunner::new(
+                    &container.app_context,
+                    &container.layout_graph,
+                    &container.project,
+                    &task,
+                    None,
+                )
+                .unwrap();
                 let node = container.create_action_node();
                 let context = ActionContext::default();
 
@@ -436,12 +451,11 @@ mod task_runner {
                     assert_eq!(result.operations[1].status, ActionStatus::Cached);
                 }
 
-                pub(super) async fn run_reuses_existing_outputs(task_id: &str, cas_enabled: bool) {
+                pub(super) async fn run_reuses_existing_outputs(task_id: &str) {
                     let container = TaskRunnerContainer::new_os("runner", task_id).await;
                     container.sandbox.enable_git();
 
                     let mut runner = container.create_runner();
-                    runner.state.local_cas_enabled = cas_enabled;
 
                     let node = container.create_action_node();
                     let context = ActionContext::default();
@@ -475,12 +489,11 @@ mod task_runner {
                     assert_eq!(get_file_id(&file), file_id);
                 }
 
-                pub(super) async fn run_restores_missing_outputs(task_id: &str, cas_enabled: bool) {
+                pub(super) async fn run_restores_missing_outputs(task_id: &str) {
                     let container = TaskRunnerContainer::new_os("runner", task_id).await;
                     container.sandbox.enable_git();
 
                     let mut runner = container.create_runner();
-                    runner.state.local_cas_enabled = cas_enabled;
 
                     let node = container.create_action_node();
                     let context = ActionContext::default();
@@ -516,23 +529,13 @@ mod task_runner {
                 }
 
                 #[tokio::test(flavor = "multi_thread")]
-                async fn running_again_reuses_existing_outputs_from_archive() {
-                    run_reuses_existing_outputs("create-file-glob", false).await;
+                async fn running_again_reuses_existing_outputs() {
+                    run_reuses_existing_outputs("create-file-glob").await;
                 }
 
                 #[tokio::test(flavor = "multi_thread")]
-                async fn running_again_reuses_existing_outputs_from_cas() {
-                    run_reuses_existing_outputs("create-file-glob", true).await;
-                }
-
-                #[tokio::test(flavor = "multi_thread")]
-                async fn running_again_restores_missing_outputs_from_archive() {
-                    run_restores_missing_outputs("create-file-glob", false).await;
-                }
-
-                #[tokio::test(flavor = "multi_thread")]
-                async fn running_again_restores_missing_outputs_from_cas() {
-                    run_restores_missing_outputs("create-file-glob", true).await;
+                async fn running_again_restores_missing_outputs() {
+                    run_restores_missing_outputs("create-file-glob").await;
                 }
             }
 
@@ -542,23 +545,13 @@ mod task_runner {
                 use super::glob_outputs::*;
 
                 #[tokio::test(flavor = "multi_thread")]
-                async fn running_again_reuses_existing_outputs_from_archive() {
-                    run_reuses_existing_outputs("create-file-optional", false).await;
+                async fn running_again_reuses_existing_outputs() {
+                    run_reuses_existing_outputs("create-file-optional").await;
                 }
 
                 #[tokio::test(flavor = "multi_thread")]
-                async fn running_again_reuses_existing_outputs_from_cas() {
-                    run_reuses_existing_outputs("create-file-optional", true).await;
-                }
-
-                #[tokio::test(flavor = "multi_thread")]
-                async fn running_again_restores_missing_outputs_from_archive() {
-                    run_restores_missing_outputs("create-file-optional", false).await;
-                }
-
-                #[tokio::test(flavor = "multi_thread")]
-                async fn running_again_restores_missing_outputs_from_cas() {
-                    run_restores_missing_outputs("create-file-optional", true).await;
+                async fn running_again_restores_missing_outputs() {
+                    run_restores_missing_outputs("create-file-optional").await;
                 }
             }
 
@@ -668,9 +661,14 @@ mod task_runner {
                         }));
                     let task = std::sync::Arc::new(task);
 
-                    let mut runner =
-                        TaskRunner::new(&container.app_context, &container.project, &task, None)
-                            .unwrap();
+                    let mut runner = TaskRunner::new(
+                        &container.app_context,
+                        &container.layout_graph,
+                        &container.project,
+                        &task,
+                        None,
+                    )
+                    .unwrap();
                     let result = runner.run(&ActionContext::default(), &node).await.unwrap();
 
                     assert!(result.error.is_some());
@@ -1122,7 +1120,6 @@ mod task_runner {
                 runner.cache.data.hash = "previous".into();
 
                 // Outputs for the next run, that fail to unpack after one is written
-                runner.state.local_cas_enabled = true;
                 runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
 
                 let digest = container.seed_blob(b"next").await;
@@ -1160,73 +1157,6 @@ mod task_runner {
             }
         }
 
-        mod local_cach_legacy {
-            use super::*;
-
-            #[tokio::test(flavor = "multi_thread")]
-            async fn returns_if_archive_exists() {
-                let container = TaskRunnerContainer::new("runner", "base").await;
-                let mut runner = container.create_runner();
-
-                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
-
-                container
-                    .sandbox
-                    .create_file(".moon/cache/outputs/hash123.tar.gz", "");
-
-                assert!(matches!(
-                    runner.is_cached("hash123").await.unwrap(),
-                    Some(HydrateFrom::LocalArchive)
-                ));
-            }
-
-            #[tokio::test(flavor = "multi_thread")]
-            async fn skips_if_archive_doesnt_exist() {
-                let container = TaskRunnerContainer::new("runner", "base").await;
-                let mut runner = container.create_runner();
-
-                assert!(runner.is_cached("hash123").await.unwrap().is_none());
-            }
-
-            #[tokio::test(flavor = "multi_thread")]
-            async fn skips_if_cache_isnt_readable() {
-                let container = TaskRunnerContainer::new("runner", "base").await;
-                let mut runner = container.create_runner();
-
-                container
-                    .sandbox
-                    .create_file(".moon/cache/outputs/hash123.tar.gz", "");
-
-                container
-                    .app_context
-                    .cache_engine
-                    .force_mode(CacheMode::Off);
-
-                assert!(runner.is_cached("hash123").await.unwrap().is_none());
-
-                GlobalEnvBag::instance().remove("MOON_CACHE");
-            }
-
-            #[tokio::test(flavor = "multi_thread")]
-            async fn skips_if_cache_is_writeonly() {
-                let container = TaskRunnerContainer::new("runner", "base").await;
-                let mut runner = container.create_runner();
-
-                container
-                    .sandbox
-                    .create_file(".moon/cache/outputs/hash123.tar.gz", "");
-
-                container
-                    .app_context
-                    .cache_engine
-                    .force_mode(CacheMode::Write);
-
-                assert!(runner.is_cached("hash123").await.unwrap().is_none());
-
-                GlobalEnvBag::instance().remove("MOON_CACHE");
-            }
-        }
-
         mod local_cache {
             use super::*;
 
@@ -1235,7 +1165,6 @@ mod task_runner {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;
                 let mut runner = container.create_runner();
 
-                runner.state.local_cas_enabled = true;
                 runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
 
                 container
@@ -1249,11 +1178,62 @@ mod task_runner {
             }
 
             #[tokio::test(flavor = "multi_thread")]
+            async fn skips_if_manifest_doesnt_exist() {
+                let container = TaskRunnerContainer::new("runner", "outputs").await;
+                let mut runner = container.create_runner();
+
+                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
+
+                assert!(runner.is_cached("hash123").await.unwrap().is_none());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_if_cache_disabled() {
+                let container = TaskRunnerContainer::new("runner", "outputs").await;
+                let mut runner = container.create_runner();
+
+                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
+
+                container
+                    .seed_manifest(&runner.state.digest, TaskManifest::default())
+                    .await;
+
+                container
+                    .app_context
+                    .cache_engine
+                    .force_mode(CacheMode::Off);
+
+                assert!(runner.is_cached("hash123").await.unwrap().is_none());
+
+                GlobalEnvBag::instance().remove("MOON_CACHE");
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_if_cache_is_writeonly() {
+                let container = TaskRunnerContainer::new("runner", "outputs").await;
+                let mut runner = container.create_runner();
+
+                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
+
+                container
+                    .seed_manifest(&runner.state.digest, TaskManifest::default())
+                    .await;
+
+                container
+                    .app_context
+                    .cache_engine
+                    .force_mode(CacheMode::Write);
+
+                assert!(runner.is_cached("hash123").await.unwrap().is_none());
+
+                GlobalEnvBag::instance().remove("MOON_CACHE");
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
             async fn skips_if_cache_isnt_readable() {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;
                 let mut runner = container.create_runner();
 
-                runner.state.local_cas_enabled = true;
                 runner.state.local_cache_readable = false;
                 runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
 
@@ -1272,78 +1252,12 @@ mod task_runner {
             use super::*;
 
             #[tokio::test(flavor = "multi_thread")]
-            async fn hydrates_archive_of_the_same_hash() {
-                let container = TaskRunnerContainer::new("runner", "base").await;
-                let mut runner = container.create_runner();
-
-                runner.cache.data.exit_code = 1;
-                runner.cache.data.hash = "hash123".into();
-                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
-
-                container
-                    .sandbox
-                    .create_file(".moon/cache/outputs/hash123.tar.gz", "");
-
-                assert!(matches!(
-                    runner.is_cached("hash123").await.unwrap(),
-                    Some(HydrateFrom::LocalArchive)
-                ));
-            }
-
-            #[tokio::test(flavor = "multi_thread")]
-            async fn hydrates_archive_of_another_hash() {
-                let container = TaskRunnerContainer::new("runner", "base").await;
-                let mut runner = container.create_runner();
-
-                runner.cache.data.exit_code = 1;
-                runner.cache.data.hash = "otherhash456".into();
-                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
-
-                container
-                    .sandbox
-                    .create_file(".moon/cache/outputs/hash123.tar.gz", "");
-
-                assert!(matches!(
-                    runner.is_cached("hash123").await.unwrap(),
-                    Some(HydrateFrom::LocalArchive)
-                ));
-            }
-
-            // A read-only cache never saves the last run, so it would never recover
-            #[tokio::test(flavor = "multi_thread")]
-            async fn hydrates_archive_when_cache_is_readonly() {
-                let container = TaskRunnerContainer::new("runner", "base").await;
-                let mut runner = container.create_runner();
-
-                runner.cache.data.exit_code = 1;
-                runner.cache.data.hash = "hash123".into();
-                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
-
-                container
-                    .sandbox
-                    .create_file(".moon/cache/outputs/hash123.tar.gz", "");
-
-                container
-                    .app_context
-                    .cache_engine
-                    .force_mode(CacheMode::Read);
-
-                assert!(matches!(
-                    runner.is_cached("hash123").await.unwrap(),
-                    Some(HydrateFrom::LocalArchive)
-                ));
-
-                GlobalEnvBag::instance().remove("MOON_CACHE");
-            }
-
-            #[tokio::test(flavor = "multi_thread")]
-            async fn hydrates_action_result_in_storage() {
+            async fn hydrates_action_result_of_the_same_hash() {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;
                 let mut runner = container.create_runner();
 
                 runner.cache.data.exit_code = 1;
                 runner.cache.data.hash = "hash123".into();
-                runner.state.local_cas_enabled = true;
                 runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
 
                 container
@@ -1354,6 +1268,52 @@ mod task_runner {
                     runner.is_cached("hash123").await.unwrap(),
                     Some(HydrateFrom::Storage(_))
                 ));
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn hydrates_action_result_of_another_hash() {
+                let container = TaskRunnerContainer::new("runner", "outputs").await;
+                let mut runner = container.create_runner();
+
+                runner.cache.data.exit_code = 1;
+                runner.cache.data.hash = "otherhash456".into();
+                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
+
+                container
+                    .seed_manifest(&runner.state.digest, TaskManifest::default())
+                    .await;
+
+                assert!(matches!(
+                    runner.is_cached("hash123").await.unwrap(),
+                    Some(HydrateFrom::Storage(_))
+                ));
+            }
+
+            // A read-only cache never saves the last run, so it would never recover
+            #[tokio::test(flavor = "multi_thread")]
+            async fn hydrates_action_result_when_cache_is_readonly() {
+                let container = TaskRunnerContainer::new("runner", "outputs").await;
+                let mut runner = container.create_runner();
+
+                runner.cache.data.exit_code = 1;
+                runner.cache.data.hash = "hash123".into();
+                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
+
+                container
+                    .seed_manifest(&runner.state.digest, TaskManifest::default())
+                    .await;
+
+                container
+                    .app_context
+                    .cache_engine
+                    .force_mode(CacheMode::Read);
+
+                assert!(matches!(
+                    runner.is_cached("hash123").await.unwrap(),
+                    Some(HydrateFrom::Storage(_))
+                ));
+
+                GlobalEnvBag::instance().remove("MOON_CACHE");
             }
 
             #[tokio::test(flavor = "multi_thread")]
@@ -1439,7 +1399,6 @@ mod task_runner {
                 runner.cache.data.exit_code = 1;
                 runner.cache.data.hash = "hash123".into();
                 runner.cache.data.last_run_time = now_millis();
-                runner.state.local_cas_enabled = true;
                 runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
 
                 container
@@ -1806,7 +1765,7 @@ mod task_runner {
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn creates_a_manifest_file() {
+        async fn creates_a_fingerprint_file() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             container.sandbox.enable_git();
 
@@ -1816,13 +1775,13 @@ mod task_runner {
 
             let hash = runner.hash(&context, &node).await.unwrap();
 
-            // The fingerprint is stored as a blob in the local CAS, which
+            // The fingerprint is stored in the local objects store, which
             // shards objects by the first 2 chars of their hash.
             assert!(
                 container
                     .sandbox
                     .path()
-                    .join(".moon/cache/blobs")
+                    .join(".moon/cache/objects")
                     .join(&hash[0..2])
                     .join(&hash[2..])
                     .exists()
@@ -2261,6 +2220,8 @@ mod task_runner {
             container.sandbox.create_file("project/file.txt", "");
 
             let mut runner = container.create_runner();
+            runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
+
             let result = runner.archive("hash123").await.unwrap();
 
             assert!(result);
@@ -2277,8 +2238,9 @@ mod task_runner {
             container.sandbox.enable_git();
 
             let mut runner = container.create_runner();
+            runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
 
-            // Task has no outputs; legacy archive path still packs the
+            // Task has no outputs; the manifest still captures the
             // stdout/stderr logs and returns true.
             assert!(runner.archive("hash123").await.unwrap());
         }
@@ -2365,15 +2327,33 @@ mod task_runner {
             }
         }
 
-        mod local_cache_legacy {
+        mod local_cache {
             use super::*;
+            use moon_cache::TaskManifestFile;
             use std::fs;
 
-            fn setup_local_state(container: &TaskRunnerContainer, runner: &mut TaskRunner) {
+            async fn setup_local_state(
+                container: &TaskRunnerContainer,
+                runner: &mut TaskRunner<'_>,
+            ) {
                 container.sandbox.enable_git();
-                container.pack_archive();
 
                 runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
+
+                let manifest = TaskManifest {
+                    files: vec![TaskManifestFile {
+                        path: "project/file.txt".into(),
+                        digest: Some(container.seed_blob(b"content").await),
+                        ..Default::default()
+                    }],
+                    stderr_digest: Some(container.seed_blob(b"stderr").await),
+                    stdout_digest: Some(container.seed_blob(b"stdout").await),
+                    ..Default::default()
+                };
+
+                container
+                    .seed_manifest(&runner.state.digest, manifest)
+                    .await;
             }
 
             #[tokio::test(flavor = "multi_thread")]
@@ -2381,7 +2361,7 @@ mod task_runner {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;
                 let mut runner = container.create_runner();
 
-                setup_local_state(&container, &mut runner);
+                setup_local_state(&container, &mut runner).await;
 
                 let result = runner.hydrate("hash123").await.unwrap();
 
@@ -2398,7 +2378,7 @@ mod task_runner {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;
                 let mut runner = container.create_runner();
 
-                setup_local_state(&container, &mut runner);
+                setup_local_state(&container, &mut runner).await;
 
                 runner.hydrate("hash123").await.unwrap();
 
@@ -2409,26 +2389,29 @@ mod task_runner {
             }
 
             #[tokio::test(flavor = "multi_thread")]
-            async fn sets_the_hash_to_cache() {
+            async fn unpacks_outputs_into_project() {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;
                 let mut runner = container.create_runner();
 
-                setup_local_state(&container, &mut runner);
+                setup_local_state(&container, &mut runner).await;
 
                 runner.hydrate("hash123").await.unwrap();
 
-                assert_eq!(runner.cache.data.hash, "hash123");
+                let output_file = container.sandbox.path().join("project/file.txt");
+
+                assert!(output_file.exists());
+                assert_eq!(fs::read_to_string(output_file).unwrap(), "content");
             }
 
-            // An archive is only created by a run that passed, so the exit code of
+            // A manifest is only stored by a run that passed, so the exit code of
             // a previous run that failed must not be kept, otherwise the previous
-            // outputs are never reused, and the archive is unpacked on every run
+            // outputs are never reused, and the manifest is hydrated on every run
             #[tokio::test(flavor = "multi_thread")]
             async fn resets_the_exit_code_of_a_failed_run() {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;
                 let mut runner = container.create_runner();
 
-                setup_local_state(&container, &mut runner);
+                setup_local_state(&container, &mut runner).await;
                 runner.cache.data.exit_code = 1;
 
                 runner.hydrate("hash123").await.unwrap();
@@ -2450,53 +2433,12 @@ mod task_runner {
                 ));
             }
 
-            // Like the partial outputs of a run that failed, or those of a run at
-            // another hash, as they would be reused as previous outputs
             #[tokio::test(flavor = "multi_thread")]
-            async fn removes_existing_outputs_that_arent_in_the_archive() {
-                let container = TaskRunnerContainer::new("runner", "glob-outputs").await;
-                let mut runner = container.create_runner();
-
-                setup_local_state(&container, &mut runner);
-                container.sandbox.create_file("project/file.txt", "fail");
-                container.sandbox.create_file("project/partial.txt", "fail");
-
-                runner.hydrate("hash123").await.unwrap();
-
-                assert_eq!(
-                    fs::read_to_string(container.sandbox.path().join("project/file.txt")).unwrap(),
-                    "content"
-                );
-                assert!(
-                    !container
-                        .sandbox
-                        .path()
-                        .join("project/partial.txt")
-                        .exists()
-                );
-            }
-
-            #[tokio::test(flavor = "multi_thread")]
-            async fn unpacks_archive_into_project() {
+            async fn loads_stdlogs_in_manifest_into_operation() {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;
                 let mut runner = container.create_runner();
 
-                setup_local_state(&container, &mut runner);
-
-                runner.hydrate("hash123").await.unwrap();
-
-                let output_file = container.sandbox.path().join("project/file.txt");
-
-                assert!(output_file.exists());
-                assert_eq!(fs::read_to_string(output_file).unwrap(), "content");
-            }
-
-            #[tokio::test(flavor = "multi_thread")]
-            async fn loads_stdlogs_in_archive_into_operation() {
-                let container = TaskRunnerContainer::new("runner", "outputs").await;
-                let mut runner = container.create_runner();
-
-                setup_local_state(&container, &mut runner);
+                setup_local_state(&container, &mut runner).await;
 
                 let result = runner.hydrate("hash123").await.unwrap();
 
@@ -2526,8 +2468,14 @@ mod task_runner {
         async fn no_checks_does_not_hash() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             let task = container.task.clone();
-            let mut runner =
-                TaskRunner::new(&container.app_context, &container.project, &task, None).unwrap();
+            let mut runner = TaskRunner::new(
+                &container.app_context,
+                &container.layout_graph,
+                &container.project,
+                &task,
+                None,
+            )
+            .unwrap();
 
             let mut hasher = ContentHasher::new("test");
             runner.hash_checks(&mut hasher).await.unwrap();
@@ -2551,8 +2499,14 @@ mod task_runner {
                 },
             ));
             let task = std::sync::Arc::new(task);
-            let mut runner =
-                TaskRunner::new(&container.app_context, &container.project, &task, None).unwrap();
+            let mut runner = TaskRunner::new(
+                &container.app_context,
+                &container.layout_graph,
+                &container.project,
+                &task,
+                None,
+            )
+            .unwrap();
 
             let mut hasher = ContentHasher::new("test");
             runner.hash_checks(&mut hasher).await.unwrap();
@@ -2570,8 +2524,14 @@ mod task_runner {
                 TaskCheckFingerprint::default(),
             ));
             let task = std::sync::Arc::new(task);
-            let mut runner =
-                TaskRunner::new(&container.app_context, &container.project, &task, None).unwrap();
+            let mut runner = TaskRunner::new(
+                &container.app_context,
+                &container.layout_graph,
+                &container.project,
+                &task,
+                None,
+            )
+            .unwrap();
 
             let mut hasher = ContentHasher::new("test");
             runner.hash_checks(&mut hasher).await.unwrap();
@@ -2592,8 +2552,14 @@ mod task_runner {
                 TaskCheckFingerprint::Stdout,
             ));
             let task = std::sync::Arc::new(task);
-            let mut runner =
-                TaskRunner::new(&container.app_context, &container.project, &task, None).unwrap();
+            let mut runner = TaskRunner::new(
+                &container.app_context,
+                &container.layout_graph,
+                &container.project,
+                &task,
+                None,
+            )
+            .unwrap();
 
             let mut hasher = ContentHasher::new("test");
             runner.hash_checks(&mut hasher).await.unwrap();
@@ -2614,8 +2580,14 @@ mod task_runner {
                 TaskCheckFingerprint::Stderr,
             ));
             let task = std::sync::Arc::new(task);
-            let mut runner =
-                TaskRunner::new(&container.app_context, &container.project, &task, None).unwrap();
+            let mut runner = TaskRunner::new(
+                &container.app_context,
+                &container.layout_graph,
+                &container.project,
+                &task,
+                None,
+            )
+            .unwrap();
 
             let mut hasher = ContentHasher::new("test");
             runner.hash_checks(&mut hasher).await.unwrap();
@@ -2635,8 +2607,14 @@ mod task_runner {
                 TaskCheckFingerprint::ExitCode,
             ));
             let task = std::sync::Arc::new(task);
-            let mut runner =
-                TaskRunner::new(&container.app_context, &container.project, &task, None).unwrap();
+            let mut runner = TaskRunner::new(
+                &container.app_context,
+                &container.layout_graph,
+                &container.project,
+                &task,
+                None,
+            )
+            .unwrap();
 
             let mut hasher = ContentHasher::new("test");
             runner.hash_checks(&mut hasher).await.unwrap();
@@ -2656,8 +2634,14 @@ mod task_runner {
                 TaskCheckFingerprint::Enabled(false),
             ));
             let task = std::sync::Arc::new(task);
-            let mut runner =
-                TaskRunner::new(&container.app_context, &container.project, &task, None).unwrap();
+            let mut runner = TaskRunner::new(
+                &container.app_context,
+                &container.layout_graph,
+                &container.project,
+                &task,
+                None,
+            )
+            .unwrap();
 
             let mut hasher = ContentHasher::new("test");
             runner.hash_checks(&mut hasher).await.unwrap();
@@ -2675,8 +2659,14 @@ mod task_runner {
                 TaskCheckFingerprint::default(),
             ));
             let task = std::sync::Arc::new(task);
-            let mut runner =
-                TaskRunner::new(&container.app_context, &container.project, &task, None).unwrap();
+            let mut runner = TaskRunner::new(
+                &container.app_context,
+                &container.layout_graph,
+                &container.project,
+                &task,
+                None,
+            )
+            .unwrap();
 
             let mut hasher = ContentHasher::new("test");
             let result = runner.hash_checks(&mut hasher).await;
@@ -2695,8 +2685,14 @@ mod task_runner {
                 TaskCheckFingerprint::default(),
             ));
             let task = std::sync::Arc::new(task);
-            let mut runner =
-                TaskRunner::new(&container.app_context, &container.project, &task, None).unwrap();
+            let mut runner = TaskRunner::new(
+                &container.app_context,
+                &container.layout_graph,
+                &container.project,
+                &task,
+                None,
+            )
+            .unwrap();
 
             let mut hasher = ContentHasher::new("test");
             runner.hash_checks(&mut hasher).await.unwrap();
@@ -2716,8 +2712,14 @@ mod task_runner {
                 TaskCheckFingerprint::default(),
             ));
             let task_a = std::sync::Arc::new(task_a);
-            let mut runner_a =
-                TaskRunner::new(&container.app_context, &container.project, &task_a, None).unwrap();
+            let mut runner_a = TaskRunner::new(
+                &container.app_context,
+                &container.layout_graph,
+                &container.project,
+                &task_a,
+                None,
+            )
+            .unwrap();
 
             let mut hasher_a = ContentHasher::new("test");
             runner_a.hash_checks(&mut hasher_a).await.unwrap();
@@ -2730,8 +2732,14 @@ mod task_runner {
                 TaskCheckFingerprint::default(),
             ));
             let task_b = std::sync::Arc::new(task_b);
-            let mut runner_b =
-                TaskRunner::new(&container.app_context, &container.project, &task_b, None).unwrap();
+            let mut runner_b = TaskRunner::new(
+                &container.app_context,
+                &container.layout_graph,
+                &container.project,
+                &task_b,
+                None,
+            )
+            .unwrap();
 
             let mut hasher_b = ContentHasher::new("test");
             runner_b.hash_checks(&mut hasher_b).await.unwrap();
@@ -2764,8 +2772,14 @@ mod task_runner {
                 TaskCheckFingerprint::default(),
             ));
             let task = std::sync::Arc::new(task);
-            let mut runner =
-                TaskRunner::new(&container.app_context, &container.project, &task, None).unwrap();
+            let mut runner = TaskRunner::new(
+                &container.app_context,
+                &container.layout_graph,
+                &container.project,
+                &task,
+                None,
+            )
+            .unwrap();
 
             let mut hasher = ContentHasher::new("test");
             runner.hash_checks(&mut hasher).await.unwrap();
@@ -2788,9 +2802,14 @@ mod task_runner {
                 }
                 let task = std::sync::Arc::new(task);
                 async move {
-                    let mut runner =
-                        TaskRunner::new(&container.app_context, &container.project, &task, None)
-                            .unwrap();
+                    let mut runner = TaskRunner::new(
+                        &container.app_context,
+                        &container.layout_graph,
+                        &container.project,
+                        &task,
+                        None,
+                    )
+                    .unwrap();
                     let mut hasher = ContentHasher::new("test");
                     runner.hash_checks(&mut hasher).await.unwrap();
                     hasher.generate_hash().unwrap()
@@ -2816,8 +2835,14 @@ mod task_runner {
                 TaskCheckFingerprint::default(),
             ));
             let task = std::sync::Arc::new(task);
-            let mut runner =
-                TaskRunner::new(&container.app_context, &container.project, &task, None).unwrap();
+            let mut runner = TaskRunner::new(
+                &container.app_context,
+                &container.layout_graph,
+                &container.project,
+                &task,
+                None,
+            )
+            .unwrap();
 
             let mut hasher = ContentHasher::new("test");
             runner.hash_checks(&mut hasher).await.unwrap();
@@ -2847,8 +2872,14 @@ mod task_runner {
         async fn no_checks_returns_false() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             let task = container.task.clone();
-            let mut runner =
-                TaskRunner::new(&container.app_context, &container.project, &task, None).unwrap();
+            let mut runner = TaskRunner::new(
+                &container.app_context,
+                &container.layout_graph,
+                &container.project,
+                &task,
+                None,
+            )
+            .unwrap();
 
             let result = runner.execute_checks().await.unwrap();
             assert!(!result);
@@ -2864,8 +2895,14 @@ mod task_runner {
                     hash: TaskCheckFingerprint::default(),
                 }));
             let task = std::sync::Arc::new(task);
-            let mut runner =
-                TaskRunner::new(&container.app_context, &container.project, &task, None).unwrap();
+            let mut runner = TaskRunner::new(
+                &container.app_context,
+                &container.layout_graph,
+                &container.project,
+                &task,
+                None,
+            )
+            .unwrap();
 
             let result = runner.execute_checks().await.unwrap();
             assert!(!result);
@@ -2880,9 +2917,14 @@ mod task_runner {
                 let mut task = container.task.as_ref().to_owned();
                 task.checks.push(make_requirement("exit 0"));
                 let task = std::sync::Arc::new(task);
-                let mut runner =
-                    TaskRunner::new(&container.app_context, &container.project, &task, None)
-                        .unwrap();
+                let mut runner = TaskRunner::new(
+                    &container.app_context,
+                    &container.layout_graph,
+                    &container.project,
+                    &task,
+                    None,
+                )
+                .unwrap();
 
                 let result = runner.execute_checks().await.unwrap();
                 assert!(!result);
@@ -2894,9 +2936,14 @@ mod task_runner {
                 let mut task = container.task.as_ref().to_owned();
                 task.checks.push(make_requirement("exit 1"));
                 let task = std::sync::Arc::new(task);
-                let mut runner =
-                    TaskRunner::new(&container.app_context, &container.project, &task, None)
-                        .unwrap();
+                let mut runner = TaskRunner::new(
+                    &container.app_context,
+                    &container.layout_graph,
+                    &container.project,
+                    &task,
+                    None,
+                )
+                .unwrap();
 
                 let result = runner.execute_checks().await;
                 assert!(result.is_err());
@@ -2914,9 +2961,14 @@ mod task_runner {
                 task.checks.push(make_requirement("exit 0"));
                 task.checks.push(make_requirement("echo ok"));
                 let task = std::sync::Arc::new(task);
-                let mut runner =
-                    TaskRunner::new(&container.app_context, &container.project, &task, None)
-                        .unwrap();
+                let mut runner = TaskRunner::new(
+                    &container.app_context,
+                    &container.layout_graph,
+                    &container.project,
+                    &task,
+                    None,
+                )
+                .unwrap();
 
                 let result = runner.execute_checks().await.unwrap();
                 assert!(!result);
@@ -2928,9 +2980,14 @@ mod task_runner {
                 let mut task = container.task.as_ref().to_owned();
                 task.checks.push(make_requirement("exit 0"));
                 let task = std::sync::Arc::new(task);
-                let mut runner =
-                    TaskRunner::new(&container.app_context, &container.project, &task, None)
-                        .unwrap();
+                let mut runner = TaskRunner::new(
+                    &container.app_context,
+                    &container.layout_graph,
+                    &container.project,
+                    &task,
+                    None,
+                )
+                .unwrap();
 
                 runner.execute_checks().await.unwrap();
                 assert!(!runner.operations.is_empty());
@@ -2947,9 +3004,14 @@ mod task_runner {
                 let mut task = container.task.as_ref().to_owned();
                 task.checks.push(make_condition("exit 0"));
                 let task = std::sync::Arc::new(task);
-                let mut runner =
-                    TaskRunner::new(&container.app_context, &container.project, &task, None)
-                        .unwrap();
+                let mut runner = TaskRunner::new(
+                    &container.app_context,
+                    &container.layout_graph,
+                    &container.project,
+                    &task,
+                    None,
+                )
+                .unwrap();
 
                 let result = runner.execute_checks().await.unwrap();
                 assert!(result);
@@ -2961,9 +3023,14 @@ mod task_runner {
                 let mut task = container.task.as_ref().to_owned();
                 task.checks.push(make_condition("exit 1"));
                 let task = std::sync::Arc::new(task);
-                let mut runner =
-                    TaskRunner::new(&container.app_context, &container.project, &task, None)
-                        .unwrap();
+                let mut runner = TaskRunner::new(
+                    &container.app_context,
+                    &container.layout_graph,
+                    &container.project,
+                    &task,
+                    None,
+                )
+                .unwrap();
 
                 let result = runner.execute_checks().await.unwrap();
                 assert!(!result);
@@ -2976,9 +3043,14 @@ mod task_runner {
                 task.checks.push(make_condition("exit 0"));
                 task.checks.push(make_condition("exit 1"));
                 let task = std::sync::Arc::new(task);
-                let mut runner =
-                    TaskRunner::new(&container.app_context, &container.project, &task, None)
-                        .unwrap();
+                let mut runner = TaskRunner::new(
+                    &container.app_context,
+                    &container.layout_graph,
+                    &container.project,
+                    &task,
+                    None,
+                )
+                .unwrap();
 
                 let result = runner.execute_checks().await.unwrap();
                 assert!(!result);
@@ -2991,9 +3063,14 @@ mod task_runner {
                 task.checks.push(make_condition("exit 0"));
                 task.checks.push(make_condition("echo ok"));
                 let task = std::sync::Arc::new(task);
-                let mut runner =
-                    TaskRunner::new(&container.app_context, &container.project, &task, None)
-                        .unwrap();
+                let mut runner = TaskRunner::new(
+                    &container.app_context,
+                    &container.layout_graph,
+                    &container.project,
+                    &task,
+                    None,
+                )
+                .unwrap();
 
                 let result = runner.execute_checks().await.unwrap();
                 assert!(result);
@@ -3005,9 +3082,14 @@ mod task_runner {
                 let mut task = container.task.as_ref().to_owned();
                 task.checks.push(make_condition("exit 1"));
                 let task = std::sync::Arc::new(task);
-                let mut runner =
-                    TaskRunner::new(&container.app_context, &container.project, &task, None)
-                        .unwrap();
+                let mut runner = TaskRunner::new(
+                    &container.app_context,
+                    &container.layout_graph,
+                    &container.project,
+                    &task,
+                    None,
+                )
+                .unwrap();
 
                 let result = runner.execute_checks().await;
                 assert!(result.is_ok());
@@ -3019,9 +3101,14 @@ mod task_runner {
                 let mut task = container.task.as_ref().to_owned();
                 task.checks.push(make_condition("exit 0"));
                 let task = std::sync::Arc::new(task);
-                let mut runner =
-                    TaskRunner::new(&container.app_context, &container.project, &task, None)
-                        .unwrap();
+                let mut runner = TaskRunner::new(
+                    &container.app_context,
+                    &container.layout_graph,
+                    &container.project,
+                    &task,
+                    None,
+                )
+                .unwrap();
 
                 runner.execute_checks().await.unwrap();
                 assert!(!runner.operations.is_empty());
@@ -3039,9 +3126,14 @@ mod task_runner {
                 task.checks.push(make_condition("exit 0"));
                 task.checks.push(make_requirement("exit 0"));
                 let task = std::sync::Arc::new(task);
-                let mut runner =
-                    TaskRunner::new(&container.app_context, &container.project, &task, None)
-                        .unwrap();
+                let mut runner = TaskRunner::new(
+                    &container.app_context,
+                    &container.layout_graph,
+                    &container.project,
+                    &task,
+                    None,
+                )
+                .unwrap();
 
                 let result = runner.execute_checks().await.unwrap();
                 assert!(result);
@@ -3054,9 +3146,14 @@ mod task_runner {
                 task.checks.push(make_condition("exit 1"));
                 task.checks.push(make_requirement("exit 0"));
                 let task = std::sync::Arc::new(task);
-                let mut runner =
-                    TaskRunner::new(&container.app_context, &container.project, &task, None)
-                        .unwrap();
+                let mut runner = TaskRunner::new(
+                    &container.app_context,
+                    &container.layout_graph,
+                    &container.project,
+                    &task,
+                    None,
+                )
+                .unwrap();
 
                 let result = runner.execute_checks().await.unwrap();
                 assert!(!result);
@@ -3069,9 +3166,14 @@ mod task_runner {
                 task.checks.push(make_condition("exit 0"));
                 task.checks.push(make_requirement("exit 0"));
                 let task = std::sync::Arc::new(task);
-                let mut runner =
-                    TaskRunner::new(&container.app_context, &container.project, &task, None)
-                        .unwrap();
+                let mut runner = TaskRunner::new(
+                    &container.app_context,
+                    &container.layout_graph,
+                    &container.project,
+                    &task,
+                    None,
+                )
+                .unwrap();
 
                 runner.execute_checks().await.unwrap();
                 assert_eq!(runner.operations.len(), 2);
@@ -3084,9 +3186,14 @@ mod task_runner {
                 task.checks.push(make_requirement("exit 0"));
                 task.checks.push(make_requirement("echo ok"));
                 let task = std::sync::Arc::new(task);
-                let mut runner =
-                    TaskRunner::new(&container.app_context, &container.project, &task, None)
-                        .unwrap();
+                let mut runner = TaskRunner::new(
+                    &container.app_context,
+                    &container.layout_graph,
+                    &container.project,
+                    &task,
+                    None,
+                )
+                .unwrap();
 
                 let result = runner.execute_checks().await.unwrap();
                 assert!(!result);
@@ -3099,9 +3206,14 @@ mod task_runner {
                 task.checks.push(make_condition("exit 0"));
                 task.checks.push(make_requirement("exit 1"));
                 let task = std::sync::Arc::new(task);
-                let mut runner =
-                    TaskRunner::new(&container.app_context, &container.project, &task, None)
-                        .unwrap();
+                let mut runner = TaskRunner::new(
+                    &container.app_context,
+                    &container.layout_graph,
+                    &container.project,
+                    &task,
+                    None,
+                )
+                .unwrap();
 
                 let result = runner.execute_checks().await;
                 assert!(result.is_err());

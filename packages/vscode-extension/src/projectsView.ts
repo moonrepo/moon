@@ -145,7 +145,8 @@ class ProjectItem extends TreeItem {
 		this.id = `${parent.id}-project-${project.id}`;
 		this.contextValue = 'project';
 
-		const { language } = project;
+		// Omitted from the JSON when unknown
+		const { language = 'unknown' } = project;
 		const { project: metadata } = project.config;
 
 		if (metadata) {

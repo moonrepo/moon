@@ -5,11 +5,10 @@ use moon_app_context::AppContext;
 use moon_common::is_ci_env;
 use moon_config::TaskOutputStyle;
 use moon_console::TaskReportItem;
-use moon_process::{Command, Output, ProcessRegistry, SignalType, format_command_line};
+use moon_process::{Command, Output, SignalListener, format_command_line};
 use moon_project::Project;
 use moon_task::{Task, TaskExpectedFailure};
 use std::time::Duration;
-use tokio::sync::broadcast::{Receiver, error::TryRecvError};
 use tokio::task::{self, JoinHandle};
 use tokio::time::sleep;
 use tokio_util::sync::CancellationToken;
@@ -85,9 +84,11 @@ impl<'task> TaskExecutor<'task> {
         let command_line = self.command.get_command_line(false, false);
 
         // Running processes are terminated when the pipeline is aborted (or receives
-        // a signal), which fails the current attempt, so listen for this, otherwise
-        // another attempt would start a new process that is never terminated
-        let mut signal_receiver = ProcessRegistry::instance().receive_signal();
+        // a signal), which fails the current attempt, so check for this, otherwise
+        // another attempt would start a new process that is never terminated.
+        // The pipeline only terminates the processes running at the time of the
+        // abort, so a cleanup task that starts afterwards may still attempt again
+        let aborted_before = context.abort_token.is_cancelled();
 
         let execution_error: Option<miette::Report> = loop {
             let mut attempt = Operation::task_execution(&command_line);
@@ -175,7 +176,7 @@ impl<'task> TaskExecutor<'task> {
 
                         // Only a normal exit can satisfy the expectation (not a
                         // signal), and not when processes are being terminated
-                        if self.task.options.expect_failure {
+                        if self.task.options.is_failure_expected() {
                             let expected = output.code().map(TaskExpectedFailure::from_exit_code);
 
                             is_unexpected_pass = expected == Some(TaskExpectedFailure::Passed);
@@ -230,8 +231,9 @@ impl<'task> TaskExecutor<'task> {
                     // Unsuccessful execution (maybe flaky), attempt again
                     else if self.attempt_index < self.attempt_total {
                         // Unless running processes are being terminated
-                        if has_received_signal(&mut signal_receiver)
+                        if SignalListener::received().is_some()
                             || context.should_stop(&self.task.target)
+                            || (!aborted_before && context.abort_token.is_cancelled())
                         {
                             debug!(
                                 task_target = self.task.target.as_str(),
@@ -324,24 +326,13 @@ impl<'task> TaskExecutor<'task> {
         let is_primary = context.is_primary_target(&self.task.target);
         let is_only_primary = is_primary && context.primary_targets.len() == 1;
 
-        // A style passed on the command line overrides the task's own option, and
-        // because it was requested explicitly, it also applies to primary targets.
-        let explicit_style = context.output_style.is_some()
-            || self
-                .app
-                .workspace_config
-                .experiments
-                .explicit_task_output_style;
-        let output_style = context.output_style.or(self.task.options.output_style);
-
-        // When the primary target, always stream the output for a better developer experience.
-        // However, transitive targets can opt into streaming as well. When the style is
-        // explicit, it is always applied, even for primary targets.
-        self.stream = match output_style {
-            Some(output_style) if explicit_style || !is_primary || is_ci => {
-                matches!(output_style, TaskOutputStyle::Stream)
-            }
-            _ => is_primary && !is_ci,
+        // A style passed on the command line overrides the task's own option,
+        // and either is applied to all targets, primary and transitive.
+        // Without a style, primary targets stream their output for a better
+        // developer experience, except in CI.
+        self.stream = match context.output_style.or(self.task.options.output_style) {
+            Some(output_style) => matches!(output_style, TaskOutputStyle::Stream),
+            None => is_primary && !is_ci,
         };
 
         // If only a single persistent task is being ran, we should not prefix the output.
@@ -387,10 +378,4 @@ impl Drop for TaskExecutor<'_> {
     fn drop(&mut self) {
         self.stop_monitoring();
     }
-}
-
-/// Whether a signal was received, or running processes were terminated
-/// (which is broadcast like a signal), since subscribing.
-fn has_received_signal(receiver: &mut Receiver<SignalType>) -> bool {
-    matches!(receiver.try_recv(), Ok(_) | Err(TryRecvError::Lagged(_)))
 }

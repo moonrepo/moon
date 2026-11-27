@@ -1,45 +1,48 @@
 use crate::shapes::OneOrMany;
-use crate::{config_enum, config_struct, is_false};
+use crate::{config_enum, config_struct, config_untagged_enum};
 use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{Config, ValidateError, validate};
 use serde_json::Value;
 
 macro_rules! var_setting {
-    ($name:ident, $ty:ty) => {
+    ($name:ident, $ty:ty, $doc:literal) => {
         config_struct!(
-            /// Configuration for a template variable.
             #[derive(Config)]
+            #[doc = $doc]
             pub struct $name {
                 /// The default value of the variable if none was provided.
                 #[serde(alias = "defaultValue")]
                 pub default: $ty,
 
                 /// Marks the variable as internal, and won't be overwritten via CLI arguments.
-                #[serde(skip_serializing_if = "is_false")]
                 pub internal: bool,
 
                 /// The order in which variables should be prompted for.
-                #[serde(skip_serializing_if = "Option::is_none")]
+                #[serde(default, skip_serializing_if = "Option::is_none")]
                 pub order: Option<usize>,
 
                 /// Prompt the user for a value when the generator is running.
-                #[serde(skip_serializing_if = "Option::is_none")]
+                #[serde(default, skip_serializing_if = "Option::is_none")]
                 pub prompt: Option<String>,
 
                 /// Marks the variable as required, and will not accept an empty value.
-                #[serde(skip_serializing_if = "Option::is_none")]
+                #[serde(default, skip_serializing_if = "Option::is_none")]
                 pub required: Option<bool>,
             }
         );
     };
 }
 
-var_setting!(TemplateVariableArraySetting, Vec<Value>);
-var_setting!(TemplateVariableBoolSetting, bool);
-var_setting!(TemplateVariableNumberSetting, isize);
-var_setting!(TemplateVariableObjectSetting, FxHashMap<String, Value>);
-var_setting!(TemplateVariableStringSetting, String);
+var_setting!(
+    TemplateVariableArraySetting,
+    Vec<Value>,
+    "An array variable."
+);
+var_setting!(TemplateVariableBoolSetting, bool, "A boolean variable.");
+var_setting!(TemplateVariableNumberSetting, isize, "A number variable.");
+var_setting!(TemplateVariableObjectSetting, FxHashMap<String, Value>, "An object variable.");
+var_setting!(TemplateVariableStringSetting, String, "A string variable.");
 
 config_struct!(
     #[derive(Config)]
@@ -52,9 +55,8 @@ config_struct!(
     }
 );
 
-config_enum!(
+config_untagged_enum!(
     #[derive(Config)]
-    #[serde(untagged)]
     pub enum TemplateVariableEnumValue {
         String(String),
         #[setting(nested)]
@@ -62,9 +64,8 @@ config_enum!(
     }
 );
 
-config_enum!(
+config_untagged_enum!(
     #[derive(Config)]
-    #[serde(untagged)]
     pub enum TemplateVariableEnumDefault {
         String(String),
         #[setting(default)]
@@ -123,6 +124,7 @@ fn validate_enum_default<C>(
 }
 
 config_struct!(
+    /// A string enumerable variable.
     #[derive(Config)]
     pub struct TemplateVariableEnumSetting {
         /// The default value of the variable if none was provided.
@@ -131,7 +133,6 @@ config_struct!(
         pub default: TemplateVariableEnumDefault,
 
         /// Marks the variable as internal, and won't be overwritten via CLI arguments.
-        #[serde(default, skip_serializing_if = "is_false")]
         pub internal: bool,
 
         /// Allows multiple values to be selected.
@@ -274,7 +275,7 @@ config_struct!(
         pub schema: String,
 
         /// A description on what the template scaffolds.
-        #[setting(validate = validate::not_empty)]
+        #[setting(required, validate = validate::not_empty)]
         pub description: String,
 
         /// A pre-populated destination to scaffold to, relative from the
@@ -283,7 +284,6 @@ config_struct!(
         pub destination: Option<String>,
 
         /// Extends one or many other templates.
-        #[serde(default, skip_serializing_if = "OneOrMany::is_empty")]
         pub extends: OneOrMany<Id>,
 
         /// Overrides the identifier of the template, instead of using the folder name.
@@ -291,13 +291,12 @@ config_struct!(
         pub id: Option<Id>,
 
         /// A human-readable title for the template.
-        #[setting(validate = validate::not_empty)]
+        #[setting(required, validate = validate::not_empty)]
         pub title: String,
 
         /// A map of variables that'll be interpolated within each template file.
         /// Variables can also be populated by passing command line arguments.
         #[setting(nested)]
-        #[serde(default, skip_serializing_if = "FxHashMap::is_empty")]
         pub variables: FxHashMap<String, TemplateVariable>,
     }
 );

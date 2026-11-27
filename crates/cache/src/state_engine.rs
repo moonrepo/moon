@@ -67,14 +67,7 @@ impl StateEngine {
         dir.join(encode_component(name))
     }
 
-    pub fn load_state<T>(&self, path: impl AsRef<OsStr>) -> miette::Result<CacheItem<T>>
-    where
-        T: Default + DeserializeOwned + Serialize,
-    {
-        CacheItem::<T>::load(self.resolve_path(path))
-    }
-
-    pub fn load_target_state<T>(&self, target: &Target) -> miette::Result<CacheItem<T>>
+    pub fn load_target_last_run<T>(&self, target: &Target) -> miette::Result<CacheItem<T>>
     where
         T: Default + DeserializeOwned + Serialize,
     {

@@ -1,0 +1,3 @@
+dependsOn: ['b']
+toolchains:
+  tc-tier2: false

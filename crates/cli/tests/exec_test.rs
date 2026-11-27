@@ -1,10 +1,12 @@
 mod utils;
 
-use moon_cache::{CacheContext, CacheEngine};
+use moon_cache::{CacheContext, CacheEngine, TaskManifest};
 use moon_common::is_ci;
 use moon_config::{HasherWalkStrategy, PartialHasherConfig};
 use moon_task_runner::TaskRunCacheState;
-use moon_test_utils::{create_moon_sandbox, predicates::prelude::*};
+use moon_test_utils::{
+    MoonSandbox, create_empty_moon_sandbox, create_moon_sandbox, predicates::prelude::*,
+};
 use starbase_utils::{fs, json};
 use std::path::{MAIN_SEPARATOR_STR, Path};
 use utils::{
@@ -33,6 +35,45 @@ fn extract_state_from_run(fixture: &Path, target_id: &str) -> TaskRunCacheState 
 
 fn extract_hash_from_run(fixture: &Path, target_id: &str) -> String {
     extract_state_from_run(fixture, target_id).hash
+}
+
+// A chain of `c:build` -> `b:build` -> `a:build`, where each task
+// only has its own file as an input
+fn create_chain_sandbox() -> MoonSandbox {
+    let sandbox = create_empty_moon_sandbox();
+    sandbox.with_default_projects();
+
+    for (id, dep) in [("a", None), ("b", Some("a")), ("c", Some("b"))] {
+        let mut config =
+            format!("tasks:\n  build:\n    command: 'noop'\n    inputs: ['{id}.txt']\n");
+
+        if let Some(dep) = dep {
+            config.push_str(&format!("    deps: ['{dep}:build']\n"));
+        }
+
+        sandbox.create_file(format!("{id}/moon.yml"), config);
+        sandbox.create_file(format!("{id}/{id}.txt"), "");
+    }
+
+    sandbox.enable_git();
+    sandbox
+}
+
+fn get_task_manifest_path(fixture: &Path, hash: &str) -> std::path::PathBuf {
+    fixture
+        .join(".moon/cache/manifests")
+        .join(&hash[0..2])
+        .join(&hash[2..])
+}
+
+fn get_task_manifest_files(fixture: &Path, hash: &str) -> Vec<String> {
+    let manifest: TaskManifest = json::read_file(get_task_manifest_path(fixture, hash)).unwrap();
+
+    manifest
+        .files
+        .into_iter()
+        .map(|file| file.path.to_string())
+        .collect()
 }
 
 mod exec {
@@ -1169,19 +1210,13 @@ tasks:
 
             let state: TaskRunCacheState = json::read_file(cache_path).unwrap();
 
-            assert!(
-                sandbox
-                    .path()
-                    .join(".moon/cache/outputs")
-                    .join(format!("{}.tar.gz", state.hash))
-                    .exists()
-            );
-            // The hash manifest is a blob in the local CAS, which shards
+            assert!(get_task_manifest_path(sandbox.path(), &state.hash).exists());
+            // The hash fingerprint is in the local objects store, which shards
             // objects by the first 2 chars of their hash.
             assert!(
                 sandbox
                     .path()
-                    .join(".moon/cache/blobs")
+                    .join(".moon/cache/objects")
                     .join(&state.hash[0..2])
                     .join(&state.hash[2..])
                     .exists()
@@ -1201,12 +1236,7 @@ tasks:
 
                 let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
 
-                assert!(
-                    sandbox
-                        .path()
-                        .join(format!(".moon/cache/outputs/{hash}.tar.gz"))
-                        .exists()
-                );
+                assert!(get_task_manifest_path(sandbox.path(), &hash).exists());
             }
 
             #[test]
@@ -1267,7 +1297,7 @@ tasks:
     outputs:
       - 'allowed.txt'
     options:
-      allowFailure: true
+      onFailure: allow
 "#
                     ),
                 );
@@ -1283,12 +1313,7 @@ tasks:
 
                 let hash = extract_hash_from_run(sandbox.path(), "outputs:allowedFailure");
 
-                assert!(
-                    !sandbox
-                        .path()
-                        .join(format!(".moon/cache/outputs/{hash}.tar.gz"))
-                        .exists()
-                );
+                assert!(!get_task_manifest_path(sandbox.path(), &hash).exists());
             }
         }
 
@@ -1866,6 +1891,30 @@ tasks:
             assert!(predicate::str::contains("\nfile.txt\n").eval(&assert.output()));
         }
 
+        // Forcing runs the task regardless, but its affected state must still
+        // be tracked, so that it's reported
+        #[test]
+        fn reports_affected_tasks_even_when_forced() {
+            let sandbox = create_cases_sandbox();
+
+            change_files(&sandbox, ["files/other.txt"]);
+
+            sandbox
+                .run_bin(|cmd| {
+                    cmd.arg("exec")
+                        .arg("files:noop")
+                        .arg("--affected")
+                        .arg("--force");
+                })
+                .success();
+
+            let report: json::JsonValue =
+                json::read_file(sandbox.path().join(".moon/cache/runReport.json")).unwrap();
+            let tasks = &report["context"]["affected"]["tasks"];
+
+            assert!(tasks["files:noop"].is_object(), "{tasks}");
+        }
+
         #[test]
         fn runs_if_affected_via_stdin() {
             let sandbox = create_cases_sandbox();
@@ -2428,8 +2477,6 @@ projects:
   consumer: consumer
 pipeline:
   installDependencies: false
-experiments:
-  casOutputsCache: true
 "#,
             );
             sandbox.create_file(
@@ -2575,6 +2622,216 @@ tasks:
             assert
                 .success()
                 .stderr(predicate::str::contains("Encountered a missing hash").not());
+        }
+    }
+
+    mod graph_depth {
+        use super::*;
+
+        #[test]
+        fn affects_dependents_deeply_by_default() {
+            let sandbox = create_chain_sandbox();
+
+            change_files(&sandbox, ["a/a.txt"]);
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg(":build").arg("--affected");
+            });
+
+            let output = format!("{}{}", assert.stderr(), assert.stdout());
+
+            assert!(predicate::str::contains("Affected depth: deep").eval(&output));
+            assert!(
+                predicate::str::contains("b:build affected by dependency task a:build")
+                    .eval(&output)
+            );
+            // Only the distance of dependents further than 1 hop is printed
+            assert!(
+                !predicate::str::contains("b:build affected by dependency task a:build (")
+                    .eval(&output)
+            );
+            assert!(
+                predicate::str::contains(
+                    "c:build affected by dependency task b:build (2 hops away)"
+                )
+                .eval(&output)
+            );
+            assert!(predicate::str::contains("Tasks: 3 completed").eval(&output));
+
+            assert.success();
+        }
+
+        #[test]
+        fn can_limit_affected_depth() {
+            let sandbox = create_chain_sandbox();
+
+            change_files(&sandbox, ["a/a.txt"]);
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg(":build")
+                    .arg("--affected")
+                    .arg("--affected-depth")
+                    .arg("1");
+            });
+
+            let output = format!("{}{}", assert.stderr(), assert.stdout());
+
+            assert!(predicate::str::contains("Affected depth: direct").eval(&output));
+            assert!(
+                predicate::str::contains("b:build affected by dependency task a:build")
+                    .eval(&output)
+            );
+            assert!(!predicate::str::contains("c:build affected").eval(&output));
+            assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
+
+            assert.success();
+        }
+
+        #[test]
+        fn can_disable_affected_depth() {
+            let sandbox = create_chain_sandbox();
+
+            change_files(&sandbox, ["a/a.txt"]);
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg(":build")
+                    .arg("--affected")
+                    .arg("--affected-depth")
+                    .arg("none");
+            });
+
+            let output = format!("{}{}", assert.stderr(), assert.stdout());
+
+            assert!(predicate::str::contains("Affected depth: none").eval(&output));
+            assert!(!predicate::str::contains("affected by dependency task").eval(&output));
+            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+
+            assert.success();
+        }
+
+        #[test]
+        fn affected_depth_doesnt_add_dependents() {
+            let sandbox = create_chain_sandbox();
+
+            change_files(&sandbox, ["a/a.txt"]);
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("a:build").arg("--affected");
+            });
+
+            let output = format!("{}{}", assert.stderr(), assert.stdout());
+
+            assert!(predicate::str::contains("Dependents: none").eval(&output));
+            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+
+            assert.success();
+        }
+
+        #[test]
+        fn can_add_dependents() {
+            let sandbox = create_chain_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("a:build")
+                    .arg("--dependents")
+                    .arg("deep");
+            });
+
+            let output = format!("{}{}", assert.stderr(), assert.stdout());
+
+            assert!(predicate::str::contains("Dependents: deep").eval(&output));
+            assert!(predicate::str::contains("Tasks: 3 completed").eval(&output));
+
+            assert.success();
+        }
+
+        #[test]
+        fn query_bounds_added_dependents() {
+            let sandbox = create_chain_sandbox();
+
+            // `b` doesn't match, so isn't added, nor walked through to `c`
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("a:build")
+                    .arg("--dependents")
+                    .arg("deep")
+                    .arg("--query")
+                    .arg("project!=b");
+            });
+
+            let output = format!("{}{}", assert.stderr(), assert.stdout());
+
+            assert!(predicate::str::contains("Dependents: deep").eval(&output));
+            assert!(!predicate::str::contains("RunTask(b:build)").eval(&output));
+            assert!(!predicate::str::contains("RunTask(c:build)").eval(&output));
+            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+
+            assert.success();
+
+            // `b` matches, and `c` is reached through it
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("a:build")
+                    .arg("--dependents")
+                    .arg("deep")
+                    .arg("--query")
+                    .arg("project=[b,c]");
+            });
+
+            let output = format!("{}{}", assert.stderr(), assert.stdout());
+
+            assert!(predicate::str::contains("Tasks: 3 completed").eval(&output));
+
+            assert.success();
+        }
+
+        #[test]
+        fn no_dependencies_skips_unselected_dependencies() {
+            let sandbox = create_chain_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("c:build").arg("--no-dependencies");
+            });
+
+            let output = format!("{}{}", assert.stderr(), assert.stdout());
+
+            assert!(predicate::str::contains("Skipping dependencies: yes").eval(&output));
+            assert!(!predicate::str::contains("RunTask(a:build)").eval(&output));
+            assert!(!predicate::str::contains("RunTask(b:build)").eval(&output));
+            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+
+            assert.success();
+        }
+
+        // https://github.com/moonrepo/moon/issues/2685
+        #[test]
+        fn no_dependencies_keeps_order_between_selected_tasks() {
+            let sandbox = create_chain_sandbox();
+
+            // Run with a high concurrency, so that both tasks could
+            // run at the same time if they were not linked
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("c:build")
+                    .arg("b:build")
+                    .arg("--no-dependencies")
+                    .arg("--concurrency")
+                    .arg("4");
+            });
+
+            let stdout = assert.stdout();
+            let b = stdout.find("b:build");
+            let c = stdout.find("c:build");
+
+            assert!(b.is_some() && c.is_some());
+            assert!(b < c);
+            assert!(!stdout.contains("a:build"));
+            assert!(predicate::str::contains("Tasks: 2 completed").eval(&stdout));
+
+            assert.success();
         }
     }
 
@@ -2751,14 +3008,14 @@ tasks:
             use super::*;
 
             #[test]
-            fn upstream_deep() {
-                let sandbox = create_pipeline_sandbox();
+            fn no_dependencies() {
+                let sandbox = create_chain_sandbox();
 
                 sandbox.create_file(
                     "plan.json",
                     r#"{
-                    "graph": { "upstream": "deep" },
-                    "targets": ["shared:base"]
+                    "graph": { "noDependencies": true },
+                    "targets": ["c:build"]
                 }"#,
                 );
 
@@ -2766,11 +3023,38 @@ tasks:
                     cmd.arg("exec").arg("--plan").arg("plan.json");
                 });
 
+                let output = assert.output();
+
+                assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+
                 assert.success();
             }
 
             #[test]
-            fn upstream_none_ignores_dependency_hashes() {
+            fn dependents_direct() {
+                let sandbox = create_chain_sandbox();
+
+                sandbox.create_file(
+                    "plan.json",
+                    r#"{
+                    "graph": { "dependents": "direct" },
+                    "targets": ["a:build"]
+                }"#,
+                );
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("--plan").arg("plan.json");
+                });
+
+                let output = format!("{}{}", assert.stderr(), assert.stdout());
+
+                assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
+
+                assert.success();
+            }
+
+            #[test]
+            fn no_dependencies_ignores_dependency_hashes() {
                 let sandbox = create_pipeline_sandbox();
 
                 sandbox.create_file(
@@ -2794,27 +3078,37 @@ tasks:
                 );
 
                 let assert = sandbox.run_bin(|cmd| {
-                    cmd.arg("exec").arg("--upstream=none").arg("b:task");
+                    cmd.arg("exec").arg("--no-dependencies").arg("b:task");
                 });
+
+                let output = assert.output();
+
+                assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
 
                 assert.success();
             }
 
             #[test]
-            fn downstream_direct() {
-                let sandbox = create_pipeline_sandbox();
+            fn affected_depth() {
+                let sandbox = create_chain_sandbox();
 
                 sandbox.create_file(
                     "plan.json",
                     r#"{
-                    "graph": { "downstream": "direct" },
-                    "targets": ["shared:base"]
+                    "affected": { "depth": "direct" },
+                    "targets": [":build"]
                 }"#,
                 );
+
+                change_files(&sandbox, ["a/a.txt"]);
 
                 let assert = sandbox.run_bin(|cmd| {
                     cmd.arg("exec").arg("--plan").arg("plan.json");
                 });
+
+                let output = assert.output();
+
+                assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
 
                 assert.success();
             }
@@ -2939,12 +3233,6 @@ tasks:
     mod outputs {
         use super::*;
 
-        fn untar(tarball: &Path, root: &Path) {
-            starbase_archive::Archiver::new(root, tarball)
-                .unpack_from_ext()
-                .unwrap();
-        }
-
         #[test]
         fn errors_if_output_missing() {
             let sandbox = create_cases_sandbox();
@@ -3015,24 +3303,18 @@ tasks:
 
             let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFile");
 
-            // hash manifest, stored as a blob in the local CAS
+            // hash fingerprint, stored in the local objects store
             assert!(
                 sandbox
                     .path()
-                    .join(".moon/cache/blobs")
+                    .join(".moon/cache/objects")
                     .join(&hash[0..2])
                     .join(&hash[2..])
                     .exists()
             );
 
-            // outputs
-            assert!(
-                sandbox
-                    .path()
-                    .join(".moon/cache/outputs")
-                    .join(format!("{hash}.tar.gz"))
-                    .exists()
-            );
+            // task manifest (outputs)
+            assert!(get_task_manifest_path(sandbox.path(), &hash).exists());
         }
 
         #[test]
@@ -3048,19 +3330,13 @@ tasks:
             assert!(
                 sandbox
                     .path()
-                    .join(".moon/cache/blobs")
+                    .join(".moon/cache/objects")
                     .join(&hash[0..2])
                     .join(&hash[2..])
                     .exists()
             );
 
-            assert!(
-                sandbox
-                    .path()
-                    .join(".moon/cache/outputs")
-                    .join(format!("{hash}.tar.gz"))
-                    .exists()
-            );
+            assert!(get_task_manifest_path(sandbox.path(), &hash).exists());
         }
 
         #[test]
@@ -3076,19 +3352,13 @@ tasks:
             assert!(
                 sandbox
                     .path()
-                    .join(".moon/cache/blobs")
+                    .join(".moon/cache/objects")
                     .join(&hash[0..2])
                     .join(&hash[2..])
                     .exists()
             );
 
-            assert!(
-                sandbox
-                    .path()
-                    .join(".moon/cache/outputs")
-                    .join(format!("{hash}.tar.gz"))
-                    .exists()
-            );
+            assert!(get_task_manifest_path(sandbox.path(), &hash).exists());
         }
 
         #[test]
@@ -3104,19 +3374,13 @@ tasks:
             assert!(
                 sandbox
                     .path()
-                    .join(".moon/cache/blobs")
+                    .join(".moon/cache/objects")
                     .join(&hash[0..2])
                     .join(&hash[2..])
                     .exists()
             );
 
-            assert!(
-                sandbox
-                    .path()
-                    .join(".moon/cache/outputs")
-                    .join(format!("{hash}.tar.gz"))
-                    .exists()
-            );
+            assert!(get_task_manifest_path(sandbox.path(), &hash).exists());
         }
 
         #[test]
@@ -3132,19 +3396,13 @@ tasks:
             assert!(
                 sandbox
                     .path()
-                    .join(".moon/cache/blobs")
+                    .join(".moon/cache/objects")
                     .join(&hash[0..2])
                     .join(&hash[2..])
                     .exists()
             );
 
-            assert!(
-                sandbox
-                    .path()
-                    .join(".moon/cache/outputs")
-                    .join(format!("{hash}.tar.gz"))
-                    .exists()
-            );
+            assert!(get_task_manifest_path(sandbox.path(), &hash).exists());
         }
 
         #[test]
@@ -3156,18 +3414,12 @@ tasks:
             });
 
             let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFileTypes");
-            let tarball = sandbox
-                .path()
-                .join(".moon/cache/outputs")
-                .join(format!("{hash}.tar.gz"));
-            let dir = sandbox.path().join(".moon/cache/outputs").join(hash);
+            let files = get_task_manifest_files(sandbox.path(), &hash);
 
-            untar(&tarball, &dir);
-
-            assert!(dir.join("outputs/multiple-types/one.js").exists());
-            assert!(dir.join("outputs/multiple-types/two.js").exists());
-            assert!(!dir.join("outputs/multiple-types/styles.css").exists());
-            assert!(!dir.join("outputs/multiple-types/image.png").exists());
+            assert!(files.contains(&"outputs/multiple-types/one.js".to_owned()));
+            assert!(files.contains(&"outputs/multiple-types/two.js".to_owned()));
+            assert!(!files.contains(&"outputs/multiple-types/styles.css".to_owned()));
+            assert!(!files.contains(&"outputs/multiple-types/image.png".to_owned()));
         }
 
         #[test]
@@ -3179,16 +3431,10 @@ tasks:
             });
 
             let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
-            let tarball = sandbox
-                .path()
-                .join(".moon/cache/outputs")
-                .join(format!("{hash}.tar.gz"));
-            let dir = sandbox.path().join(".moon/cache/outputs").join(hash);
+            let files = get_task_manifest_files(sandbox.path(), &hash);
 
-            untar(&tarball, &dir);
-
-            assert!(dir.join("outputs/both/a/one.js").exists());
-            assert!(dir.join("outputs/both/b/two.js").exists());
+            assert!(files.contains(&"outputs/both/a/one.js".to_owned()));
+            assert!(files.contains(&"outputs/both/b/two.js".to_owned()));
         }
 
         #[test]
@@ -3202,16 +3448,10 @@ tasks:
 
             let hash =
                 extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolderWorkspace");
-            let tarball = sandbox
-                .path()
-                .join(".moon/cache/outputs")
-                .join(format!("{hash}.tar.gz"));
-            let dir = sandbox.path().join(".moon/cache/outputs").join(hash);
+            let files = get_task_manifest_files(sandbox.path(), &hash);
 
-            untar(&tarball, &dir);
-
-            assert!(dir.join("both/a/one.js").exists());
-            assert!(dir.join("both/b/two.js").exists());
+            assert!(files.contains(&"both/a/one.js".to_owned()));
+            assert!(files.contains(&"both/b/two.js".to_owned()));
         }
 
         #[test]
@@ -3223,16 +3463,10 @@ tasks:
             });
 
             let hash = extract_hash_from_run(sandbox.path(), "outputs:negatedOutputGlob");
-            let tarball = sandbox
-                .path()
-                .join(".moon/cache/outputs")
-                .join(format!("{hash}.tar.gz"));
-            let dir = sandbox.path().join(".moon/cache/outputs").join(hash);
+            let files = get_task_manifest_files(sandbox.path(), &hash);
 
-            untar(&tarball, &dir);
-
-            assert!(dir.join("outputs/both/a/one.js").exists());
-            assert!(!dir.join("outputs/both/b/two.js").exists());
+            assert!(files.contains(&"outputs/both/a/one.js".to_owned()));
+            assert!(!files.contains(&"outputs/both/b/two.js".to_owned()));
         }
 
         #[test]
@@ -3259,7 +3493,6 @@ tasks:
 
     mod output_styles {
         use super::*;
-        use moon_config::PartialExperimentsConfig;
 
         #[test]
         fn buffer() {
@@ -3332,37 +3565,8 @@ tasks:
         }
 
         #[test]
-        fn ignores_style_for_direct_tasks() {
+        fn applies_style_to_direct_tasks() {
             let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg("outputStyles:none");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("stdout").eval(&output));
-            assert!(predicate::str::contains("stderr").eval(&output));
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg("outputStyles:none");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("cached").eval(&output));
-            assert!(predicate::str::contains("stdout").eval(&output));
-            assert!(predicate::str::contains("stderr").eval(&output));
-        }
-
-        #[test]
-        fn applies_style_to_direct_tasks_when_experiment_enabled() {
-            let sandbox = create_cases_sandbox_with_config(|workspace_config| {
-                workspace_config.experiments = Some(PartialExperimentsConfig {
-                    explicit_task_output_style: Some(true),
-                    ..PartialExperimentsConfig::default()
-                });
-            });
 
             let assert = sandbox.run_bin(|cmd| {
                 cmd.arg("run").arg("outputStyles:none");
@@ -3386,13 +3590,23 @@ tasks:
         }
 
         #[test]
-        fn streams_direct_tasks_when_experiment_enabled() {
-            let sandbox = create_cases_sandbox_with_config(|workspace_config| {
-                workspace_config.experiments = Some(PartialExperimentsConfig {
-                    explicit_task_output_style: Some(true),
-                    ..PartialExperimentsConfig::default()
-                });
+        fn applies_hash_style_to_direct_tasks() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("run").arg("outputStyles:hash");
             });
+
+            let output = assert.output();
+
+            // Output is captured (not streamed), and only the hash is displayed
+            assert!(predicate::str::contains("stdout").not().eval(&output));
+            assert!(predicate::str::contains("stderr").not().eval(&output));
+        }
+
+        #[test]
+        fn streams_direct_tasks() {
+            let sandbox = create_cases_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
                 cmd.arg("run").arg("outputStyles:stream");
@@ -3437,6 +3651,54 @@ tasks:
 
             assert!(predicate::str::contains("stdout").not().eval(&output));
             assert!(predicate::str::contains("stderr").not().eval(&output));
+        }
+
+        #[test]
+        fn option_overrides_the_task_option_when_cached() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("run")
+                    .arg("outputStyles:none")
+                    .arg("--output-style")
+                    .arg("buffer");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("stdout").eval(&output));
+            assert!(predicate::str::contains("stderr").eval(&output));
+
+            // And again when hydrating from the cache
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("run")
+                    .arg("outputStyles:none")
+                    .arg("--output-style")
+                    .arg("buffer");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("cached").eval(&output));
+            assert!(predicate::str::contains("stdout").eval(&output));
+            assert!(predicate::str::contains("stderr").eval(&output));
+        }
+
+        #[test]
+        fn option_overrides_the_task_option_for_transitive_tasks() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("run")
+                    .arg("outputStyles:nonePrimary")
+                    .arg("--output-style")
+                    .arg("buffer");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("outputStyles:none | stdout").eval(&output));
+            assert!(predicate::str::contains("outputStyles:none | stderr").eval(&output));
         }
 
         #[test]
@@ -3497,13 +3759,14 @@ tasks:
                 cmd.arg("exec")
                     .arg("interactive:prompt")
                     .arg("--interactive")
-                    .write_stdin("with-arg");
+                    .write_stdin("with-arg\n");
             });
 
-            // Test doesn't output the input (answer) we provide, so check for the question
+            // Interactive tasks read the input from stdin
             assert
                 .success()
-                .stdout(predicate::str::contains("Question?"));
+                .stdout(predicate::str::contains("Question?"))
+                .stdout(predicate::str::contains("Answer: with-arg"));
         }
 
         #[test]

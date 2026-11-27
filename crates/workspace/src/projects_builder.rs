@@ -5,21 +5,22 @@ use crate::workspace_builder::WorkspaceBuilderContext;
 use crate::workspace_builder_error::WorkspaceBuilderError;
 use crate::workspace_cache::map_plugin_input_paths;
 use miette::IntoDiagnostic;
-use moon_async_utils::run_pooled_tasks;
+use moon_async_utils::{run_pooled_blocking_tasks, run_pooled_tasks};
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source};
 use moon_common::{Id, color};
 use moon_config::{
     DependencyScope, ProjectConfig, ProjectDependencyConfig, WorkspaceProjectGlobFormat,
     WorkspaceProjects, finalize_config,
 };
+use moon_config_loader::ProjectConfigFile;
 use moon_graph_utils::{GraphExpanderContext, NodeState};
 use moon_pdk_api::{ExtendProjectGraphInput, ExtendProjectGraphOutput, ExtendProjectOutput};
 use moon_project::{Project, ProjectAlias};
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_layer_relationships, enforce_tag_relationships};
-use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectNode, would_cycle_in_scope};
+use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectNode, find_cycle_in_scopes};
 use moon_task::{Target, Task, TaskOptions};
-use moon_task_builder::TaskDepsBuilder;
+use moon_task_builder::{CommandLineCache, TaskDepsBuilder};
 use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -28,7 +29,6 @@ use starbase_utils::glob::{self, GlobWalkOptions};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::mem;
 use std::sync::Arc;
-use tokio::task::JoinSet;
 use tracing::{debug, instrument};
 
 pub type ProjectDiGraph = DiGraph<NodeState<Project>, DependencyScope>;
@@ -44,15 +44,17 @@ pub struct ProjectBuildData {
     #[serde(skip)]
     pub config: Option<ProjectConfig>,
 
+    /// Config file located within the source, which also
+    /// determines whether the source exists.
+    #[serde(skip)]
+    pub config_file: ProjectConfigFile,
+
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub extensions: Vec<ExtendProjectOutput>,
 
     // Only used for renaming!
     #[serde(skip)]
     pub id: Option<Id>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub node_index: Option<NodeIndex>,
 
     pub source: WorkspaceRelativePathBuf,
 }
@@ -69,24 +71,6 @@ impl ProjectBuildData {
 
         None
     }
-
-    // TODO deprecated
-    pub fn resolve_id(id_or_alias: &str, project_data: &ProjectBuildDataMap) -> Id {
-        if project_data.contains_key(id_or_alias) {
-            Id::raw(id_or_alias)
-        } else {
-            match project_data.iter().find_map(|(id, build_data)| {
-                if build_data.aliases.contains_key(id_or_alias) {
-                    Some(id)
-                } else {
-                    None
-                }
-            }) {
-                Some(project_id) => project_id.to_owned(),
-                None => Id::raw(id_or_alias),
-            }
-        }
-    }
 }
 
 pub fn load_project_build_data(
@@ -94,12 +78,29 @@ pub fn load_project_build_data(
     id: Id,
     source: WorkspaceRelativePathBuf,
 ) -> miette::Result<ProjectBuildData> {
-    let config = context
-        .config_loader
-        .load_project_config_from_source(&context.workspace_root, &source)?;
+    let loader = &context.config_loader;
+    let workspace_root = &context.workspace_root;
+
+    // Locate the config file once, which stops probing at the first file
+    // that exists, and also tells us whether the source exists, so that
+    // it doesn't need to be checked again when building
+    let config_file = loader.locate_project_file(&workspace_root.join(source.as_str()));
+
+    let config = match &config_file {
+        ProjectConfigFile::Unresolved => {
+            loader.load_project_config_from_source(workspace_root, &source)?
+        }
+        ProjectConfigFile::MissingRoot => {
+            loader.load_project_config_from_file(workspace_root, None)?
+        }
+        ProjectConfigFile::Located(file) => {
+            loader.load_project_config_from_file(workspace_root, file.as_deref())?
+        }
+    };
 
     Ok(ProjectBuildData {
         config: Some(config),
+        config_file,
         id: Some(id),
         source,
         ..Default::default()
@@ -147,12 +148,21 @@ pub async fn extend_project_build_data_with_plugins(
 
 pub async fn build_project(
     context: Arc<WorkspaceBuilderContext>,
+    command_line_cache: Arc<CommandLineCache>,
     build_data: ProjectBuildData,
     id: Id,
     root_id: Option<Id>,
     monorepo: bool,
 ) -> miette::Result<Project> {
-    if !build_data.source.to_path(&context.workspace_root).exists() {
+    let source_exists = match &build_data.config_file {
+        ProjectConfigFile::Unresolved => {
+            build_data.source.to_path(&context.workspace_root).exists()
+        }
+        ProjectConfigFile::MissingRoot => false,
+        ProjectConfigFile::Located(_) => true,
+    };
+
+    if !source_exists {
         return Err(
             WorkspaceBuilderError::MissingProjectAtSource(build_data.source.to_string()).into(),
         );
@@ -162,6 +172,7 @@ pub async fn build_project(
         &id,
         &build_data.source,
         ProjectBuilderContext {
+            command_line_cache,
             config_loader: &context.config_loader,
             enabled_toolchains: &context.enabled_toolchains,
             monorepo,
@@ -209,19 +220,34 @@ pub async fn build_project(
     builder.build().await
 }
 
+// Only the graph and aliases are serialized for the cache, as they're all that's
+// required to finalize the graph, while the other fields are only used to build it
 #[derive(Deserialize, Serialize)]
 pub struct WorkspaceProjectsBuilder {
+    /// The context is not serialized, so it's optional for deserializing
+    /// a cached builder, and is set immediately after.
     #[serde(skip)]
     pub context: Option<Arc<WorkspaceBuilderContext>>,
 
     /// Map of aliases to project IDs.
     aliases_to_ids: FxHashMap<String, Id>,
 
+    /// Parsed task command lines, shared across all projects in the build,
+    /// so that identical strings (from inherited tasks) are parsed once.
+    #[serde(skip)]
+    command_line_cache: Arc<CommandLineCache>,
+
     /// Cached projects build data.
+    #[serde(skip)]
     pub build_data: ProjectBuildDataMap,
+
+    /// Whether the build data was preloaded, as it may be empty.
+    #[serde(skip)]
+    preloaded: bool,
 
     /// List of config paths used in the hashing process.
     /// These are used for invalidation.
+    #[serde(skip)]
     pub config_paths: FxHashSet<WorkspaceRelativePathBuf>,
 
     /// Input files discovered by plugins while extending the graph.
@@ -230,30 +256,34 @@ pub struct WorkspaceProjectsBuilder {
     pub plugin_input_paths: BTreeSet<WorkspaceRelativePathBuf>,
 
     /// Map of project IDs to their graph index.
+    #[serde(skip)]
     pub ids_to_indexes: FxHashMap<Id, NodeIndex>,
 
     /// Map of project IDs to task options, indexed by target.
+    #[serde(skip)]
     ids_to_target_options: FxHashMap<Id, FxHashMap<Target, TaskOptions>>,
 
     /// Map of task targets to whether they declare any outputs.
+    #[serde(skip)]
     target_to_has_outputs: FxHashMap<Target, bool>,
 
     /// The project DAG.
     pub graph: ProjectDiGraph,
 
-    /// Map of original project IDs to renamed IDs.
-    renamed_ids: FxHashMap<Id, Id>,
-
     /// The type of repository: monorepo or polyrepo.
+    #[serde(skip)]
     repo_type: RepoType,
 
     /// The root project ID (only if a monorepo).
+    #[serde(skip)]
     root_id: Option<Id>,
 
     /// Map of tag IDs to a list of project IDs that belong to the tag.
+    #[serde(skip)]
     tags_to_ids: FxHashMap<Id, Vec<Id>>,
 
     /// Map of tag IDs to a list of task targets that belong to the tag.
+    #[serde(skip)]
     tags_to_targets: FxHashMap<Id, Vec<Target>>,
 }
 
@@ -303,6 +333,7 @@ impl WorkspaceProjectsBuilder {
         Self {
             context: Some(context),
             aliases_to_ids: FxHashMap::default(),
+            command_line_cache: Arc::default(),
             build_data: ProjectBuildDataMap::default(),
             config_paths: FxHashSet::default(),
             plugin_input_paths: BTreeSet::default(),
@@ -310,7 +341,7 @@ impl WorkspaceProjectsBuilder {
             ids_to_target_options: FxHashMap::default(),
             target_to_has_outputs: FxHashMap::default(),
             graph: ProjectDiGraph::default(),
-            renamed_ids: FxHashMap::default(),
+            preloaded: false,
             repo_type: RepoType::Unknown,
             root_id: None,
             tags_to_ids: FxHashMap::default(),
@@ -319,26 +350,27 @@ impl WorkspaceProjectsBuilder {
     }
 
     /// Preload projects and their configs for use within caching.
-    #[instrument(skip(self))]
+    #[instrument(skip_all)]
     pub async fn preload(&mut self) -> miette::Result<()> {
         self.build_data = self.load().await?;
+        self.preloaded = true;
 
         Ok(())
     }
 
     /// Load and build all projects into the graph, as configured in the workspace.
-    #[instrument(skip(self))]
+    #[instrument(skip_all)]
     pub async fn build(&mut self, ids: Option<Vec<Id>>) -> miette::Result<()> {
-        let mut data = if self.build_data.is_empty() {
-            self.load().await?
-        } else {
+        let mut data = if self.preloaded {
             mem::take(&mut self.build_data)
+        } else {
+            self.load().await?
         };
 
         // Extend projects with plugins before building, so that the
         // cached flow can skip these plugin calls entirely on a hit
         self.extend_build_data(&mut data).await?;
-        self.determine_repo_type(&data)?;
+        self.determine_repo_type(&data);
         self.build_graph(ids, data).await?;
 
         Ok(())
@@ -346,7 +378,7 @@ impl WorkspaceProjectsBuilder {
 
     // Extract all tasks from their respective project, as the data will live
     // in the task graph and not the project graph!
-    #[instrument(skip(self))]
+    #[instrument(skip_all)]
     pub fn extract_tasks(&mut self) -> miette::Result<Vec<Task>> {
         let mut tasks = vec![];
 
@@ -393,17 +425,18 @@ impl WorkspaceProjectsBuilder {
         project_graph.aliases.extend(self.aliases_to_ids);
         let mut loaded_projects = FxHashMap::default();
 
-        // TODO switch to filter_map_owned
-        let graph = self.graph.filter_map(
+        // Move the loaded projects out of the graph instead of cloning them,
+        // and drop the placeholders that were never loaded
+        let graph = self.graph.filter_map_owned(
             |ni, node| match node {
                 NodeState::Loading => None,
                 NodeState::Loaded(project) => {
-                    loaded_projects.insert(ni, project.to_owned());
+                    loaded_projects.insert(ni, project);
 
                     Some(ni)
                 }
             },
-            |_, edge| Some(*edge),
+            |_, edge| Some(edge),
         );
 
         for index in graph.node_indices() {
@@ -411,7 +444,10 @@ impl WorkspaceProjectsBuilder {
             let project = loaded_projects.remove(&old_index).unwrap();
             let id = project.id.clone();
 
-            project_graph.indexes.insert(index, id.clone());
+            // Node indexes are dense and ascending, so push in order
+            debug_assert_eq!(project_graph.indexes.len(), index.index());
+
+            project_graph.indexes.push(id.clone());
             project_graph
                 .nodes
                 .insert(id, ProjectNode { index, project });
@@ -422,7 +458,7 @@ impl WorkspaceProjectsBuilder {
         Ok(project_graph)
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip_all)]
     async fn build_graph(
         &mut self,
         ids: Option<Vec<Id>>,
@@ -441,6 +477,7 @@ impl WorkspaceProjectsBuilder {
         let context = self.context();
         let root_id = self.root_id.clone();
         let monorepo = self.repo_type.is_monorepo();
+        let command_line_cache = Arc::clone(&self.command_line_cache);
 
         run_pooled_tasks(
             queue,
@@ -453,6 +490,7 @@ impl WorkspaceProjectsBuilder {
 
                 Ok(build_project(
                     Arc::clone(&context),
+                    Arc::clone(&command_line_cache),
                     build_data,
                     id,
                     root_id.clone(),
@@ -469,22 +507,6 @@ impl WorkspaceProjectsBuilder {
                     // And then create edges but don't link the root project
                     if !dep_config.is_root_scope() {
                         let to_index = self.get_or_insert_node(&dep_config.id);
-
-                        // Only error when the cycle exists within the scope's
-                        // partition, as cycles that cross the production and
-                        // development boundary are legitimate
-                        if would_cycle_in_scope(
-                            &self.graph,
-                            from_index,
-                            to_index,
-                            &dep_config.scope,
-                        ) {
-                            return Err(ProjectGraphError::WouldCycle {
-                                source_id: project.id.to_string(),
-                                target_id: dep_config.id.to_string(),
-                            }
-                            .into());
-                        }
 
                         self.graph.add_edge(from_index, to_index, dep_config.scope);
                     }
@@ -515,7 +537,7 @@ impl WorkspaceProjectsBuilder {
                             // Only copy fields needed for task deps resolution,
                             // which must include every field read by `TaskDepsBuilder`
                             TaskOptions {
-                                allow_failure: task.options.allow_failure,
+                                on_failure: task.options.on_failure,
                                 interactive: task.options.interactive,
                                 run_in_ci: task.options.run_in_ci.clone(),
                                 persistent: task.options.persistent,
@@ -534,12 +556,33 @@ impl WorkspaceProjectsBuilder {
         )
         .await?;
 
+        // Only error when a cycle exists within a scope's partition, as cycles that
+        // cross the production and development boundary are legitimate. This is
+        // checked once all edges exist, instead of on every insertion, but before
+        // the task graph is built, so that the cycle is what's reported
+        if let Some(edge) = find_cycle_in_scopes(&self.graph) {
+            let (source, target) = self.graph.edge_endpoints(edge).unwrap();
+            let label = |index| {
+                self.ids_to_indexes
+                    .iter()
+                    .find(|(_, node_index)| **node_index == index)
+                    .map(|(id, _)| id.to_string())
+                    .unwrap_or_default()
+            };
+
+            return Err(ProjectGraphError::WouldCycle {
+                source_id: label(source),
+                target_id: label(target),
+            }
+            .into());
+        }
+
         Ok(())
     }
 
     /// Determine the repository type/structure based on the number of project
     /// sources, and where the point to.
-    fn determine_repo_type(&mut self, projects_data: &ProjectBuildDataMap) -> miette::Result<()> {
+    fn determine_repo_type(&mut self, projects_data: &ProjectBuildDataMap) {
         let single_project = projects_data.len() == 1;
         let mut has_root_project = false;
         let mut root_project_id = None;
@@ -561,8 +604,6 @@ impl WorkspaceProjectsBuilder {
         if self.repo_type == RepoType::MonorepoWithRoot {
             self.root_id = root_project_id;
         }
-
-        Ok(())
     }
 
     /// Enforce project constraints and boundaries after all nodes have been inserted.
@@ -580,36 +621,23 @@ impl WorkspaceProjectsBuilder {
             return Ok(());
         }
 
-        let default_scope = DependencyScope::Build;
-
         for (project_index, project_state) in self.graph.node_references() {
             let NodeState::Loaded(project) = project_state else {
                 continue;
             };
 
-            let deps: Vec<_> = self
+            // A project may depend on another multiple times (by its ID and
+            // an alias), so check every edge, as each may have a different scope
+            for edge in self
                 .graph
-                .neighbors_directed(project_index, Direction::Outgoing)
-                .flat_map(|dep_index| {
-                    self.graph.node_weight(dep_index).and_then(|dep| {
-                        match dep {
-                            NodeState::Loading => None,
-                            NodeState::Loaded(dep) => {
-                                Some((
-                                    dep,
-                                    // Is this safe?
-                                    self.graph
-                                        .find_edge(project_index, dep_index)
-                                        .and_then(|ei| self.graph.edge_weight(ei))
-                                        .unwrap_or(&default_scope),
-                                ))
-                            }
-                        }
-                    })
-                })
-                .collect();
+                .edges_directed(project_index, Direction::Outgoing)
+            {
+                let Some(NodeState::Loaded(dep)) = self.graph.node_weight(edge.target()) else {
+                    continue;
+                };
 
-            for (dep, dep_scope) in deps {
+                let dep_scope = edge.weight();
+
                 if layer_relationships {
                     enforce_layer_relationships(project, dep, dep_scope)?;
                 }
@@ -625,7 +653,7 @@ impl WorkspaceProjectsBuilder {
 
     /// Load the graph with project sources from the workspace configuration.
     /// If globs are provided, walk the file system and gather sources.
-    #[instrument(skip(self))]
+    #[instrument(skip_all)]
     async fn load(&mut self) -> miette::Result<ProjectBuildDataMap> {
         let context = self.context();
         let mut glob_format = WorkspaceProjectGlobFormat::default();
@@ -699,28 +727,28 @@ impl WorkspaceProjectsBuilder {
             .into());
         }
 
-        // Free up some memory
-        mem::take(&mut self.renamed_ids);
-
         Ok(build_data)
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip_all)]
     async fn load_build_data(
         &mut self,
-        sources: Vec<(Id, WorkspaceRelativePathBuf)>,
+        mut sources: Vec<(Id, WorkspaceRelativePathBuf)>,
     ) -> miette::Result<ProjectBuildDataMap> {
         let context = self.context();
         let config_label = context.config_loader.get_debug_label("moon");
         let config_names = context.config_loader.get_project_file_names();
         let mut projects_data = FxHashMap::<Id, ProjectBuildData>::default();
-        let mut dupe_original_ids = FxHashSet::default();
+        let mut renamed_ids = FxHashSet::default();
+        let mut dupe_renamed_ids = FxHashSet::default();
 
         debug!("Loading projects");
 
-        let mut set = JoinSet::new();
+        // Sort the sources, as the results are applied in this order,
+        // so that duplicate ID errors (and debug logs) are deterministic
+        sources.sort();
 
-        for (id, source) in sources {
+        for (id, source) in &sources {
             debug!(
                 project_id = id.as_str(),
                 "Attempting to load {} (optional)",
@@ -731,19 +759,41 @@ impl WorkspaceProjectsBuilder {
             for name in &config_names {
                 self.config_paths.insert(source.join(name));
             }
-
-            // Load each project config in parallel
-            let context = Arc::clone(&context);
-
-            set.spawn_blocking(move || load_project_build_data(context, id, source));
         }
 
-        while let Some(result) = set.join_next().await {
-            let mut build_data = result.into_diagnostic()??;
+        // Load project configs in parallel, bounded to the number of CPUs,
+        // instead of a blocking thread per project
+        let mut results = vec![];
 
-            // Track ID renames
+        run_pooled_blocking_tasks(
+            sources,
+            move |(id, source)| {
+                load_project_build_data(Arc::clone(&context), id.to_owned(), source.to_owned())
+            },
+            |build_data| {
+                results.push(build_data);
+
+                Ok(())
+            },
+        )
+        .await?;
+
+        for mut build_data in results {
+            // Rename the project if an explicit ID was configured
             if let Some((old_id, new_id)) = build_data.rename_id_if_configured() {
-                self.track_id_rename(old_id, new_id, &mut dupe_original_ids, &mut build_data);
+                debug!(
+                    old_id = old_id.as_str(),
+                    new_id = new_id.as_str(),
+                    "Project has been configured with an explicit identifier of {}, renaming from {}",
+                    color::id(&new_id),
+                    color::id(&old_id),
+                );
+
+                if !renamed_ids.insert(old_id.clone()) {
+                    dupe_renamed_ids.insert(old_id);
+                }
+
+                build_data.id = Some(new_id);
             }
 
             let id = build_data.id.take().expect("Missing project ID!");
@@ -763,15 +813,11 @@ impl WorkspaceProjectsBuilder {
             projects_data.insert(id, build_data);
         }
 
-        if !dupe_original_ids.is_empty() {
+        if !dupe_renamed_ids.is_empty() {
             debug!(
-                original_ids = ?dupe_original_ids.iter().collect::<Vec<_>>(),
-                "Found multiple renamed projects with the same original ID; will ignore these IDs within lookups"
+                original_ids = ?dupe_renamed_ids.iter().collect::<Vec<_>>(),
+                "Found multiple renamed projects with the same original ID",
             );
-
-            for dupe_id in dupe_original_ids {
-                self.renamed_ids.remove(&dupe_id);
-            }
         }
 
         debug!("Loaded {} projects", projects_data.len());
@@ -779,7 +825,7 @@ impl WorkspaceProjectsBuilder {
         Ok(projects_data)
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip_all)]
     async fn extend_build_data(
         &mut self,
         projects_data: &mut ProjectBuildDataMap,
@@ -897,30 +943,6 @@ impl WorkspaceProjectsBuilder {
         }
 
         Ok(())
-    }
-
-    fn track_id_rename(
-        &mut self,
-        old_id: Id,
-        new_id: Id,
-        duplicate_ids: &mut FxHashSet<Id>,
-        project_data: &mut ProjectBuildData,
-    ) {
-        debug!(
-            old_id = old_id.as_str(),
-            new_id = new_id.as_str(),
-            "Project has been configured with an explicit identifier of {}, renaming from {}",
-            color::id(&new_id),
-            color::id(&old_id),
-        );
-
-        if self.renamed_ids.contains_key(&old_id) {
-            duplicate_ids.insert(old_id.clone());
-        } else {
-            self.renamed_ids.insert(old_id.clone(), new_id.clone());
-        }
-
-        project_data.id = Some(new_id);
     }
 
     fn context(&self) -> Arc<WorkspaceBuilderContext> {

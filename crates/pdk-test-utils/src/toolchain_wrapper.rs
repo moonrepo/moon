@@ -183,6 +183,23 @@ impl ToolchainTestWrapper {
             .unwrap()
     }
 
+    pub async fn locate_dependencies_roots(
+        &self,
+        mut input: LocateDependenciesRootsInput,
+    ) -> LocateDependenciesRootsOutput {
+        input.context = self.create_context();
+        input.starting_dirs = input
+            .starting_dirs
+            .into_iter()
+            .map(|dir| self.plugin.to_virtual_path(dir))
+            .collect();
+
+        self.plugin
+            .call_func_with("locate_dependencies_roots", input)
+            .await
+            .unwrap()
+    }
+
     pub async fn parse_lock(&self, mut input: ParseLockInput) -> ParseLockOutput {
         input.context = self.create_context();
         input.path = self.plugin.to_virtual_path(input.path);

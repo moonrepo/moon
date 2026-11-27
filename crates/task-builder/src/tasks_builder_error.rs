@@ -10,10 +10,11 @@ use thiserror::Error;
 pub enum TasksBuilderError {
     #[diagnostic(code(task_builder::dependency::no_allowed_failures))]
     #[error(
-        "Task {} cannot depend on task {}, as it is allowed to fail, which may cause unwanted side-effects.\nA task is marked to allow failure with the {} setting.",
+        "Task {} cannot depend on task {}, as it is allowed to fail, which may cause unwanted side-effects.\nA task is allowed to fail when {} is set to {}.",
         .task.style(Style::Label),
         .dep.style(Style::Label),
-        "options.allowFailure".style(Style::Property),
+        "options.onFailure".style(Style::Property),
+        "allow".style(Style::Symbol),
     )]
     AllowFailureDepRequirement { dep: Target, task: Target },
 
@@ -78,9 +79,10 @@ pub enum TasksBuilderError {
 
     #[diagnostic(code(task_builder::options::expect_failure_conflict))]
     #[error(
-        "Task {} cannot enable both {} and {}, as {}.",
+        "Task {} cannot set {} to {} and enable {}, as {}.",
         .task.style(Style::Label),
-        "options.expectFailure".style(Style::Property),
+        "options.onFailure".style(Style::Property),
+        "expect".style(Style::Symbol),
         .option.style(Style::Property),
         .reason,
     )]

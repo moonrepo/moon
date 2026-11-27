@@ -9,7 +9,8 @@ This may result in different or unexpected results. The following guidelines mus
 globs:
 
 - Must use forward slashes (`/`) for path separators, even on Windows.
-- Must _not_ start with or use any relative path parts, `.` or `..`.
+- Must _not_ start with or use any relative path parts, `.` or `..`, except for a
+  [parent traversal](#parent-traversal) segment, `...`.
 
 ### Supported syntax
 
@@ -25,6 +26,8 @@ globs:
 - `{glob,glob}` - Matches one or more comma separated list of sub-glob patterns.
 - `<glob:n,n>` - Matches a sub-glob within a defined bounds.
 - `!` - At the start of a pattern, will negate previous positive patterns.
+- `...` - As a whole path segment, matches the path after it in the directory before it, or in any
+  of its parent directories. [Learn more](#parent-traversal).
 
 ### Examples
 
@@ -34,7 +37,39 @@ src/**/*
 tests/**/*.?js
 !**/__tests__/**/*
 logs/<[0-9]:4>-<[0-9]:2>-<[0-9]:2>.log
+.../package.json
 ```
+
+### Parent traversal
+
+A `...` path segment matches the path after it in the directory before it, or in any parent
+directory of that directory, up to the workspace root. Paths in sibling or nested directories are
+never matched. This is useful for files that tools look up from the current directory, like
+manifests, lockfiles, and configs.
+
+For example, the [project relative](#project-relative) `.../package.json`, in a project at
+`packages/a`, matches the following files:
+
+- `packages/a/package.json`
+- `packages/package.json`
+- `package.json`
+
+While `packages/b/package.json` and `packages/a/src/package.json` are _not_ matched.
+
+The following rules apply:
+
+- Only 1 `...` segment is allowed per pattern.
+- A path is required after it, which may contain globs that stay within a directory, like
+  `.../*.lock`, but not `**`.
+- Globs are allowed before it, as each parent directory is expanded from the pattern itself, so
+  `/packages/*/.../config.json` matches `packages/*/config.json`, `packages/config.json`, and
+  `config.json`.
+- It can be negated with a leading `!`.
+
+Task [`outputs`](../config/project#outputs) and code [`owners`](../config/project#owners) don't
+support it, as they can't be expanded. The same applies to token functions that return globs as-is,
+like [`@globs`](./token#globs) and [`@group`](./token#group), outside of task inputs, as shells can't
+expand them. Use [`@files`](./token#files) instead.
 
 ## Project relative
 

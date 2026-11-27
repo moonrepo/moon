@@ -1,0 +1,6 @@
+---
+source: crates/cli/tests/migrate_v2_test.rs
+expression: "read_file(&sandbox, \".moon/extensions.yml\")"
+---
+example:
+  plugin: https://example.com/plugin.wasm

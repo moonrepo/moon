@@ -39,7 +39,7 @@ impl<'graph> ProjectExpander<'graph> {
                 .context
                 .aliases
                 .get(dep_config.id.as_str())
-                .map(|id| (*id).to_owned())
+                .cloned()
                 .unwrap_or(dep_config.id);
 
             // Use a map so that aliases and IDs get flattened

@@ -4,7 +4,7 @@ use schematic::{Config, ConfigEnum};
 
 config_unit_enum!(
     /// The relationship scope of a dependency.
-    #[derive(ConfigEnum, PartialOrd, Ord)]
+    #[derive(ConfigEnum, Default, PartialOrd, Ord)]
     pub enum DependencyScope {
         Build,
         Development,
@@ -30,7 +30,7 @@ impl DependencyScope {
 config_unit_enum!(
     /// The source where the dependency comes from. Either explicitly
     /// defined in configuration, or implicitly derived from source files.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Default)]
     pub enum DependencySource {
         #[default]
         Explicit,

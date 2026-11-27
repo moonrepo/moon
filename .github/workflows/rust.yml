@@ -7,6 +7,7 @@ on:
   pull_request:
     paths:
       - .cargo/config.toml
+      - .github/actions/build-toolchain-plugins/**
       - .github/workflows/rust.yml
       - crates/**
       - legacy/**
@@ -77,6 +78,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
       fail-fast: false
+    env:
+      # Cargo 1.100+ passes a `-L` for every dependency, which exceeds the command line length
+      # limit on Windows when sccache runs rustc (Cargo itself falls back to an argfile)
+      RUSTC_WRAPPER: ${{ vars.ENABLE_SCCACHE == 'true' && !contains(matrix.os, 'windows') && 'sccache' || '' }}
     steps:
       - uses: actions/checkout@v6
       - uses: arduino/setup-protoc@v3
@@ -88,7 +93,7 @@ jobs:
           cache: false
           components: clippy
       - uses: mozilla-actions/sccache-action@v0.0.9
-        if: ${{ vars.ENABLE_SCCACHE == 'true' }}
+        if: ${{ env.RUSTC_WRAPPER == 'sccache' }}
       - name: Run linter
         run: just lint
   test-plan:
@@ -117,6 +122,9 @@ jobs:
     env:
       # Windows runs out of disk space
       COVERAGE: ${{ needs.test-plan.outputs.coverage == 'true' && !contains(matrix.os, 'windows') }}
+      # Cargo 1.100+ passes a `-L` for every dependency, which exceeds the command line length
+      # limit on Windows when sccache runs rustc (Cargo itself falls back to an argfile)
+      RUSTC_WRAPPER: ${{ vars.ENABLE_SCCACHE == 'true' && !contains(matrix.os, 'windows') && 'sccache' || '' }}
       # Temporary until we upgrade starbase
       GIT_AUTHOR_NAME: 'Sandbox'
       GIT_AUTHOR_EMAIL: 'fakeemail@somedomain.dev'
@@ -137,16 +145,17 @@ jobs:
         with:
           auto-install: true
           cache: true
-          proto-version: '0.62.2' # Keep in sync
+          proto-version: '0.64.0' # Keep in sync
         env:
           PROTO_LOG: trace
       - uses: mozilla-actions/sccache-action@v0.0.9
-        if: ${{ vars.ENABLE_SCCACHE == 'true' }}
+        if: ${{ env.RUSTC_WRAPPER == 'sccache' }}
       # Fixes issues where proto can't find a version because nothing is pinned globally
       - run: cp .prototools ~/.proto/.prototools
       # - run: bash ./scripts/ci/warmPluginsCache.sh
       - name: Build plugins
         run: just build-wasm
+      - uses: ./.github/actions/build-toolchain-plugins
       - name: Run tests
         if: ${{ env.COVERAGE == 'false' }}
         run: just test-ci

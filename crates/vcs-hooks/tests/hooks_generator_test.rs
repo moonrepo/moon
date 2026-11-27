@@ -1,6 +1,7 @@
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::VcsConfig;
 use moon_test_utils::WorkspaceMocker;
-use moon_vcs_hooks::HooksGenerator;
+use moon_vcs_hooks::{HooksGenerator, HooksState, STATE_KEY};
 use rustc_hash::FxHashMap;
 use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
 use std::fs;
@@ -154,10 +155,19 @@ mod vcs_hooks {
         sandbox.create_file(".husky/other-file", "keep me");
 
         // Simulate state from an older moon version that adopted a foreign dir
-        sandbox.create_file(
-            ".moon/cache/states/vcsHooks.json",
-            r#"{"hookNames":["pre-commit"],"relativeHooksDir":".husky"}"#,
-        );
+        WorkspaceMocker::new(sandbox.path())
+            .mock_app_context()
+            .cache_engine
+            .objects_storage
+            .save_state(
+                STATE_KEY,
+                &HooksState {
+                    hook_names: vec!["pre-commit".into()],
+                    relative_hooks_dir: Some(WorkspaceRelativePathBuf::from(".husky")),
+                },
+            )
+            .await
+            .unwrap();
 
         clean_generator(sandbox.path()).await;
 

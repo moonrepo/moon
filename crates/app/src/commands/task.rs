@@ -59,9 +59,13 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> SessionResult {
         return Ok(None);
     }
 
+    let inherited = workspace_graph.projects.get_inherited_tasks(&project)?;
     let mut modes = vec![];
 
-    if task.options.expect_failure {
+    if task.options.is_failure_allowed() {
+        modes.push("allow failure");
+    }
+    if task.options.is_failure_expected() {
         modes.push("expect failure");
     }
     if task.is_internal() {
@@ -310,9 +314,9 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> SessionResult {
             }
 
             Section(title: "Configuration") {
-                #(project.inherited
-                    .as_ref()
-                    .and_then(|inherited| inherited.layers.get(task.id.as_str()))
+                #(inherited
+                    .layers
+                    .get(task.id.as_str())
                     .map(|layers| {
                     element! {
                         Entry(

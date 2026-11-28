@@ -458,8 +458,7 @@ impl AppSession for MoonSession {
 
         self.moon_env = startup::detect_moon_environment(&self.working_dir, &self.workspace_root)?;
 
-        self.proto_env =
-            startup::detect_proto_environment(&self.working_dir, &self.workspace_root)?;
+        self.proto_env = startup::detect_proto_environment(&self.workspace_root)?;
 
         // Load configs
 
@@ -474,7 +473,6 @@ impl AppSession for MoonSession {
                     self.config_loader.clone(),
                     self.proto_env.clone(),
                     &self.workspace_root,
-                    &self.working_dir,
                 ),
             )?;
 

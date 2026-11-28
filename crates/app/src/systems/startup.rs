@@ -98,12 +98,11 @@ pub fn detect_moon_environment(
 
 /// Detect information for proto from the environment.
 #[instrument]
-pub fn detect_proto_environment(
-    working_dir: &Path,
-    _workspace_root: &Path,
-) -> miette::Result<Arc<ProtoEnvironment>> {
+pub fn detect_proto_environment(workspace_root: &Path) -> miette::Result<Arc<ProtoEnvironment>> {
     let mut env = ProtoEnvironment::new()?;
-    env.working_dir = working_dir.to_path_buf();
+    // Not the cwd: proto mounts its working dir into plugins as `/cwd`, which hides
+    // the workspace above it, and it reads `.prototools` from there.
+    env.working_dir = workspace_root.to_path_buf();
 
     Ok(Arc::new(env))
 }
@@ -139,7 +138,6 @@ pub async fn load_toolchains_config(
     config_loader: ConfigLoader,
     proto_env: Arc<ProtoEnvironment>,
     workspace_root: &Path,
-    working_dir: &Path,
 ) -> miette::Result<Arc<ToolchainsConfig>> {
     debug!(
         "Attempting to load {} (optional)",
@@ -147,10 +145,11 @@ pub async fn load_toolchains_config(
     );
 
     let root = workspace_root.to_owned();
-    let cwd = working_dir.to_owned();
     let config = load_config_blocking(move || {
-        config_loader
-            .load_toolchains_config(root, proto_env.load_file_manager()?.get_local_config(&cwd)?)
+        config_loader.load_toolchains_config(
+            &root,
+            proto_env.load_file_manager()?.get_local_config(&root)?,
+        )
     })
     .await
     .into_diagnostic()??;

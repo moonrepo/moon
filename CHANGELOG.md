@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where running moon from a subdirectory of the workspace produced different task
+  hashes than running it from the root, so nothing hit the cache, and moon installed dependencies for
+  the project alone. Toolchain versions are inherited from the workspace root's `.prototools` again,
+  and the proto environment of toolchain plugins is rooted at the workspace instead of the working
+  directory, so dependency roots and lockfiles above the working directory are found.
+
 ## 2.6.6
 
 #### 🐞 Fixes

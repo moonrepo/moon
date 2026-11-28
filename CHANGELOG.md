@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where `moon mcp` did not exit when its stdin was closed, which is how an MCP client
+  stops a stdio server. When a client exited without stopping the server, like when it was killed,
+  the server kept running in the background.
+- Fixed an issue where a task that's restricted to other operating systems with the `os` option was
+  reported as passed, though its command never ran, and on subsequent runs as cached, as it was
+  hashed and archived like a task that ran. It's now reported as skipped (in the terminal and the
+  run report), and is not hashed or cached. Tasks that depend on it still run.
+
 ## 2.6.6
 
 #### 🐞 Fixes

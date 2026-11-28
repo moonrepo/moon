@@ -635,21 +635,19 @@ impl<'proj> TasksBuilder<'proj> {
             task.options.shell = Some(true);
         }
 
-        if let Some(os_list) = &task.options.os {
-            let for_current_system = os_list.iter().any(|os| os.is_current_system());
+        // The task runner skips these tasks, but their command and outputs are
+        // also removed, so that nothing relies on what they would have created
+        if task.is_excluded_from_current_os() {
+            trace!(
+                task_target = target.as_str(),
+                os_list = ?task.options.os.iter().flatten().map(|os| os.to_string()).collect::<Vec<_>>(),
+                "Task has been marked for another operating system, disabling command/script",
+            );
 
-            if !for_current_system {
-                trace!(
-                    task_target = target.as_str(),
-                    os_list = ?os_list.iter().map(|os| os.to_string()).collect::<Vec<_>>(),
-                    "Task has been marked for another operating system, disabling command/script",
-                );
-
-                task.command = TaskArg::new_unquoted("noop");
-                task.args.clear();
-                task.outputs.clear();
-                task.script = None;
-            }
+            task.command = TaskArg::new_unquoted("noop");
+            task.args.clear();
+            task.outputs.clear();
+            task.script = None;
         }
 
         task.id = id.to_owned();

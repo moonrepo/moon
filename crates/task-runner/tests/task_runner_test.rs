@@ -104,6 +104,125 @@ mod task_runner {
             }
         }
 
+        mod for_another_os {
+            use super::*;
+
+            fn task_for_another_os() -> &'static str {
+                if moon_config::TaskOperatingSystem::Linux.is_current_system() {
+                    "os-macos"
+                } else {
+                    "os-linux"
+                }
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_without_hashing_or_caching() {
+                let container = TaskRunnerContainer::new("runner", task_for_another_os()).await;
+                container.sandbox.enable_git();
+
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
+                let context = ActionContext::default();
+
+                let result = runner.run_with_panic(&context, &node).await.unwrap();
+
+                assert!(result.hash.is_none());
+                assert_eq!(result.operations.len(), 1);
+                assert!(result.operations[0].meta.is_task_execution());
+                assert_eq!(result.operations.get_final_status(), ActionStatus::Skipped);
+                assert!(!result.operations.has_executed_task());
+                assert!(runner.cache.data.hash.is_empty());
+                assert_eq!(
+                    context
+                        .target_states
+                        .get_sync(&runner.task.target)
+                        .unwrap()
+                        .get(),
+                    &TargetState::SkippedOs
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn never_hydrates_from_a_previous_run() {
+                let container = TaskRunnerContainer::new("runner", task_for_another_os()).await;
+                container.sandbox.enable_git();
+
+                let node = container.create_action_node();
+
+                for _ in 0..2 {
+                    let mut runner = container.create_runner();
+                    let context = ActionContext::default();
+
+                    let result = runner.run_with_panic(&context, &node).await.unwrap();
+
+                    assert_eq!(result.operations.get_final_status(), ActionStatus::Skipped);
+                    assert!(!result.operations.iter().any(|op| op.is_cached()));
+                }
+
+                let outputs_dir = container.sandbox.path().join(".moon/cache/outputs");
+
+                assert!(
+                    !outputs_dir.exists() || std::fs::read_dir(outputs_dir).unwrap().count() == 0
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_if_dep_failed() {
+                let container = TaskRunnerContainer::new("runner", task_for_another_os()).await;
+                let mut task = container.task.as_ref().to_owned();
+                task.deps.push(moon_config::TaskDependencyConfig::new(
+                    Target::new("project", "dep").unwrap(),
+                ));
+                let task = std::sync::Arc::new(task);
+                let mut runner =
+                    TaskRunner::new(&container.app_context, &container.project, &task, None)
+                        .unwrap();
+                let node = container.create_action_node();
+
+                let context = ActionContext::default();
+                context
+                    .target_states
+                    .insert_sync(Target::new("project", "dep").unwrap(), TargetState::Failed)
+                    .unwrap();
+
+                runner.run_with_panic(&context, &node).await.unwrap();
+
+                // A failure must still propagate to dependents
+                assert_eq!(
+                    context.target_states.get_sync(&task.target).unwrap().get(),
+                    &TargetState::Skipped
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn allows_downstream_to_run() {
+                let container = TaskRunnerContainer::new("runner", "has-deps").await;
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
+
+                let context = ActionContext::default();
+                context
+                    .target_states
+                    .insert_sync(
+                        Target::new("project", "dep").unwrap(),
+                        TargetState::SkippedOs,
+                    )
+                    .unwrap();
+
+                let result = runner.run_with_panic(&context, &node).await.unwrap();
+
+                assert!(result.hash.is_some());
+                assert!(matches!(
+                    context
+                        .target_states
+                        .get_sync(&runner.task.target)
+                        .unwrap()
+                        .get(),
+                    TargetState::Passed(_)
+                ));
+            }
+        }
+
         mod has_checks {
             use super::*;
 
@@ -2150,6 +2269,37 @@ mod task_runner {
             runner.skip().unwrap();
 
             assert_eq!(runner.state.target.as_ref().unwrap(), &TargetState::Skipped);
+        }
+    }
+
+    mod skip_os {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn creates_an_operation() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut runner = container.create_runner();
+
+            runner.skip_os().unwrap();
+
+            let operation = runner.operations.last().unwrap();
+
+            assert!(operation.meta.is_task_execution());
+            assert_eq!(operation.status, ActionStatus::Skipped);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn sets_skipped_os_state() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut runner = container.create_runner();
+
+            runner.skip_os().unwrap();
+
+            assert_eq!(
+                runner.state.target.as_ref().unwrap(),
+                &TargetState::SkippedOs
+            );
+            assert!(runner.state.target.as_ref().unwrap().is_complete());
         }
     }
 

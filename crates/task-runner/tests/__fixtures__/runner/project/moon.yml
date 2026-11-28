@@ -23,6 +23,21 @@ tasks:
       - file: 'file.txt'
         optional: true
 
+  # Only one of these is for the current OS
+  os-linux:
+    command: 'echo ran'
+    outputs:
+      - 'file.txt'
+    options:
+      os: 'linux'
+
+  os-macos:
+    command: 'echo ran'
+    outputs:
+      - 'file.txt'
+    options:
+      os: 'macos'
+
   dep:
     command: noop
 

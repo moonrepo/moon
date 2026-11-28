@@ -2898,6 +2898,10 @@ tasks:
             let task = tasks.get("os-linux").unwrap();
 
             assert_eq!(task.options.os, Some(vec![TaskOperatingSystem::Linux]));
+            assert_eq!(
+                task.is_excluded_from_current_os(),
+                !cfg!(target_os = "linux")
+            );
 
             if cfg!(target_os = "linux") {
                 assert_eq!(task.command, "execute");
@@ -2919,6 +2923,10 @@ tasks:
             let task = tasks.get("os-macos").unwrap();
 
             assert_eq!(task.options.os, Some(vec![TaskOperatingSystem::Macos]));
+            assert_eq!(
+                task.is_excluded_from_current_os(),
+                !cfg!(target_os = "macos")
+            );
 
             if cfg!(target_os = "macos") {
                 assert_eq!(task.command, "execute");
@@ -2940,6 +2948,10 @@ tasks:
             let task = tasks.get("os-windows").unwrap();
 
             assert_eq!(task.options.os, Some(vec![TaskOperatingSystem::Windows]));
+            assert_eq!(
+                task.is_excluded_from_current_os(),
+                !cfg!(target_os = "windows")
+            );
 
             if cfg!(target_os = "windows") {
                 assert_eq!(task.command, "execute");

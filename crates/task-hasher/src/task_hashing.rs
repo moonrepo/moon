@@ -95,6 +95,9 @@ pub fn dep_hash_input(
         Some(TaskDependencyCacheStrategy::Hash) | None => match state {
             TargetState::Passed(hash) | TargetState::SkippedConditional(hash) => Some(hash.clone()),
             TargetState::Passthrough => Some("passthrough".into()),
+            // Skipped without a hash, as it's never ran on this operating
+            // system, so there's nothing that can change
+            TargetState::SkippedOs => Some("skipped-os".into()),
             TargetState::Failed | TargetState::Skipped => None,
         },
         // Outputs: constant marker — invalidation comes from the dep's outputs,
@@ -102,6 +105,7 @@ pub fn dep_hash_input(
         Some(TaskDependencyCacheStrategy::Outputs) => match state {
             TargetState::Passed(_) | TargetState::SkippedConditional(_) => Some("outputs".into()),
             TargetState::Passthrough => Some("outputs-passthrough".into()),
+            TargetState::SkippedOs => Some("outputs-skipped-os".into()),
             TargetState::Failed | TargetState::Skipped => None,
         },
     }
@@ -1020,6 +1024,19 @@ mod tests {
         }
 
         #[test]
+        fn hash_strategy_marks_skipped_os() {
+            // A dep for another OS has nothing that can change, but its
+            // dependents still run, so it contributes a constant marker
+            assert_eq!(
+                dep_hash_input(
+                    Some(TaskDependencyCacheStrategy::Hash),
+                    &TargetState::SkippedOs
+                ),
+                Some("skipped-os".into())
+            );
+        }
+
+        #[test]
         fn hash_strategy_skips_failed_and_skipped() {
             assert_eq!(
                 dep_hash_input(
@@ -1051,6 +1068,7 @@ mod tests {
                 TargetState::Failed,
                 TargetState::Skipped,
                 TargetState::SkippedConditional("cond".into()),
+                TargetState::SkippedOs,
             ] {
                 assert_eq!(
                     dep_hash_input(None, &state),
@@ -1067,6 +1085,7 @@ mod tests {
                 TargetState::Failed,
                 TargetState::Skipped,
                 TargetState::SkippedConditional("cond".into()),
+                TargetState::SkippedOs,
             ] {
                 assert_eq!(
                     dep_hash_input(Some(TaskDependencyCacheStrategy::Ignored), &state),
@@ -1104,6 +1123,17 @@ mod tests {
                     &TargetState::SkippedConditional("cond123".into())
                 ),
                 Some("outputs".into())
+            );
+        }
+
+        #[test]
+        fn outputs_strategy_marks_skipped_os() {
+            assert_eq!(
+                dep_hash_input(
+                    Some(TaskDependencyCacheStrategy::Outputs),
+                    &TargetState::SkippedOs
+                ),
+                Some("outputs-skipped-os".into())
             );
         }
 

@@ -110,7 +110,7 @@ export interface Action {
 }
 
 export interface TargetState {
-	state: 'failed' | 'passed' | 'passthrough' | 'skipped';
+	state: 'failed' | 'passed' | 'passthrough' | 'skipped' | 'skipped-conditional' | 'skipped-os';
 	hash?: string;
 }
 

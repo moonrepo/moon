@@ -138,7 +138,15 @@ impl<'task> TaskRunner<'task> {
             return Ok(None);
         }
 
-        // Always generate a hash
+        // If the task is for another operating system, it has nothing to run,
+        // so skip it before hashing, so that it's never cached or hydrated
+        if self.task.is_excluded_from_current_os() {
+            self.skip_os()?;
+
+            return Ok(None);
+        }
+
+        // Otherwise always generate a hash
         let hash = self.hash(context, node).await?;
 
         if self.is_cache_enabled() {
@@ -838,6 +846,26 @@ impl<'task> TaskRunner<'task> {
         self.state.target = Some(TargetState::SkippedConditional(
             self.report.hash.as_deref().unwrap_or("passthrough").into(),
         ));
+
+        Ok(())
+    }
+
+    /// Skip the task because it has been restricted to other operating systems.
+    /// Unlike a skip from a dependency, tasks that depend on it still run.
+    #[instrument(skip(self))]
+    pub fn skip_os(&mut self) -> miette::Result<()> {
+        debug!(
+            task_target = self.task.target.as_str(),
+            os_list = ?self.task.options.os.iter().flatten().map(|os| os.to_string()).collect::<Vec<_>>(),
+            "Skipping task as it's for another operating system"
+        );
+
+        self.operations.push(Operation::new_finished(
+            OperationMeta::TaskExecution(Default::default()),
+            ActionStatus::Skipped,
+        ));
+
+        self.state.target = Some(TargetState::SkippedOs);
 
         Ok(())
     }

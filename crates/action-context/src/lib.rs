@@ -17,6 +17,7 @@ pub enum TargetState {
     Failed,
     Skipped,                    // skipped due to dependency failure
     SkippedConditional(String), // skipped because conditions passed
+    SkippedOs,                  // skipped because for another operating system
 }
 
 impl TargetState {
@@ -30,14 +31,17 @@ impl TargetState {
     pub fn is_complete(&self) -> bool {
         matches!(
             self,
-            TargetState::Passed(_) | TargetState::Passthrough | TargetState::SkippedConditional(_)
+            TargetState::Passed(_)
+                | TargetState::Passthrough
+                | TargetState::SkippedConditional(_)
+                | TargetState::SkippedOs
         )
     }
 
     pub fn is_skipped(&self) -> bool {
         matches!(
             self,
-            TargetState::Skipped | TargetState::SkippedConditional(_)
+            TargetState::Skipped | TargetState::SkippedConditional(_) | TargetState::SkippedOs
         )
     }
 }

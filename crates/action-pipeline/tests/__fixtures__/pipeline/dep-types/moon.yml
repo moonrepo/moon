@@ -247,3 +247,19 @@ tasks:
 
   mutex-crash:
     command: 'node ./signal.mjs fail crash-ran 800'
+
+  # Only one of these is for the current OS (on Windows, neither is), and
+  # the others are skipped, but the task that depends on them still runs
+  os-linux:
+    command: 'node ./signal.mjs write os-linux-ran'
+    options:
+      os: 'linux'
+
+  os-macos:
+    command: 'node ./signal.mjs write os-macos-ran'
+    options:
+      os: 'macos'
+
+  os-dependent:
+    command: 'node ./signal.mjs write os-dependent-ran'
+    deps: ['os-linux', 'os-macos']

@@ -390,6 +390,15 @@ impl Task {
         self.options.interactive
     }
 
+    /// Return true if the task has been restricted to other operating
+    /// systems (via the `os` option), and must not run on the current one.
+    pub fn is_excluded_from_current_os(&self) -> bool {
+        self.options
+            .os
+            .as_ref()
+            .is_some_and(|os_list| !os_list.iter().any(|os| os.is_current_system()))
+    }
+
     /// Return true if the task is a "no operation" and does nothing.
     pub fn is_no_op(&self) -> bool {
         (self.command == "nop" || self.command == "noop" || self.command == "no-op")

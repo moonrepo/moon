@@ -1787,7 +1787,8 @@ tasks:
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#os" />
 
 When defined, the task will _only_ run on the configured operating system. For other operating
-systems, the task becomes a no-operation. Supports the values `linux`, `macos`, and `windows`.
+systems, the task is skipped: it's not ran, hashed, or cached, and it's reported as skipped instead
+of passed. Tasks that depend on it still run. Supports the values `linux`, `macos`, and `windows`.
 
 Can be defined as a single value, or a list of values.
 

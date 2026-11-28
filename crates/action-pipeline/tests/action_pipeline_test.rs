@@ -571,6 +571,43 @@ mod action_pipeline {
             let _ = std::fs::remove_file(sandbox.path().join("dep-types").join(name));
         }
 
+        mod os {
+            use super::*;
+            use moon_task::TaskOperatingSystem;
+
+            // A task for another OS doesn't run, and is skipped instead of
+            // passing, but unlike a skip from a failure, its dependents run
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_tasks_for_another_os_but_runs_dependents() {
+                let sandbox = create_sandbox("pipeline");
+                let statuses = run_targets(&sandbox, &["dep-types:os-dependent"], false).await;
+
+                for (id, os) in [
+                    ("os-linux", TaskOperatingSystem::Linux),
+                    ("os-macos", TaskOperatingSystem::Macos),
+                ] {
+                    let is_current = os.is_current_system();
+
+                    assert_eq!(
+                        statuses.get(&format!("RunTask(dep-types:{id})")),
+                        Some(if is_current {
+                            &ActionStatus::Passed
+                        } else {
+                            &ActionStatus::Skipped
+                        }),
+                        "{id}"
+                    );
+                    assert_eq!(has_signal(&sandbox, &format!("{id}-ran")), is_current);
+                }
+
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:os-dependent)"),
+                    Some(&ActionStatus::Passed)
+                );
+                assert!(has_signal(&sandbox, "os-dependent-ran"));
+            }
+        }
+
         mod wait {
             use super::*;
 

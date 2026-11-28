@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where `moon mcp` did not exit when its stdin was closed, which is how an MCP client
+  stops a stdio server. When a client exited without stopping the server, like when it was killed,
+  the server kept running in the background.
+
 ## 2.6.6
 
 #### 🐞 Fixes
